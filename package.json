@@ -8,10 +8,12 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "aurafront_vue": "file:",
     "axios": "^1.6.8",
     "core-js": "^3.8.3",
     "primevue": "^3.52.0",
-    "vue": "^3.2.13"
+    "vue": "^3.2.13",
+    "vue-router": "^4.4.5"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
@@ -35,7 +37,7 @@
       "parser": "@babel/eslint-parser"
     },
     "rules": {
-      "no-console" : "off"
+      "no-console": "off"
     }
   },
   "browserslist": [
