@@ -10,6 +10,7 @@
         <router-link to="/dashboard/crm/puntos-suministro" class="menu-link">Puntos de Suministro</router-link>
         <router-link to="/dashboard/crm/contratos" class="menu-link">Contratos</router-link>
         <router-link to="/dashboard/crm/servicios" class="menu-link">Servicios</router-link>
+        <router-link to="/dashboard/crm/configuracion" class="menu-link">Configuracion</router-link>
       </aside>
       <main class="crm-view">
         <router-view></router-view> <!-- Aquí se cargarán los componentes hijos -->
