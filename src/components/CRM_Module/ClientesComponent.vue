@@ -15,64 +15,94 @@
     <table class="clientes-table">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Nombre</th>
+          <th>Nombre Cliente</th>
           <th>CIF</th>
-          <th>Dirección</th>
-          <th>Población</th>
-          <th>Provincia</th>
-          <th>Contacto</th>
-          <th>Teléfono</th>
+          <th>Dirección Fiscal</th>
+          <th>PS</th>
+          <th>Empleado</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <tr
-          v-for="cliente in filteredClientes"
-          :key="cliente.id"
-        >
-          <td>{{ cliente.id }}</td>
+        <tr v-for="cliente in filteredClientes" :key="cliente.idCliente">
           <td>{{ cliente.nombre }}</td>
           <td>{{ cliente.cif }}</td>
-          <td>{{ cliente.direccion }}</td>
-          <td>{{ cliente.poblacion }}</td>
-          <td>{{ cliente.provincia }}</td>
-          <td>{{ cliente.nombreContacto }}</td>
-          <td>{{ cliente.telefonoContacto }}</td>
+          <td>{{ cliente.direccionFiscal }}</td>
           <td>
-            <button class="btn btn-editar" @click="openEditModal(cliente)">Editar</button>
-            <button class="btn btn-eliminar" @click="deleteCliente(cliente.id)">Eliminar</button>
+            {{ cliente.totalPuntosSuministro }}
+            <button class="btn btn-ojo" @click="verPuntosSuministro(cliente)">👁️</button>
+          </td>
+          <td>{{ cliente.empleado }}</td>
+          <td>
+            <button class="btn btn-consultar" @click="consultarCliente(cliente)">Consultar</button>
+            <button class="btn btn-editar" @click="openEditModal(cliente)">Modificar</button>
+            <button class="btn btn-darBaja" @click="darBajaCliente(cliente.idCliente)">Dar de Baja</button>
           </td>
         </tr>
       </tbody>
     </table>
 
+    <!-- Modal de Puntos de Suministro -->
+    <div v-if="isModalPuntosOpen" class="modal">
+      <div class="modal-content">
+        <h2>Puntos de Suministro del Cliente {{ clienteSeleccionado?.nombre || '' }}</h2>
+        <!-- Filtro para los puntos de suministro -->
+        <input
+          type="text"
+          placeholder="Buscar en puntos de suministro..."
+          v-model="filterPuntos"
+          class="filter-input full-width"
+        />
+        <table class="puntos-suministro-table">
+          <thead>
+            <tr>
+              <th>Dirección</th>
+              <th>CUPS Luz</th>
+              <th>CUPS Gas</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="punto in filteredPuntosSuministro" :key="punto.idPunto">
+              <td>{{ punto.direccion }}, {{ punto.codigoPostal }}, {{ punto.poblacion }}, {{ punto.provincia }}</td>
+              <td>{{ punto.cupsluz }}</td>
+              <td>{{ punto.cupsgas }}</td>
+              <td>
+                <button class="btn btn-detalle" @click="verDetallePunto(punto)">Detalle</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button @click="closeModalPuntos" class="btn btn-cancelar">Cerrar</button>
+      </div>
+    </div>
+
     <!-- Modal para Crear/Editar Cliente -->
     <div v-if="isModalOpen" class="modal">
       <div class="modal-content">
         <h2>{{ editingCliente ? 'Editar Cliente' : 'Crear Cliente' }}</h2>
-        
+
         <label>Nombre:</label>
         <input type="text" v-model="selectedCliente.nombre" />
-        
+
         <label>CIF:</label>
         <input type="text" v-model="selectedCliente.cif" />
-        
+
         <label>Dirección:</label>
         <input type="text" v-model="selectedCliente.direccion" />
-        
+
         <label>Población:</label>
         <input type="text" v-model="selectedCliente.poblacion" />
-        
+
         <label>Provincia:</label>
         <input type="text" v-model="selectedCliente.provincia" />
-        
+
         <label>Contacto:</label>
         <input type="text" v-model="selectedCliente.nombreContacto" />
-        
+
         <label>Teléfono:</label>
         <input type="text" v-model="selectedCliente.telefonoContacto" />
-        
+
         <div class="modal-actions">
           <button @click="saveCliente" class="btn btn-guardar">Actualizar</button>
           <button @click="closeModal" class="btn btn-cancelar">Cancelar</button>
@@ -91,9 +121,11 @@ export default {
     return {
       clientes: [],
       isModalOpen: false,
+      isModalPuntosOpen: false, // Variable para abrir el modal de puntos de suministro
       editingCliente: false,
+      clienteSeleccionado: null,
       selectedCliente: {
-        id: null,
+        idCliente: null,
         nombre: '',
         cif: '',
         direccion: '',
@@ -103,39 +135,68 @@ export default {
         telefonoContacto: '',
       },
       filter: '',
+      filterPuntos: '', // Variable para el filtro de puntos de suministro
+      puntosSuministro: [], // Lista de puntos de suministro
     };
   },
   computed: {
     filteredClientes() {
-      // Filtrar clientes según el input de búsqueda
-      return this.clientes.filter(cliente => {
-        return (
-          cliente.nombre.toLowerCase().includes(this.filter.toLowerCase()) ||
-          cliente.cif.toLowerCase().includes(this.filter.toLowerCase()) ||
-          cliente.direccion.toLowerCase().includes(this.filter.toLowerCase()) ||
-          cliente.poblacion.toLowerCase().includes(this.filter.toLowerCase()) ||
-          cliente.provincia.toLowerCase().includes(this.filter.toLowerCase()) ||
-          cliente.nombreContacto.toLowerCase().includes(this.filter.toLowerCase()) ||
-          cliente.telefonoContacto.toLowerCase().includes(this.filter.toLowerCase())
-        );
-      });
+      return this.clientes
+        .map((cliente) => ({
+          ...cliente,
+          direccionFiscal: `${cliente.direccionFiscal}`,
+          totalPuntosSuministro: cliente.numeroPuntosSuministro || 0,
+          empleado: cliente.idEmpleado,
+        }))
+        .filter((cliente) => {
+          return (
+            cliente.nombre.toLowerCase().includes(this.filter.toLowerCase()) ||
+            cliente.cif.toLowerCase().includes(this.filter.toLowerCase())
+          );
+        });
+    },
+    filteredPuntosSuministro() {
+      return this.puntosSuministro.filter((punto) =>
+        Object.values(punto)
+          .join(' ')
+          .toLowerCase()
+          .includes(this.filterPuntos.toLowerCase())
+      );
     },
   },
   methods: {
     async fetchClientes() {
       try {
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/clientes`);   
-        console.log('Clientes:', response.data);     
-        this.clientes = response.data; // Asegúrate de que esta línea obtiene solo la lista de clientes
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
+        this.clientes = response.data;
       } catch (error) {
         console.error('Error al obtener los clientes:', error);
       }
+    },
+    verPuntosSuministro(cliente) {
+      axios
+        .get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${cliente.idCliente}`)
+        .then((response) => {
+          this.puntosSuministro = response.data;
+          this.clienteSeleccionado = cliente; // Guardar el cliente seleccionado
+          this.isModalPuntosOpen = true; // Abre el modal de puntos de suministro
+        })
+        .catch((error) => {
+          console.error('Error al obtener los puntos de suministro:', error);
+        });
+    },
+    closeModalPuntos() {
+      this.isModalPuntosOpen = false; // Cierra el modal de puntos de suministro
+    },
+    verDetallePunto(punto) {
+      console.log('Ver detalle del punto de suministro:', punto);
+      // Aquí podrías agregar la lógica para mostrar más detalles
     },
     openCreateModal() {
       this.isModalOpen = true;
       this.editingCliente = false;
       this.selectedCliente = {
-        id: null,
+        idCliente: null,
         nombre: '',
         cif: '',
         direccion: '',
@@ -150,29 +211,35 @@ export default {
       this.editingCliente = true;
       this.selectedCliente = { ...cliente };
     },
+    consultarCliente(cliente) {
+      console.log('Consultando cliente:', cliente);
+    },
     async saveCliente() {
       try {
         let response;
         if (this.editingCliente) {
-          response = await axios.put(`/api/v1/cliente/${this.selectedCliente.id}`, this.selectedCliente);
+          response = await axios.put(`/cliente/${this.selectedCliente.idCliente}`, this.selectedCliente);
         } else {
-          response = await axios.post('/api/v1/cliente', this.selectedCliente);
+          response = await axios.post('/cliente', this.selectedCliente);
         }
-        alert(response.data.mensaje); // Mostrar mensaje de respuesta
+        alert(response.data.mensaje);
         this.fetchClientes();
         this.closeModal();
       } catch (error) {
         console.error('Error al guardar el cliente:', error);
       }
     },
-    async deleteCliente(id) {
+    async deleteCliente(idCliente) {
       try {
-        const response = await axios.delete(`/api/v1/cliente/${id}`);
-        alert(response.data.mensaje); // Mostrar mensaje de respuesta
+        const response = await axios.delete(`/cliente/${idCliente}`);
+        alert(response.data.mensaje);
         this.fetchClientes();
       } catch (error) {
         console.error('Error al eliminar el cliente:', error);
       }
+    },
+    darBajaCliente(idCliente) {
+      console.log('Dando de baja al cliente con ID:', idCliente);
     },
     closeModal() {
       this.isModalOpen = false;
@@ -185,6 +252,14 @@ export default {
 </script>
 
 <style scoped>
+/* Escala la aplicación completa al 75% */
+body {
+  transform: scale(0.75);
+  transform-origin: top left;
+  width: 133.33%; /* Compensa el escalado al 75% */
+  overflow-x: hidden; /* Evita scroll horizontal */
+}
+
 .clientes-container {
   padding: 1.5rem;
   color: #333;
@@ -216,7 +291,7 @@ export default {
   padding: 0.5rem;
   text-align: left;
   border-bottom: 1px solid #ddd;
-  font-size: 0.85rem; /* Tamaño de letra más pequeño */
+  font-size: 0.85rem;
 }
 
 .clientes-table th {
@@ -238,10 +313,10 @@ export default {
   cursor: pointer;
   border: none;
   font-size: 0.9rem;
-  color: #f5c600; /* Color del texto */
+  color: #f5c600;
   border-radius: 4px;
-  transition: background-color 0.3s; /* Transición suave para el cambio de color */
-  background-color: #333; /* Color de fondo por defecto */
+  transition: background-color 0.3s;
+  background-color: #333;
 }
 
 .btn-crear {
@@ -249,43 +324,100 @@ export default {
   color: #333;
 }
 
-.btn-editar:hover, .btn-eliminar:hover {
-  background-color: #f5c600; /* Color amarillo al pasar el mouse */
-  color: #333; /* Color del texto al pasar el mouse */
+.btn-editar:hover,
+.btn-darBaja:hover {
+  background-color: #f5c600;
+  color: #333;
+}
+
+.btn-cancelar {
+  background-color: #f5c600;
+  color: #333;
 }
 
 .btn-guardar {
-  background-color: #4CAF50; /* Color verde para el botón de guardar */
+  background-color: #4CAF50;
+}
+
+.btn-ojo {
+  background-color: transparent;
+  border: none;
+  font-size: 1.2rem;
+  color: #f5c600;
+  cursor: pointer;
 }
 
 .modal {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100%;
+  height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 9999;
 }
 
 .modal-content {
   background-color: white;
-  padding: 1.5rem;
-  width: 100%;
-  max-width: 400px;
-  border-radius: 5px;
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 80%;
+  overflow-y: auto;
+  width: 80%;
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 1rem;
 }
 
-.btn-cancelar {
+/* Hace que el campo de búsqueda tenga el mismo ancho que la tabla */
+.full-width {
+  width: 100%;
+  box-sizing: border-box; /* Asegura que los bordes estén dentro del ancho */
+  margin-bottom: 1em; /* Espacio debajo del campo de búsqueda */
+}
+
+/* Estilos para la tabla de puntos de suministro */
+.puntos-suministro-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.puntos-suministro-table th,
+.puntos-suministro-table td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.puntos-suministro-table th {
+  background-color: #333;
+  color: #f5c600;
+}
+
+.puntos-suministro-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.puntos-suministro-table tr:hover {
+  background-color: #eaeaea;
+}
+
+.btn-detalle {
   background-color: #f5c600;
   color: #333;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-detalle:hover {
+  background-color: #e0b800;
 }
 </style>

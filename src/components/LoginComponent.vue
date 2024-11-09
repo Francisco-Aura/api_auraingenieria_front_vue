@@ -27,22 +27,24 @@ export default {
   methods: {
     async submitForm() {
       try {
-        const response = await axios.post(`${process.env.VUE_APP_API_URL}/login`, {
-          username: this.username,
+        // Asegúrate de que la URL de la API esté correctamente configurada
+        const response = await axios.post(`${process.env.VUE_APP_API_URL}/auth/login`, {
+          user: this.username, // Cambia "username" por "user"
           password: this.password
         });
 
-        // Si la autenticación es exitosa, guardamos el token en localStorage
-        if (response.status === 202) {
-          const token = response.data.objeto; // Obtenemos el token del backend
-          localStorage.setItem('token', token); // Guardamos el token en localStorage
-          this.$router.push('/dashboard'); // Redirigimos al dashboard
+        // Maneja la respuesta del backend
+        if (response.status === 200) { // Cambia a 200, que es el código de éxito correcto
+          // Si la autenticación es exitosa, puedes guardar un token si lo devuelve tu backend
+          // Aquí solo devuelve un mensaje, así que puedes guardar una variable de estado o redirigir
+          alert('Login Satisfactorio'); // Aquí puedes mostrar un mensaje de éxito
+          this.$router.push('/dashboard'); // Redirige al dashboard
         } else {
           alert('Error en la autenticación');
         }
       } catch (error) {
         console.error('Error en la solicitud:', error);
-        alert('Usuario o contraseña incorrectos');
+        alert('Usuario o contraseña incorrectos'); // Muestra un mensaje de error
       }
     }
   }
@@ -50,6 +52,14 @@ export default {
 </script>
 
 <style scoped>
+/* Escala la aplicación completa al 75% */
+body {
+  transform: scale(0.75);
+  transform-origin: top left;
+  width: 133.33%; /* Compensa el escalado al 75% */
+  overflow-x: hidden; /* Evita scroll horizontal */
+}
+
 /* Estilo del contenedor principal del login */
 .login-wrapper {
   display: flex;

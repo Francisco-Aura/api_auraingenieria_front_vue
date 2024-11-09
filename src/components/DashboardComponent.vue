@@ -1,72 +1,101 @@
 <template>
-  <div class="dashboard">
-    <div class="modules">
-      <router-link to="/dashboard/crm" class="module">CRM</router-link>
-      <router-link to="/dashboard/facturacion" class="module">Facturación</router-link>
-      <router-link to="/dashboard/informes" class="module">Informes</router-link>
-      <router-link to="/dashboard/administracion" class="module">Administración</router-link>
+  <div class="dashboard-container">
+    <div class="dashboard-header">
     </div>
-    <!-- Imagen de la empresa -->
-    <img src="@/images/LogoAura.jpg" alt="Logo de Aura Ingeniería" class="logo" />
-      
+    <div class="dashboard-content">
+      <aside class="dashboard-menu">
+        <router-link to="/dashboard/clientes" class="menu-link">Cartera de Clientes</router-link>        
+        <router-link to="/dashboard/puntos-suministro" class="menu-link">Puntos de Suministro</router-link>
+        <!--<router-link to="/dashboard/puntos-suministro" class="menu-link">Facturación</router-link>-->
+        <!--<router-link to="/dashboard/ticket" class="menu-link">Ticket de Trabajo</router-link>-->
+        <!--<router-link to="/dashboard/informes" class="menu-link">Informes</router-link>-->
+        <!--<router-link to="/dashboard/administracion" class="menu-link">Administracion</router-link>-->
+      </aside>
+      <main class="dashboard-view">
+        <router-view></router-view> <!-- Aquí se cargarán los componentes hijos -->
+      </main>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'DashboardComponent'
+  name: 'Dashboard-Component'
 };
 </script>
 
 <style scoped>
-.dashboard {
-  text-align: center; /* Centra el texto */
-  margin-top: 2rem; /* Margen superior */
+/* Escala la aplicación completa al 75% */
+body {
+  transform: scale(0.75);
+  transform-origin: top left;
+  width: 133.33%; /* Compensa el escalado al 75% */
+  overflow-x: hidden; /* Evita scroll horizontal */
 }
 
-h1 {
-  font-size: 2.5rem; /* Tamaño del título */
-  margin-bottom: 1rem; /* Margen inferior */
-  color: #333; /* Color del título */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
 }
 
-p {
-  margin-top: 1rem; /* Margen superior del párrafo */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 2rem;
 }
 
-/* Contenedor de módulos */
-.modules {
-  display: flex; /* Usa flexbox para organizar los módulos */
-  justify-content: center; /* Centra los módulos horizontalmente */
-  flex-wrap: wrap; /* Permite que los módulos se ajusten en varias líneas */
-  gap: 20px; /* Espacio entre módulos */
-  margin-top: 1rem; /* Margen superior */
+.back-link {
+  color: #555;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
 }
 
-/* Módulos individuales */
-.module {
-  padding: 20px; /* Espaciado interno */
-  background-color: #f0c040; /* Color de fondo del módulo */
-  color: white; /* Color del texto */
-  border-radius: 10px; /* Bordes redondeados */
-  text-decoration: none; /* Sin subrayado */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra del módulo */
-  transition: background-color 0.3s, transform 0.3s; /* Transiciones suaves */
-  width: 150px; /* Ancho fijo de cada módulo */
-  text-align: center; /* Centra el texto */
+.back-link:hover {
+  color: #d4af37; /* Color amarillo dorado */
 }
 
-/* Estilo del módulo al pasar el cursor por encima */
-.module:hover {
-  background-color: #e5b233; /* Cambia el color de fondo al pasar el cursor */
-  transform: translateY(-5px); /* Efecto de elevación al pasar el cursor */
+.dashboard-content {
+  display: flex;
+  width: 100%;
 }
 
-/* Estilo para la imagen del logo */
-.logo {
-  width: 100%; /* Ancho del logo al 100% del contenedor */
-  max-width: 600px; /* Tamaño máximo del logo */
-  height: auto; /* Mantiene la proporción de la imagen */
-  margin-top: 20px; /* Margen superior de la imagen */
+.dashboard-menu {
+  background-color: #333;
+  padding: 1rem;
+  width: 200px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.menu-link {
+  display: block;
+  color: #ffffff;
+  background-color: #555;
+  padding: 10px 15px;
+  margin: 8px 0;
+  text-align: center;
+  border-radius: 5px;
+  text-decoration: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.menu-link:hover {
+  background-color: #d4af37; /* Color amarillo dorado */
+  color: #333; /* Texto oscuro sobre el amarillo */
+}
+
+.dashboard-view {
+  flex-grow: 1;
+  padding: 2rem;
+  margin-left: 1rem;
+  background-color: #f1f1f1; /* Gris claro */
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 </style>

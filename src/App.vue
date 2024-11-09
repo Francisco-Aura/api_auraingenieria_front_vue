@@ -11,6 +11,14 @@ export default {
 </script>
 
 <style>
+/* Escala la aplicación completa al 75% */
+body {
+  transform: scale(0.75);
+  transform-origin: top left;
+  width: 133.33%; /* Compensa el escalado al 75% */
+  overflow-x: hidden; /* Evita scroll horizontal */
+}
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
