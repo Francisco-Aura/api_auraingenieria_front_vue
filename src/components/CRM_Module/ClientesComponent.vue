@@ -1,17 +1,10 @@
 <template>
   <div class="clientes-container">
-    <!-- Filtro para localizar clientes -->
     <div class="filter-container">
-      <input
-        type="text"
-        placeholder="Buscar cliente..."
-        v-model="filter"
-        class="filter-input"
-      />
-      <button class="btn btn-crear" @click="openCreateModal">Crear Cliente</button>
+      <button class="btn btn-crear" @click="mostrarFormularioCrear">Crear Cliente</button>
+      <input type="text" placeholder="Buscar cliente..." v-model="filter" class="filter-input" />
     </div>
 
-    <!-- Tabla de clientes -->
     <table class="clientes-table">
       <thead>
         <tr>
@@ -30,83 +23,113 @@
           <td>{{ cliente.direccionFiscal }}</td>
           <td>
             {{ cliente.totalPuntosSuministro }}
-            <button class="btn btn-ojo" @click="verPuntosSuministro(cliente)">👁️</button>
+            <button class="btn btn-ojo">👁️</button>
           </td>
           <td>{{ cliente.empleado }}</td>
           <td>
-            <button class="btn btn-consultar" @click="consultarCliente(cliente)">Consultar</button>
-            <button class="btn btn-editar" @click="openEditModal(cliente)">Modificar</button>
-            <button class="btn btn-darBaja" @click="darBajaCliente(cliente.idCliente)">Dar de Baja</button>
+            <button class="btn btn-consultar">Consulta Cliente</button>
+            <button class="btn btn-crearPS">Crear Punto Suministro</button>
           </td>
         </tr>
       </tbody>
     </table>
 
-    <!-- Modal de Puntos de Suministro -->
-    <div v-if="isModalPuntosOpen" class="modal">
+    <div v-if="formularioVisible" class="modal-overlay">
       <div class="modal-content">
-        <h2>Puntos de Suministro del Cliente {{ clienteSeleccionado?.nombre || '' }}</h2>
-        <!-- Filtro para los puntos de suministro -->
-        <input
-          type="text"
-          placeholder="Buscar en puntos de suministro..."
-          v-model="filterPuntos"
-          class="filter-input full-width"
-        />
-        <table class="puntos-suministro-table">
-          <thead>
-            <tr>
-              <th>Dirección</th>
-              <th>CUPS Luz</th>
-              <th>CUPS Gas</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="punto in filteredPuntosSuministro" :key="punto.idPunto">
-              <td>{{ punto.direccion }}, {{ punto.codigoPostal }}, {{ punto.poblacion }}, {{ punto.provincia }}</td>
-              <td>{{ punto.cupsluz }}</td>
-              <td>{{ punto.cupsgas }}</td>
-              <td>
-                <button class="btn btn-detalle" @click="verDetallePunto(punto)">Detalle</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <button @click="closeModalPuntos" class="btn btn-cancelar">Cerrar</button>
-      </div>
-    </div>
+        <h2>Alta de Cliente</h2>
+        <form @submit.prevent="crearCliente">
+          <div class="form-container">
+            <div class="form-column">
+              <label for="nombre">Nombre</label>
+              <input type="text" id="nombre" v-model="nuevoCliente.nombre" required />
 
-    <!-- Modal para Crear/Editar Cliente -->
-    <div v-if="isModalOpen" class="modal">
-      <div class="modal-content">
-        <h2>{{ editingCliente ? 'Editar Cliente' : 'Crear Cliente' }}</h2>
+              <label for="cif">CIF</label>
+              <input type="text" id="cif" v-model="nuevoCliente.cif" required />
 
-        <label>Nombre:</label>
-        <input type="text" v-model="selectedCliente.nombre" />
+              <label for="direccionFiscal">Dirección Fiscal</label>
+              <input type="text" id="direccionFiscal" v-model="nuevoCliente.direccionFiscal" required />
 
-        <label>CIF:</label>
-        <input type="text" v-model="selectedCliente.cif" />
+              <label for="codigoPostal">Código Postal</label>
+              <input type="text" id="codigoPostal" v-model="nuevoCliente.codigoPostal" required />
 
-        <label>Dirección:</label>
-        <input type="text" v-model="selectedCliente.direccion" />
+              <label for="poblacion">Población</label>
+              <input type="text" id="poblacion" v-model="nuevoCliente.poblacion" required />
 
-        <label>Población:</label>
-        <input type="text" v-model="selectedCliente.poblacion" />
+              <label for="provincia">Provincia</label>
+              <input type="text" id="provincia" v-model="nuevoCliente.provincia" required />
 
-        <label>Provincia:</label>
-        <input type="text" v-model="selectedCliente.provincia" />
+              <label for="iban">IBAN</label>
+              <input type="text" id="iban" v-model="nuevoCliente.iban" required />
 
-        <label>Contacto:</label>
-        <input type="text" v-model="selectedCliente.nombreContacto" />
+              <label for="telefonoContacto">Teléfono de Contacto</label>
+              <input type="text" id="telefonoContacto" v-model="nuevoCliente.telefonoContacto" required />
 
-        <label>Teléfono:</label>
-        <input type="text" v-model="selectedCliente.telefonoContacto" />
+              <label for="emailContacto">Email de Contacto</label>
+              <input type="email" id="emailContacto" v-model="nuevoCliente.emailContacto" required />
 
-        <div class="modal-actions">
-          <button @click="saveCliente" class="btn btn-guardar">Actualizar</button>
-          <button @click="closeModal" class="btn btn-cancelar">Cancelar</button>
-        </div>
+              <label for="empleado">Empleado</label>
+              <select id="empleado" v-model="nuevoCliente.idEmpleado" required>
+                <option value="">Seleccione un empleado</option>
+                <option v-for="empleado in empleados" :key="empleado.id" :value="empleado.id">
+                  {{ empleado.nombre }}
+                </option>
+              </select>
+
+              <label for="codigoSector">Código Sector</label>
+              <select id="codigoSector" v-model="nuevoCliente.codigoSector" required>
+                <option value="">Seleccione un código sector</option>
+                <option v-for="sector in sectores" :key="sector.codigo" :value="sector.codigo">
+                  {{ sector.nombre }}
+                </option>
+              </select>
+
+              <label for="codigoSubtipologia">Código Subtipología</label>
+              <select id="codigoSubtipologia" v-model="nuevoCliente.codigoSubtipologia" required>
+                <option value="">Seleccione un código subtipología</option>
+                <option v-for="subtipologia in subtipologias" :key="subtipologia.codigo" :value="subtipologia.codigo">
+                  {{ subtipologia.nombre }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-column">
+              <label for="nombreAutorizado1">Nombre Autorizado 1</label>
+              <input type="text" id="nombreAutorizado1" v-model="nuevoCliente.nombreAutorizado1" />
+
+              <label for="dniAutorizado1">DNI Autorizado 1</label>
+              <input type="text" id="dniAutorizado1" v-model="nuevoCliente.dniAutorizado1" />
+
+              <label for="emailAutorizado1">Email Autorizado 1</label>
+              <input type="email" id="emailAutorizado1" v-model="nuevoCliente.emailAutorizado1" />
+
+              <label for="nombreAutorizado2">Nombre Autorizado 2</label>
+              <input type="text" id="nombreAutorizado2" v-model="nuevoCliente.nombreAutorizado2" />
+
+              <label for="dniAutorizado2">DNI Autorizado 2</label>
+              <input type="text" id="dniAutorizado2" v-model="nuevoCliente.dniAutorizado2" />
+
+              <label for="emailAutorizado2">Email Autorizado 2</label>
+              <input type="email" id="emailAutorizado2" v-model="nuevoCliente.emailAutorizado2" />
+
+              <label for="nombreAutorizado3">Nombre Autorizado 3</label>
+              <input type="text" id="nombreAutorizado3" v-model="nuevoCliente.nombreAutorizado3" />
+
+              <label for="dniAutorizado3">DNI Autorizado 3</label>
+              <input type="text" id="dniAutorizado3" v-model="nuevoCliente.dniAutorizado3" />
+
+              <label for="emailAutorizado3">Email Autorizado 3</label>
+              <input type="email" id="emailAutorizado3" v-model="nuevoCliente.emailAutorizado3" />
+
+              <label for="notas">Notas</label>
+              <textarea id="notas" v-model="nuevoCliente.notas"></textarea>
+            </div>
+          </div>
+
+          <div>
+            <button type="submit" class="btn btn-crearUsuario" >Crear</button>
+            <button type="button" class="btn btn-cancelarUsuario" @click="cancelarFormulario">Cancelar</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -120,23 +143,29 @@ export default {
   data() {
     return {
       clientes: [],
-      isModalOpen: false,
-      isModalPuntosOpen: false, // Variable para abrir el modal de puntos de suministro
-      editingCliente: false,
-      clienteSeleccionado: null,
-      selectedCliente: {
-        idCliente: null,
+    empleados: [],
+    sectores: [], // Aquí sectores inicializado como array vacío
+    subtipologias: [], // Aquí subtipologías inicializado como array vacío
+      filter: '',
+      formularioVisible: false,
+      nuevoCliente: {
         nombre: '',
         cif: '',
-        direccion: '',
-        poblacion: '',
-        provincia: '',
-        nombreContacto: '',
-        telefonoContacto: '',
+        direccionFiscal: '',
+        empleado: null,
+        codigoSector: null,
+        codigoSubtipologia: null,
+        nombreAutorizado1: '',
+        dniAutorizado1: '',
+        emailAutorizado1: '',
+        nombreAutorizado2: '',
+        dniAutorizado2: '',
+        emailAutorizado2: '',
+        nombreAutorizado3: '',
+        dniAutorizado3: '',
+        emailAutorizado3: '',
+        notas: '',
       },
-      filter: '',
-      filterPuntos: '', // Variable para el filtro de puntos de suministro
-      puntosSuministro: [], // Lista de puntos de suministro
     };
   },
   computed: {
@@ -148,20 +177,10 @@ export default {
           totalPuntosSuministro: cliente.numeroPuntosSuministro || 0,
           empleado: cliente.idEmpleado,
         }))
-        .filter((cliente) => {
-          return (
-            cliente.nombre.toLowerCase().includes(this.filter.toLowerCase()) ||
-            cliente.cif.toLowerCase().includes(this.filter.toLowerCase())
-          );
-        });
-    },
-    filteredPuntosSuministro() {
-      return this.puntosSuministro.filter((punto) =>
-        Object.values(punto)
-          .join(' ')
-          .toLowerCase()
-          .includes(this.filterPuntos.toLowerCase())
-      );
+        .filter((cliente) =>
+          cliente.nombre.toLowerCase().includes(this.filter.toLowerCase()) ||
+          cliente.cif.toLowerCase().includes(this.filter.toLowerCase())
+        );
     },
   },
   methods: {
@@ -173,251 +192,146 @@ export default {
         console.error('Error al obtener los clientes:', error);
       }
     },
-    verPuntosSuministro(cliente) {
-      axios
-        .get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${cliente.idCliente}`)
-        .then((response) => {
-          this.puntosSuministro = response.data;
-          this.clienteSeleccionado = cliente; // Guardar el cliente seleccionado
-          this.isModalPuntosOpen = true; // Abre el modal de puntos de suministro
-        })
-        .catch((error) => {
-          console.error('Error al obtener los puntos de suministro:', error);
-        });
+
+    async fetchSelectData() {
+      try {
+        const [empleadosResponse, sectoresResponse, subtipologiasResponse] = await Promise.all([
+          axios.get(`${process.env.VUE_APP_API_URL}/api/empleados`),
+          axios.get(`${process.env.VUE_APP_API_URL}/api/sectores`),
+          axios.get(`${process.env.VUE_APP_API_URL}/api/subtipologias`),
+        ]);
+        this.empleados = empleadosResponse.data;
+        this.sectores = sectoresResponse.data;
+        this.subtipologias = subtipologiasResponse.data;
+      } catch (error) {
+        console.error('Error al obtener datos de selects:', error);
+        alert('Error al cargar datos para el formulario. Intente nuevamente más tarde.');
+      }
     },
-    closeModalPuntos() {
-      this.isModalPuntosOpen = false; // Cierra el modal de puntos de suministro
+
+    mostrarFormularioCrear() {
+      this.formularioVisible = true;
     },
-    verDetallePunto(punto) {
-      console.log('Ver detalle del punto de suministro:', punto);
-      // Aquí podrías agregar la lógica para mostrar más detalles
+
+    cancelarFormulario() {
+      this.formularioVisible = false;
+      this.resetFormulario();
     },
-    openCreateModal() {
-      this.isModalOpen = true;
-      this.editingCliente = false;
-      this.selectedCliente = {
-        idCliente: null,
+
+    resetFormulario() {
+      this.nuevoCliente = {
         nombre: '',
         cif: '',
-        direccion: '',
-        poblacion: '',
-        provincia: '',
-        nombreContacto: '',
-        telefonoContacto: '',
+        direccionFiscal: '',
+        empleado: null,
+        codigoSector: null,
+        codigoSubtipologia: null,
+        nombreAutorizado1: '',
+        dniAutorizado1: '',
+        emailAutorizado1: '',
+        nombreAutorizado2: '',
+        dniAutorizado2: '',
+        emailAutorizado2: '',
+        nombreAutorizado3: '',
+        dniAutorizado3: '',
+        emailAutorizado3: '',
+        notas: '',
       };
     },
-    openEditModal(cliente) {
-      this.isModalOpen = true;
-      this.editingCliente = true;
-      this.selectedCliente = { ...cliente };
-    },
-    consultarCliente(cliente) {
-      console.log('Consultando cliente:', cliente);
-    },
-    async saveCliente() {
-      try {
-        let response;
-        if (this.editingCliente) {
-          response = await axios.put(`/cliente/${this.selectedCliente.idCliente}`, this.selectedCliente);
-        } else {
-          response = await axios.post('/cliente', this.selectedCliente);
-        }
-        alert(response.data.mensaje);
-        this.fetchClientes();
-        this.closeModal();
-      } catch (error) {
-        console.error('Error al guardar el cliente:', error);
+
+    async crearCliente() {
+      if (!this.nuevoCliente.nombre || !this.nuevoCliente.cif) {
+        alert('El nombre y CIF son obligatorios.');
+        return;
       }
-    },
-    async deleteCliente(idCliente) {
       try {
-        const response = await axios.delete(`/cliente/${idCliente}`);
-        alert(response.data.mensaje);
+        await axios.post(`${process.env.VUE_APP_API_URL}/api/clientes`, this.nuevoCliente);
         this.fetchClientes();
+        this.cancelarFormulario();
       } catch (error) {
-        console.error('Error al eliminar el cliente:', error);
+        console.error('Error al crear cliente:', error);
+        alert('Hubo un error al crear el cliente. Por favor, inténtelo de nuevo.');
       }
-    },
-    darBajaCliente(idCliente) {
-      console.log('Dando de baja al cliente con ID:', idCliente);
-    },
-    closeModal() {
-      this.isModalOpen = false;
     },
   },
   mounted() {
     this.fetchClientes();
+    this.fetchSelectData();
   },
 };
 </script>
 
 <style scoped>
-/* Escala la aplicación completa al 75% */
-body {
-  transform: scale(0.75);
-  transform-origin: top left;
-  width: 133.33%; /* Compensa el escalado al 75% */
-  overflow-x: hidden; /* Evita scroll horizontal */
-}
-
-.clientes-container {
-  padding: 1.5rem;
-  color: #333;
-}
-
-.filter-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.filter-input {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  flex-grow: 1;
-  margin-right: 1rem;
-}
-
-.clientes-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-.clientes-table th,
-.clientes-table td {
-  padding: 0.5rem;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-  font-size: 0.85rem;
-}
-
-.clientes-table th {
-  background-color: #333;
-  color: #f5c600;
-}
-
-.clientes-table tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-.clientes-table tr:hover {
-  background-color: #eaeaea;
-}
-
-.btn {
-  padding: 0.4rem 0.8rem;
-  margin: 0.2rem;
-  cursor: pointer;
-  border: none;
-  font-size: 0.9rem;
-  color: #f5c600;
-  border-radius: 4px;
-  transition: background-color 0.3s;
-  background-color: #333;
-}
-
-.btn-crear {
-  background-color: #f5c600;
-  color: #333;
-}
-
-.btn-editar:hover,
-.btn-darBaja:hover {
-  background-color: #f5c600;
-  color: #333;
-}
-
-.btn-cancelar {
-  background-color: #f5c600;
-  color: #333;
-}
-
-.btn-guardar {
-  background-color: #4CAF50;
-}
-
-.btn-ojo {
-  background-color: transparent;
-  border: none;
-  font-size: 1.2rem;
-  color: #f5c600;
-  cursor: pointer;
-}
-
-.modal {
+/* Estilos para el modal */
+.modal-overlay {
   position: fixed;
-  top: 0;
+  top: 0; /* Asegura que esté alineado con la parte superior de la página */
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
   display: flex;
   justify-content: center;
-  align-items: center;
-  z-index: 9999;
+  align-items: flex-start; /* Alineación en la parte superior */
+  z-index: 1000; /* Asegura que el modal esté por encima de otros elementos */
+  padding-top: 20px; /* Espacio entre el top de la pantalla y el modal */
 }
 
 .modal-content {
   background-color: white;
-  padding: 2rem;
-  border-radius: 8px;
-  max-width: 80%;
-  overflow-y: auto;
-  width: 80%;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 100%;
 }
-
-.modal-actions {
+  
+.form-container {
   display: flex;
-  justify-content: flex-end;
+  gap: 20px;
 }
 
-/* Hace que el campo de búsqueda tenga el mismo ancho que la tabla */
-.full-width {
+.form-column {
+  flex: 1;
+}
+
+.modal-content {
+  width: 80%;  /* Aumenta el ancho del modal */
+  max-width: 1200px; /* Limita el ancho máximo */
+  margin: 0 auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+}
+
+.form-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px; /* Espacio entre columnas */
+}
+
+.form-column {
+  flex: 1;
+}
+
+.form-column input, .form-column select, .form-column textarea {
   width: 100%;
-  box-sizing: border-box; /* Asegura que los bordes estén dentro del ancho */
-  margin-bottom: 1em; /* Espacio debajo del campo de búsqueda */
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
 }
 
-/* Estilos para la tabla de puntos de suministro */
-.puntos-suministro-table {
-  width: 100%;
-  border-collapse: collapse;
+form div {
+  margin-bottom: 15px;
 }
 
-.puntos-suministro-table th,
-.puntos-suministro-table td {
-  padding: 0.5rem;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-}
-
-.puntos-suministro-table th {
-  background-color: #333;
-  color: #f5c600;
-}
-
-.puntos-suministro-table tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-.puntos-suministro-table tr:hover {
-  background-color: #eaeaea;
-}
-
-.btn-detalle {
-  background-color: #f5c600;
-  color: #333;
-  padding: 0.5rem;
-  font-size: 0.9rem;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-detalle:hover {
-  background-color: #e0b800;
+textarea {
+  width: 100%; /* Asegura que el textarea ocupe todo el ancho disponible */
+  height: 150px; /* Ajusta la altura para que sea más grande */
+  padding: 10px; /* Espaciado interior para que el texto no se pegue al borde */
+  font-size: 14px; /* Aumenta el tamaño de la fuente para hacerlo más legible */
+  border: 1px solid #ccc; /* Estilo para el borde del textarea */
+  border-radius: 5px; /* Bordes redondeados para un estilo más moderno */
+  resize: vertical; /* Permite redimensionar solo verticalmente */
 }
 </style>

@@ -1,0 +1,230 @@
+/* =============================== */
+/*          Estilos Generales       */
+/* =============================== */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  transform: scale(0.75);
+  transform-origin: top left;
+  width: 133.33%;
+  overflow-x: hidden;
+}
+
+/* =============================== */
+/*        Estilos de Contenedores   */
+/* =============================== */
+.container {
+  padding: 1.5rem;
+  color: #333;
+}
+
+/* =============================== */
+/*        Estilos de Botones        */
+/* =============================== */
+.btn {
+  padding: 0.4rem 0.8rem;
+  margin: 0.2rem;
+  cursor: pointer;
+  border: none;
+  font-size: 1rem;
+  color: #f5c600;
+  background-color: #333;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Estilo de los botones al pasar el ratón */
+.btn:hover {
+  background-color: #f5c600;
+  color: #333;
+}
+
+/* Botones con estilo "ojo" */
+.btn-ojo {
+  background-color: transparent;
+  border: none;
+  font-size: 1.2rem;
+  color: #f5c600;
+  cursor: pointer;
+}
+
+/* Efecto hover para los botones "ojo" */
+.btn-ojo:hover {
+  color: #333;
+  background-color: transparent;
+}
+
+/* =============================== */
+/*            Tablas Comunes        */
+/* =============================== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th, table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+table th {
+  background-color: #333;
+  color: #f5c600;
+}
+
+table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+table tr:hover {
+  background-color: #eaeaea;
+}
+
+/* =============================== */
+/*             Formularios          */
+/* =============================== */
+label {
+  margin-top: 1rem;
+  display: block;
+  font-weight: bold;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+input[type="text"] {
+  font-size: 0.9rem;
+}
+
+input:focus {
+  outline: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+button {
+  padding: 10px 20px;
+  margin-right: 10px;
+  border: none;
+  background-color: #333;
+  color: #f5c600;
+  border-radius: 5px;
+}
+
+button:hover {
+  background-color: #f5c600;
+  color: #333;
+}
+
+.btn-cancelar:hover {
+  background-color: #5a6268;
+}
+
+/* =============================== */
+/*         Estilos del Dashboard    */
+/* =============================== */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.dashboard-content {
+  display: flex;
+  width: 100%;
+}
+
+.dashboard-menu {
+  background-color: #333;
+  padding: 1rem;
+  width: 200px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.menu-link {
+  display: block;
+  color: #ffffff;
+  background-color: #555;
+  padding: 10px 15px;
+  margin: 8px 0;
+  text-align: center;
+  border-radius: 5px;
+  text-decoration: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.menu-link:hover {
+  background-color: #d4af37;
+  color: #333;
+}
+
+.dashboard-view {
+  flex-grow: 1;
+  padding: 2rem;
+  margin-left: 1rem;
+  background-color: #f1f1f1;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* =============================== */
+/*          Estilos de Login        */
+/* =============================== */
+.login-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background-color: #d9d9d9;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  text-align: center;
+}
+
+h2 {
+  color: #333;
+  margin-bottom: 30px;
+}
+
+input {
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 16px;
+  transition: box-shadow 0.3s ease;
+}
+
+/* Enlace de login */
+a {
+  color: #333;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #f0c040;
+}
