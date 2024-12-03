@@ -20,6 +20,21 @@
         <router-link to="/dashboard/puntos-suministro" class="menu-link">
           Puntos de Suministro
         </router-link>
+
+        <!-- Enlace al módulo de Gestion de Proyectos -->
+        <router-link to="/dashboard/gestion-proyectos" class="menu-link">
+          Gestion de Proyectos
+        </router-link>
+
+        <!-- Enlace al módulo de Informes -->
+        <router-link to="/dashboard/informes" class="menu-link">
+          Informes
+        </router-link>
+
+        <!-- Enlace al módulo de Administracion -->
+        <router-link to="/dashboard/administracion" class="menu-link">
+          Administracion
+        </router-link>
         
       </aside>
 
