@@ -1,68 +1,100 @@
 <template>
+  <!-- Componente Spinner para mostrar cuando la aplicación esté cargando -->
+  <Spinner :isLoading="loading" />
+
   <div class="clientes-container">
+    <!-- Contenedor para el filtro y el botón de creación de clientes -->
     <div class="filter-container">
-      <button class="btn btn-crear" @click="mostrarFormularioCrear">Crear Cliente</button>
+      <button class="btn btn-crear" @click="abrirFormularioCliente">Crear Cliente</button>
+      <!-- Campo de entrada para filtrar clientes por nombre o CIF -->
       <input type="text" placeholder="Buscar cliente..." v-model="filter" class="filter-input" />
     </div>
 
+    <!-- Tabla para mostrar la lista de clientes -->
     <table class="clientes-table">
       <thead>
         <tr>
           <th>Nombre Cliente</th>
           <th>CIF</th>
           <th>Dirección Fiscal</th>
-          <th>PS</th>
+          <th>PS</th> <!-- Puntos de suministro -->
           <th>Empleado</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
+        <!-- Itera sobre los clientes filtrados para mostrarlos en la tabla -->
         <tr v-for="cliente in filteredClientes" :key="cliente.idCliente">
           <td>{{ cliente.nombre }}</td>
           <td>{{ cliente.cif }}</td>
           <td>{{ cliente.direccionFiscal }}</td>
           <td>
+            <!-- Total de puntos de suministro y botón para ver detalles -->
             {{ cliente.totalPuntosSuministro }}
-            <button class="btn btn-ojo" @click="mostrarPuntosSuministro(cliente.idCliente)">👁️</button>
+            <button class="btn btn-ojo" @click="verPuntosSuministro(cliente)">👁️</button>
           </td>
           <td>{{ cliente.empleadoAsignado }}</td>
           <td>
-            <button class="btn btn-consultar" @click="mostrarFormularioActualizar(cliente.idCliente)">  Consulta Cliente </button>
+            <!-- Botón para consultar los datos de un cliente específico -->
+            <button class="btn btn-consultar" @click="abrirFormularioClienteActualizar(cliente.idCliente)">
+              Consulta Cliente
+            </button>
+            <!-- Botón para crear un nuevo punto de suministro (aún no implementado) -->
             <button class="btn btn-crearPS">Crear Punto Suministro</button>
           </td>
         </tr>
       </tbody>
     </table>
 
-    <!-- Modal para puntos de suministro -->
-    <div v-if="modalVisible" class="modal-overlay">
+    <!-- Modal para mostrar los puntos de suministro de un cliente -->
+    <div v-if="isModalPuntosOpen" class="modal-overlay">
       <div class="modal-content">
-        <h2>Puntos de Suministro</h2>
-        <ul v-if="puntosSuministro.length > 0">
-          <li v-for="punto in puntosSuministro" :key="punto.idPuntoSuministro">
-            {{ punto.nombre }} - {{ punto.direccion }}
-          </li>
-        </ul>
-        <p v-else>No hay puntos de suministro disponibles.</p>
-        <button class="btn btn-cerrar" @click="cerrarModalPS">Cerrar</button>
+        <h2>Puntos de Suministro del Cliente: {{ clienteSeleccionado?.nombre || 'Desconocido' }}</h2>
+
+        <!-- Filtro para los puntos de suministro -->
+        <input
+          type="text"
+          placeholder="Buscar en puntos de suministro..."
+          v-model="filterPuntos"
+          class="filter-input full-width"
+        />
+        <table class="puntos-suministro-table">
+          <thead>
+            <tr>
+              <th>Dirección</th>
+              <th>CUPS Luz</th>
+              <th>CUPS Gas</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>            
+            <tr v-for="punto in filteredPuntosSuministro()" :key="punto.idPunto">
+              <td>{{ punto.direccion }}, {{ punto.codigoPostal }}, {{ punto.poblacion }}, {{ punto.provincia }}</td>
+              <td>{{ punto.cupsluz }}</td>
+              <td>{{ punto.cupsgas }}</td>
+              <td>
+                <button class="btn btn-detalle" @click="verDetallePunto(punto)">Detalle</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <!-- Botón para cerrar el modal -->
+        <button @click="closeModalPuntos " class="btn btn-cancelar">Cerrar</button>
       </div>
     </div>
 
     <!-- Modal para crear o modificar clientes -->
     <div v-if="formularioVisible" class="modal-overlay">
       <div class="modal-content">
+        <!-- Título dinámico según el modo del formulario -->
         <h2>{{ modoActualizar ? 'Actualizar Cliente' : 'Alta de Cliente' }}</h2>
+        <!-- Formulario para crear o actualizar clientes -->
         <form @submit.prevent="modoActualizar ? actualizarCliente() : crearCliente()">
           <div class="form-container">
             <div class="form-column">
+              <!-- Columna 1 -->
               <label for="nombre">Nombre</label>
               <input type="text" id="nombre" v-model="nuevoCliente.nombre" required />
-
-              <label for="nombreComercial">Nombre Comercial</label>
-              <input type="text" id="nombreComercial" v-model="nuevoCliente.nombreComercial" required />
-
-              <label for="cif">CIF</label>
-              <input type="text" id="cif" v-model="nuevoCliente.cif" required />
 
               <label for="direccionFiscal">Dirección Fiscal</label>
               <input type="text" id="direccionFiscal" v-model="nuevoCliente.direccion" required />
@@ -120,9 +152,8 @@
 
               <label for="notas">Notas</label>
               <textarea id="notas" v-model="nuevoCliente.notas"></textarea>
-
-            </div>
-
+            </div>            
+            <!-- Columna 4 -->
             <div class="form-column">
               <label for="nombreAutorizado1">Nombre Autorizado 1</label>
               <input type="text" id="nombreAutorizado1" v-model="nuevoCliente.nombreAutorizado1" />
@@ -168,14 +199,15 @@
 
               <label for="nombreAutorizado3">Telefono Autorizado 3</label>
               <input type="text" id="nombreAutorizado3" v-model="nuevoCliente.telefonoAutorizado3" />
-              
             </div>
           </div>
 
           <div>
-            <button type="submit" class="btn btn-crearUsuario">
+            <!-- Botón dinámico para crear o actualizar según el modo -->
+            <button type="submit" :disabled="isSubmitting">
               {{ modoActualizar ? 'Actualizar' : 'Crear' }}
             </button>
+            <!-- Botón para cancelar y cerrar el formulario -->
             <button type="button" class="btn btn-cancelarUsuario" @click="cancelarFormulario">Cancelar</button>
           </div>
         </form>
@@ -186,22 +218,43 @@
 
 <script>
 import axios from 'axios';
+import Spinner from "@/components/SpinnerComponent.vue"; // Asegúrate de ajustar la ruta según tu estructura de carpetas
 
 export default {
   name: 'ClientesComponent',
+  components: {
+    Spinner, // Componente para mostrar un spinner durante cargas
+  },
   data() {
     return {
+      // Lista de clientes obtenida del backend
       clientes: [],
+      // Lista de empleados para el select del formulario
       empleados: [],
+      // Lista de puntos de suministro del cliente seleccionado
       puntosSuministro: [],
-      modalVisible: false, // Para controlar la visibilidad del modal de puntos de suministro
-      idClienteSeleccionado: null,
-      sectores: [], // Aquí sectores inicializado como array vacío
-      subtipologias: [], // Aquí subtipologías inicializado como array vacío
+      // Controla la visibilidad del modal de puntos de suministro
+      isModalPuntosOpen: false,
+      //Cliente seleccionado para mostrar sus puntos de suministro
+      clienteSeleccionado: null, 
+      // ID del cliente seleccionado para actualizar
+      idClienteActualizar: null,
+      // Evita múltiples envíos del formulario
+      isSubmitting: false,
+      // Listas para selects de sectores y subtipologías
+      sectores: [],
+      subtipologias: [],
+      // Filtro para buscar clientes      
       filter: '',
+      // Filtro para buscar en los puntos de suministro
+      filterPuntos: '',
+      // Controla la visibilidad del formulario de clientes
       formularioVisible: false,
-      modoActualizar: false, // Indica si estamos en modo actualización
-      nuevoCliente: {        
+      // Indica si el formulario está en modo actualización
+      modoActualizar: false,
+      // Objeto para almacenar los datos del cliente nuevo o actualizado
+      nuevoCliente: {   
+        // Campos inicializados en blanco o null     
         nombre: '',
         nombreComercial: '',
         cif: '',
@@ -238,9 +291,9 @@ export default {
         
       },
     };
-  },
-  
+  },  
   computed: {
+    // Calcula una lista de clientes filtrados según el texto de búsqueda
     filteredClientes() {
       return this.clientes
         .map((cliente) => ({
@@ -258,26 +311,72 @@ export default {
     },
   },
   methods: {
-    async mostrarPuntosSuministro(idCliente) {
+    normalizeText(text) {
+      return text
+        ? text
+            .toString()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Elimina acentos
+            .toLowerCase()
+        : ''; // Devuelve una cadena vacía si el texto es null o undefined
+    },
+    //Llamada para obtener todos los clientes
+    async fetchClientes() {
       try {
-        this.idClienteSeleccionado = idCliente;
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${idCliente}`);
-        this.puntosSuministro = response.data;
-        this.modalVisible = true; // Activa el modal
+        this.loading = true;
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
+        console.log('Clientes cargados:', response.data);
+        this.clientes = response.data;
       } catch (error) {
-        console.error("Error al cargar puntos de suministro:", error);
+        console.error('Error al obtener los clientes:', error);
+      } finally {
+        this.loading = false;
       }
-    }, 
-    cerrarModalPS() {
-      this.modalVisible = false;
+    },
+    //Llamada para obtener los puntos de suministro de un cliente (boton OJO)
+    async verPuntosSuministro(cliente) {
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${cliente.idCliente}`);
+        console.log('Puntos de suministro:', response.data); // Verifica la respuesta
+        this.puntosSuministro = response.data;
+        this.clienteSeleccionado = cliente;
+        this.isModalPuntosOpen = true;
+      } catch (error) {
+        console.error('Error al obtener los puntos de suministro:', error);
+      }
+    },
+    closeModalPuntos() {
+      this.isModalPuntosOpen = false; // Cierra el modal de puntos de suministro
       this.puntosSuministro = [];
-    },  
-    mostrarFormularioActualizar(idCliente) {
-      console.log("Cargando datos para cliente con ID:", idCliente); // Verifica si llega aquí
+    },
+    verDetallePunto(punto) {
+      console.log('Ver detalle del punto de suministro:', punto);
+      // Aquí podrías agregar la lógica para mostrar más detalles
+    },
+    // Lista filtrada de puntos de suministro
+    filteredPuntosSuministro() {
+      const filtro = this.normalizeText(this.filterPuntos); // Normalizamos el texto del filtro
+      return this.puntosSuministro.filter((punto) => {
+        // Concatenamos todas las propiedades de los puntos de suministro que queremos filtrar
+        const concatenated = [
+          punto.direccion || '',
+          punto.codigoPostal || '',
+          punto.poblacion || '',
+          punto.provincia || '',
+          punto.cupsluz || '',
+          punto.cupsgas || ''
+        ].join(' ').toLowerCase(); // Aseguramos que la concatenación sea una cadena en minúsculas
+        return this.normalizeText(concatenated).includes(filtro); // Comparamos el filtro con el texto concatenado
+      });
+    }, 
+    abrirFormularioClienteActualizar(idCliente) {
+      this.idClienteActualizar = idCliente;
+      console.log("Cargando datos para cliente con ID:", idCliente); // Verifica si llega aquí      
       axios
-        .get(`${process.env.VUE_APP_API_URL}/api/cliente/cliente`, { params: { idCliente } })
+        .get(`${process.env.VUE_APP_API_URL}/api/clientes/cliente`, { params: { idCliente } })
         .then((response) => {
           console.log("Datos del cliente recibidos:", response.data); // Verifica los datos recibidos
+          this.nuevoCliente = { ...response.data, idCliente }; // Asegura que idCliente esté definido
           this.nuevoCliente = response.data;
           this.formularioVisible = true;
           this.modoActualizar = true;
@@ -286,33 +385,66 @@ export default {
           console.error("Error al obtener los datos del cliente:", error);
         });
     },
-    actualizarCliente() {
-      axios
-        .put(`${process.env.VUE_APP_API_URL}/api/cliente/actualizar`, this.nuevoCliente)
-        .then(() => {
-          alert('Cliente actualizado con éxito.');
-          this.cancelarFormulario();
-          this.fetchClientes(); // Actualiza la lista de clientes
-        })
-        .catch((error) => {
-          console.error('Error al actualizar el cliente:', error);
-          alert('No se pudo actualizar el cliente. Intente nuevamente.');
-        });
-    },
+    // Actualiza un cliente
+async actualizarCliente() {
+  if (!this.idClienteActualizar) {
+    console.error("ID del cliente no definido. No se puede actualizar.");
+    alert("Error: El cliente seleccionado no tiene un ID válido.");
+    return;
+  }
+  
+  this.isSubmitting = true;
+
+  try {
+    // Enviar datos actualizados al backend
+    const response = await axios.put(
+      `${process.env.VUE_APP_API_URL}/api/clientes/${this.idClienteActualizar}`,
+      this.nuevoCliente // Objeto con los datos actualizados
+    );
+    
+    // Validar respuesta del backend
+    if (response.status === 200) {
+      alert('Cliente actualizado con éxito.');
+      this.cancelarFormulario();
+      this.fetchClientes(); // Actualiza la lista de clientes
+    }
+  } catch (error) {
+    console.error('Error al actualizar el cliente:', error);
+
+    if (error.response) {
+      // Manejar errores específicos
+      switch (error.response.status) {
+        case 400:
+          alert('Datos inválidos. Por favor, revise los campos ingresados.');
+          break;
+        case 404:
+          alert('Cliente no encontrado.');
+          break;
+        case 500:
+          alert('Error interno del servidor. Intente nuevamente más tarde.');
+          break;
+        default:
+          alert('Ocurrió un error inesperado.');
+      }
+    } else {
+      alert('No se pudo conectar con el servidor. Intente nuevamente.');
+    }
+  } finally {
+    this.isSubmitting = false;
+  }
+},
+
+
     cancelarFormulario() {
       this.formularioVisible = false;
       this.modoActualizar = false; // Vuelve a modo creación por defecto
       this.resetFormulario();
     },
 
-    async fetchClientes() {
-      try {
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
-        this.clientes = response.data;
-        console.log(this.clientes);
-      } catch (error) {
-        console.error('Error al obtener los clientes:', error);
-      }
+    abrirFormularioCliente () {
+      this.resetFormulario();  // Asegura que el formulario esté vacío
+      this.formularioVisible = true;  // Muestra el formulario
+      this.modoActualizar = false;  // Asegura que está en modo de creación
     },
 
     async fetchSelectData() {
@@ -331,8 +463,26 @@ export default {
       }
     },
 
-    mostrarFormularioCrear() {
-      this.formularioVisible = true;
+    async crearCliente() {
+      this.isSubmitting = true;
+      //console.log('Datos enviados al backend:', this.nuevoCliente); // Verifica aquí los valores
+      if (!this.nuevoCliente.nombre || !this.nuevoCliente.cif) {
+        this.isSubmitting = false;
+        alert('El nombre y CIF son obligatorios.');
+        return;
+      }
+      try {
+        // Agregar fecha y hora del sistema
+        this.nuevoCliente.fechaAlta = new Date().toISOString(); // Formato ISO para compatibilidad
+        await axios.post(`${process.env.VUE_APP_API_URL}/api/clientes/cliente`, this.nuevoCliente);
+        this.fetchClientes();  // Actualiza la lista de clientes
+        this.cancelarFormulario();  // Cierra el formulario
+      } catch (error) {
+        console.error('Error al crear cliente:', error);        
+        alert('Hubo un error al crear el cliente. Por favor, inténtelo de nuevo.');
+      } finally {
+        this.isSubmitting = false;
+      }
     },
 
     resetFormulario() {
@@ -371,104 +521,11 @@ export default {
         emailAutorizado3: '',
         telefonoAutorizado3: '',
       };
-    },
-
-    async crearCliente() {
-      //console.log('Datos enviados al backend:', this.nuevoCliente); // Verifica aquí los valores
-      if (!this.nuevoCliente.nombre || !this.nuevoCliente.cif) {
-        alert('El nombre y CIF son obligatorios.');
-        return;
-      }
-      try {
-        // Agregar fecha y hora del sistema
-        this.nuevoCliente.fechaAlta = new Date().toISOString(); // Formato ISO para compatibilidad
-        await axios.post(`${process.env.VUE_APP_API_URL}/api/clientes/cliente`, this.nuevoCliente);
-        this.fetchClientes();
-        this.cancelarFormulario();
-      } catch (error) {
-        console.error('Error al crear cliente:', error);
-        alert('Hubo un error al crear el cliente. Por favor, inténtelo de nuevo.');
-      }
-    },
+    },    
   },
   mounted() {
-    this.fetchClientes();
-    this.fetchSelectData();
+    this.fetchClientes(); // Carga inicial de la lista de clientes
+    this.fetchSelectData(); // Carga inicial de empleados, sectores y subtipologías
   },
 };
 </script>
-
-<style scoped>
-/* Estilos para el modal */
-.modal-overlay {
-  position: fixed;
-  top: 0; /* Asegura que esté alineado con la parte superior de la página */
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
-  display: flex;
-  justify-content: center;
-  align-items: flex-start; /* Alineación en la parte superior */
-  z-index: 1000; /* Asegura que el modal esté por encima de otros elementos */
-  padding-top: 20px; /* Espacio entre el top de la pantalla y el modal */
-}
-
-.modal-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 500px;
-  width: 100%;
-}
-  
-.form-container {
-  display: flex;
-  gap: 20px;
-}
-
-.form-column {
-  flex: 1;
-}
-
-.modal-content {
-  width: 80%;  /* Aumenta el ancho del modal */
-  max-width: 1200px; /* Limita el ancho máximo */
-  margin: 0 auto;
-  padding: 20px;
-  background-color: white;
-  border-radius: 10px;
-}
-
-.form-container {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px; /* Espacio entre columnas */
-}
-
-.form-column {
-  flex: 1;
-}
-
-.form-column input, .form-column select, .form-column textarea {
-  width: 100%;
-  padding: 8px;
-  margin: 5px 0;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-form div {
-  margin-bottom: 15px;
-}
-
-textarea {
-  width: 100%; /* Asegura que el textarea ocupe todo el ancho disponible */
-  height: 150px; /* Ajusta la altura para que sea más grande */
-  padding: 10px; /* Espaciado interior para que el texto no se pegue al borde */
-  font-size: 14px; /* Aumenta el tamaño de la fuente para hacerlo más legible */
-  border: 1px solid #ccc; /* Estilo para el borde del textarea */
-  border-radius: 5px; /* Bordes redondeados para un estilo más moderno */
-  resize: vertical; /* Permite redimensionar solo verticalmente */
-}
-</style>

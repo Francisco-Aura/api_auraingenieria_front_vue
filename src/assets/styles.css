@@ -2,6 +2,7 @@
 /*          Estilos Generales       */
 /* =============================== */
 body {
+  background-color:#ffd050b6;
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
@@ -16,6 +17,7 @@ body {
 /*        Estilos de Contenedores   */
 /* =============================== */
 .container {
+  padding-top: 0;  /* Elimina el padding superior */
   padding: 1.5rem;
   color: #333;
 }
@@ -133,7 +135,8 @@ button:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
+  margin: 0;
+  padding: 0;
   text-align: center;
 }
 
@@ -142,10 +145,12 @@ button:hover {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  margin-bottom: 2rem;
+  margin-bottom: -4rem;/* Espacio superior dashboard*/
 }
 
 .dashboard-content {
+  margin: 0;
+  padding: 0;
   display: flex;
   width: 100%;
 }
@@ -176,8 +181,9 @@ button:hover {
 }
 
 .dashboard-view {
-  flex-grow: 1;
-  padding: 2rem;
+  margin: 0;
+  padding: 0;
+  flex-grow: 1;  
   margin-left: 1rem;
   background-color: #f1f1f1;
   border-radius: 10px;
@@ -227,4 +233,79 @@ a {
 
 a:hover {
   color: #f0c040;
+}
+
+/* =============================== */
+/*          Estilos de Modal        */
+/* =============================== */
+.modal-overlay {
+  position: fixed;
+  top: 0; /* Asegura que esté alineado con la parte superior de la página */
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Alineación en la parte superior */
+  z-index: 1000; /* Asegura que el modal esté por encima de otros elementos */
+  padding-top: 20px; /* Espacio entre el top de la pantalla y el modal */
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 100%;
+}
+  
+.form-container {
+  display: flex;
+  gap: 20px;
+}
+
+.form-column {
+  flex: 1;
+}
+
+.modal-content {
+  width: 80%;  /* Aumenta el ancho del modal */
+  max-width: 1200px; /* Limita el ancho máximo */
+  margin: 0 auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+}
+
+.form-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px; /* Espacio entre columnas */
+}
+
+.form-column {
+  flex: 1;
+}
+
+.form-column input, .form-column select, .form-column textarea {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+form div {
+  margin-bottom: 15px;
+}
+
+textarea {
+  width: 100%; /* Asegura que el textarea ocupe todo el ancho disponible */
+  height: 150px; /* Ajusta la altura para que sea más grande */
+  padding: 10px; /* Espaciado interior para que el texto no se pegue al borde */
+  font-size: 14px; /* Aumenta el tamaño de la fuente para hacerlo más legible */
+  border: 1px solid #ccc; /* Estilo para el borde del textarea */
+  border-radius: 5px; /* Bordes redondeados para un estilo más moderno */
+  resize: vertical; /* Permite redimensionar solo verticalmente */
 }

@@ -5,7 +5,7 @@
     <!-- Encabezado del dashboard (actualmente vacío) -->
     <div class="dashboard-header">
     </div>
-
+    
     <!-- Contenido principal del dashboard -->
     <div class="dashboard-content">
       
