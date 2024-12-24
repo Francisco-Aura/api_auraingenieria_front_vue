@@ -236,7 +236,7 @@ a:hover {
 }
 
 /* =============================== */
-/*          Estilos de Modal        */
+/*   Estilos de Modal  Clientes    */
 /* =============================== */
 .modal-overlay {
   position: fixed;
@@ -253,11 +253,12 @@ a:hover {
 }
 
 .modal-content {
-  background-color: white;
-  padding: 20px;
+  padding: 20px; /* Espaciado interno uniforme */
   border-radius: 10px;
-  max-width: 500px;
+  max-width: 1200px; /* Limitar el tamaño del modal */
   width: 100%;
+  overflow: auto;
+  box-sizing: border-box;
 }
   
 .form-container {
@@ -270,12 +271,14 @@ a:hover {
 }
 
 .modal-content {
-  width: 80%;  /* Aumenta el ancho del modal */
+  width: 90%; /* Ocupa el 90% del ancho disponible */
   max-width: 1200px; /* Limita el ancho máximo */
-  margin: 0 auto;
-  padding: 20px;
+  max-height: 80%; /* Limita la altura máxima */
+  overflow-y: auto; /* Permite hacer scroll si el contenido excede la altura */
   background-color: white;
+  padding: 20px;
   border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); /* Sombra para dar un efecto elevado */
 }
 
 .form-container {
@@ -288,12 +291,17 @@ a:hover {
   flex: 1;
 }
 
-.form-column input, .form-column select, .form-column textarea {
+/* Estilos para los inputs, selects y textarea */
+.form-column input,
+.form-column select,
+.form-column textarea {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   margin: 5px 0;
   border-radius: 5px;
   border: 1px solid #ccc;
+  font-size: 14px;
+  box-sizing: border-box;
 }
 
 form div {
@@ -301,11 +309,106 @@ form div {
 }
 
 textarea {
-  width: 100%; /* Asegura que el textarea ocupe todo el ancho disponible */
-  height: 150px; /* Ajusta la altura para que sea más grande */
-  padding: 10px; /* Espaciado interior para que el texto no se pegue al borde */
-  font-size: 14px; /* Aumenta el tamaño de la fuente para hacerlo más legible */
-  border: 1px solid #ccc; /* Estilo para el borde del textarea */
-  border-radius: 5px; /* Bordes redondeados para un estilo más moderno */
+  width: 200%; /* Asegura que el textarea ocupe todo el ancho disponible */
+  height: 100px; /* Ajusta la altura por defecto */
+  padding: 10px; /* Espaciado interior */
+  font-size: 14px; /* Fuente legible */
+  border: 1px solid #ccc; /* Estilo del borde */
+  border-radius: 5px; /* Bordes redondeados */
   resize: vertical; /* Permite redimensionar solo verticalmente */
+}
+
+/* Ajusta el ancho completo para el campo "Notas" */
+.form-notas {
+  margin-top: 1rem;
+}
+
+/* Aplica estilos a los botones */
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Área de texto "Notas" ajustada al ancho */
+textarea#notas {
+  width: 100%;
+  height: 120px; /* Ajusta según sea necesario */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  resize: vertical;
+}
+
+/* =============================== */
+/*          Estilos de Modal  PS   */
+/* =============================== */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Dos columnas iguales */
+  gap: 1rem; /* Espaciado entre columnas y filas */
+}
+
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.full-width {
+  grid-column: span 2; /* Asegura que ocupe ambas columnas */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-with-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-content {
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* Espaciado interno entre label y campo */
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+}
+
+textarea {
+  resize: none; /* Evita que el usuario cambie el tamaño manualmente */
+}
+
+/* =============================== */
+/*   Estilos de Modal  Contratos   */
+/* =============================== */
+
+.tabs {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 10px;
+}
+.tabs button {
+  padding: 10px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  background-color: #f9f9f9;
+}
+.tabs button.active {
+  background-color: #ddd;
+  font-weight: bold;
 }

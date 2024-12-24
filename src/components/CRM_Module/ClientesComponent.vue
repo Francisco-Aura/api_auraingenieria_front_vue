@@ -40,7 +40,7 @@
               Consulta Cliente
             </button>
             <!-- Botón para crear un nuevo punto de suministro (aún no implementado) -->
-            <button class="btn btn-crearPS">Crear Punto Suministro</button>
+            <button class="btn btn-crearPS" @click="CrearPuntoSuministro(cliente)">Crear Punto Suministro</button>
           </td>
         </tr>
       </tbody>
@@ -68,7 +68,7 @@
             </tr>
           </thead>
           <tbody>            
-            <tr v-for="punto in filteredPuntosSuministro()" :key="punto.idPunto">
+            <tr v-for="punto in filteredPuntosSuministro" :key="punto.idPunto">
               <td>{{ punto.direccion }}, {{ punto.codigoPostal }}, {{ punto.poblacion }}, {{ punto.provincia }}</td>
               <td>{{ punto.cupsluz }}</td>
               <td>{{ punto.cupsgas }}</td>
@@ -88,51 +88,65 @@
       <div class="modal-content">
         <!-- Título dinámico según el modo del formulario -->
         <h2>{{ modoActualizar ? 'Actualizar Cliente' : 'Alta de Cliente' }}</h2>
+
         <!-- Formulario para crear o actualizar clientes -->
         <form @submit.prevent="modoActualizar ? actualizarCliente() : crearCliente()">
           <div class="form-container">
-            <div class="form-column">
-              <!-- Columna 1 -->
+            <!-- Columna 1 -->
+            <div class="form-column">              
               <label for="nombre">Nombre</label>
               <input type="text" id="nombre" v-model="nuevoCliente.nombre" required />
 
               <label for="direccionFiscal">Dirección Fiscal</label>
-              <input type="text" id="direccionFiscal" v-model="nuevoCliente.direccion" required />
-
-              <label for="codigoPostal">Código Postal</label>
-              <input type="text" id="codigoPostal" v-model="nuevoCliente.codigoPostal" required />
-
-              <label for="poblacion">Población</label>
-              <input type="text" id="poblacion" v-model="nuevoCliente.poblacion" required />
-
-              <label for="provincia">Provincia</label>
-              <input type="text" id="provincia" v-model="nuevoCliente.provincia" required />
+              <input type="text" id="direccionFiscal" v-model="nuevoCliente.direccion" required />              
 
               <label for="iban">IBAN</label>
               <input type="text" id="iban" v-model="nuevoCliente.iban" required />
 
-              <label for="nombreContacto">Nombre de Contacto</label>
-              <input type="text" id="nombreContacto" v-model="nuevoCliente.nombreContacto" required />
+              <label for="nombreAutorizado">Nombre de AUTORIZADO</label>
+              <input type="text" id="nombreAutorizado" v-model="nuevoCliente.nombreAutorizado" required />                     
 
-              <label for="dniContacto">DNI Contacto</label>
-              <input type="text" id="dniContacto" v-model="nuevoCliente.dniContacto" required />
+              <label for="nombreContacto1">Nombre Contacto 1</label>
+              <input type="text" id="nombreContacto1" v-model="nuevoCliente.nombreContacto1" />
+             
+              <label for="nombreContacto2">Nombre Contacto 2</label>
+              <input type="text" id="nombreContacto2" v-model="nuevoCliente.nombreContacto2" />             
 
-              <label for="telefonoContacto">Teléfono de Contacto</label>
-              <input type="text" id="telefonoContacto" v-model="nuevoCliente.telefonoContacto" required />
+              <label for="nombreContacto3">Nombre Contacto 3</label>
+              <input type="text" id="nombreContacto3" v-model="nuevoCliente.nombreContacto3" />
+            </div>
 
-              <label for="emailContacto">Email de Contacto</label>
-              <input type="email" id="emailContacto" v-model="nuevoCliente.emailContacto" required />
+            <!-- Columna 2 -->
+            <div class="form-column">              
+              <label for="nombreComercial">Nombre Comercial</label>
+              <input type="text" id="nombreComercial" v-model="nuevoCliente.nombreComercial" required />
 
-              <label for="empleado">Empleado</label>
-              <select id="empleado" v-model="nuevoCliente.idEmpleado" required>
-                <option value="">Seleccione un empleado</option>
-                <option v-for="empleado in empleados" :key="empleado.idUsuario" :value="empleado.idUsuario">
-                  {{ empleado.nombre }}
-                </option>
-              </select>
-              
+              <label for="codigoPostal">Código Postal</label>
+              <input type="text" id="codigoPostal" v-model="nuevoCliente.codigoPostal" required />
+        
               <label for="actividad">Actividad</label>
               <input type="text" id="actividad" v-model="nuevoCliente.actividad" />
+
+              <label for="dniAutorizado">DNI AUTORIZADO</label>
+              <input type="text" id="dniAutorizado" v-model="nuevoCliente.dniAutorizado" required />
+
+              <label for="cargoContacto1">Cargo Contacto 1</label>
+              <input type="text" id="cargoContacto1" v-model="nuevoCliente.cargoContacto1" />
+
+              <label for="cargoContacto2">Cargo Contacto 2</label>
+              <input type="text" id="cargoContacto2" v-model="nuevoCliente.cargoContacto2" />          
+
+              <label for="cargoContacto3">Cargo Contacto 3</label>
+              <input type="text" id="cargoContacto3" v-model="nuevoCliente.cargoContacto3" />
+         
+            </div>   
+            <!-- Columna 3 -->
+            <div class="form-column">              
+              <label for="cif">CIF</label>
+              <input type="text" id="cif" v-model="nuevoCliente.cif" required />
+
+              <label for="poblacion">Población</label>
+              <input type="text" id="poblacion" v-model="nuevoCliente.poblacion" required />
 
               <label for="codigoSector">Código Sector</label>
               <select id="codigoSector" v-model="nuevoCliente.codigoSector" required>
@@ -140,7 +154,37 @@
                 <option v-for="sector in sectores" :key="sector.id" :value="sector.id">
                   {{ sector.nombre }}
                 </option>
-              </select>
+              </select>                
+
+              <label for="telefonoContacto">Teléfono de AUTORIZADO</label>
+              <input type="text" id="telefonoAutorizado" v-model="nuevoCliente.telefonoAutorizado" required />             
+
+              <label for="telefonoContacto1">Telefono Contacto 1</label>
+              <input type="text" id="telefonoContacto1" v-model="nuevoCliente.telefonoContacto1" />            
+
+              <label for="telefonoContacto2">Telefono Contacto 2</label>
+              <input type="text" id="telefonoContacto2" v-model="nuevoCliente.telefonoContacto2" />             
+
+              <label for="telefonoContacto3">Telefono Contacto 3</label>
+              <input type="text" id="telefonoContacto3" v-model="nuevoCliente.telefonoContacto3" />
+
+              <label for="userTelemedida">Usuario Telemedida</label>
+              <input type="text" id="userTelemedida" v-model="nuevoCliente.userTelemedida" />
+                        
+            </div> 
+
+            <!-- Columna 4 -->
+            <div class="form-column">
+              <label for="empleado">Empleado</label>
+              <select id="empleado" v-model="nuevoCliente.idEmpleado" required>
+                <option value="">Seleccione un empleado</option>
+                <option v-for="empleado in empleados" :key="empleado.idUsuario" :value="empleado.idUsuario">
+                  {{ empleado.nombre }}
+                </option>
+              </select>              
+
+              <label for="provincia">Provincia</label>
+              <input type="text" id="provincia" v-model="nuevoCliente.provincia" required />
 
               <label for="codigoSubtipologia">Código Subtipología</label>
               <select id="codigoSubtipologia" v-model="nuevoCliente.codigoSubtipologia" required>
@@ -148,71 +192,188 @@
                 <option v-for="subtipologia in subtipologias" :key="subtipologia.id" :value="subtipologia.id">
                   {{ subtipologia.nombre }}
                 </option>
-              </select>
+              </select>              
 
-              <label for="notas">Notas</label>
-              <textarea id="notas" v-model="nuevoCliente.notas"></textarea>
-            </div>            
-            <!-- Columna 4 -->
-            <div class="form-column">
-              <label for="nombreAutorizado1">Nombre Autorizado 1</label>
-              <input type="text" id="nombreAutorizado1" v-model="nuevoCliente.nombreAutorizado1" />
+              <label for="emailAutorizado">Email de AUTORIZADO</label>
+              <input type="email" id="emailAutorizado" v-model="nuevoCliente.emailAutorizado" required />
 
-              <label for="cargoAutorizado1">Cargo Autorizado 1</label>
-              <input type="text" id="cargoAutorizado1" v-model="nuevoCliente.cargoAutorizado1" />
-
-              <label for="dniAutorizado1">DNI Autorizado 1</label>
-              <input type="text" id="dniAutorizado1" v-model="nuevoCliente.dniAutorizado1" />
-
-              <label for="emailAutorizado1">Email Autorizado 1</label>
-              <input type="email" id="emailAutorizado1" v-model="nuevoCliente.emailAutorizado1" />
-
-              <label for="nombreAutorizado1">Telefono Autorizado 1</label>
-              <input type="text" id="nombreAutorizado1" v-model="nuevoCliente.telefonoAutorizado1" />
-
-              <label for="nombreAutorizado2">Nombre Autorizado 2</label>
-              <input type="text" id="nombreAutorizado2" v-model="nuevoCliente.nombreAutorizado2" />
-
-              <label for="cargoAutorizado2">Cargo Autorizado 2</label>
-              <input type="text" id="cargoAutorizado2" v-model="nuevoCliente.cargoAutorizado2" />
-
-              <label for="dniAutorizado2">DNI Autorizado 2</label>
-              <input type="text" id="dniAutorizado2" v-model="nuevoCliente.dniAutorizado2" />
-
-              <label for="emailAutorizado2">Email Autorizado 2</label>
-              <input type="email" id="emailAutorizado2" v-model="nuevoCliente.emailAutorizado2" />
-
-              <label for="nombreAutorizado2">Telefono Autorizado 2</label>
-              <input type="text" id="nombreAutorizado2" v-model="nuevoCliente.telefonoAutorizado2" />
-
-              <label for="nombreAutorizado3">Nombre Autorizado 3</label>
-              <input type="text" id="nombreAutorizado3" v-model="nuevoCliente.nombreAutorizado3" />
-
-              <label for="cargoAutorizado3">Cargo Autorizado 3</label>
-              <input type="text" id="cargoAutorizado3" v-model="nuevoCliente.cargoAutorizado3" />
-
-              <label for="dniAutorizado3">DNI Autorizado 3</label>
-              <input type="text" id="dniAutorizado3" v-model="nuevoCliente.dniAutorizado3" />
-
-              <label for="emailAutorizado3">Email Autorizado 3</label>
-              <input type="email" id="emailAutorizado3" v-model="nuevoCliente.emailAutorizado3" />
-
-              <label for="nombreAutorizado3">Telefono Autorizado 3</label>
-              <input type="text" id="nombreAutorizado3" v-model="nuevoCliente.telefonoAutorizado3" />
+              <label for="emailContacto1">Email Contacto 1</label>
+              <input type="email" id="emailContacto1" v-model="nuevoCliente.emailContacto1" />
+             
+              <label for="emailContacto2">Email Contacto 2</label>
+              <input type="email" id="emailContacto2" v-model="nuevoCliente.emailContacto2" />
+            
+              <label for="emailContacto3">Email Contacto 3</label>
+              <input type="email" id="emailContacto3" v-model="nuevoCliente.emailContacto3" />    
+              
+              <label for="passTelemedida">Contraseña Telemedida</label>
+              <input type="text" id="passTelemedida" v-model="nuevoCliente.passTelemedida" />
             </div>
           </div>
 
-          <div>
-            <!-- Botón dinámico para crear o actualizar según el modo -->
-            <button type="submit" :disabled="isSubmitting">
+          <!-- Campo "Notas" ocupa el ancho completo al final -->
+          <div class="form-notas full-width">
+            <label for="notas">Notas</label>
+            <textarea id="notas" v-model="nuevoCliente.notas"></textarea>
+          </div>
+
+          <!-- Botones de acción -->
+          <div class="form-buttons">            
+            <button type="button" class="btn btn-cancelarUsuario" @click="cancelarFormulario">Cancelar</button>
+            <button type="submit" :disabled="isSubmitting" class="btn" >
               {{ modoActualizar ? 'Actualizar' : 'Crear' }}
             </button>
-            <!-- Botón para cancelar y cerrar el formulario -->
-            <button type="button" class="btn btn-cancelarUsuario" @click="cancelarFormulario">Cancelar</button>
           </div>
         </form>
       </div>
     </div>
+
+    <!-- Modal para crear puntos de suministro -->
+    <div v-if="showModal_PS" class="modal-overlay">
+      <div class="modal-content" style="width: 80%; max-width: 900px; padding: 20px;">
+        <h1>Nuevo Punto de Suministro</h1>
+        <br>
+        <h2>{{ clienteSeleccionado?.nombre || 'Desconocido' }}</h2>
+
+        <!-- Formulario -->
+        <form @submit.prevent="createPuntoSuministro">
+          <div class="form-grid">
+            <!-- Primera Columna -->
+            <div class="form-column">
+              <div class="form-group">
+                <label for="direccion">Dirección</label>
+                <input 
+                  type="text" 
+                  id="direccion" 
+                  v-model="nuevoPunto.direccion" 
+                  class="form-control" 
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="codigoPostal">Código Postal</label>
+                <input 
+                  type="text" 
+                  id="codigoPostal" 
+                  v-model="nuevoPunto.codigoPostal" 
+                  class="form-control" 
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="poblacion">Población</label>
+                <input 
+                  type="text" 
+                  id="poblacion" 
+                  v-model="nuevoPunto.poblacion" 
+                  class="form-control" 
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="provincia">Provincia</label>
+                <input 
+                  type="text" 
+                  id="provincia" 
+                  v-model="nuevoPunto.provincia" 
+                  class="form-control" 
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Segunda Columna -->
+            <div class="form-column">
+              <div class="form-group">
+                <label for="cupsluz">CUPS Luz</label>
+                <input 
+                  type="text" 
+                  id="cupsluz" 
+                  v-model="nuevoPunto.cupsluz" 
+                  class="form-control" 
+                />
+              </div>
+              <div class="form-group">
+                <label for="cupsgas">CUPS Gas</label>
+                <input 
+                  type="text" 
+                  id="cupsgas" 
+                  v-model="nuevoPunto.cupsgas" 
+                  class="form-control" 
+                />
+              </div>
+              <div class="form-group">
+                <label for="contador">Contador</label>
+                <div class="input-with-checkbox">
+                  <input 
+                    type="text" 
+                    id="contador" 
+                    v-model="nuevoPunto.contador" 
+                    class="form-control" 
+                    @input="nuevoPunto.propiedadContador = !!nuevoPunto.contador"
+                  />
+                  <label>
+                    <input 
+                      type="checkbox" 
+                      v-model="nuevoPunto.propiedadContador"
+                      disabled
+                    />
+                    Propiedad
+                  </label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="modem">Modem</label>
+                <div class="input-with-checkbox">
+                  <input 
+                    type="text" 
+                    id="modem" 
+                    v-model="nuevoPunto.modem" 
+                    class="form-control" 
+                    @input="nuevoPunto.propiedadModem = !!nuevoPunto.modem"
+                  />
+                  <label>
+                    <input 
+                      type="checkbox" 
+                      v-model="nuevoPunto.propiedadModem"
+                      disabled
+                    />
+                    Propiedad
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Campos que ocupan dos columnas -->
+            <div class="form-group full-width">
+              <label for="observaciones">Observaciones</label>
+              <textarea 
+                id="observaciones" 
+                v-model="nuevoPunto.observaciones" 
+                class="form-control" 
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="form-group full-width">
+              <label for="fechaInstalacion">Fecha de Instalación</label>
+              <input 
+                type="date" 
+                id="fechaInstalacion" 
+                v-model="nuevoPunto.fechaInstalacion" 
+                class="form-control" 
+              />
+            </div>
+          </div>
+
+          <!-- Botones -->
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeModal_PS">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -235,7 +396,7 @@ export default {
       puntosSuministro: [],
       // Controla la visibilidad del modal de puntos de suministro
       isModalPuntosOpen: false,
-      //Cliente seleccionado para mostrar sus puntos de suministro
+      // Cliente seleccionado para mostrar sus puntos de suministro
       clienteSeleccionado: null, 
       // ID del cliente seleccionado para actualizar
       idClienteActualizar: null,
@@ -263,33 +424,45 @@ export default {
         poblacion: '',
         provincia: '',
         iban: '',
-        nombreContacto: '',
-        dniContacto: '',
-        telefonoContacto: '',
-        emailContacto: '',
+        nombreAutorizado: '',
+        dniAutorizado: '',
+        telefonoAutorizado: '',
+        emailAutorizado: '',
         empleado: null,
         actividad: '',
         codigoSector: null,
         codigoSubtipologia: null,
         notas: '',
-        //Autorizados
-        nombreAutorizado1: '',
-        cargoAutorizado1: '',
-        dniAutorizado1: '',
-        emailAutorizado1: '',
-        telefonoAutorizado1: '',
-        nombreAutorizado2: '',
-        cargoAutorizado2: '',
-        dniAutorizado2: '',
-        emailAutorizado2: '',
-        telefonoAutorizado2: '',
-        nombreAutorizado3: '',
-        cargoAutorizado3: '',
-        dniAutorizado3: '',
-        emailAutorizado3: '',
-        telefonoAutorizado3: '',
-        
+        userTelemedida: '',
+        passTelemedida: '',
+        // Autorizados
+        nombreContacto1: '',
+        cargoContacto1: '',
+        emailContacto1: '',
+        telefonoContacto1: '',
+        nombreContacto2: '',
+        cargoContacto2: '',
+        emailContacto2: '',
+        telefonoContacto2: '',
+        nombreContacto3: '',
+        cargoContacto3: '',
+        emailContacto3: '',
+        telefonoContacto3: '',        
       },
+      showModal_PS: false,
+      nuevoPunto: {        
+        direccion: "",
+        codigoPostal: "",
+        poblacion: "",
+        provincia: "",
+        propiedadContador: 0,
+        contador: '',
+        propiedadModem: 0,
+        modem: '',
+        observaciones: '',
+        fechaInstalacion: ''
+      },
+      loading: false, // Controla el estado del spinner
     };
   },  
   computed: {
@@ -309,51 +482,6 @@ export default {
           return nombre.toLowerCase().includes(filtro) || cif.toLowerCase().includes(filtro);
         });
     },
-  },
-  methods: {
-    normalizeText(text) {
-      return text
-        ? text
-            .toString()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '') // Elimina acentos
-            .toLowerCase()
-        : ''; // Devuelve una cadena vacía si el texto es null o undefined
-    },
-    //Llamada para obtener todos los clientes
-    async fetchClientes() {
-      try {
-        this.loading = true;
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
-        console.log('Clientes cargados:', response.data);
-        this.clientes = response.data;
-      } catch (error) {
-        console.error('Error al obtener los clientes:', error);
-      } finally {
-        this.loading = false;
-      }
-    },
-    //Llamada para obtener los puntos de suministro de un cliente (boton OJO)
-    async verPuntosSuministro(cliente) {
-      try {
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${cliente.idCliente}`);
-        console.log('Puntos de suministro:', response.data); // Verifica la respuesta
-        this.puntosSuministro = response.data;
-        this.clienteSeleccionado = cliente;
-        this.isModalPuntosOpen = true;
-      } catch (error) {
-        console.error('Error al obtener los puntos de suministro:', error);
-      }
-    },
-    closeModalPuntos() {
-      this.isModalPuntosOpen = false; // Cierra el modal de puntos de suministro
-      this.puntosSuministro = [];
-    },
-    verDetallePunto(punto) {
-      console.log('Ver detalle del punto de suministro:', punto);
-      // Aquí podrías agregar la lógica para mostrar más detalles
-    },
-    // Lista filtrada de puntos de suministro
     filteredPuntosSuministro() {
       const filtro = this.normalizeText(this.filterPuntos); // Normalizamos el texto del filtro
       return this.puntosSuministro.filter((punto) => {
@@ -368,7 +496,120 @@ export default {
         ].join(' ').toLowerCase(); // Aseguramos que la concatenación sea una cadena en minúsculas
         return this.normalizeText(concatenated).includes(filtro); // Comparamos el filtro con el texto concatenado
       });
-    }, 
+    },
+  },
+  methods: {
+    normalizeText(text) {
+      return text
+        ? text
+            .toString()
+            .normalize('NFD')
+            .replace(/[̀-ͯ]/g, '') // Elimina acentos
+            .toLowerCase()
+        : ''; // Devuelve una cadena vacía si el texto es null o undefined
+    },
+    // Llamada para obtener todos los clientes
+    async fetchClientes() {
+      try {
+        this.loading = true;
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
+        //console.log('Clientes cargados:', response.data);
+        this.clientes = response.data;
+      } catch (error) {
+        console.error('Error al obtener los clientes:', error);
+        alert('Ocurrió un error al cargar los clientes.');
+      } finally {
+        this.loading = false;
+      }
+    },
+    // Llamada para obtener los puntos de suministro de un cliente (botón OJO)
+    async verPuntosSuministro(cliente) {
+      try {
+        this.loading = true;
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${cliente.idCliente}`);
+        console.log('Puntos de suministro:', response.data); // Verifica la respuesta
+        this.puntosSuministro = response.data;
+        this.clienteSeleccionado = cliente;
+        this.isModalPuntosOpen = true;
+      } catch (error) {
+        console.error('Error al obtener los puntos de suministro:', error);
+        alert('Ocurrió un error al cargar los puntos de suministro.');
+      } finally {
+        this.loading = false;
+      }
+    },
+    closeModalPuntos() {
+      this.isModalPuntosOpen = false; // Cierra el modal de puntos de suministro
+      this.puntosSuministro = [];
+    },
+    verDetallePunto(punto) {
+      console.log('Ver detalle del punto de suministro:', punto);
+      // Aquí podrías agregar la lógica para mostrar más detalles
+    },
+    CrearPuntoSuministro(cliente) {
+      this.clienteSeleccionado = cliente;
+      this.nuevoPunto = {  // Resetea los valores del formulario al abrir el modal
+        cliente: cliente.nombre,
+        direccion: "",
+        codigoPostal: "",
+        poblacion: "",
+        provincia: "",
+        propiedadContador: 0,
+        contador: "",
+        propiedadModem: 0,
+        modem: "",
+        observaciones: "",
+        fechaInstalacion: "",
+        idCliente: cliente.idCliente, // Asocia el cliente seleccionado al punto de suministro
+      };
+      this.showModal_PS = true;
+    },
+    async createPuntoSuministro() {
+      this.loading = true; // Muestra el spinner mientras se procesa la solicitud
+      try {
+        // Adaptamos los datos para que coincidan con el formato que requiere el backend
+        const datosAdaptados = {
+          direccion: this.nuevoPunto.direccion,
+          cliente: this.nuevoPunto.cliente,
+          codigoPostal: this.nuevoPunto.codigoPostal,
+          poblacion: this.nuevoPunto.poblacion,
+          provincia: this.nuevoPunto.provincia,
+          propiedadContador: this.nuevoPunto.propiedadContador ? 1 : 0,
+          contador: this.nuevoPunto.contador,
+          propiedadModem: this.nuevoPunto.propiedadModem ? 1 : 0,
+          modem: this.nuevoPunto.modem,
+          observaciones: this.nuevoPunto.observaciones,
+          fechaInstalacion: this.nuevoPunto.fechaInstalacion,
+          //fechaBaja: "string", // Según el ejemplo que diste
+          id_cliente: { id: this.nuevoPunto.idCliente },
+          cupsluz: this.nuevoPunto.cupsluz,
+          cupsgas: this.nuevoPunto.cupsgas,
+        };
+
+        console.log("Datos enviados al backend (JSON):", JSON.stringify(datosAdaptados, null, 2));
+
+        // Llamada al backend para guardar el nuevo punto de suministro
+        await axios.post(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/save`, datosAdaptados);
+        alert("Punto de suministro creado con éxito");     
+
+        this.fetchClientes();  // Actualiza la lista de clientes
+        // Cierra el modal y resetea el formulario
+        this.closeModal_PS();
+      } catch (error) {
+        console.error("Error al crear el punto de suministro:", error);
+        alert(
+          error.response?.data?.message || 
+          "Ocurrió un error al intentar crear el punto de suministro."
+        );
+      } finally {
+        this.loading = false; // Oculta el spinner
+      }
+    },
+
+
+    closeModal_PS() {
+      this.showModal_PS = false;
+    },
     abrirFormularioClienteActualizar(idCliente) {
       this.idClienteActualizar = idCliente;
       console.log("Cargando datos para cliente con ID:", idCliente); // Verifica si llega aquí      
@@ -385,55 +626,52 @@ export default {
           console.error("Error al obtener los datos del cliente:", error);
         });
     },
-    // Actualiza un cliente
-async actualizarCliente() {
-  if (!this.idClienteActualizar) {
-    console.error("ID del cliente no definido. No se puede actualizar.");
-    alert("Error: El cliente seleccionado no tiene un ID válido.");
-    return;
-  }
-  
-  this.isSubmitting = true;
-
-  try {
-    // Enviar datos actualizados al backend
-    const response = await axios.put(
-      `${process.env.VUE_APP_API_URL}/api/clientes/${this.idClienteActualizar}`,
-      this.nuevoCliente // Objeto con los datos actualizados
-    );
-    
-    // Validar respuesta del backend
-    if (response.status === 200) {
-      alert('Cliente actualizado con éxito.');
-      this.cancelarFormulario();
-      this.fetchClientes(); // Actualiza la lista de clientes
-    }
-  } catch (error) {
-    console.error('Error al actualizar el cliente:', error);
-
-    if (error.response) {
-      // Manejar errores específicos
-      switch (error.response.status) {
-        case 400:
-          alert('Datos inválidos. Por favor, revise los campos ingresados.');
-          break;
-        case 404:
-          alert('Cliente no encontrado.');
-          break;
-        case 500:
-          alert('Error interno del servidor. Intente nuevamente más tarde.');
-          break;
-        default:
-          alert('Ocurrió un error inesperado.');
+    async actualizarCliente() {
+      if (!this.idClienteActualizar) {
+        console.error("ID del cliente no definido. No se puede actualizar.");
+        alert("Error: El cliente seleccionado no tiene un ID válido.");
+        return;
       }
-    } else {
-      alert('No se pudo conectar con el servidor. Intente nuevamente.');
-    }
-  } finally {
-    this.isSubmitting = false;
-  }
-},
+  
+      this.isSubmitting = true;
 
+      try {
+        // Enviar datos actualizados al backend
+        const response = await axios.put(
+          `${process.env.VUE_APP_API_URL}/api/clientes/${this.idClienteActualizar}`, this.nuevoCliente // Objeto con los datos actualizados
+        );
+        
+        // Validar respuesta del backend
+        if (response.status === 200) {
+          alert('Cliente actualizado con éxito.');
+          this.cancelarFormulario();
+          this.fetchClientes(); // Actualiza la lista de clientes
+        }
+      } catch (error) {
+        console.error('Error al actualizar el cliente:', error);
+
+        if (error.response) {
+          // Manejar errores específicos
+          switch (error.response.status) {
+            case 400:
+              alert('Datos inválidos. Por favor, revise los campos ingresados.');
+              break;
+            case 404:
+              alert('Cliente no encontrado.');
+              break;
+            case 500:
+              alert('Error interno del servidor. Intente nuevamente más tarde.');
+              break;
+            default:
+              alert('Ocurrió un error inesperado.');
+          }
+        } else {
+          alert('No se pudo conectar con el servidor. Intente nuevamente.');
+        }
+      } finally {
+        this.isSubmitting = false;
+      }
+    },
 
     cancelarFormulario() {
       this.formularioVisible = false;
@@ -495,31 +733,30 @@ async actualizarCliente() {
         poblacion: '',
         provincia: '',
         iban: '',
-        nombreContacto: '',
-        dniContacto: '',
-        telefonoContacto: '',
-        emailContacto: '',
+        nombreAutorizado: '',
+        dniAutorizado: '',
+        telefonoAutorizado: '',
+        emailAutorizado: '',
         empleado: null,
         actividad: '',
         codigoSector: null,
         codigoSubtipologia: null,
         notas: '',
-        //Autorizados
-        nombreAutorizado1: '',
-        cargoAutorizado1: '',
-        dniAutorizado1: '',
-        emailAutorizado1: '',
-        telefonoAutorizado1: '',
-        nombreAutorizado2: '',
-        cargoAutorizado2: '',
-        dniAutorizado2: '',
-        emailAutorizado2: '',
-        telefonoAutorizado2: '',
-        nombreAutorizado3: '',
-        cargoAutorizado3: '',
-        dniAutorizado3: '',
-        emailAutorizado3: '',
-        telefonoAutorizado3: '',
+        userTelemedida: '',
+        passTelemedida: '',
+        // Autorizados
+        nombreContacto1: '',
+        cargoContacto1: '',
+        emailContacto1: '',
+        telefonoContacto1: '',
+        nombreContacto2: '',
+        cargoContacto2: '',
+        emailContacto2: '',
+        telefonoContacto2: '',
+        nombreContacto3: '',
+        cargoContacto3: '',
+        emailContacto3: '',
+        telefonoContacto3: '',
       };
     },    
   },
