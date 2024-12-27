@@ -312,14 +312,6 @@
                     class="form-control" 
                     @input="nuevoPunto.propiedadContador = !!nuevoPunto.contador"
                   />
-                  <label>
-                    <input 
-                      type="checkbox" 
-                      v-model="nuevoPunto.propiedadContador"
-                      disabled
-                    />
-                    Propiedad
-                  </label>
                 </div>
               </div>
               <div class="form-group">
@@ -332,14 +324,6 @@
                     class="form-control" 
                     @input="nuevoPunto.propiedadModem = !!nuevoPunto.modem"
                   />
-                  <label>
-                    <input 
-                      type="checkbox" 
-                      v-model="nuevoPunto.propiedadModem"
-                      disabled
-                    />
-                    Propiedad
-                  </label>
                 </div>
               </div>
             </div>

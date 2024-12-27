@@ -394,7 +394,8 @@ textarea {
 }
 
 /* =============================== */
-/*   Estilos de Modal  Contratos   */
+/*   Estilos de Modal              */
+/*  Contratos y Servicios          */
 /* =============================== */
 
 .tabs {
@@ -412,3 +413,26 @@ textarea {
   background-color: #ddd;
   font-weight: bold;
 }
+
+/* Botón cerrar dentro del modal */
+.modal-content {
+  position: relative; /* Asegúrate de que el modal sea un contenedor de posición */
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #333;
+  transition: color 0.3s ease;
+}
+
+.close-button:hover {
+  color: #ff3c00; /* Cambia el color al pasar el cursor */
+}
+
