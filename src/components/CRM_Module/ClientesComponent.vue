@@ -46,43 +46,6 @@
       </tbody>
     </table>
 
-    <!-- Modal para mostrar los puntos de suministro de un cliente -->
-    <div v-if="isModalPuntosOpen" class="modal-overlay">
-      <div class="modal-content">
-        <h2>Puntos de Suministro del Cliente: {{ clienteSeleccionado?.nombre || 'Desconocido' }}</h2>
-
-        <!-- Filtro para los puntos de suministro -->
-        <input
-          type="text"
-          placeholder="Buscar en puntos de suministro..."
-          v-model="filterPuntos"
-          class="filter-input full-width"
-        />
-        <table class="puntos-suministro-table">
-          <thead>
-            <tr>
-              <th>Dirección</th>
-              <th>CUPS Luz</th>
-              <th>CUPS Gas</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody>            
-            <tr v-for="punto in filteredPuntosSuministro" :key="punto.idPunto">
-              <td>{{ punto.direccion }}, {{ punto.codigoPostal }}, {{ punto.poblacion }}, {{ punto.provincia }}</td>
-              <td>{{ punto.cupsluz }}</td>
-              <td>{{ punto.cupsgas }}</td>
-              <td>
-                <button class="btn btn-detalle" @click="verDetallePunto(punto)">Detalle</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <!-- Botón para cerrar el modal -->
-        <button @click="closeModalPuntos " class="btn btn-cancelar">Cerrar</button>
-      </div>
-    </div>
-
     <!-- Modal para crear o modificar clientes -->
     <div v-if="formularioVisible" class="modal-overlay">
       <div class="modal-content">
@@ -363,7 +326,8 @@
 
 <script>
 import axios from 'axios';
-import Spinner from "@/components/SpinnerComponent.vue"; // Asegúrate de ajustar la ruta según tu estructura de carpetas
+import Spinner from "@/components/SpinnerComponent.vue"; 
+import puntosSuministroDelCliente from "@/components/CRM_Module/Clientes/MuestraPsClienteComponent.vue";
 
 export default {
   name: 'ClientesComponent',

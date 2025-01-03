@@ -53,3 +53,67 @@ export default {
   name: 'Dashboard-Component',
 };
 </script>
+
+<style scoped>
+  /* =============================== */
+  /*         Estilos del Dashboard    */
+  /* =============================== */
+  .dashboard-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+  }
+
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: -4rem;/* Espacio superior dashboard*/
+  }
+
+  .dashboard-content {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    width: 100%;
+  }
+
+  .dashboard-menu {
+    background-color: #333;
+    padding: 1rem;
+    width: 200px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .menu-link {
+    display: block;
+    color: #ffffff;
+    background-color: #555;
+    padding: 10px 15px;
+    margin: 8px 0;
+    text-align: center;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .menu-link:hover {
+    background-color: #d4af37;
+    color: #333;
+  }
+
+  .dashboard-view {
+    margin: 0;
+    padding: 0;
+    flex-grow: 1;  
+    margin-left: 1rem;
+    background-color: #f1f1f1;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+</style>
