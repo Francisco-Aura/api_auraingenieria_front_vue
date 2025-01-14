@@ -26,7 +26,6 @@
     </div>
   </div>
 </template>
-
 <script>
 import axios from 'axios'; // Importa Axios para realizar solicitudes HTTP
 
@@ -65,3 +64,46 @@ export default {
   }
 };
 </script>
+<style scoped>
+/* Enlace de login */
+a {
+  color: #333;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #f0c040;
+}
+
+.login-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background-color: #d9d9d9;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  text-align: center;
+}
+
+h2 {
+  color: #333;
+  margin-bottom: 30px;
+}
+
+input {
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 16px;
+  transition: box-shadow 0.3s ease;
+}
+</style>
