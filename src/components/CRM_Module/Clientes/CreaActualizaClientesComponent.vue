@@ -250,25 +250,6 @@
   z-index: 1000; /* Asegura que el modal esté por encima de otros elementos */
   padding-top: 20px; /* Espacio entre el top de la pantalla y el modal */
 }
-
-.modal-content {
-  padding: 20px; /* Espaciado interno uniforme */
-  border-radius: 10px;
-  max-width: 1200px; /* Limitar el tamaño del modal */
-  width: 100%;
-  overflow: auto;
-  box-sizing: border-box;
-}
-  
-.form-container {
-  display: flex;
-  gap: 20px;
-}
-
-.form-column {
-  flex: 1;
-}
-
 .modal-content {
   width: 90%; /* Ocupa el 90% del ancho disponible */
   max-width: 1200px; /* Limita el ancho máximo */
@@ -278,43 +259,21 @@
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); /* Sombra para dar un efecto elevado */
-}
-
-.form-container {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px; /* Espacio entre columnas */
+  box-sizing: border-box;
 }
 
 .form-column {
   flex: 1;
 }
 
-/* Estilos para los inputs, selects y textarea */
-.form-column input,
-.form-column select,
-.form-column textarea {
-  width: 100%;
-  padding: 10px;
-  margin: 5px 0;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
 form div {
   margin-bottom: 15px;
 }
 
-textarea {
-  width: 200%; /* Asegura que el textarea ocupe todo el ancho disponible */
-  height: 100px; /* Ajusta la altura por defecto */
-  padding: 10px; /* Espaciado interior */
-  font-size: 14px; /* Fuente legible */
-  border: 1px solid #ccc; /* Estilo del borde */
-  border-radius: 5px; /* Bordes redondeados */
-  resize: vertical; /* Permite redimensionar solo verticalmente */
+.form-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px; /* Espacio entre columnas */
 }
 
 /* Ajusta el ancho completo para el campo "Notas" */
@@ -328,6 +287,28 @@ textarea {
   justify-content: flex-end;
   gap: 1rem;
   margin-top: 1.5rem;
+}
+
+/* Estilos para los inputs, selects y textarea */
+.form-column input,
+.form-column select {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc; 
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+textarea {
+  width: 200%; /* Asegura que el textarea ocupe todo el ancho disponible */
+  height: 100px; /* Ajusta la altura por defecto */
+  padding: 10px; /* Espaciado interior */
+  font-size: 14px; /* Fuente legible */
+  border: 1px solid #ccc; /* Estilo del borde */
+  border-radius: 5px; /* Bordes redondeados */
+  resize: vertical; /* Permite redimensionar solo verticalmente */
 }
 
 /* Área de texto "Notas" ajustada al ancho */

@@ -2,10 +2,7 @@
   <!-- Contenedor principal del módulo de gestión de clientes -->
   <div class="clientes-container">
     <!-- Muestra un spinner mientras se realizan solicitudes al servidor -->
-    <Spinner :isLoading="loading" />
-    
-    <p>Estado del modal (isModalPuntosOpen): {{ isModalPuntosOpen }}</p>
-
+    <Spinner :isLoading="loading" />  
     <!-- Sección de filtro y botón de creación de clientes -->
     <div class="filter-container">
       <button class="btn btn-crear" @click="abrirFormularioCrearCliente">Crear Cliente</button>
@@ -74,12 +71,14 @@
 
     <!-- Modal: Crear punto de suministro -->
     <CrearPuntosSuministroComponent
+      v-if="showModalPS"
       :formulario-visible="showModalPS"
-      :cliente-seleccionado="clienteSeleccionado"
+      :cliente="clienteSeleccionado"
       :nuevo-punto="nuevoPunto"
       @guardar-punto-suministro="crearPuntoSuministro"
       @cerrar-formulario="cerrarFormularioNuevoPuntoSuministro"
     />
+    
   </div>
 </template>
 
@@ -130,11 +129,6 @@ export default {
         );
       });
     },
-  },
-  watch: {
-    isModalPuntosOpen(val) {
-      console.log("Estado de isModalPuntosOpen cambió desde el padre:", val);
-    }
   },
   methods: {
     // Reinicia el formulario de cliente
@@ -198,7 +192,6 @@ export default {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
         this.clientes = response.data;
       } catch (error) {
-        console.error("Error al obtener clientes:", error);
         alert("Error al cargar clientes.");
       } finally {
         this.loading = false;
@@ -207,11 +200,9 @@ export default {
     // Muestra el modal de puntos de suministro para el cliente seleccionado
     verPuntosSuministro(cliente) {
       try {
-        console.log("Cliente seleccionado:", cliente);
+        console.log("Cliente seleccionado para ver los puntos de suministro :", cliente);
         this.clienteSeleccionado = cliente;
         this.isModalPuntosOpen = true; // Abre el modal primero
-        console.log("Abriendo modal...");
-        console.log("Estado del modal (isModalPuntosOpen):", this.isModalPuntosOpen);
         this.fetchPuntosSuministro(cliente.idCliente); // Luego carga los puntos
       } catch (error) {
         console.error('Error al mostrar puntos de suministro:', error);
@@ -227,12 +218,10 @@ export default {
     async fetchPuntosSuministro(idCliente) {
       try {
         this.loading = true;
-        console.log("Cargando puntos de suministro para ID cliente:", idCliente);
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${idCliente}`);
         console.log("Puntos de suministro recibidos:", response.data);
         this.puntosSuministro = response.data;
       } catch (error) {
-        console.error("Error al cargar puntos de suministro:", error);
         alert("No se pudieron cargar los puntos de suministro.");
       } finally {
         this.loading = false;
@@ -292,6 +281,8 @@ export default {
     },
     // Muestra el modal para crear un punto de suministro
     abrirFormularioNuevoPunto(cliente) {
+      console.log("Cliente recibido para crear punto de suministro:", cliente); // Verifica que los datos sean correctos
+      this.clienteSeleccionado = cliente;
       this.nuevoPunto = this.resetFormularioPuntoSuministro();
       this.nuevoPunto.cliente = cliente;
       this.showModalPS = true;

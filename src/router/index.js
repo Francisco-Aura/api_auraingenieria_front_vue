@@ -2,8 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import LoginComponent from '@/components/LoginComponent.vue';
 import DashboardComponent from '@/components/DashboardComponent.vue';
 //CRM
-import ClientesComponent from '@/components/CRM_Module/ClientesComponent.vue';
-import PuntosSuministroComponent from '@/components/CRM_Module/PuntoSuministroComponent.vue';
+import ClientesComponent from '@/components/CRM_Module/Clientes/ClientesComponent.vue';
+import PuntosSuministroComponent from '@/components/CRM_Module/PuntosSuministro/PuntoSuministroComponent.vue';
 
 
 // Define las rutas
