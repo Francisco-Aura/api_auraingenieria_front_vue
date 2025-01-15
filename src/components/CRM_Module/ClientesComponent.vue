@@ -3,6 +3,8 @@
   <div class="clientes-container">
     <!-- Muestra un spinner mientras se realizan solicitudes al servidor -->
     <Spinner :isLoading="loading" />
+    
+    <p>Estado del modal (isModalPuntosOpen): {{ isModalPuntosOpen }}</p>
 
     <!-- Sección de filtro y botón de creación de clientes -->
     <div class="filter-container">
@@ -100,10 +102,10 @@ export default {
     return {
       clientes: [], // Lista de clientes
       filter: "", // Texto del filtro
-      loading: false, // Estado del spinner
-      clienteSeleccionado: null, // Cliente seleccionado para ver detalles o acciones
-      puntosSuministro: [], // Lista de puntos de suministro
-      isModalPuntosOpen: false, // Estado del modal de puntos de suministro
+      puntosSuministro: [],        // Lista de puntos de suministro
+      clienteSeleccionado: null,   // Cliente seleccionado
+      isModalPuntosOpen: false,    // Estado para controlar la visibilidad del modal
+      loading: false,              // Estado para mostrar un spinner de carga
       formularioVisible: false, // Control de visibilidad del formulario cliente
       modoActualizar: false, // Indica si el formulario está en modo actualizar
       nuevoCliente: this.resetFormularioCliente(), // Datos del nuevo cliente o cliente a actualizar
@@ -128,6 +130,11 @@ export default {
         );
       });
     },
+  },
+  watch: {
+    isModalPuntosOpen(val) {
+      console.log("Estado de isModalPuntosOpen cambió desde el padre:", val);
+    }
   },
   methods: {
     // Reinicia el formulario de cliente
@@ -200,10 +207,12 @@ export default {
     // Muestra el modal de puntos de suministro para el cliente seleccionado
     verPuntosSuministro(cliente) {
       try {
-        // Inicializamos valores
+        console.log("Cliente seleccionado:", cliente);
         this.clienteSeleccionado = cliente;
-        this.fetchPuntosSuministro(cliente.idCliente); // Carga los puntos de suministro del cliente
-        this.modalVisible = true;
+        this.isModalPuntosOpen = true; // Abre el modal primero
+        console.log("Abriendo modal...");
+        console.log("Estado del modal (isModalPuntosOpen):", this.isModalPuntosOpen);
+        this.fetchPuntosSuministro(cliente.idCliente); // Luego carga los puntos
       } catch (error) {
         console.error('Error al mostrar puntos de suministro:', error);
       }
@@ -217,16 +226,16 @@ export default {
     // Carga los puntos de suministro asociados a un cliente
     async fetchPuntosSuministro(idCliente) {
       try {
-        this.loading = true; // Muestra el spinner
-        const response = await axios.get(
-          `${process.env.VUE_APP_API_URL}/api/puntos-suministro/${idCliente}`
-        );
-        this.puntosSuministro = response.data; // Asigna los datos recibidos
+        this.loading = true;
+        console.log("Cargando puntos de suministro para ID cliente:", idCliente);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${idCliente}`);
+        console.log("Puntos de suministro recibidos:", response.data);
+        this.puntosSuministro = response.data;
       } catch (error) {
         console.error("Error al cargar puntos de suministro:", error);
         alert("No se pudieron cargar los puntos de suministro.");
       } finally {
-        this.loading = false; // Oculta el spinner
+        this.loading = false;
       }
     },
 
