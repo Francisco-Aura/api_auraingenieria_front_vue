@@ -72,6 +72,7 @@
     <!-- Modal: Crear punto de suministro -->
     <CrearPuntosSuministroComponent
       v-if="showModalPS"
+      :ShowModalPS="showModalPS"
       :formulario-visible="showModalPS"
       :cliente="clienteSeleccionado"
       :nuevo-punto="nuevoPunto"
@@ -171,18 +172,20 @@ export default {
     // Reinicia el formulario de punto de suministro
     resetFormularioPuntoSuministro() {
       return {
-        direccion: "",
-        codigoPostal: "",
-        poblacion: "",
-        provincia: "",
-        cupsluz: "",
-        cupsgas: "",
-        contador: "",
+        direccion: '',
+        codigoPostal: '',
+        poblacion: '',
+        provincia: '',
         propiedadContador: 0,
-        modem: "",
+        contador: '',
         propiedadModem: 0,
-        observaciones: "",
-        fechaInstalacion: "",
+        modem: '',
+        observaciones: '',
+        fechaInstalacion: '',
+        idCliente: null,
+        nombreCliente: '',
+        cupsluz: '',
+        cupsgas: ''
       };
     },
     // Carga la lista de clientes desde el backend
@@ -284,7 +287,8 @@ export default {
       console.log("Cliente recibido para crear punto de suministro:", cliente); // Verifica que los datos sean correctos
       this.clienteSeleccionado = cliente;
       this.nuevoPunto = this.resetFormularioPuntoSuministro();
-      this.nuevoPunto.cliente = cliente;
+      this.nuevoPunto.idCliente = cliente.idCliente; // Asigna el idCliente
+      this.nuevoPunto.nombreCliente = cliente.nombre; // Asigna el nombreCliente
       this.showModalPS = true;
     },
     // Cierra el modal de puntos de suministro
@@ -296,8 +300,7 @@ export default {
       try {
         // Adaptamos los datos para que coincidan con el formato que requiere el backend
         const datosAdaptados = {
-          direccion: this.nuevoPunto.direccion,
-          cliente: this.nuevoPunto.cliente,
+          direccion: this.nuevoPunto.direccion,          
           codigoPostal: this.nuevoPunto.codigoPostal,
           poblacion: this.nuevoPunto.poblacion,
           provincia: this.nuevoPunto.provincia,
@@ -307,7 +310,8 @@ export default {
           modem: this.nuevoPunto.modem,
           observaciones: this.nuevoPunto.observaciones,
           fechaInstalacion: this.nuevoPunto.fechaInstalacion,
-          id_cliente: { id: this.nuevoPunto.idCliente },
+          idCliente: this.nuevoPunto.idCliente, // Asegúrate de que idCliente esté presente
+          nombreCliente: this.nuevoPunto.nombreCliente, // Asegúrate de que nombreCliente esté presente
           cupsluz: this.nuevoPunto.cupsluz,
           cupsgas: this.nuevoPunto.cupsgas,
         };
@@ -347,3 +351,4 @@ export default {
 };
 </script>
 
+ 

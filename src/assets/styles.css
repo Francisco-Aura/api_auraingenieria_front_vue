@@ -128,25 +128,6 @@ button:hover {
   background-color: #5a6268;
 }
 
-/* =============================== */
-/*         Estilos del Dashboard    */
-/* =============================== */
-
-
-/* =============================== */
-/*          Estilos de Login        */
-/* =============================== */
-
-
-/* =============================== */
-/*   Estilos de Modal  Clientes    */
-/* =============================== */
-
-
-/* =============================== */
-/*          Estilos de Modal  PS   */
-/* =============================== */
-
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr); /* Dos columnas iguales */

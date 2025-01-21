@@ -95,25 +95,26 @@ export default {
 <style scoped>
 .modal-overlay {
   position: fixed;
-  top: 0;
+  top: 0; /* Asegura que esté alineado con la parte superior de la página */
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* Cambiado de flex-start a center para centrar verticalmente */
-  z-index: 1000;
+  align-items: flex-start; /* Alineación en la parte superior */
+  z-index: 1000; /* Asegura que el modal esté por encima de otros elementos */
+  padding-top: 20px; /* Espacio entre el top de la pantalla y el modal */
 }
 .modal-content {
-  width: 90%;
-  max-width: 800px;
-  max-height: 80%;
-  overflow-y: auto;
+  width: 90%; /* Ocupa el 90% del ancho disponible */
+  max-width: 1200px; /* Limita el ancho máximo */
+  max-height: 80%; /* Limita la altura máxima */
+  overflow-y: auto; /* Permite hacer scroll si el contenido excede la altura */
   background-color: white;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); /* Sombra para dar un efecto elevado */
   box-sizing: border-box;
 }
 </style>

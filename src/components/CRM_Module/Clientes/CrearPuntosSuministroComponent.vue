@@ -91,7 +91,7 @@ export default {
     },
     ShowModalPS: {
       type: Boolean,
-      required: true,
+      required: true, // Esto causará el error si no se pasa desde el padre
     },
     nuevoPunto: {
       type: Object,
@@ -147,5 +147,26 @@ export default {
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); /* Sombra para dar un efecto elevado */
   box-sizing: border-box;
+}
+.form-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.form-column {
+  flex: 1;
+  min-width: 200px;
+}
+.form-group {
+  margin-bottom: 15px;
+}
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+.full-width {
+  width: 100%;
 }
 </style>
