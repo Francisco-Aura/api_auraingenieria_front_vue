@@ -186,7 +186,7 @@
               direccion: '',
               poblacion: '',
               provincia: '',
-              codigo_postal: '',
+              codigoPostal : '',
               telefono_autorizado: '',
               email_autorizado: '',
               nombre_comercial: '',

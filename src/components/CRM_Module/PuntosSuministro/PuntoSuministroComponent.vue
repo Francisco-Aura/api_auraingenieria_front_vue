@@ -263,10 +263,10 @@ export default {
     },
 
     // Actualizar un punto de suministro
-    async actualizarPS() {
+    async actualizarPS(actualizadoPunto) {
       try {
         const payload = {
-          ...this.modificarPunto,
+          ...actualizadoPunto,
           propiedadContador: this.modificarPunto.propiedadContador ? 1 : 0,
           propiedadModem: this.modificarPunto.propiedadModem ? 1 : 0,
         };

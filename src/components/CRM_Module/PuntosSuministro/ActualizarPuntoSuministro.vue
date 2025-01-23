@@ -157,12 +157,21 @@ export default {
       puntoLocal: { ...this.modificarPunto }
     };
   },
+  watch: {
+    modificarPunto: {
+      immediate: true,
+      deep: true,
+      handler(newVal) {
+        this.puntoLocal = { ...newVal };
+      },
+    },
+},
   methods: {
     cerrarModal() {
       this.$emit('cerrar-modal');
     },
     actualizarPS() {
-      this.$emit('actualizar-punto-suministro', this.puntoLocal);
+      this.$emit('actualizar-punto-suministro', { ...this.puntoLocal });
     },
   },
 };
