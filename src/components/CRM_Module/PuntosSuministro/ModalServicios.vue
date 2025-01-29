@@ -16,12 +16,28 @@
           <h3>Crear Nuevo Servicio</h3>
           <form @submit.prevent="crearNuevoServicio">
             <div class="form-group">
+              <label for="clienteId">Cliente:</label>
+              <select id="clienteId" v-model="nuevoServicio.idCliente" required>
+                <option v-for="cliente in clientes" :key="cliente.id" :value="cliente.id">
+                  {{ cliente.nombre }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="puntoSuministroId">Punto de Suministro:</label>
+              <select id="puntoSuministroId" v-model="nuevoServicio.idPuntoSuministro" required>
+                <option v-for="punto in puntosSuministro" :key="punto.id" :value="punto.id">
+                  {{ punto.cups }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
               <label for="fechaInicioServicio">Fecha Inicio:</label>
-              <input type="date" id="fechaInicioServicio" v-model="nuevoServicio.fechaInicio" required />
+              <input type="date" id="fechaInicioServicio" v-model="nuevoServicio.fechaInicioServicio" required />
             </div>
             <div class="form-group">
               <label for="fechaFinServicio">Fecha Fin:</label>
-              <input type="date" id="fechaFinServicio" v-model="nuevoServicio.fechaFin" required />
+              <input type="date" id="fechaFinServicio" v-model="nuevoServicio.fechaFinServicio" />
             </div>
             <div class="form-group">
               <label for="descripcionServicio">Descripción:</label>
@@ -36,9 +52,11 @@
           <h3>Servicio Actual</h3>
           <div v-if="servicioActual">
             <p><strong>ID:</strong> {{ servicioActual.id }}</p>
+            <p><strong>Cliente:</strong> {{ servicioActual.cliente.nombre }}</p>
+            <p><strong>Punto de Suministro:</strong> {{ servicioActual.puntoSuministro.cups }}</p>
             <p><strong>Descripción:</strong> {{ servicioActual.descripcion }}</p>
-            <p><strong>Fecha Inicio:</strong> {{ servicioActual.fechaInicio }}</p>
-            <p><strong>Fecha Fin:</strong> {{ servicioActual.fechaFin }}</p>
+            <p><strong>Fecha Inicio:</strong> {{ servicioActual.fechaInicioServicio }}</p>
+            <p><strong>Fecha Fin:</strong> {{ servicioActual.fechaFinServicio }}</p>
           </div>
           <div v-else>
             <p>No hay servicios actuales.</p>
@@ -50,7 +68,7 @@
           <ul>
             <li v-for="servicio in serviciosHistoricos" :key="servicio.id">
               <strong>ID:</strong> {{ servicio.id }} - 
-              <strong>Fecha Fin:</strong> {{ servicio.fechaFin }}
+              <strong>Fecha Fin:</strong> {{ servicio.fechaFinServicio }}
               <button @click="verDetalleServicio(servicio)">Ver Detalle</button>
             </li>
           </ul>
@@ -61,15 +79,13 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
   name: "ModalServicios",
   props: {
     visible: {
       type: Boolean,
-      required: true,
-    },
-    servicios: {
-      type: Array,
       required: true,
     },
     servicioActual: {
@@ -79,29 +95,47 @@ export default {
     serviciosHistoricos: {
       type: Array,
       required: true,
-    }
+    },
+    clientes: {
+      type: Array,
+      required: true,
+    },
+    puntosSuministro: {
+      type: Array,
+      required: true,
+    },
   },
   data() {
     return {
       pestañaActiva: "actual",
       nuevoServicio: {
-        fechaInicio: "",
-        fechaFin: "",
+        idCliente: "",
+        idPuntoSuministro: "",
+        fechaInicioServicio: "",
+        fechaFinServicio: "",
         descripcion: "",
-      }
+      },
     };
   },
   methods: {
     cerrarModal() {
       this.$emit("cerrar-modal");
     },
-    crearNuevoServicio() {
-      this.$emit("crear-servicio", this.nuevoServicio);
+    async crearNuevoServicio() {
+      try {
+        const respuesta = await axios.post("/api/servicios", this.nuevoServicio);
+        alert("Servicio creado con éxito: " + respuesta.data.id);
+        this.$emit("servicio-creado", respuesta.data);
+        this.cerrarModal();
+      } catch (error) {
+        console.error("Error al crear el servicio", error);
+        alert("Ocurrió un error al crear el servicio.");
+      }
     },
     verDetalleServicio(servicio) {
       alert(`Detalles del servicio ID: ${servicio.id}\n${JSON.stringify(servicio, null, 2)}`);
-    }
-  }
+    },
+  },
 };
 </script>
 

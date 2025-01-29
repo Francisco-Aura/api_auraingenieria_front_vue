@@ -19,13 +19,28 @@
           <!-- Botón para enviar el formulario -->
           <button type="submit">Acceder</button>
 
-          <!-- Enlace para la recuperación de contraseña (aún no funcional) -->
-          <a href="#">¿Olvidaste tu contraseña?</a>
+          <!-- Enlace para la recuperación de contraseña -->
+          <a href="#" @click.prevent="showRecoverPasswordMessage">¿Olvidaste tu contraseña?</a>
         </div>
       </form>
     </div>
   </div>
+  <!--
+  ICONOS PARA TABLAS
+      Editar	✏️	fas fa-edit
+      Eliminar	🗑️	fas fa-trash
+      Ver detalles	🔍	fas fa-eye
+      Guardar	💾	fas fa-save
+      Cancelar	❌	fas fa-times
+      Agregar nuevo	➕	fas fa-plus
+      Refrescar	🔄	fas fa-sync-alt
+      Descargar	⬇️	fas fa-download
+      Subir archivo	📤	fas fa-upload
+      Filtrar	🔎	fas fa-filter
+      Imprimir	🖨️	fas fa-print
+  -->
 </template>
+
 <script>
 import axios from 'axios'; // Importa Axios para realizar solicitudes HTTP
 
@@ -41,10 +56,12 @@ export default {
     // Método para manejar el envío del formulario
     async submitForm() {
       try {
-        // Realiza una solicitud POST a la API de autenticación
-        const response = await axios.post(`${process.env.VUE_APP_API_URL}/auth/login`, {
-          user: this.username,  // Envía el nombre de usuario en el cuerpo de la solicitud
-          password: this.password // Envía la contraseña en el cuerpo de la solicitud
+        // Realiza una solicitud GET a la API de autenticación
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/usuarios/login`, {
+          params: {
+            user: this.username,  // Envía el nombre de usuario como parámetro
+            pass: this.password // Envía la contraseña como parámetro
+          }
         });
 
         // Verifica si la respuesta fue exitosa
@@ -60,10 +77,16 @@ export default {
         console.error('Error en la solicitud:', error);
         alert('Usuario o contraseña incorrectos');
       }
+    },
+
+    // Método para mostrar un mensaje al hacer clic en "¿Olvidaste tu contraseña?"
+    showRecoverPasswordMessage() {
+      alert('La funcionalidad de recuperación de contraseña aún no está implementada.');
     }
   }
 };
 </script>
+
 <style scoped>
 /* Enlace de login */
 a {
@@ -105,5 +128,26 @@ input {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   font-size: 16px;
   transition: box-shadow 0.3s ease;
+}
+
+input:focus {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+button {
+  padding: 0.4rem 0.8rem;
+  margin: 0.2rem;
+  cursor: pointer;
+  border: none;
+  font-size: 1rem;
+  color: #f5c600;
+  background-color: #333;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+button:hover {
+  background-color: #f5c600;
+  color: #333;
 }
 </style>

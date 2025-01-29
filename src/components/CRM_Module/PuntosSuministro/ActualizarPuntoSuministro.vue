@@ -2,7 +2,7 @@
   <div class="modal-overlay">
     <div class="modal-content">
       <h1>Actualizar Punto de Suministro</h1>
-      <h2>{{ puntoLocal.nombreCliente || 'Desconocido' }}</h2>
+      <h2>{{ puntoLocal.cliente.nombre || 'Desconocido' }}</h2>
 
       <!-- Formulario para actualizar el punto de suministro -->
       <form @submit.prevent="actualizarPS">

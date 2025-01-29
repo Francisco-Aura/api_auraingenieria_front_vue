@@ -45,15 +45,9 @@
           <td>{{ suministro.cupsgas }}</td>
           <!-- Botones para realizar acciones -->
           <td>
-            <button class="btn btn-modPS" @click="abrirFormularioPSActualizar(suministro)">
-              Modificar PS
-            </button>
-            <button class="btn btn-crearContrato" @click="abrirModalContratos(suministro.id)">
-              Contrato
-            </button>
-            <button class="btn btn-crearContrato" @click="abrirModalServicios(suministro.id)">
-              Servicio
-            </button>
+            <button @click="abrirFormularioPSActualizar(suministro)">Modificar PS</button>
+            <button @click="abrirModalContratos(suministro.id)">Contrato</button>
+            <button @click="abrirModalServicios(suministro.id)">Servicio</button>
           </td>
         </tr>
       </tbody>
@@ -70,16 +64,24 @@
     <!-- Modal de Contratos -->
     <ModalContratos
       :visible="mostrarModalContratos"
+      :cliente="modalCliente"
+      :puntoSuministro="modalPuntoSuministro"
       :contratos="contratos"
+      :comercializadoras="comercializadoras"
+      :tarifasGas="tarifasGas"
+      :tarifasLuz="tarifasLuz"
       :contratoActual="contratoActual"
       :contratosHistoricos="contratosHistoricos"
+      @actualizar-contrato="actualizarContrato"
       @cerrar-modal="cerrarModalContratos"
       @crear-contrato="crearNuevoContrato"
     />
 
     <!-- Modal de Servicios -->
     <ModalServicios
-      :visible="mostrarModalServicios"
+      :visible="mostrarModalServicios" 
+      :cliente="modalCliente"
+      :puntoSuministro="modalPuntoSuministro"
       :servicios="servicios"
       :servicioActual="servicioActual"
       :serviciosHistoricos="serviciosHistoricos"
@@ -90,13 +92,14 @@
 </template>
 
 <script>
+// Importamos los componentes y librerías necesarias
 import ModalActualizarPuntoSuministro from './ActualizarPuntoSuministro.vue';
 import ModalContratos from './ModalContratos.vue';
 import ModalServicios from './ModalServicios.vue';
-import axios from "axios";
+import axios from "axios"; // Librería para hacer peticiones HTTP
 
 export default {
-  name: "PuntosSuministro",
+  name: "PuntosSuministro", // Nombre del componente
   components: {
     ModalActualizarPuntoSuministro,
     ModalContratos,
@@ -136,6 +139,9 @@ export default {
         fechaFin: "",
         detalles: "",
       },
+      comercializadoras: [],
+      tarifasGas: [],
+      tarifasLuz: [],
 
       // Datos SERVICIO
       mostrarModalServicios: false, // Control de visibilidad del modal de servicios
@@ -145,12 +151,13 @@ export default {
         fechaFinServicio: "",
         descripcion: "",
       },
+      modalCliente: null, // Cliente actual para el modal
+      modalPuntoSuministro: null, // Punto de suministro actual para el modal
     };
   },
 
-  // Computed properties para filtrar y clasificar datos
   computed: {
-    // Filtrar puntos de suministro según el término de búsqueda
+    // Filtra los puntos de suministro según el término ingresado en "filter"
     filteredPuntosSuministro() {
       return this.puntosSuministro.filter((suministro) =>
         Object.values(suministro).some((value) =>
@@ -159,7 +166,7 @@ export default {
       );
     },
 
-    // Obtener el contrato actual (vigente)
+    // Obtiene el contrato actual (aquel cuya fecha de finalización es posterior a hoy)
     contratoActual() {
       const ahora = new Date();
       return this.contratos.find(
@@ -167,7 +174,7 @@ export default {
       );
     },
 
-    // Obtener contratos históricos (finalizados)
+    // Obtiene los contratos históricos (los que ya finalizaron)
     contratosHistoricos() {
       const ahora = new Date();
       return this.contratos.filter(
@@ -175,7 +182,7 @@ export default {
       );
     },
 
-    // Obtener el servicio actual (vigente)
+    // Obtiene el servicio actual (vigente)
     servicioActual() {
       const ahora = new Date();
       return this.servicios.find(
@@ -183,7 +190,7 @@ export default {
       );
     },
 
-    // Obtener servicios históricos (finalizados)
+    // Obtiene los servicios históricos (finalizados)
     serviciosHistoricos() {
       const ahora = new Date();
       return this.servicios.filter(
@@ -192,180 +199,159 @@ export default {
     },
   },
 
-  // Cargar datos al crear el componente
+  // Se ejecuta cuando el componente es creado para cargar datos iniciales
   created() {
     this.fetchPuntosSuministro();
   },
 
   methods: {
-    // Obtener todos los puntos de suministro del backend
+    // Carga todos los puntos de suministro desde la API
     async fetchPuntosSuministro() {
       try {
-        console.log("Fetching all puntos de suministro");
-        const response = await axios.get(
-          `${process.env.VUE_APP_API_URL}/api/puntos-suministro/all`
-        );
-        console.log("Fetched data:", response.data);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/all`);
         this.puntosSuministro = response.data;
       } catch (error) {
         console.error("Error al cargar los puntos de suministro:", error);
       }
     },
 
-    // Abrir formulario para actualizar un punto de suministro
+    // Abre el formulario de actualización de un punto de suministro
     async abrirFormularioPSActualizar(ps) {
-      if (!ps.id) {
-        console.error("El punto de suministro seleccionado no tiene un ID válido.");
-        alert("No se puede cargar el punto de suministro seleccionado.");
-        return;
-      }
-
+      if (!ps.id) return alert("Punto de suministro no válido");
       try {
-        console.log("Fetching punto de suministro with ID:", ps.id);
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
-        console.log("Fetched data:", response.data);
-        const punto = response.data;
-
-        // Mapear datos al formato del formulario
-        this.modificarPunto = {
-          ...punto,
-          propiedadContador: punto.propiedadContador ? 1 : 0,
-          propiedadModem: punto.propiedadModem ? 1 : 0,
-        };
+        this.modificarPunto = { ...response.data };
         this.formularioVisible = true;
       } catch (error) {
         console.error("Error al obtener el punto de suministro:", error);
-        alert("No se pudo cargar la información del punto de suministro.");
       }
     },
 
-    // Cerrar formulario de actualización y reiniciar datos
+    // Cierra el formulario de actualización
     cerrarModal() {
       this.formularioVisible = false;
-      this.modificarPunto = {
-        id: null,
-        direccion: "",
-        codigoPostal: "",
-        poblacion: "",
-        provincia: "",
-        cupsluz: "",
-        cupsgas: "",
-        contador: "",
-        propiedadContador: 0,
-        modem: "",
-        propiedadModem: 0,
-        observaciones: "",
-        fechaInstalacion: "",
-        fechaBaja: null,
-        idCliente: null,
-        nombreCliente: "",
-      };
     },
 
-    // Actualizar un punto de suministro
+    // Actualiza un punto de suministro en la API
     async actualizarPS(actualizadoPunto) {
       try {
-        const payload = {
-          ...actualizadoPunto,
-          propiedadContador: this.modificarPunto.propiedadContador ? 1 : 0,
-          propiedadModem: this.modificarPunto.propiedadModem ? 1 : 0,
-        };
-        console.log("Updating punto de suministro with payload:", payload);
-
-        const response = await axios.put(
-          `${process.env.VUE_APP_API_URL}/api/puntos-suministro/${this.modificarPunto.id}`,
-          payload
-        );
-        console.log("Update response:", response.data);
-
-        if (response.status === 200) {
-          alert("Punto de suministro actualizado con éxito.");
-          this.cerrarModal();
-          this.fetchPuntosSuministro();
-        }
+        await axios.post(`${process.env.VUE_APP_API_URL}/api/puntos-suministro`, actualizadoPunto);
+        this.fetchPuntosSuministro();
       } catch (error) {
         console.error("Error al actualizar el punto de suministro:", error);
-        alert("No se pudo actualizar el punto de suministro.");
       }
     },
 
-    // Abrir modal de contratos
+    // Abre el modal de contratos con los datos del punto de suministro seleccionado
     async abrirModalContratos(idPuntoSuministro) {
       try {
-        console.log("Fetching contratos for punto de suministro with ID:", idPuntoSuministro);
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${idPuntoSuministro}`);
-        console.log("Fetched data:", response.data);
         this.contratos = response.data;
         this.mostrarModalContratos = true;
       } catch (error) {
-        console.error("Error al cargar los contratos:", error);
-        alert("No se pudieron cargar los contratos.");
+        console.error("Error al cargar contratos:", error);
       }
     },
 
-    // Cerrar modal de contratos
+    // Cierra el modal de contratos
     cerrarModalContratos() {
       this.mostrarModalContratos = false;
-      this.contratos = [];
-      this.pestañaActivaContratos = "actual";
-    },
-
-    // Mostrar detalles de un contrato
-    verDetalle(contrato) {
-      alert(`Detalles del contrato ID: ${contrato.id}\n${JSON.stringify(contrato, null, 2)}`);
-    },
-
-    // Abrir modal de servicios
-    async abrirModalServicios(idPuntoSuministro) {
-      try {
-        console.log("Fetching servicios for punto de suministro with ID:", idPuntoSuministro);
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios/${idPuntoSuministro}`);
-        console.log("Fetched data:", response.data);
-        this.servicios = response.data;
-        this.mostrarModalServicios = true;
-      } catch (error) {
-        console.error("Error al cargar los servicios:", error);
-        alert("No se pudieron cargar los servicios.");
-      }
-    },
-
-    // Cerrar modal de servicios
-    cerrarModalServicios() {
-      this.mostrarModalServicios = false;
-      this.servicios = [];
-      this.pestañaActivaServicios = "actual";
-    },
-
-    // Mostrar detalles de un servicio
-    verDetalleServicio(servicio) {
-      alert(`Detalles del servicio ID: ${servicio.id}\n${JSON.stringify(servicio, null, 2)}`);
-    },
-
-    // Crear un nuevo contrato
-    async crearNuevoContrato() {
-      try {
-        await axios.post(`${process.env.VUE_APP_API_URL}/api/contratos`,this.nuevoContrato);
-        alert("Contrato creado con éxito.");
-        this.nuevoContrato = { fechaInicio: "", fechaFin: "", detalles: "" };
-        this.fetchPuntosSuministro();
-      } catch (error) {
-        console.error("Error al crear el contrato:", error);
-        alert("No se pudo crear el contrato.");
-      }
-    },
-
-    // Crear un nuevo servicio
-    async crearNuevoServicio() {
-      try {
-        await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios`,this.nuevoServicio);
-        alert("Servicio creado con éxito.");
-        this.nuevoServicio = { fechaInicioServicio: "", fechaFinServicio: "", descripcion: "" };
-        this.fetchPuntosSuministro();
-      } catch (error) {
-        console.error("Error al crear el servicio:", error);
-        alert("No se pudo crear el servicio.");
-      }
     },
   },
+
+  // Se ejecuta cuando el componente es montado para cargar datos necesarios
+  async mounted() {
+    try {
+      const [comercializadoras, tarifasGas, tarifasLuz] = await Promise.all([
+        axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/tarifasLuz`),
+      ]);
+      this.comercializadoras = comercializadoras.data;
+      this.tarifasGas = tarifasGas.data;
+      this.tarifasLuz = tarifasLuz.data;
+    } catch (error) {
+      console.error("Error al cargar datos iniciales:", error);
+    }
+  }
 };
 </script>
+
+
+<style scoped>
+/* =============================== */
+/*        Estilos de Botones        */
+/* =============================== */
+.btn {
+  padding: 0.4rem 0.8rem;
+  margin: 0.2rem;
+  cursor: pointer;
+  border: none;
+  font-size: 1rem;
+  color: #f5c600;
+  background-color: #333;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Estilo de los botones al pasar el ratón */
+.btn:hover {
+  background-color: #f5c600;
+  color: #333;
+}
+
+/* Botones con estilo "ojo" */
+.btn-ojo {
+  background-color: transparent;
+  border: none;
+  font-size: 1.2rem;
+  color: #f5c600;
+  cursor: pointer;
+}
+/* Efecto hover para los botones "ojo" */
+.btn-ojo:hover {
+  color: #333;
+  background-color: transparent;
+}
+
+/*TABLAS*/
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th, table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+table th {
+  background-color: #333;
+  color: #f5c600;
+}
+
+table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+table tr:hover {
+  background-color: #eaeaea;
+}
+/*///////////////////////////////////*/
+label {
+  margin-top: 1rem;
+  display: block;
+  font-weight: bold;
+}
+
+input[type="text"] {
+  font-size: 0.9rem;
+}
+
+input:focus {
+  outline: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+</style>
+
+ 

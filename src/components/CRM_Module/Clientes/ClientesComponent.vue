@@ -22,7 +22,7 @@
           <th>CIF</th>
           <th>Dirección Fiscal</th>
           <th>PS</th> <!-- Número de puntos de suministro -->
-          <th>Empleado</th>
+          <th>Usuario</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -33,9 +33,9 @@
           <td>{{ cliente.direccionFiscal }}</td>
           <td>
             {{ cliente.numeroPuntosSuministro }}
-            <button class="btn btn-ojo" @click="verPuntosSuministro(cliente)">👁️</button>
+            <button class="btn btn-ojo" @click="verPuntosSuministro(cliente)" title="Ver puntos de suministro">👁️</button>
           </td>
-          <td>{{ cliente.empleadoAsignado }}</td>
+          <td>{{ cliente.usuarioAsignado }}</td>
           <td>
             <button class="btn btn-consultar" @click="cargarDatosCliente(cliente.idCliente)">
               Consultar Cliente
@@ -62,7 +62,7 @@
       :modoActualizar="modoActualizar"
       :nuevoCliente="clienteSeleccionado"
       :sectores="sectores"
-      :empleados="empleados"
+      :usuarios="usuarios"
       :subtipologias="subtipologias"
       @cancelar-formulario="formularioVisible = false"
       @crear-cliente="crearCliente"
@@ -110,7 +110,7 @@ export default {
       modoActualizar: false, // Indica si el formulario está en modo actualizar
       nuevoCliente: this.resetFormularioCliente(), // Datos del nuevo cliente o cliente a actualizar
       sectores: [], // Opciones de sectores
-      empleados: [], // Opciones de empleados
+      usuarios: [], // Opciones de usuarios
       subtipologias: [], // Opciones de subtipologías
       isSubmitting: false, // Evita múltiples envíos del formulario
       showModalPS: false, // Estado del modal de puntos de suministro
@@ -147,7 +147,7 @@ export default {
         dniAutorizado: '',
         telefonoAutorizado: '',
         emailAutorizado: '',
-        idEmpleado: null,
+        idUsuario: null,
         actividad: '',
         codigoSector: null,
         codigoSubtipologia: null,
@@ -187,19 +187,7 @@ export default {
         cupsluz: '',
         cupsgas: ''
       };
-    },
-    // Carga la lista de clientes desde el backend
-    async fetchClientes() {
-      try {
-        this.loading = true;
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
-        this.clientes = response.data;
-      } catch (error) {
-        alert("Error al cargar clientes.");
-      } finally {
-        this.loading = false;
-      }
-    },
+    },    
     // Muestra el modal de puntos de suministro para el cliente seleccionado
     verPuntosSuministro(cliente) {
       try {
@@ -245,7 +233,7 @@ export default {
     // Carga datos para actualizar un cliente
     async cargarDatosCliente(idCliente) {
       try {
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cliente`,{ params: { idCliente } });
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`);
         this.clienteSeleccionado = response.data;
         this.formularioVisible = true;
         this.modoActualizar = true;
@@ -269,12 +257,25 @@ export default {
         console.error("Error al actualizar cliente:", error);
       }
     },
+    // Carga la lista de clientes desde el backend
+    async fetchClientes() {
+      try {
+        this.loading = true;
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
+        this.clientes = response.data;
+        console.log("lista de clientes recibidos:", this.clientes);
+      } catch (error) {
+        alert("Error al cargar clientes.");
+      } finally {
+        this.loading = false;
+      }
+    },
     // Lógica para crear cliente
     async crearCliente(clienteRecibido) {
       try {
         if (this.modoActualizar) return; // Evita llamadas erróneas en modo actualización
         console.log("Cliente recibido para crear:", clienteRecibido); // Verifica que los datos sean correctos
-        await axios.post(`${process.env.VUE_APP_API_URL}/api/clientes/cliente`, clienteRecibido);
+        await axios.post(`${process.env.VUE_APP_API_URL}/api/clientes`, clienteRecibido);
         alert("Cliente creado con éxito.");
         this.fetchClientes(); // Actualiza la lista
         this.cancelarFormulario(); // Limpia y cierra el formulario
@@ -299,8 +300,9 @@ export default {
     async crearPuntoSuministro() {
       try {
         // Adaptamos los datos para que coincidan con el formato que requiere el backend
+        // Adaptamos los datos para que coincidan con el formato que requiere el backend
         const datosAdaptados = {
-          direccion: this.nuevoPunto.direccion,          
+          direccion: this.nuevoPunto.direccion,
           codigoPostal: this.nuevoPunto.codigoPostal,
           poblacion: this.nuevoPunto.poblacion,
           provincia: this.nuevoPunto.provincia,
@@ -310,15 +312,15 @@ export default {
           modem: this.nuevoPunto.modem,
           observaciones: this.nuevoPunto.observaciones,
           fechaInstalacion: this.nuevoPunto.fechaInstalacion,
-          idCliente: this.nuevoPunto.idCliente, // Asegúrate de que idCliente esté presente
-          nombreCliente: this.nuevoPunto.nombreCliente, // Asegúrate de que nombreCliente esté presente
-          cupsluz: this.nuevoPunto.cupsluz,
-          cupsgas: this.nuevoPunto.cupsgas,
+          cliente: { id: this.nuevoPunto.idCliente }, // Aquí adaptamos el formato para que coincida con el backend
+          clienteNombre: this.nuevoPunto.nombreCliente,
+          CUPSluz: this.nuevoPunto.cupsluz, // Respeta mayúsculas/minúsculas del modelo
+          CUPSgas: this.nuevoPunto.cupsgas,
         };
         console.log("Datos enviados al backend (JSON):", JSON.stringify(datosAdaptados, null, 2));
 
         await axios.post(
-          `${process.env.VUE_APP_API_URL}/api/puntos-suministro/save`,
+          `${process.env.VUE_APP_API_URL}/api/puntos-suministro`,
           datosAdaptados
         );
         alert("Punto de suministro creado.");
@@ -327,28 +329,101 @@ export default {
       } catch (error) {
         console.error("Error al crear punto de suministro:", error);
       }
-    },
-    // Carga las opciones de los selects
-    async fetchSelectData() {
-      try {
-        const [empleados, sectores, subtipologias] = await Promise.all([
-          axios.get(`${process.env.VUE_APP_API_URL}/api/empleados`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/sectores`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/subtipologias`),
-        ]);
-        this.empleados = empleados.data;
-        this.sectores = sectores.data;
-        this.subtipologias = subtipologias.data;
-      } catch (error) {
-        console.error("Error al cargar datos de selects:", error);
-      }
-    },
+    },    
   },
-  mounted() {
-    this.fetchClientes();
-    this.fetchSelectData();
-  },
+  async mounted() {
+    try {
+      const [clientes, usuarios, sectores, subtipologias] = await Promise.all([
+        axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/usuarios`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/sectores`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/subtipologias`),
+      ]);
+      this.clientes = clientes.data;
+      this.usuarios = usuarios.data;
+      this.sectores = sectores.data;
+      this.subtipologias = subtipologias.data;
+    } catch (error) {
+      console.error("Error al cargar datos iniciales:", error);
+    }
+  }
 };
 </script>
+
+<style scoped>
+/* =============================== */
+/*        Estilos de Botones        */
+/* =============================== */
+.btn {
+  padding: 0.4rem 0.8rem;
+  margin: 0.2rem;
+  cursor: pointer;
+  border: none;
+  font-size: 1rem;
+  color: #f5c600;
+  background-color: #333;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Estilo de los botones al pasar el ratón */
+.btn:hover {
+  background-color: #f5c600;
+  color: #333;
+}
+
+/* Botones con estilo "ojo" */
+.btn-ojo {
+  background-color: transparent;
+  border: none;
+  font-size: 1.2rem;
+  color: #f5c600;
+  cursor: pointer;
+}
+/* Efecto hover para los botones "ojo" */
+.btn-ojo:hover {
+  color: #333;
+  background-color: transparent;
+}
+
+/*TABLAS*/
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th, table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+table th {
+  background-color: #333;
+  color: #f5c600;
+}
+
+table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+table tr:hover {
+  background-color: #eaeaea;
+}
+/*///////////////////////////////////*/
+label {
+  margin-top: 1rem;
+  display: block;
+  font-weight: bold;
+}
+
+input[type="text"] {
+  font-size: 0.9rem;
+}
+
+input:focus {
+  outline: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+</style>
 
  
