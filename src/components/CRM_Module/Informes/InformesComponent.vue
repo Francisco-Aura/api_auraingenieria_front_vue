@@ -11,6 +11,7 @@
   <script>
   import axios from 'axios';
   import { jsPDF } from "jspdf";
+  import autoTable from "jspdf-autotable";
   
   export default {
     methods: {
@@ -23,20 +24,36 @@
         }
       },
       crearPDF(datos, tipo) {
-        const doc = new jsPDF();
-        doc.text(`Informe: ${tipo.replace(/-/g, ' ')}`, 10, 10);
+        // Crear documento en horizontal (landscape) y tamaño A4
+        const doc = new jsPDF({ orientation: "landscape", format: "a1" });
+
+        // Título del informe
+        doc.setFontSize(16);
+        doc.text(`Informe: ${tipo.replace(/-/g, ' ')}`, 14, 10);
         
-        let y = 20;
-        datos.forEach((item, index) => {
-          doc.text(`${index + 1}. ${JSON.stringify(item)}`, 10, y);
-          y += 10;
+        // Extraer claves para los encabezados
+        const encabezados = Object.keys(datos[0]).map(key => key.toUpperCase());
+
+        // Convertir los datos en formato tabla
+        const filas = datos.map(item => Object.values(item));
+
+        // Generar tabla con ajuste automático de ancho
+        autoTable(doc, {
+          head: [encabezados],
+          body: filas,
+          startY: 20,
+          theme: "striped",
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [44, 62, 80], textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [240, 240, 240] },
+          columnStyles: { 0: { cellWidth: 'auto' } }, // Ajusta automáticamente el ancho de las columnas
+          margin: { top: 15, left: 10, right: 10 }, // Márgenes ajustados
         });
-        
-        const pdfBlob = doc.output("blob");
-        const url = URL.createObjectURL(pdfBlob);
-        window.open(url, "_blank");
+
+        // Descargar el PDF o abrirlo en una nueva pestaña
+        doc.save(`${tipo}.pdf`);
       }
-    }
+    }    
   };
   </script>
   
