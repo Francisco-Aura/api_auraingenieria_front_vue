@@ -88,18 +88,6 @@ export default {
 </script>
 
 <style scoped>
-/* Enlace de login */
-a {
-  color: #333;
-  text-decoration: none;
-  font-size: 14px;
-  transition: color 0.3s ease;
-}
-
-a:hover {
-  color: #f0c040;
-}
-
 .login-wrapper {
   display: flex;
   justify-content: center;
@@ -116,11 +104,6 @@ a:hover {
   text-align: center;
 }
 
-h2 {
-  color: #333;
-  margin-bottom: 30px;
-}
-
 input {
   padding: 10px;
   margin-bottom: 20px;
@@ -132,22 +115,5 @@ input {
 
 input:focus {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  padding: 0.4rem 0.8rem;
-  margin: 0.2rem;
-  cursor: pointer;
-  border: none;
-  font-size: 1rem;
-  color: #f5c600;
-  background-color: #333;
-  border-radius: 4px;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-button:hover {
-  background-color: #f5c600;
-  color: #333;
 }
 </style>

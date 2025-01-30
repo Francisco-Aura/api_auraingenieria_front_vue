@@ -178,29 +178,8 @@ export default {
 </script>
 
 <style scoped>
-
 .modal-overlay {
-  position: fixed; /* Fijar en la pantalla */
-  top: 0;
-  left: 12.5%;
   width: 90vw;
   height: 125vh;
-  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro translúcido */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000; /* Asegurar que esté por encima de todo */
 }
-
-.modal-content {
-  min-width: 100%;
-  min-height: 100%;  
-  background: rgb(219, 219, 219);
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 80vw; /* Para que no sea demasiado grande en pantallas grandes */
-  max-height: 80vh; /* Limitar altura para evitar que sobresalga */
-  overflow-y: auto; /* Permitir scroll si el contenido es muy grande */
-}
-
 </style>

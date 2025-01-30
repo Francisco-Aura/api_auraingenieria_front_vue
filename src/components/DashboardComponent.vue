@@ -56,9 +56,6 @@ export default {
 </script>
 
 <style scoped>
-  /* =============================== */
-  /*         Estilos del Dashboard    */
-  /* =============================== */
   .dashboard-container {
     display: flex;
     flex-direction: column;

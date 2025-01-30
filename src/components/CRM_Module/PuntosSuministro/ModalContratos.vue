@@ -434,82 +434,45 @@ export default {
 </script>
 
 <style scoped>
-
 .modal-overlay {
-  position: fixed; /* Fijar en la pantalla */
-  top: 0;
-  left: 12.5%;
   width: 90vw;
   height: 125vh;
-  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro translúcido */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000; /* Asegurar que esté por encima de todo */
 }
 
-.modal-content {
-  min-width: 100%;
-  min-height: 100%;  
-  background: rgb(219, 219, 219);
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 80vw; /* Para que no sea demasiado grande en pantallas grandes */
-  max-height: 80vh; /* Limitar altura para evitar que sobresalga */
-  overflow-y: auto; /* Permitir scroll si el contenido es muy grande */
-}
-
-.form-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-}
 .form-column {
   flex: 1;
 }
+
 .form-actions {
   margin-top: 20px;
   text-align: right;
 }
+
 .historical-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
   font-size: 14px;
 }
+
 .historical-table th,
 .historical-table td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
 }
+
 .historical-table th {
   background-color: #f4f4f4;
   font-weight: bold;
 }
+
 .historical-table tr:nth-child(even) {
   background-color: #f9f9f9;
 }
+
 .historical-table tr:hover {
   background-color: #f1f1f1;
-}
-
-button {
-  padding: 10px 20px;
-  margin-right: 10px;
-  border: none;
-  background-color: #333;
-  color: #f5c600;
-  border-radius: 5px;
-}
-
-button:hover {
-  background-color: #f5c600;
-  color: #333;
-}
-
-.btn-cancelar:hover {
-  background-color: #5a6268;
 }
 
 .tabs {
@@ -517,21 +480,18 @@ button:hover {
   justify-content: space-around;
   margin-bottom: 10px;
 }
+
 .tabs button {
   padding: 10px;
   border: 1px solid #070707;
   cursor: pointer;
   background-color: #808080;
 }
+
 .tabs button.active {
   background-color: #ddd;
   color: #f50000;
   font-weight: bold;
-}
-
-/* Botón cerrar dentro del modal */
-.modal-content {
-  position: relative; /* Asegúrate de que el modal sea un contenedor de posición */
 }
 
 .close-button {

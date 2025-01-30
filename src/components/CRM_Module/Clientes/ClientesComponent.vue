@@ -48,7 +48,6 @@
       </tbody>
     </table>
 
-    <Teleport to="body">
       <!-- Modal: Detalle de puntos de suministro -->
       <PuntosSuministroClienteComponent
         v-if="isModalPuntosOpen"
@@ -56,9 +55,7 @@
         :puntosSuministro="puntosSuministro"
         @cerrar-modal="cerrarModalPuntos"
       />
-    </Teleport>
 
-    <Teleport to="body">
       <!-- Modal: Crear o actualizar cliente -->
       <CreaActualizaClienteComponent
         :formularioVisible="formularioVisible"
@@ -71,10 +68,8 @@
         @crear-cliente="crearCliente"
         @actualizar-cliente="actualizarCliente"
       />
-    </Teleport>
-    
-    <Teleport to="body">
-      <!-- Modal: Crear punto de suministro, con teleport nos lo llevamos al DOM y sacamos del componente -->
+
+      <!-- Modal: Crear punto de suministro -->
       <CrearPuntosSuministroComponent
         v-if="showModalPS"
         :ShowModalPS="showModalPS"
@@ -83,9 +78,7 @@
         :nuevo-punto="nuevoPunto"
         @guardar-punto-suministro="crearPuntoSuministro"
         @cerrar-formulario="cerrarFormularioNuevoPuntoSuministro"
-      />
-    </Teleport>
-    
+      />    
   </div>
 </template>
 
@@ -361,27 +354,6 @@ export default {
 </script>
 
 <style scoped>
-/* =============================== */
-/*        Estilos de Botones        */
-/* =============================== */
-.btn {
-  padding: 0.4rem 0.8rem;
-  margin: 0.2rem;
-  cursor: pointer;
-  border: none;
-  font-size: 1rem;
-  color: #f5c600;
-  background-color: #333;
-  border-radius: 4px;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-/* Estilo de los botones al pasar el ratón */
-.btn:hover {
-  background-color: #f5c600;
-  color: #333;
-}
-
 /* Botones con estilo "ojo" */
 .btn-ojo {
   background-color: transparent;
@@ -394,45 +366,6 @@ export default {
 .btn-ojo:hover {
   color: #333;
   background-color: transparent;
-}
-
-/*TABLAS*/
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-table th, table td {
-  padding: 0.5rem;
-  border-bottom: 1px solid #ddd;
-}
-
-table th {
-  background-color: #333;
-  color: #f5c600;
-}
-
-table tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-table tr:hover {
-  background-color: #eaeaea;
-}
-/*///////////////////////////////////*/
-label {
-  margin-top: 1rem;
-  display: block;
-  font-weight: bold;
-}
-
-input[type="text"] {
-  font-size: 0.9rem;
-}
-
-input:focus {
-  outline: none;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 </style>
 
