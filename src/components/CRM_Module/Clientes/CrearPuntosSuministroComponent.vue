@@ -1,10 +1,7 @@
 <template>
   <div v-if="ShowModalPS" class="modal-overlay">
     <div class="modal-content">
-      <h1>Nuevo Punto de Suministro</h1>
-      <br />
-      <h2>{{ cliente?.nombre || 'Desconocido' }}</h2>
-
+      <h2>Nuevo Punto de Suministro -  {{ cliente?.nombre || 'Desconocido' }}</h2>          
       <form @submit.prevent="guardarPuntoSuministro">
         <div class="form-grid">
           <!-- Primera Columna del formulario -->
@@ -188,29 +185,29 @@ export default {
 </script>
 
 <style scoped>
+
 .modal-overlay {
-  position: fixed; /* Posiciona el elemento en relación a la ventana del navegador */
-  top: 0; /* Alinea con la parte superior de la página */
-  left: 0; /* Alinea con la parte izquierda de la página */
-  width: 100%; /* Ocupa todo el ancho de la página */
-  height: 100%; /* Ocupa toda la altura de la página */
-  background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
-  display: flex; /* Utiliza Flexbox para la disposición del contenido */
-  justify-content: center; /* Centra horizontalmente el contenido */
-  align-items: flex-start; /* Alinea el contenido en la parte superior */
-  z-index: 1000; /* Asegura que el modal esté por encima de otros elementos */
-  padding-top: 20px; /* Espacio entre la parte superior de la pantalla y el modal */
+  position: fixed; /* Fijar en la pantalla */
+  top: 0;
+  left: 12.5%;
+  width: 90vw;
+  height: 125vh;
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro translúcido */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Asegurar que esté por encima de todo */
 }
+
 .modal-content {
-  width: 90%; /* Ocupa el 90% del ancho disponible */
-  max-width: 1200px; /* Limita el ancho máximo */
-  max-height: 80%; /* Limita la altura máxima */
-  overflow-y: auto; /* Permite desplazamiento vertical si el contenido excede la altura */
-  background-color: white; /* Fondo blanco */
-  padding: 20px; /* Espaciado interno */
-  border-radius: 10px; /* Bordes redondeados */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25); /* Sombra para dar un efecto elevado */
-  box-sizing: border-box; /* Incluye padding y border en el cálculo del ancho y alto */
+  min-width: 100%;
+  min-height: 100%;  
+  background: rgb(219, 219, 219);
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 80vw; /* Para que no sea demasiado grande en pantallas grandes */
+  max-height: 80vh; /* Limitar altura para evitar que sobresalga */
+  overflow-y: auto; /* Permitir scroll si el contenido es muy grande */
 }
 
 .form-column {

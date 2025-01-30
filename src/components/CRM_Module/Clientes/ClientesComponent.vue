@@ -48,37 +48,43 @@
       </tbody>
     </table>
 
-    <!-- Modal: Detalle de puntos de suministro -->
-    <PuntosSuministroClienteComponent
-      v-if="isModalPuntosOpen"
-      :cliente="clienteSeleccionado"
-      :puntosSuministro="puntosSuministro"
-      @cerrar-modal="cerrarModalPuntos"
-    />
+    <Teleport to="body">
+      <!-- Modal: Detalle de puntos de suministro -->
+      <PuntosSuministroClienteComponent
+        v-if="isModalPuntosOpen"
+        :cliente="clienteSeleccionado"
+        :puntosSuministro="puntosSuministro"
+        @cerrar-modal="cerrarModalPuntos"
+      />
+    </Teleport>
 
-    <!-- Modal: Crear o actualizar cliente -->
-    <CreaActualizaClienteComponent
-      :formularioVisible="formularioVisible"
-      :modoActualizar="modoActualizar"
-      :nuevoCliente="clienteSeleccionado"
-      :sectores="sectores"
-      :usuarios="usuarios"
-      :subtipologias="subtipologias"
-      @cancelar-formulario="formularioVisible = false"
-      @crear-cliente="crearCliente"
-      @actualizar-cliente="actualizarCliente"
-    />
-
-    <!-- Modal: Crear punto de suministro -->
-    <CrearPuntosSuministroComponent
-      v-if="showModalPS"
-      :ShowModalPS="showModalPS"
-      :formulario-visible="showModalPS"
-      :cliente="clienteSeleccionado"
-      :nuevo-punto="nuevoPunto"
-      @guardar-punto-suministro="crearPuntoSuministro"
-      @cerrar-formulario="cerrarFormularioNuevoPuntoSuministro"
-    />
+    <Teleport to="body">
+      <!-- Modal: Crear o actualizar cliente -->
+      <CreaActualizaClienteComponent
+        :formularioVisible="formularioVisible"
+        :modoActualizar="modoActualizar"
+        :nuevoCliente="clienteSeleccionado"
+        :sectores="sectores"
+        :usuarios="usuarios"
+        :subtipologias="subtipologias"
+        @cancelar-formulario="formularioVisible = false"
+        @crear-cliente="crearCliente"
+        @actualizar-cliente="actualizarCliente"
+      />
+    </Teleport>
+    
+    <Teleport to="body">
+      <!-- Modal: Crear punto de suministro, con teleport nos lo llevamos al DOM y sacamos del componente -->
+      <CrearPuntosSuministroComponent
+        v-if="showModalPS"
+        :ShowModalPS="showModalPS"
+        :formulario-visible="showModalPS"
+        :cliente="clienteSeleccionado"
+        :nuevo-punto="nuevoPunto"
+        @guardar-punto-suministro="crearPuntoSuministro"
+        @cerrar-formulario="cerrarFormularioNuevoPuntoSuministro"
+      />
+    </Teleport>
     
   </div>
 </template>
@@ -132,6 +138,32 @@ export default {
     },
   },
   methods: {
+    // Carga la lista de clientes desde el backend
+    async fetchClientes() {
+      try {
+        this.loading = true;
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
+        this.clientes = response.data;
+        console.log("Clientes cargados:", this.clientes);
+      } catch (error) {
+        console.error("Error al cargar clientes:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    // Carga los puntos de suministro asociados a un cliente
+    async fetchPuntosSuministro(idCliente) {
+      try {
+        this.loading = true;
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${idCliente}`);
+        console.log("Puntos de suministro recibidos:", response.data);
+        this.puntosSuministro = response.data;
+      } catch (error) {
+        alert("No se pudieron cargar los puntos de suministro.");
+      } finally {
+        this.loading = false;
+      }
+    },
     // Reinicia el formulario de cliente
     resetFormularioCliente() {
       return {
@@ -204,21 +236,7 @@ export default {
         this.isModalPuntosOpen = false; // Cierra el modal
         this.clienteSeleccionado = null; // Limpia el cliente seleccionado
         this.puntosSuministro = []; // Limpia los puntos de suministro cargados
-    },
-    // Carga los puntos de suministro asociados a un cliente
-    async fetchPuntosSuministro(idCliente) {
-      try {
-        this.loading = true;
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${idCliente}`);
-        console.log("Puntos de suministro recibidos:", response.data);
-        this.puntosSuministro = response.data;
-      } catch (error) {
-        alert("No se pudieron cargar los puntos de suministro.");
-      } finally {
-        this.loading = false;
-      }
-    },
-
+    },       
     // Muestra el modal de creación de cliente
     abrirFormularioCrearCliente() {
       this.nuevoCliente = {}; // Asegúrate de que sea un objeto vacío
@@ -256,20 +274,7 @@ export default {
       } catch (error) {
         console.error("Error al actualizar cliente:", error);
       }
-    },
-    // Carga la lista de clientes desde el backend
-    async fetchClientes() {
-      try {
-        this.loading = true;
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
-        this.clientes = response.data;
-        console.log("lista de clientes recibidos:", this.clientes);
-      } catch (error) {
-        alert("Error al cargar clientes.");
-      } finally {
-        this.loading = false;
-      }
-    },
+    },    
     // Lógica para crear cliente
     async crearCliente(clienteRecibido) {
       try {
@@ -332,6 +337,11 @@ export default {
     },    
   },
   async mounted() {
+    this.loading = true; // Forzar la visibilidad del spinner
+    setTimeout(() => { 
+      this.loading = false; 
+    }, 2000); // Simular carga por 2 segundos
+    //Precargamos los arrays de los combos
     try {
       const [clientes, usuarios, sectores, subtipologias] = await Promise.all([
         axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`),

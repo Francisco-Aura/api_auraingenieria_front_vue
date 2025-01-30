@@ -320,7 +320,11 @@ export default {
     },
     cliente: {
       type: Object,
-      required: true,
+      default: () => ({}), // 👈 Esto evita que sea null y previene errores
+    },
+    puntoSuministro: {
+      type: Object,
+      default: () => ({}), // 👈 Esto evita que sea null y previene errores
     },
     tarifasGas: {
       type: Array,
@@ -425,39 +429,36 @@ export default {
     verDetalleContrato(contrato) {
       alert(`Detalles del contrato ID: ${contrato.id}\n${JSON.stringify(contrato, null, 2)}`);
     },
-    emitirActualizacion() {
-      // Emite el cambio al padre
-      this.$emit("actualizar-contrato", { ...this.contratoActualCopia });
-    },
   },
 };
 </script>
 
 <style scoped>
+
 .modal-overlay {
-  position: fixed;
+  position: fixed; /* Fijar en la pantalla */
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  left: 12.5%;
+  width: 90vw;
+  height: 125vh;
+  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro translúcido */
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  z-index: 1000;
-  padding-top: 20px;
+  align-items: center;
+  z-index: 1000; /* Asegurar que esté por encima de todo */
 }
+
 .modal-content {
-  width: 90%;
-  max-width: 800px;
-  max-height: 80%;
-  overflow-y: auto;
-  background-color: white;
+  min-width: 100%;
+  min-height: 100%;  
+  background: rgb(219, 219, 219);
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-  box-sizing: border-box;
+  max-width: 80vw; /* Para que no sea demasiado grande en pantallas grandes */
+  max-height: 80vh; /* Limitar altura para evitar que sobresalga */
+  overflow-y: auto; /* Permitir scroll si el contenido es muy grande */
 }
+
 .form-row {
   display: flex;
   justify-content: space-between;
