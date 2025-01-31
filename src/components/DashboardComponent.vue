@@ -1,72 +1,135 @@
 <template>
-  <div class="dashboard">
-    <div class="modules">
-      <router-link to="/dashboard/crm" class="module">CRM</router-link>
-      <router-link to="/dashboard/facturacion" class="module">Facturación</router-link>
-      <router-link to="/dashboard/informes" class="module">Informes</router-link>
-      <router-link to="/dashboard/administracion" class="module">Administración</router-link>
+  <!-- Contenedor principal del dashboard -->
+  <div class="dashboard-container">
+    
+    <!-- Encabezado del dashboard (actualmente vacío) -->
+    <div class="dashboard-header">
     </div>
-    <!-- Imagen de la empresa -->
-    <img src="@/images/LogoAura.jpg" alt="Logo de Aura Ingeniería" class="logo" />
+    
+    <!-- Contenido principal del dashboard -->
+    <div class="dashboard-content">
       
+      <!-- Menú lateral con opciones de navegación -->
+      <aside class="dashboard-menu">
+        <!-- Enlace al módulo de cartera de clientes -->
+        <router-link to="/dashboard/clientes" class="menu-link">
+          Cartera de Clientes
+        </router-link>
+
+        <!-- Enlace al módulo de puntos de suministro -->
+        <router-link to="/dashboard/puntos-suministro" class="menu-link">
+          Puntos de Suministro
+        </router-link>
+
+        <!-- Enlace al módulo de Gestion de Proyectos 
+        <router-link to="/dashboard/gestion-proyectos" class="menu-link">
+          Gestion de Proyectos
+        </router-link>
+        -->
+
+        <!-- Enlace al módulo de Informes -->
+        <router-link to="/dashboard/informes" class="menu-link">
+          Informes
+        </router-link>
+
+        <!-- Solo mostrar Administración si el nivel de acceso es 1 (Admin) , 
+         para ocultar botones <button v-if="nivelAcceso === 1", 
+         para Deshabilitar <button :disabled="nivelAcceso !== 1"
+        -->
+        <router-link v-if="nivelAcceso === 1" to="/dashboard/administracion" class="menu-link">
+          Administración
+        </router-link>
+        
+      </aside>
+
+      <!-- Vista principal donde se mostrarán los componentes hijos -->
+      <main class="dashboard-view">
+        <!-- El componente hijo que coincida con la ruta se renderizará aquí -->
+        <router-view></router-view>
+      </main>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'DashboardComponent'
+  // Nombre del componente para facilitar su identificación
+  name: 'Dashboard-Component',
+
+  data() {
+    return {
+      nivelAcceso: null
+    };
+  },
+  created() {
+    // Cargar nivel de acceso desde localStorage
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    if (usuario) {
+      this.nivelAcceso = usuario.nivelAcceso;
+    }
+  }
+
 };
 </script>
 
 <style scoped>
-.dashboard {
-  text-align: center; /* Centra el texto */
-  margin-top: 2rem; /* Margen superior */
-}
+  .dashboard-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+  }
 
-h1 {
-  font-size: 2.5rem; /* Tamaño del título */
-  margin-bottom: 1rem; /* Margen inferior */
-  color: #333; /* Color del título */
-}
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: -4rem;/* Espacio superior dashboard*/
+  }
 
-p {
-  margin-top: 1rem; /* Margen superior del párrafo */
-}
+  .dashboard-content {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    width: 100%;
+  }
 
-/* Contenedor de módulos */
-.modules {
-  display: flex; /* Usa flexbox para organizar los módulos */
-  justify-content: center; /* Centra los módulos horizontalmente */
-  flex-wrap: wrap; /* Permite que los módulos se ajusten en varias líneas */
-  gap: 20px; /* Espacio entre módulos */
-  margin-top: 1rem; /* Margen superior */
-}
+  .dashboard-menu {
+    background-color: #333;
+    padding: 1rem;
+    width: 200px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
 
-/* Módulos individuales */
-.module {
-  padding: 20px; /* Espaciado interno */
-  background-color: #f0c040; /* Color de fondo del módulo */
-  color: white; /* Color del texto */
-  border-radius: 10px; /* Bordes redondeados */
-  text-decoration: none; /* Sin subrayado */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra del módulo */
-  transition: background-color 0.3s, transform 0.3s; /* Transiciones suaves */
-  width: 150px; /* Ancho fijo de cada módulo */
-  text-align: center; /* Centra el texto */
-}
+  .menu-link {
+    display: block;
+    color: #ffffff;
+    background-color: #555;
+    padding: 10px 15px;
+    margin: 8px 0;
+    text-align: center;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
 
-/* Estilo del módulo al pasar el cursor por encima */
-.module:hover {
-  background-color: #e5b233; /* Cambia el color de fondo al pasar el cursor */
-  transform: translateY(-5px); /* Efecto de elevación al pasar el cursor */
-}
+  .menu-link:hover {
+    background-color: #d4af37;
+    color: #333;
+  }
 
-/* Estilo para la imagen del logo */
-.logo {
-  width: 100%; /* Ancho del logo al 100% del contenedor */
-  max-width: 600px; /* Tamaño máximo del logo */
-  height: auto; /* Mantiene la proporción de la imagen */
-  margin-top: 20px; /* Margen superior de la imagen */
-}
+  .dashboard-view {
+    margin: 0;
+    padding: 0;
+    flex-grow: 1;  
+    margin-left: 1rem;
+    background-color: #f1f1f1;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
 </style>
+
