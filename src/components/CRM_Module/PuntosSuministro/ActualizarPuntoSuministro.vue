@@ -177,9 +177,4 @@ export default {
 };
 </script>
 
-<style scoped>
-.modal-overlay {
-  width: 90vw;
-  height: 125vh;
-}
-</style>
+<style scoped></style>

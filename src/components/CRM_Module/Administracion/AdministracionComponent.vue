@@ -3,14 +3,17 @@
       <!-- Encabezado con iconos para cada tabla -->
       <div class="icon-bar">
         <button v-for="tabla in tablas" :key="tabla.nombre" @click="cargarDatos(tabla)" :class="{ active: tablaSeleccionada === tabla }">
-          <i :class="tabla.icono"></i>
+          <i :class="['icon', tabla.icono]"></i>
           <span>.{{ tabla.nombre }}</span>
         </button>
       </div>
   
+      <!-- Botón CREAR que solo se muestra si hay una tabla seleccionada -->
+      <button v-if="tablaSeleccionada" @click="nuevoRegistro()">CREAR</button>
+
       <!-- Formulario de edición/inserción -->
       <div v-if="mostrarFormulario" class="formulario">
-        <h3>{{ editando ? 'Editar Registro' : 'Nuevo Registro' }}</h3>
+        <h3>{{ editando ? 'Editar Registro' : `Nuevo Registro en ${this.tablaSeleccionada.nombre}`}}</h3>
         <form @submit.prevent="guardarRegistro">
           <div v-for="col in columnasFiltradas" :key="col">
             <label>{{ col }}</label>
@@ -36,7 +39,7 @@
               <td v-for="col in columnas" :key="col">{{ fila[col] }}</td>
               <td>
                 <button @click="editarRegistro(fila)">✏️</button>
-                <button @click="nuevoRegistro(fila.id)">➕</button>
+                <button @click="eliminarRegistro(fila.id)">🗑️</button>                
               </td>
             </tr>
           </tbody>
@@ -81,6 +84,7 @@
     methods: {
       async cargarDatos(tabla) {
         this.tablaSeleccionada = tabla;
+        this.mostrarFormulario = false;
         try {
           const respuesta = await axios.get(tabla.url);
           this.datos = respuesta.data;
@@ -128,13 +132,21 @@
   </script>
   
   <style scoped>
+    .icon-bar button .icon {
+      color: black; /* Color negro para los iconos */
+    }
+
     button {
         border: 1px;
-        background-color: #333;
-        color: #919090;
+        color: #f5c600;  
+        background-color: #333;     
         border-radius: 5px;
     }
 
+    button:hover {
+      color:#333;
+      background-color: #f5c600; 
+    }
     .admin-dashboard {
         padding: 20px;
         text-align: center;

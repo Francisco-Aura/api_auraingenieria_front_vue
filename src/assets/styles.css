@@ -175,6 +175,7 @@ input, textarea, select {
   border: 1px solid #ddd; /* Borde del campo */
 }
 
+/*Notas de Cliente en actualizar y crear*/
 textarea#notas {
   width: 98%; /* Ancho del campo "Notas" */
   height: 120px; /* Altura del campo "Notas" */
@@ -182,7 +183,7 @@ textarea#notas {
   border: 1px solid #ccc; /* Borde del campo */
   border-radius: 5px; /* Bordes redondeados */
   font-size: 14px; /* Tamaño de la fuente */
-  resize: vertical; /* Permite redimensionar solo verticalmente */
+  resize: none; /* Permite redimensionar solo verticalmente */
 }
 
 
@@ -216,10 +217,14 @@ table tr:hover {
 /*             MODALES             */
 /* =============================== */
 .modal-overlay {
-  position: fixed; /* Fijar en la pantalla */
+  position: fixed;/* Fijar en la pantalla */
   top: 0;
-  left: 12.5%;
-  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro translúcido */
+  left: 0;
+  width: 130vw;
+  height: 120vh;
+  border: 2px solid rgb(39, 39, 39);
+  border-radius: 10px; /* Bordes redondeados */ 
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -227,12 +232,9 @@ table tr:hover {
 }
 
 .modal-content {
-  min-width: 100%;
-  min-height: 100%;  
   background: rgb(219, 219, 219);
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 80vw; /* Para que no sea demasiado grande en pantallas grandes */
-  max-height: 80vh; /* Limitar altura para evitar que sobresalga */
+  padding: 1%;
+  border: 2px solid rgb(70, 70, 70);
+  border-radius: 10px; /* Bordes redondeados */ 
   overflow-y: auto; /* Permitir scroll si el contenido es muy grande */
 }

@@ -32,9 +32,12 @@
           Informes
         </router-link>
 
-        <!-- Enlace al módulo de Administracion -->
-        <router-link to="/dashboard/administracion" class="menu-link">
-          Administracion
+        <!-- Solo mostrar Administración si el nivel de acceso es 1 (Admin) , 
+         para ocultar botones <button v-if="nivelAcceso === 1", 
+         para Deshabilitar <button :disabled="nivelAcceso !== 1"
+        -->
+        <router-link v-if="nivelAcceso === 1" to="/dashboard/administracion" class="menu-link">
+          Administración
         </router-link>
         
       </aside>
@@ -52,6 +55,20 @@
 export default {
   // Nombre del componente para facilitar su identificación
   name: 'Dashboard-Component',
+
+  data() {
+    return {
+      nivelAcceso: null
+    };
+  },
+  created() {
+    // Cargar nivel de acceso desde localStorage
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    if (usuario) {
+      this.nivelAcceso = usuario.nivelAcceso;
+    }
+  }
+
 };
 </script>
 

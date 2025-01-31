@@ -153,6 +153,7 @@ export default {
     nuevoCliente: {
       type: Object,
       required: true,
+      default: () => ({})  // 🔹 Si es null, usa un objeto vacío
     },
     sectores: Array,
     usuarios: Array,
@@ -234,7 +235,6 @@ export default {
       this.$emit("cancelar-formulario");
     },
     crearCliente() {
-      console.log("Creando nuevo cliente:", this.clienteLocal);
       this.$emit("crear-cliente", this.clienteLocal);
     },
     actualizarCliente() {
@@ -246,7 +246,6 @@ export default {
         console.error("El cliente no tiene un usuario asignado.");
         return;
       }
-      console.log("Actualizando cliente con ID:", this.clienteLocal.id, "Usuario:", this.clienteLocal.idUsuario);
       this.$emit("actualizar-cliente", this.clienteLocal);
         },
     },
@@ -255,9 +254,7 @@ export default {
 
 
 <style scoped>
-
-.modal-overlay {
-  width: 90vw;
-  height: 125vh; 
+.modal-content {
+  height: 95%; 
 }
 </style>

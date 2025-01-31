@@ -239,9 +239,8 @@ export default {
 </script>
 
 <style scoped>
-.modal-overlay {
-  width: 90vw;
-  height: 125vh;
+.modal-content {
+  height: 95%; 
 }
 
 .form-row {

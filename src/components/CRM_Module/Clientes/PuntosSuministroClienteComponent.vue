@@ -70,11 +70,6 @@ export default {
       });
     },
   },
-  mounted() {
-    console.log("El modal de puntos de suministro se ha montado en el DOM.");
-    console.log("Cliente recibido en modal:", this.cliente);
-    console.log("Puntos de suministro recibidos:", this.puntosSuministro);
-  },
   methods: {
     normalizeText(text) {
       if (!text) return "";
@@ -84,16 +79,15 @@ export default {
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
     },
-    verDetallePunto(punto) {
-      console.log("Detalle del punto:", punto);
+    verDetallePunto(punto) {      
+      alert(`Detalles del Punto de SUMINISTRO ID: ${punto.id}\n${JSON.stringify(punto, null, 2)}`);
     },
   },
 };
 </script>
 
 <style scoped>
-.modal-overlay {
-  width: 90vw;
-  height: 80vh; 
+.modal-content {
+  height: 50%; 
 }
 </style>

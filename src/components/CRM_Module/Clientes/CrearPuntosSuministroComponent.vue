@@ -185,8 +185,7 @@ export default {
 </script>
 
 <style scoped>
-.modal-overlay {
-  width: 90vw;
-  height: 80vh; 
+.modal-content {
+  height: 90%; 
 }
 </style>

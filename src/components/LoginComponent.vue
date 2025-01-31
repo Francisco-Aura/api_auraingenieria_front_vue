@@ -66,6 +66,9 @@ export default {
 
         // Verifica si la respuesta fue exitosa
         if (response.status === 200) { // Código HTTP 200 indica éxito
+          const userData = response.data;
+          // Guardamos los datos del usuario en localStorage
+          localStorage.setItem('usuario', JSON.stringify(userData));
           // Redirige al usuario al dashboard después del inicio de sesión exitoso
           this.$router.push('/dashboard');
         } else {

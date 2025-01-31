@@ -102,7 +102,7 @@ export default {
       clientes: [], // Lista de clientes
       filter: "", // Texto del filtro
       puntosSuministro: [],        // Lista de puntos de suministro
-      clienteSeleccionado: null,   // Cliente seleccionado
+      clienteSeleccionado: {},  // 🔹 Cambiar null por un objeto vacío
       isModalPuntosOpen: false,    // Estado para controlar la visibilidad del modal
       loading: false,              // Estado para mostrar un spinner de carga
       formularioVisible: false, // Control de visibilidad del formulario cliente
@@ -137,7 +137,6 @@ export default {
         this.loading = true;
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
         this.clientes = response.data;
-        console.log("Clientes cargados:", this.clientes);
       } catch (error) {
         console.error("Error al cargar clientes:", error);
       } finally {
@@ -149,7 +148,6 @@ export default {
       try {
         this.loading = true;
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${idCliente}`);
-        console.log("Puntos de suministro recibidos:", response.data);
         this.puntosSuministro = response.data;
       } catch (error) {
         alert("No se pudieron cargar los puntos de suministro.");
@@ -216,7 +214,6 @@ export default {
     // Muestra el modal de puntos de suministro para el cliente seleccionado
     verPuntosSuministro(cliente) {
       try {
-        console.log("Cliente seleccionado para ver los puntos de suministro :", cliente);
         this.clienteSeleccionado = cliente;
         this.isModalPuntosOpen = true; // Abre el modal primero
         this.fetchPuntosSuministro(cliente.idCliente); // Luego carga los puntos
@@ -254,7 +251,6 @@ export default {
     },
     // Lógica para actualizar cliente
     async actualizarCliente(clienteActualizado) {
-      console.log("Cliente recibido para actualizar:", clienteActualizado); // Verifica que los datos sean correctos
       if (!clienteActualizado.id) {
         console.error("El cliente recibido no tiene un ID.");
         return;
@@ -272,7 +268,6 @@ export default {
     async crearCliente(clienteRecibido) {
       try {
         if (this.modoActualizar) return; // Evita llamadas erróneas en modo actualización
-        console.log("Cliente recibido para crear:", clienteRecibido); // Verifica que los datos sean correctos
         await axios.post(`${process.env.VUE_APP_API_URL}/api/clientes`, clienteRecibido);
         alert("Cliente creado con éxito.");
         this.fetchClientes(); // Actualiza la lista
@@ -283,7 +278,6 @@ export default {
     },
     // Muestra el modal para crear un punto de suministro
     abrirFormularioNuevoPunto(cliente) {
-      console.log("Cliente recibido para crear punto de suministro:", cliente); // Verifica que los datos sean correctos
       this.clienteSeleccionado = cliente;
       this.nuevoPunto = this.resetFormularioPuntoSuministro();
       this.nuevoPunto.idCliente = cliente.idCliente; // Asigna el idCliente
@@ -315,7 +309,6 @@ export default {
           CUPSluz: this.nuevoPunto.cupsluz, // Respeta mayúsculas/minúsculas del modelo
           CUPSgas: this.nuevoPunto.cupsgas,
         };
-        console.log("Datos enviados al backend (JSON):", JSON.stringify(datosAdaptados, null, 2));
 
         await axios.post(
           `${process.env.VUE_APP_API_URL}/api/puntos-suministro`,
