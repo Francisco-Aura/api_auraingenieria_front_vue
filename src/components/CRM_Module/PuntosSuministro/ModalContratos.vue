@@ -434,66 +434,62 @@ export default {
 </script>
 
 <style scoped>
-
-.modal-content {
-  height: 95%; 
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.18);
+  z-index: 1000;
 }
-
+.modal-content {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  max-width: 1100px;
+  min-width: 600px;
+  max-height: 90vh;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 32px 0 32px;
+}
+.modal-content h2, .modal-content h3 {
+  margin: 0;
+  padding: 24px 32px 0 32px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+form {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 24px 32px 0 32px;
+}
+.form-actions {
+  background: #fff;
+  padding: 18px 32px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+}
+@media (max-width: 600px) {
+  .modal-content { max-width: 98vw; padding: 0; }
+  .modal-content h2, .modal-content h3, .form-actions, form { padding-left: 10px; padding-right: 10px; }
+}
 .form-column {
   flex: 1;
 }
-
-.form-actions {
-  margin-top: 20px;
-  text-align: right;
-}
-
-.historical-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  font-size: 14px;
-}
-
-.historical-table th,
-.historical-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
-}
-
-.historical-table th {
-  background-color: #f4f4f4;
-  font-weight: bold;
-}
-
-.historical-table tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
-.historical-table tr:hover {
-  background-color: #f1f1f1;
-}
-
-.tabs {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 10px;
-}
-
-.tabs button {
-  padding: 10px;
-  border: 1px solid #070707;
-  cursor: pointer;
-  background-color: #808080;
-}
-
-.tabs button.active {
-  background-color: #ddd;
-  color: #f50000;
-  font-weight: bold;
-}
-
 .close-button {
   position: absolute;
   top: 10px;
@@ -506,8 +502,53 @@ export default {
   color: #333;
   transition: color 0.3s ease;
 }
-
 .close-button:hover {
   color: #ff3c00; /* Cambia el color al pasar el cursor */
+}
+.historical-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 14px;
+}
+.historical-table th,
+.historical-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+.historical-table th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+.historical-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+.historical-table tr:hover {
+  background-color: #f1f1f1;
+}
+.tabs {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 10px;
+}
+.tabs button {
+  padding: 10px;
+  border: 1px solid #070707;
+  cursor: pointer;
+  background-color: #808080;
+}
+.tabs button.active {
+  background-color: #ddd;
+  color: #f50000;
+  font-weight: bold;
+}
+.form-notas {
+  flex: 1;
+}
+.tab-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
 }
 </style>
