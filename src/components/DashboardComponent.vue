@@ -694,13 +694,12 @@ export default {
 
 .sidebar:not(.sidebar-collapsed) .user-name {
   font-weight: 700;
-  font-size: 1.08rem;
+  font-size: 0.9rem;
   color: #fff;
   letter-spacing: 0.5px;
   margin-bottom: 2px;
   white-space: normal;
   overflow-wrap: break-word;
-  word-break: break-all;
   line-height: 1.1;
 }
 

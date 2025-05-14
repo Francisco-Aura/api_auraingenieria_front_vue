@@ -35,30 +35,9 @@
           <span>Acceder</span>
           <i class="fas fa-arrow-right"></i>
         </button>
-
-        <div class="links-container">
-          <a href="#" @click.prevent="showRecoverPasswordMessage" class="forgot-password">
-            <i class="fas fa-question-circle"></i>
-            ¿Olvidaste tu contraseña?
-          </a>
-        </div>
       </form>
     </div>
   </div>
-  <!--
-  ICONOS PARA TABLAS
-      Editar	✏️	fas fa-edit
-      Eliminar	🗑️	fas fa-trash
-      Ver detalles	🔍	fas fa-eye
-      Guardar	💾	fas fa-save
-      Cancelar	❌	fas fa-times
-      Agregar nuevo	➕	fas fa-plus
-      Refrescar	🔄	fas fa-sync-alt
-      Descargar	⬇️	fas fa-download
-      Subir archivo	📤	fas fa-upload
-      Filtrar	🔎	fas fa-filter
-      Imprimir	🖨️	fas fa-print
-  -->
 </template>
 
 <script>
@@ -115,6 +94,7 @@ export default {
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 
+
 :root {
   --accent-color: #FFC107;
   --primary-color: #333333;
@@ -134,17 +114,23 @@ export default {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: transparent;
+  background-image: url('@/assets/background_energy.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   padding: 20px;
 }
 
 .login-container {
-  background: var(--surface-color);
+  background: rgba(255, 255, 255, 0.562);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   padding: 40px;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.007);
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
+  border: 1px solid rgba(255, 255, 255, 0.068);
 }
 
 .logo-container {

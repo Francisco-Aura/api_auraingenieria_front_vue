@@ -203,17 +203,30 @@ export default {
       const columnasPermitidas = {
         "contratos-pendientes-renovacion": [
           "fechaInicio", "fechaFin", "cliente", "cupsLuz", "cupsGas", 
-          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraAnterior", "comercializadoraActual"
+          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual"
         ],
         "puntos-suministro-sin-contrato": [
           "cliente", "direccion", "codigoPostal", "poblacion", "provincia", "cupsLuz", "cupsGas"
         ]
       };
 
-      const doc = new jsPDF({ orientation: "landscape", format: "a1" });
+      // Crear documento en orientación horizontal y tamaño A3
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a3" });
+      
+      // Añadir logo
+      const logo = new Image();
+      logo.src = require('@/assets/logo.png');
+      doc.addImage(logo, 'PNG', 14, 10, 30, 30);
 
+      // Título del informe
       doc.setFontSize(16);
-      doc.text(`Informe: ${this.formatearTitulo(tipo)}`, 14, 10);
+      doc.setTextColor(51, 51, 51);
+      doc.text(`Informe: ${this.formatearTitulo(tipo)}`, 50, 25);
+
+      // Fecha de generación
+      doc.setFontSize(10);
+      const fecha = new Date().toLocaleDateString();
+      doc.text(`Generado el: ${fecha}`, 14, 45);
 
       let encabezados, filas;
       if (columnasPermitidas[tipo]) {
@@ -226,17 +239,85 @@ export default {
         filas = datos.map(item => Object.values(item));
       }
 
-      autoTable(doc, {
-        head: [encabezados],
-        body: filas,
-        startY: 20,
-        theme: "striped",
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [52, 152, 219], textColor: 255, fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [240, 240, 240] },
-        columnStyles: { 0: { cellWidth: 'auto' } },
-        margin: { top: 15, left: 10, right: 10 },
-      });
+      // Ahora permitimos hasta 14 columnas por página en A3
+      const maxColsPorPagina = 14;
+      if (encabezados.length > maxColsPorPagina) {
+        for (let i = 0; i < encabezados.length; i += maxColsPorPagina) {
+          const subEncabezados = encabezados.slice(i, i + maxColsPorPagina);
+          const subFilas = filas.map(fila => fila.slice(i, i + maxColsPorPagina));
+
+          autoTable(doc, {
+            head: [subEncabezados],
+            body: subFilas,
+            startY: 50,
+            theme: "grid",
+            styles: { 
+              fontSize: 8,
+              cellPadding: 2,
+              overflow: 'linebreak',
+              cellWidth: 'wrap'
+            },
+            headStyles: { 
+              fillColor: [255, 193, 7],
+              textColor: [51, 51, 51],
+              fontStyle: 'bold',
+              halign: 'center',
+              valign: 'middle',
+              fontSize: 9,
+              cellPadding: 2,
+              textRotation: 45
+            },
+            alternateRowStyles: { 
+              fillColor: [250, 250, 250]
+            },
+            margin: { top: 15, left: 10, right: 10 },
+            didDrawPage: function(data) {
+              doc.setFontSize(8);
+              doc.text(
+                `Página ${doc.internal.getNumberOfPages()}`,
+                data.settings.margin.left,
+                doc.internal.pageSize.height - 10
+              );
+            }
+          });
+          if (i + maxColsPorPagina < encabezados.length) doc.addPage();
+        }
+      } else {
+        autoTable(doc, {
+          head: [encabezados],
+          body: filas,
+          startY: 50,
+          theme: "grid",
+          styles: { 
+            fontSize: 8,
+            cellPadding: 2,
+            overflow: 'linebreak',
+            cellWidth: 'wrap'
+          },
+          headStyles: { 
+            fillColor: [255, 193, 7],
+            textColor: [51, 51, 51],
+            fontStyle: 'bold',
+            halign: 'center',
+            valign: 'middle',
+            fontSize: 9,
+            cellPadding: 2,
+            textRotation: 45
+          },
+          alternateRowStyles: { 
+            fillColor: [250, 250, 250]
+          },
+          margin: { top: 15, left: 10, right: 10 },
+          didDrawPage: function(data) {
+            doc.setFontSize(8);
+            doc.text(
+              `Página ${doc.internal.getNumberOfPages()}`,
+              data.settings.margin.left,
+              doc.internal.pageSize.height - 10
+            );
+          }
+        });
+      }
 
       doc.save(`${tipo}.pdf`);
     },
@@ -249,12 +330,12 @@ export default {
         .join(' ');
     },
 
-    // Formatea el nombre de la columna
-    formatearColumna(columna) {
-      // Transforma camelCase a palabras separadas
-      return columna
+    // Formatea el nombre de la columna para mostrar
+    formatearColumna(texto) {
+      return texto
         .replace(/([A-Z])/g, ' $1')
-        .replace(/^./, str => str.toUpperCase());
+        .replace(/^./, str => str.toUpperCase())
+        .trim();
     }
   }
 };

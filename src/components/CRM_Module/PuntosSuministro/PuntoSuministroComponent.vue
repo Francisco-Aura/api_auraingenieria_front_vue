@@ -65,9 +65,6 @@
           <button class="btn btn-outline" title="Exportar a PDF">
             <i class="fas fa-file-pdf"></i>
           </button>
-          <button class="btn btn-outline" title="Configurar columnas">
-            <i class="fas fa-columns"></i>
-          </button>
         </div>
       </div>
       <div class="table-responsive">

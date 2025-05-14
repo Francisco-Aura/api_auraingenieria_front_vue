@@ -66,14 +66,13 @@
       <div class="table-header">
         <h2><i class="fas fa-users"></i> Cartera de Clientes</h2>
         <div class="table-actions-horizontal">
-          <button class="btn btn-export" title="Exportar a Excel">
+          <button class="btn btn-export btn-excel" @click="exportarExcel" title="Exportar a Excel">
             <i class="fas fa-file-excel"></i>
+            <span>Excel</span>
           </button>
-          <button class="btn btn-export" title="Exportar a PDF">
+          <button class="btn btn-export btn-pdf" @click="exportarPDF" title="Exportar a PDF">
             <i class="fas fa-file-pdf"></i>
-          </button>
-          <button class="btn btn-export" title="Configurar columnas">
-            <i class="fas fa-columns"></i>
+            <span>PDF</span>
           </button>
         </div>
       </div>
@@ -213,6 +212,9 @@ import Spinner from "@/components/SpinnerComponent.vue";
 import PuntosSuministroClienteComponent from "@/components/CRM_Module/Clientes/PuntosSuministroClienteComponent.vue";
 import CreaActualizaClienteComponent from "@/components/CRM_Module/Clientes/CreaActualizaClientesComponent.vue";
 import CrearPuntosSuministroComponent from "@/components/CRM_Module/Clientes/CrearPuntosSuministroComponent.vue";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export default {
   name: "ClientesComponent",
@@ -505,7 +507,96 @@ export default {
     getSortIcon(key) {
       if (this.sortKey !== key) return 'fas fa-sort';
       return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
-    }
+    },
+
+    exportarExcel() {
+      try {
+        const data = this.filteredClientes.map(cliente => ({
+          'Nombre Cliente': cliente.nombre,
+          'CIF': cliente.cif,
+          'Dirección Fiscal': cliente.direccionFiscal,
+          'Puntos Suministro': cliente.numeroPuntosSuministro,
+          'Usuario Asignado': cliente.usuarioAsignado
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+        
+        // Ajustar el ancho de las columnas
+        const wscols = [
+          {wch: 30}, // Nombre Cliente
+          {wch: 15}, // CIF
+          {wch: 40}, // Dirección Fiscal
+          {wch: 15}, // Puntos Suministro
+          {wch: 20}  // Usuario Asignado
+        ];
+        ws['!cols'] = wscols;
+
+        XLSX.writeFile(wb, 'Cartera_Clientes.xlsx');
+      } catch (error) {
+        console.error('Error al exportar a Excel:', error);
+        this.$toast.error('Error al exportar a Excel');
+      }
+    },
+
+    exportarPDF() {
+      try {
+        const doc = new jsPDF();
+        
+        // Añadir logo
+        const logo = new Image();
+        logo.src = require('@/assets/logo.png');
+        doc.addImage(logo, 'PNG', 14, 10, 30, 30);
+        
+        // Título
+        doc.setFontSize(16);
+        doc.setTextColor(51, 51, 51); // Color gris oscuro para el título
+        doc.text('Cartera de Clientes', 50, 25);
+        
+        // Fecha de exportación
+        doc.setFontSize(10);
+        const fecha = new Date().toLocaleDateString();
+        doc.text(`Exportado el: ${fecha}`, 14, 45);
+
+        // Datos de la tabla
+        const data = this.filteredClientes.map(cliente => [
+          cliente.nombre,
+          cliente.cif,
+          cliente.direccionFiscal,
+          cliente.numeroPuntosSuministro,
+          cliente.usuarioAsignado
+        ]);
+
+        doc.autoTable({
+          head: [['Nombre Cliente', 'CIF', 'Dirección Fiscal', 'PS', 'Usuario']],
+          body: data,
+          startY: 50,
+          styles: { 
+            fontSize: 8,
+            cellPadding: 3
+          },
+          headStyles: { 
+            fillColor: [255, 193, 7],
+            textColor: [51, 51, 51],
+            fontStyle: 'bold',
+            halign: 'center'
+          },
+          columnStyles: {
+            0: { cellWidth: 40 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: 60 },
+            3: { cellWidth: 15 },
+            4: { cellWidth: 25 }
+          }
+        });
+
+        doc.save('Cartera_Clientes.pdf');
+      } catch (error) {
+        console.error('Error al exportar a PDF:', error);
+        this.$toast.error('Error al exportar a PDF');
+      }
+    },
   },
   async mounted() {
     this.loading = true; // Forzar la visibilidad del spinner
@@ -658,23 +749,41 @@ export default {
 }
 
 .btn-export {
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
-  color: var(--primary-color);
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1.1rem;
-  transition: all 0.2s;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
-.btn-export:hover {
-  background: var(--primary-color);
+.btn-excel {
+  background-color: #217346;
   color: white;
-  border-color: var(--primary-color);
+  border: none;
+}
+
+.btn-excel:hover {
+  background-color: #1e6b3d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(33, 115, 70, 0.2);
+}
+
+.btn-pdf {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+}
+
+.btn-pdf:hover {
+  background-color: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+}
+
+.btn-export i {
+  font-size: 1.2em;
 }
 
 .btn-icon {

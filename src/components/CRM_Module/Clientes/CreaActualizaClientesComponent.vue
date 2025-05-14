@@ -1,218 +1,390 @@
 <template>
-    <div v-if="formularioVisible" class="modal-overlay">
-      <div class="modal-content">
-        <!-- Título dinámico según el modo del formulario -->
-        <div class="modal-header">
-          <h2 class="modal-title">{{ modoActualizar ? 'Actualizar Cliente' : 'Alta de Cliente' }}</h2>
+  <div v-if="formularioVisible" class="modal-overlay">
+    <div class="modal-content">
+      <!-- Encabezado del modal -->
+      <div class="modal-header">
+        <h2 class="modal-title">{{ modoActualizar ? 'Actualizar Cliente' : 'Alta de Cliente' }}</h2>
+      </div>
+
+      <!-- Formulario principal -->
+      <form @submit.prevent="modoActualizar ? actualizarCliente() : crearCliente()" class="scrollable-form">
+        <!-- Pestañas para organizar el contenido -->
+        <div class="form-tabs">
+          <button type="button" class="tab-btn" :class="{ active: activeTab === 'principal' }" @click="activeTab = 'principal'">
+            <i class="fas fa-user-tie"></i> Datos Principales
+          </button>
+          <button type="button" class="tab-btn" :class="{ active: activeTab === 'contactos' }" @click="activeTab = 'contactos'">
+            <i class="fas fa-address-book"></i> Contactos
+          </button>
+          <button type="button" class="tab-btn" :class="{ active: activeTab === 'adicional' }" @click="activeTab = 'adicional'">
+            <i class="fas fa-cog"></i> Datos Adicionales
+          </button>
         </div>
 
-        <!-- Formulario para crear o actualizar clientes -->
-        <form @submit.prevent="modoActualizar ? actualizarCliente() : crearCliente()" class="scrollable-form">
-          <div class="form-container">
-            <!-- Columna 1 -->
-            <div class="form-column">
-              <div class="form-section-title">Datos principales</div>
-              <div class="form-group">
-                <label for="nombre">Nombre</label>
-                <input type="text" id="nombre" v-model="clienteLocal.nombre" class="form-control" required />
+        <div class="tab-container" :style="{ minHeight: tabMinHeight + 'px' }">
+          <!-- Contenido de la pestaña Datos Principales -->
+          <div v-show="activeTab === 'principal'" class="tab-content" ref="principalTab">
+            <div class="form-grid">
+              <!-- Sección de identificación del cliente -->
+              <div class="form-section card">
+                <div class="section-header">
+                  <i class="fas fa-id-card"></i>
+                  <h3>Identificación del Cliente</h3>
+                </div>
+                <div class="form-group">
+                  <label for="nombre">Nombre <span class="required">*</span></label>
+                  <input type="text" id="nombre" v-model="clienteLocal.nombre" class="form-control" required />
+                </div>
+
+                <div class="form-group">
+                  <label for="nombreComercial">Nombre Comercial <span class="required">*</span></label>
+                  <input type="text" id="nombreComercial" v-model="clienteLocal.nombreComercial" class="form-control" required />
+                </div>
+                
+                <div class="form-group">
+                  <label for="cif">CIF <span class="required">*</span></label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-fingerprint icon-prefix"></i>
+                    <input type="text" id="cif" v-model="clienteLocal.cif" class="form-control" required />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="actividad">Actividad</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-briefcase icon-prefix"></i>
+                    <input type="text" id="actividad" v-model="clienteLocal.actividad" class="form-control" />
+                  </div>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label for="nombreComercial">Nombre Comercial</label>
-                <input type="text" id="nombreComercial" v-model="clienteLocal.nombreComercial" class="form-control" required />
-              </div>
-              
-              <div class="form-group">
-                <label for="cif">CIF</label>
-                <input type="text" id="cif" v-model="clienteLocal.cif" class="form-control" required />
+              <!-- Sección de dirección -->
+              <div class="form-section card">
+                <div class="section-header">
+                  <i class="fas fa-map-marker-alt"></i>
+                  <h3>Dirección</h3>
+                </div>
+                <div class="form-group">
+                  <label for="direccionFiscal">Dirección Fiscal <span class="required">*</span></label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-home icon-prefix"></i>
+                    <input type="text" id="direccionFiscal" v-model="clienteLocal.direccion" class="form-control" required />
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group half">
+                    <label for="poblacion">Población <span class="required">*</span></label>
+                    <input type="text" id="poblacion" v-model="clienteLocal.poblacion" class="form-control" required />
+                  </div>
+
+                  <div class="form-group half">
+                    <label for="provincia">Provincia <span class="required">*</span></label>
+                    <input type="text" id="provincia" v-model="clienteLocal.provincia" class="form-control" required />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="codigoPostal">Código Postal <span class="required">*</span></label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-mail-bulk icon-prefix"></i>
+                    <input type="text" id="codigoPostal" v-model="clienteLocal.codigoPostal" class="form-control" required />
+                  </div>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label for="actividad">Actividad</label>
-                <input type="text" id="actividad" v-model="clienteLocal.actividad" class="form-control" />
+              <!-- Sección de datos financieros -->
+              <div class="form-section card">
+                <div class="section-header">
+                  <i class="fas fa-university"></i>
+                  <h3>Datos Financieros</h3>
+                </div>
+                <div class="form-group">
+                  <label for="iban">IBAN <span class="required">*</span></label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-credit-card icon-prefix"></i>
+                    <input type="text" id="iban" v-model="clienteLocal.iban" class="form-control" required />
+                  </div>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label for="iban">IBAN</label>
-                <input type="text" id="iban" v-model="clienteLocal.iban" class="form-control" required />
+              <!-- Sección del autorizado -->
+              <div class="form-section card">
+                <div class="section-header">
+                  <i class="fas fa-user-check"></i>
+                  <h3>Persona Autorizada</h3>
+                </div>
+                <div class="form-group">
+                  <label for="nombreAutorizado">Nombre Autorizado <span class="required">*</span></label>
+                  <input type="text" id="nombreAutorizado" v-model="clienteLocal.nombreAutorizado" class="form-control" required />
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group half">
+                    <label for="dniAutorizado">DNI Autorizado <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                      <i class="fas fa-id-badge icon-prefix"></i>
+                      <input type="text" id="dniAutorizado" v-model="clienteLocal.dniAutorizado" class="form-control" required />
+                    </div>
+                  </div>
+
+                  <div class="form-group half">
+                    <label for="telefonoAutorizado">Teléfono Autorizado <span class="required">*</span></label>
+                    <div class="input-with-icon">
+                      <i class="fas fa-phone icon-prefix"></i>
+                      <input type="text" id="telefonoAutorizado" v-model="clienteLocal.telefonoAutorizado" class="form-control" required />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="emailAutorizado">Email Autorizado <span class="required">*</span></label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-envelope icon-prefix"></i>
+                    <input type="email" id="emailAutorizado" v-model="clienteLocal.emailAutorizado" class="form-control" required />
+                  </div>
+                </div>
               </div>
 
-              <div class="form-group">
-                <label for="usuario">Usuario asignado</label>
-                <select id="usuario" v-model="clienteLocal.idUsuario" class="form-control" required>
-                  <option value="">Seleccione un Usuario</option>
-                  <option v-for="usuario in usuarios" :key="usuario.id" :value="usuario.id">
-                    {{ usuario.nombre }}
-                  </option>
-                </select>
-              </div>
-            </div>
+              <!-- Sección de clasificación -->
+              <div class="form-section card">
+                <div class="section-header">
+                  <i class="fas fa-tags"></i>
+                  <h3>Clasificación</h3>
+                </div>
+                <div class="form-group">
+                  <label for="codigoSector">Sector <span class="required">*</span></label>
+                  <div class="select-container">
+                    <select id="codigoSector" v-model="clienteLocal.codigoSector" class="form-select" required>
+                      <option value="">Seleccione un sector</option>
+                      <option v-for="sector in sectores" :key="sector.id" :value="sector.id">
+                        {{ sector.nombre }}
+                      </option>
+                    </select>
+                    <i class="fas fa-chevron-down select-icon"></i>
+                  </div>
+                </div>
 
-            <!-- Columna 2 -->
-            <div class="form-column">
-              <div class="form-section-title">Dirección</div>
-              <div class="form-group">
-                <label for="direccionFiscal">Dirección Fiscal</label>
-                <input type="text" id="direccionFiscal" v-model="clienteLocal.direccion" class="form-control" required />
-              </div>
+                <div class="form-group">
+                  <label for="codigoSubtipologia">Subtipología <span class="required">*</span></label>
+                  <div class="select-container">
+                    <select id="codigoSubtipologia" v-model="clienteLocal.codigoSubtipologia" class="form-select" required>
+                      <option value="">Seleccione una subtipología</option>
+                      <option v-for="subtipologia in subtipologias" :key="subtipologia.id" :value="subtipologia.id">
+                        {{ subtipologia.nombre }}
+                      </option>
+                    </select>
+                    <i class="fas fa-chevron-down select-icon"></i>
+                  </div>
+                </div>
 
-              <div class="form-group">
-                <label for="poblacion">Población</label>
-                <input type="text" id="poblacion" v-model="clienteLocal.poblacion" class="form-control" required />
-              </div>
-
-              <div class="form-group">
-                <label for="provincia">Provincia</label>
-                <input type="text" id="provincia" v-model="clienteLocal.provincia" class="form-control" required />
-              </div>
-
-              <div class="form-group">
-                <label for="codigoPostal">Código Postal</label>
-                <input type="text" id="codigoPostal" v-model="clienteLocal.codigoPostal" class="form-control" required />
-              </div>
-
-              <div class="form-group">
-                <label for="codigoSector">Código Sector</label>
-                <select id="codigoSector" v-model="clienteLocal.codigoSector" class="form-control" required>
-                  <option value="">Seleccione un código sector</option>
-                  <option v-for="sector in sectores" :key="sector.id" :value="sector.id">
-                    {{ sector.nombre }}
-                  </option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="codigoSubtipologia">Código Subtipología</label>
-                <select id="codigoSubtipologia" v-model="clienteLocal.codigoSubtipologia" class="form-control" required>
-                  <option value="">Seleccione un código subtipología</option>
-                  <option v-for="subtipologia in subtipologias" :key="subtipologia.id" :value="subtipologia.id">
-                    {{ subtipologia.nombre }}
-                  </option>
-                </select>
-              </div>
-            </div>   
-            
-            <!-- Columna 3 -->
-            <div class="form-column">
-              <div class="form-section-title">Datos de autorizado</div>
-              <div class="form-group">
-                <label for="nombreAutorizado">Nombre AUTORIZADO</label>
-                <input type="text" id="nombreAutorizado" v-model="clienteLocal.nombreAutorizado" class="form-control" required />
-              </div>
-
-              <div class="form-group">
-                <label for="dniAutorizado">DNI AUTORIZADO</label>
-                <input type="text" id="dniAutorizado" v-model="clienteLocal.dniAutorizado" class="form-control" required />
-              </div>
-
-              <div class="form-group">
-                <label for="telefonoAutorizado">Teléfono AUTORIZADO</label>
-                <input type="text" id="telefonoAutorizado" v-model="clienteLocal.telefonoAutorizado" class="form-control" required />
-              </div>
-
-              <div class="form-group">
-                <label for="emailAutorizado">Email AUTORIZADO</label>
-                <input type="email" id="emailAutorizado" v-model="clienteLocal.emailAutorizado" class="form-control" required />
-              </div>
-
-              <div class="form-section-title">Telemedida</div>
-              <div class="form-group">
-                <label for="userTelemedida">Usuario Telemedida</label>
-                <input type="text" id="userTelemedida" v-model="clienteLocal.userTelemedida" class="form-control" />
-              </div>
-              
-              <div class="form-group">
-                <label for="passTelemedida">Contraseña Telemedida</label>
-                <input type="text" id="passTelemedida" v-model="clienteLocal.passTelemedida" class="form-control" />
-              </div>
-            </div> 
-
-            <!-- Columna 4 -->
-            <div class="form-column">
-              <div class="form-section-title">Contacto 1</div>
-              <div class="form-group">
-                <label for="nombreContacto1">Nombre Contacto 1</label>
-                <input type="text" id="nombreContacto1" v-model="clienteLocal.nombreContacto1" class="form-control" />
-              </div>
-
-              <div class="form-group">
-                <label for="cargoContacto1">Cargo Contacto 1</label>
-                <input type="text" id="cargoContacto1" v-model="clienteLocal.cargoContacto1" class="form-control" />
-              </div>
-
-              <div class="form-group">
-                <label for="telefonoContacto1">Teléfono Contacto 1</label>
-                <input type="text" id="telefonoContacto1" v-model="clienteLocal.telefonoContacto1" class="form-control" />
-              </div>
-
-              <div class="form-group">
-                <label for="emailContacto1">Email Contacto 1</label>
-                <input type="email" id="emailContacto1" v-model="clienteLocal.emailContacto1" class="form-control" />
-              </div>
-
-              <div class="form-section-title">Contacto 2</div>
-              <div class="form-group">
-                <label for="nombreContacto2">Nombre Contacto 2</label>
-                <input type="text" id="nombreContacto2" v-model="clienteLocal.nombreContacto2" class="form-control" />
-              </div>
-
-              <div class="form-group">
-                <label for="cargoContacto2">Cargo Contacto 2</label>
-                <input type="text" id="cargoContacto2" v-model="clienteLocal.cargoContacto2" class="form-control" />
-              </div>
-
-              <div class="form-group">
-                <label for="telefonoContacto2">Teléfono Contacto 2</label>
-                <input type="text" id="telefonoContacto2" v-model="clienteLocal.telefonoContacto2" class="form-control" />
-              </div>
-
-              <div class="form-group">
-                <label for="emailContacto2">Email Contacto 2</label>
-                <input type="email" id="emailContacto2" v-model="clienteLocal.emailContacto2" class="form-control" />
-              </div>
-            </div>
-            
-            <!-- Columna 5 -->
-            <div class="form-column">
-              <div class="form-section-title">Contacto 3</div>
-              <div class="form-group">
-                <label for="nombreContacto3">Nombre Contacto 3</label>
-                <input type="text" id="nombreContacto3" v-model="clienteLocal.nombreContacto3" class="form-control" />
-              </div>
-
-              <div class="form-group">
-                <label for="cargoContacto3">Cargo Contacto 3</label>
-                <input type="text" id="cargoContacto3" v-model="clienteLocal.cargoContacto3" class="form-control" />
-              </div>
-
-              <div class="form-group">
-                <label for="telefonoContacto3">Teléfono Contacto 3</label>
-                <input type="text" id="telefonoContacto3" v-model="clienteLocal.telefonoContacto3" class="form-control" />
-              </div>
-
-              <div class="form-group">
-                <label for="emailContacto3">Email Contacto 3</label>
-                <input type="email" id="emailContacto3" v-model="clienteLocal.emailContacto3" class="form-control" />
+                <div class="form-group">
+                  <label for="usuario">Usuario Asignado <span class="required">*</span></label>
+                  <div class="select-container">
+                    <select id="usuario" v-model="clienteLocal.idUsuario" class="form-select" required>
+                      <option value="">Seleccione un usuario</option>
+                      <option v-for="usuario in usuarios" :key="usuario.id" :value="usuario.id">
+                        {{ usuario.nombre }}
+                      </option>
+                    </select>
+                    <i class="fas fa-chevron-down select-icon"></i>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Campo "Notas" ocupa el ancho completo al final -->
-          <div class="form-group full-width">
-            <label for="notas">Notas</label>
-            <textarea id="notas" v-model="clienteLocal.notas" class="form-control" rows="3"></textarea>
+          <!-- Contenido de la pestaña Contactos -->
+          <div v-show="activeTab === 'contactos'" class="tab-content" ref="contactosTab">
+            <div class="form-grid">
+              <!-- Contacto 1 -->
+              <div class="form-section card">
+                <div class="section-header">
+                  <i class="fas fa-user"></i>
+                  <h3>Contacto Principal</h3>
+                </div>
+                <div class="form-group">
+                  <label for="nombreContacto1">Nombre</label>
+                  <input type="text" id="nombreContacto1" v-model="clienteLocal.nombreContacto1" class="form-control" />
+                </div>
+
+                <div class="form-group">
+                  <label for="cargoContacto1">Cargo</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-user-tag icon-prefix"></i>
+                    <input type="text" id="cargoContacto1" v-model="clienteLocal.cargoContacto1" class="form-control" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="telefonoContacto1">Teléfono</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-phone icon-prefix"></i>
+                    <input type="text" id="telefonoContacto1" v-model="clienteLocal.telefonoContacto1" class="form-control" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="emailContacto1">Email</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-envelope icon-prefix"></i>
+                    <input type="email" id="emailContacto1" v-model="clienteLocal.emailContacto1" class="form-control" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Contacto 2 -->
+              <div class="form-section card">
+                <div class="section-header">
+                  <i class="fas fa-user"></i>
+                  <h3>Contacto Secundario</h3>
+                </div>
+                <div class="form-group">
+                  <label for="nombreContacto2">Nombre</label>
+                  <input type="text" id="nombreContacto2" v-model="clienteLocal.nombreContacto2" class="form-control" />
+                </div>
+
+                <div class="form-group">
+                  <label for="cargoContacto2">Cargo</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-user-tag icon-prefix"></i>
+                    <input type="text" id="cargoContacto2" v-model="clienteLocal.cargoContacto2" class="form-control" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="telefonoContacto2">Teléfono</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-phone icon-prefix"></i>
+                    <input type="text" id="telefonoContacto2" v-model="clienteLocal.telefonoContacto2" class="form-control" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="emailContacto2">Email</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-envelope icon-prefix"></i>
+                    <input type="email" id="emailContacto2" v-model="clienteLocal.emailContacto2" class="form-control" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Contacto 3 -->
+              <div class="form-section card">
+                <div class="section-header">
+                  <i class="fas fa-user"></i>
+                  <h3>Contacto Adicional</h3>
+                </div>
+                <div class="form-group">
+                  <label for="nombreContacto3">Nombre</label>
+                  <input type="text" id="nombreContacto3" v-model="clienteLocal.nombreContacto3" class="form-control" />
+                </div>
+
+                <div class="form-group">
+                  <label for="cargoContacto3">Cargo</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-user-tag icon-prefix"></i>
+                    <input type="text" id="cargoContacto3" v-model="clienteLocal.cargoContacto3" class="form-control" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="telefonoContacto3">Teléfono</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-phone icon-prefix"></i>
+                    <input type="text" id="telefonoContacto3" v-model="clienteLocal.telefonoContacto3" class="form-control" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="emailContacto3">Email</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-envelope icon-prefix"></i>
+                    <input type="email" id="emailContacto3" v-model="clienteLocal.emailContacto3" class="form-control" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Botones de acción -->
-          <div class="modal-footer">            
-            <button type="button" class="btn btn-secondary" @click="cancelarFormulario">Cancelar</button>
+          <!-- Contenido de la pestaña Datos Adicionales -->
+          <div v-show="activeTab === 'adicional'" class="tab-content" ref="adicionalTab">
+            <div class="form-grid">
+              <!-- Datos Telemedida -->
+              <div class="form-section card">
+                <div class="section-header">
+                  <i class="fas fa-tachometer-alt"></i>
+                  <h3>Telemedida</h3>
+                </div>
+                <div class="form-group">
+                  <label for="userTelemedida">Usuario Telemedida</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-user-cog icon-prefix"></i>
+                    <input type="text" id="userTelemedida" v-model="clienteLocal.userTelemedida" class="form-control" />
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="passTelemedida">Contraseña Telemedida</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-key icon-prefix"></i>
+                    <input type="password" id="passTelemedida" v-model="clienteLocal.passTelemedida" class="form-control" />
+                    <button type="button" class="icon-suffix toggle-password" @click="togglePasswordVisibility">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notas -->
+              <div class="form-section card full-width">
+                <div class="section-header">
+                  <i class="fas fa-sticky-note"></i>
+                  <h3>Notas y Observaciones</h3>
+                </div>
+                <div class="form-group">
+                  <textarea id="notas" v-model="clienteLocal.notas" class="form-control" rows="8" 
+                    placeholder="Añada aquí cualquier nota o comentario relevante sobre el cliente..."></textarea>
+                </div>
+              </div>
+              
+              <!-- Espacio extra para mantener el tamaño del modal -->
+              <div class="form-section card invisible-spacer">
+                <div class="section-header">
+                  <i class="fas fa-info-circle"></i>
+                  <h3>Información Adicional</h3>
+                </div>
+                <div class="spacer-content"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Indicador de progreso y botones de navegación -->
+        <div class="form-progress">
+          <div class="progress-indicator">
+            <div class="progress-step" :class="{ active: activeTab === 'principal', done: visitedTabs.includes('principal') }"></div>
+            <div class="progress-step" :class="{ active: activeTab === 'contactos', done: visitedTabs.includes('contactos') }"></div>
+            <div class="progress-step" :class="{ active: activeTab === 'adicional', done: visitedTabs.includes('adicional') }"></div>
+          </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="modal-footer">
+          <div class="required-legend"><span class="required">*</span> Campos obligatorios</div>            
+          <div class="action-buttons">
+            <button type="button" class="btn btn-secondary" @click="cancelarFormulario">
+              <i class="fas fa-times"></i> Cancelar
+            </button>
             <button type="submit" :disabled="isSubmitting" class="btn btn-primary">
+              <i class="fas" :class="modoActualizar ? 'fa-save' : 'fa-plus-circle'"></i>
               {{ modoActualizar ? 'Actualizar' : 'Crear' }}
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
+  </div>
 </template>
 
 <script>
@@ -224,7 +396,7 @@ export default {
     nuevoCliente: {
       type: Object,
       required: true,
-      default: () => ({})  // 🔹 Si es null, usa un objeto vacío
+      default: () => ({})
     },
     sectores: Array,
     usuarios: Array,
@@ -233,29 +405,35 @@ export default {
   },
   data() {
     return {
+      activeTab: 'principal',
+      visitedTabs: ['principal'],
+      showPassword: false,
+      tabMinHeight: 600, // Altura mínima inicial para el contenedor de pestañas
       clienteLocal: this.modoActualizar
-        ? { ...this.nuevoCliente } // Copia profunda para actualizar
-        : this.crearClienteVacio(), // Objeto vacío para nuevo cliente
+        ? { ...this.nuevoCliente }
+        : this.crearClienteVacio(),
     };
   },
   watch: {
     formularioVisible(newVal) {
-      // Cuando se abre el modal, sincroniza los datos del cliente.
       if (newVal) {
         this.clienteLocal = this.modoActualizar
           ? { ...this.nuevoCliente }
           : this.crearClienteVacio();
+        this.activeTab = 'principal';
+        this.visitedTabs = ['principal'];
+        // Actualizar altura después de mostrar
+        this.$nextTick(() => this.updateTabHeight());
       }
     },
     nuevoCliente: {
-      immediate: true, // Sincroniza al cargar el componente
-      deep: true, // Detecta cambios en propiedades anidadas
+      immediate: true,
+      deep: true,
       handler(newVal) {
         this.clienteLocal = { ...newVal };
       },
     },
     usuarios(newVal) {
-      // Verifica y sincroniza usuario asignado si está definido.
       if (newVal.length && this.clienteLocal.idUsuario) {
         const usuario = newVal.find(
           (usuario) => usuario.id === this.clienteLocal.idUsuario
@@ -263,6 +441,24 @@ export default {
         this.clienteLocal.usuario = usuario || null;
       }
     },
+    activeTab(newVal) {
+      if (!this.visitedTabs.includes(newVal)) {
+        this.visitedTabs.push(newVal);
+      }
+      // Actualizar la altura cuando cambia la pestaña
+      this.$nextTick(() => this.updateTabHeight());
+    }
+  },
+  mounted() {
+    // Calcular la altura inicial después de montar el componente
+    this.$nextTick(() => this.updateTabHeight());
+    
+    // Agregar listener para resize
+    window.addEventListener('resize', this.updateTabHeight);
+  },
+  beforeUnmount() {
+    // Eliminar el listener cuando el componente se destruye
+    window.removeEventListener('resize', this.updateTabHeight);
   },
   methods: {
     crearClienteVacio() {
@@ -299,7 +495,7 @@ export default {
         iban: "",
         userTelemedida: "",
         passTelemedida: "",
-        usuario: null, // Agregado para evitar problemas de reactividad
+        usuario: null,
       };
     },
     cancelarFormulario() {
@@ -318,105 +514,200 @@ export default {
         return;
       }
       this.$emit("actualizar-cliente", this.clienteLocal);
-        },
     },
+    togglePasswordVisibility() {
+      this.showPassword = !this.showPassword;
+      const passInput = document.getElementById('passTelemedida');
+      const eyeIcon = document.querySelector('.toggle-password i');
+      
+      if (passInput) {
+        passInput.type = this.showPassword ? 'text' : 'password';
+        if (eyeIcon) {
+          eyeIcon.className = this.showPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+        }
+      }
+    },
+    updateTabHeight() {
+      // Obtener referencias a todas las pestañas
+      if (!this.$refs.principalTab) return;
+      
+      // Calcular la altura máxima entre todas las pestañas
+      const heights = [
+        this.$refs.principalTab.scrollHeight,
+        this.$refs.contactosTab ? this.$refs.contactosTab.scrollHeight : 0,
+        this.$refs.adicionalTab ? this.$refs.adicionalTab.scrollHeight : 0
+      ];
+      
+      // Filtrar las alturas válidas (mayores que cero)
+      const validHeights = heights.filter(h => h > 0);
+      
+      // Establecer la altura mínima al máximo de las alturas o al valor predeterminado
+      const maxHeight = Math.max(...validHeights, 600);
+      this.tabMinHeight = maxHeight;
+    }
+  },
 };
 </script>
 
-
 <style scoped>
+
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+/* Estilos base del modal */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.18);
+  background: rgba(0,0,0,0.5);
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;    
+  width: 100%;
+  height: 100%;
 }
+
 .modal-content {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 90vw;
-  max-width: 1100px;
-  min-width: 600px;
-  max-height: 90vh;
+  width: 95%;
+  max-width: 100%;
+  max-height: 100%;
+  min-height: 700px;
   background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 0 32px 0 32px;
 }
-.modal-content h2 {
+
+.modal-header {
+  padding: 20px 30px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #ffc40c;
+  color: white;
+}
+
+.modal-title {
   margin: 0;
-  padding: 24px 32px 0 32px;
   font-size: 1.5rem;
-  font-weight: 700;
-  background: #fff;
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  font-weight: 600;
 }
-form {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding: 24px 32px 0 32px;
-}
-.modal-footer {
-  background: #fff;
-  padding: 18px 32px;
-  border-top: 1px solid #eee;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
-}
-@media (max-width: 700px) {
-  .modal-content {
-    min-width: 0;
-    width: 98vw;
-    max-width: 98vw;
-    padding: 0 8px;
-  }
-}
+
+/* Estilos del contenido del formulario */
 .scrollable-form {
   overflow-y: auto;
   flex: 1;
-  padding: 20px;
-  background-color: #f8f9fa;
+  padding: 0;
+  background-color: #f9fafc;
+  display: flex;
+  flex-direction: column;
 }
 
-.form-container {
+/* Contenedor para mantener altura constante entre pestañas */
+.tab-container {
+  flex: 1;
+  position: relative;
+}
+
+/* Sistema de pestañas */
+.form-tabs {
   display: flex;
-  flex-wrap: wrap;
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.tab-btn {
+  padding: 15px 25px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-btn:hover {
+  color: #ffc40c;
+  background-color: #f9fafc;
+}
+
+.tab-btn.active {
+  color: #ffc40c;
+  border-bottom-color: #ffc40c;
+  background-color: #f9fafc;
+}
+
+.tab-btn i {
+  font-size: 1rem;
+}
+
+.tab-content {
+  padding: 30px;
+  height: 100%;
+}
+
+/* Sistema de cuadrícula para los campos */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 20px;
 }
 
-.form-column {
-  flex: 1;
-  min-width: 250px;
-  background-color: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+/* Tarjetas para agrupar campos relacionados */
+.card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+  padding: 20px;
+  transition: box-shadow 0.3s ease;
 }
 
-.form-section-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #f5c600;
-  margin-bottom: 15px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #ffc40c;
+.card:hover {
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-.form-group {
-  margin-bottom: 15px;
+/* Tarjeta espaciadora invisible para mantener tamaño */
+.invisible-spacer {
+  visibility: visible; /* Cambiado a visible para que ocupe espacio real */
+  opacity: 0.5; /* Semi-transparente para indicar que es un espacio de relleno */
+}
+
+.spacer-content {
+  height: 220px; /* Altura para compensar y mantener tamaño constante */
+}
+
+/* Encabezados de sección */
+.section-header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  margin-bottom: 15px;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.section-header i {
+  font-size: 1.2rem;
+  color: #ffc40c;
+}
+
+.section-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+/* Estilos de campo de formulario */
+.form-group {
+  margin-bottom: 18px;
 }
 
 .form-group label {
@@ -424,40 +715,190 @@ form {
   margin-bottom: 6px;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #495057;
+  color: #555;
 }
 
-.full-width {
+.form-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 0;
+}
+
+.form-group.half {
+  width: 50%;
+  margin-bottom: 18px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.required {
+  color: #e74c3c;
+  margin-left: 3px;
+}
+
+/* Estilos para inputs con iconos */
+.input-with-icon {
+  position: relative;
+}
+
+.icon-prefix {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.input-with-icon input {
+  padding-left: 38px;
+}
+
+.icon-suffix {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  padding: 0;
+}
+
+.toggle-password:hover {
+  color: #ffc40c;
+}
+
+/* Nuevo estilo para selectores para evitar flechas duplicadas */
+.select-container {
+  position: relative;
   width: 100%;
-  margin-top: 20px;
-  background-color: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
+.form-select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  color: #333;
+  background-color: #f9fafc;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.form-select:focus {
+  border-color: #ffc40c;
+  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.15);
+  outline: none;
+  background-color: #fff;
+}
+
+.select-icon {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #555;
+  pointer-events: none;
+}
+
+/* Estilo para las opciones del select */
+.form-select option {
+  padding: 12px;
+  font-size: 0.95rem;
+  background-color: white;
+  color: #333;
+}
+
+/* Controles de formulario */
+.form-control {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  color: #333;
+  background-color: #f9fafc;
+}
+
+.form-control:focus {
+  border-color: #ffc40c;
+  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.15);
+  outline: none;
+  background-color: #fff;
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Indicador de progreso */
+.form-progress {
+  padding: 20px 30px;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  bottom: 0;
+}
+
+.progress-indicator {
+  display: flex;
+  gap: 5px;
+}
+
+.progress-step {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  transition: all 0.3s;
+}
+
+.progress-step.active {
+  background-color: #ffc40c;
+  transform: scale(1.2);
+}
+
+.progress-step.done {
+  background-color: #2ecc71;
+}
+
+.tab-navigation {
+  display: flex;
+  gap: 10px;
+}
+
+/* Botones */
 .btn {
   padding: 10px 20px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
   cursor: pointer;
-  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.95rem;
   border: none;
+  outline: none;
 }
 
-.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.btn-secondary {
-  background-color: #6c757d;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background-color: #5a6268;
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-primary {
@@ -465,114 +906,109 @@ form {
   color: white;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background-color: #ffb400;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255, 196, 12, 0.3);
 }
 
-.form-control {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 5px;
-  box-sizing: border-box;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-  background-color: #f9f9f9;
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
 }
 
-.form-control:focus {
+.btn-secondary:hover:not(:disabled) {
+  background-color: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid #e0e0e0;
+  color: #666;
+}
+
+.btn-outline:hover:not(:disabled) {
   border-color: #ffc40c;
-  background-color: white;
-  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.25);
-  outline: none;
+  color: #ffc40c;
+  background-color: rgba(255, 196, 12, 0.05);
 }
 
-select.form-control {
-  height: 42px;
-  cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23495057' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  padding-right: 40px;
+/* Pie del modal */
+.modal-footer {
+  padding: 20px 30px;
+  border-top: 1px solid #f0f0f0;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-textarea.form-control {
-  resize: vertical;
-  min-height: 100px;
+.required-legend {
+  font-size: 0.85rem;
+  color: #777;
 }
 
-/* Estilos para inputs requeridos */
-.form-control:required {
-  border-left: 3px solid #ffc40c;
+.action-buttons {
+  display: flex;
+  gap: 10px;
 }
 
-/* Estilos para estados de validación */
-.form-control:valid {
-  border-color: #28a745;
-}
-
-.form-control:invalid:not(:placeholder-shown) {
-  border-color: #dc3545;
-}
-
-/* Agregar iconos a los inputs */
-input[type="email"] {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23495057' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'%3E%3C/path%3E%3Cpolyline points='22,6 12,13 2,6'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  padding-right: 40px;
-}
-
-/* Estilos para pantallas pequeñas */
+/* Responsive */
 @media (max-width: 992px) {
-  .form-column {
-    min-width: calc(50% - 20px);
+  .form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 }
 
 @media (max-width: 768px) {
-  .form-container {
-    flex-direction: column;
-  }
-  
-  .form-column {
-    width: 100%;
+  .form-grid {
+    grid-template-columns: 1fr;
   }
   
   .modal-content {
-    width: 95%;
-    max-height: 90vh;
+    width: 95vw;
+    max-height: 95vh;
   }
   
-  .modal-title {
-    font-size: 1.3rem;
+  .form-tabs {
+    overflow-x: auto;
+    padding-bottom: 5px;
   }
   
-  .btn {
-    padding: 8px 16px;
+  .tab-btn {
+    padding: 12px 15px;
+    white-space: nowrap;
     font-size: 0.9rem;
   }
-}
-
-.input-with-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.input-with-checkbox input[type="text"] {
-  flex: 1;
-}
-.input-with-checkbox label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin: 0;
-  font-weight: 500;
-  font-size: 0.95rem;
+  
+  .tab-content {
+    padding: 20px;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .form-group.half {
+    width: 100%;
+  }
+  
+  .modal-footer {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .required-legend {
+    order: 2;
+  }
+  
+  .action-buttons {
+    order: 1;
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 </style>
