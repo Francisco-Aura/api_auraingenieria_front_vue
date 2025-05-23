@@ -13,38 +13,56 @@ deploy_frontend_job:
     - set -eo pipefail # Salir inmediatamente si un comando falla
     - set -x # Imprimir cada comando ejecutado
 
-    # ... (Instalación de dependencias, build de Vue, y las verificaciones ls -la - TODO IGUAL) ...
+    # 1. Instalar dependencias de Node.js
+    - echo "Instalando dependencias de Node.js..."
+    - npm install --production=false --ci
 
-    # 3. Configurar SSH usando ssh-agent (igual)
+    # 2. Construir la aplicación Vue (generar archivos estáticos)
+    - echo "Construyendo la aplicación Vue..."
+    - npm run build
+
+    # === PASOS DE DEPURACIÓN Y PERMISOS MEJORADOS ===
+    - echo "--- Contenido del directorio de trabajo actual después del build ---"
+    - ls -la .
+    - echo "--- Contenido de la carpeta 'dist/' (si existe) ---"
+    - ls -la dist/ || echo "Directorio dist/ no encontrado o vacío."
+
+    # Cambiar permisos de la carpeta dist para asegurar acceso total
+    - echo "Ajustando permisos de la carpeta dist/ para rsync..."
+    - chmod -R 777 dist/ || echo "No se pudo cambiar permisos de dist/ (podría no existir o ser vacío)"
+
+
+    # 3. Configurar SSH usando ssh-agent
     - echo "Configurando SSH con ssh-agent..."
-    - apt-get update -y && apt-get install -y openssh-client # openssh-client suele incluir scp y ssh
+    - apt-get update -y && apt-get install -y openssh-client
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" | ssh-add -
 
-    # 4. Añadir la huella digital del servidor (known_hosts) (igual)
+    # 4. Añadir la huella digital del servidor (known_hosts)
     - mkdir -p ~/.ssh
     - ssh-keyscan 5.34.149.250 >> ~/.ssh/known_hosts
     - chmod 600 ~/.ssh/known_hosts
 
-    # === NUEVO PASO: INSTALAR RSYNC EN EL RUNNER ===
+    # 5. Instalar rsync en el runner
     - echo "Instalando rsync en el runner..."
     - apt-get install -y rsync
 
-    # 5. Asegurar la existencia del directorio temporal en la Raspberry Pi (igual)
+    # 6. Asegurar la existencia del directorio temporal en la Raspberry Pi
     - export REMOTE_TMP_DIR="/home/babenza/tmp_vue_build"
     - echo "Creando o asegurando la existencia del directorio temporal ${REMOTE_TMP_DIR} en la Raspberry Pi..."
     - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "mkdir -p ${REMOTE_TMP_DIR}"
 
-    # 6. Limpiar el directorio temporal remoto (opcional, pero buena práctica) (igual)
+    # 7. Limpiar el directorio temporal remoto (opcional, buena práctica)
     - echo "Limpiando contenido antiguo del directorio temporal remoto..."
     - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "rm -rf ${REMOTE_TMP_DIR}/*"
 
-    # === AJUSTE CRÍTICO AQUÍ: USAR RSYNC EN LUGAR DE SCP ===
+    # 8. Copiar archivos del frontend usando rsync
     - echo "Copiando archivos del frontend a ${REMOTE_TMP_DIR} en la Raspberry Pi usando rsync..."
-    # La barra al final de 'dist/' es importante para copiar el CONTENIDO.
+    # rsync necesita que el ORIGEN sea accesible. El error "change_dir failed" es del lado del SENDER (el runner).
+    # Asegúrate de que 'dist/' tenga la barra al final para copiar su CONTENIDO.
     - rsync -avzh --delete -e "ssh -o StrictHostKeyChecking=no" dist/ babenza@5.34.149.250:"${REMOTE_TMP_DIR}/"
 
-    # 7. Ejecutar el script de despliegue del frontend en la Raspberry Pi (igual)
+    # 9. Ejecutar el script de despliegue del frontend en la Raspberry Pi
     - echo "Ejecutando script de despliegue en la Raspberry Pi..."
     - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "bash /home/babenza/deploy_frontend.sh ${REMOTE_TMP_DIR}"
 
