@@ -1,0 +1,94 @@
+# Define la imagen base de Docker para el runner de GitLab CI/CD.
+# node:20 es adecuada para la mayoría de los proyectos Vue.js modernos.
+image: node:20
+
+# Define las etapas de tu pipeline.
+# En este caso, solo tenemos una etapa principal de construcción y despliegue.
+stages:
+  - build_and_deploy_frontend
+
+# Define el trabajo de despliegue del frontend.
+deploy_frontend_job:
+  # Asigna este trabajo a la etapa 'build_and_deploy_frontend'.
+  stage: build_and_deploy_frontend
+  # Configura que este trabajo solo se ejecute en la rama 'main'.
+  only:
+    - main
+
+  # Script principal que define los pasos de ejecución del trabajo.
+  script:
+    # Habilita el modo "fail fast" (set -e) para que el script termine inmediatamente si un comando falla.
+    # Habilita el modo "debug" (set -x) para imprimir cada comando que se ejecuta, útil para depuración.
+    - set -eo pipefail
+    - set -x
+
+    # 1. Instalar dependencias de Node.js.
+    # --production=false asegura que las devDependencies (necesarias para el build) también se instalen.
+    # --ci es recomendado en entornos CI para una instalación limpia y reproducible.
+    - echo "Instalando dependencias de Node.js..."
+    - npm install --production=false --ci
+
+    # 2. Construir la aplicación Vue.js.
+    # Esto genera los archivos estáticos listos para producción en la carpeta 'dist/'.
+    - echo "Construyendo la aplicación Vue..."
+    - npm run build
+
+    # === PASOS DE DEPURACIÓN (pueden ser eliminados una vez que todo funcione bien) ===
+    # Listar el contenido del directorio de trabajo actual para verificar la existencia de 'dist/'.
+    - echo "--- Contenido del directorio de trabajo actual después del build ---"
+    - ls -la .
+    # Listar el contenido de la carpeta 'dist/' para asegurar que no está vacía.
+    - echo "--- Contenido de la carpeta 'dist/' (si existe) ---"
+    - ls -la dist/ || echo "Directorio dist/ no encontrado o vacío."
+    # Ajustar permisos de la carpeta dist/ para asegurar que rsync pueda acceder sin problemas.
+    # Esto abordó el error "change_dir failed" de rsync.
+    - echo "Ajustando permisos de la carpeta dist/ para rsync..."
+    - chmod -R 777 dist/ || echo "No se pudo cambiar permisos de dist/ (podría no existir o ser vacío)"
+    # === FIN DE PASOS DE DEPURACIÓN ===
+
+    # 3. Configurar SSH para la conexión con la Raspberry Pi.
+    # Instala openssh-client en el runner si no está presente.
+    - echo "Configurando SSH con ssh-agent..."
+    - apt-get update -y && apt-get install -y openssh-client
+    # Inicia ssh-agent y añade la clave privada SSH (que debe estar configurada como variable CI/CD).
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | ssh-add -
+
+    # 4. Añadir la huella digital del servidor de la Raspberry Pi a known_hosts.
+    # Esto evita el prompt de confirmación de huella digital en la primera conexión.
+    - mkdir -p ~/.ssh
+    - ssh-keyscan 5.34.149.250 >> ~/.ssh/known_hosts
+    - chmod 600 ~/.ssh/known_hosts
+
+    # 5. Instalar rsync en el runner de GitLab.
+    # rsync es más robusto para la sincronización de archivos que scp.
+    - echo "Instalando rsync en el runner..."
+    - apt-get install -y rsync
+
+    # 6. Definir el directorio de destino final en la Raspberry Pi.
+    # IMPORTANTE: rsync copiará directamente a este directorio, eliminando la necesidad de un 'mv' en el script remoto.
+    - export FRONTEND_FINAL_DIR="/home/babenza/deploy/frontend"
+    - echo "Asegurando la existencia del directorio final ${FRONTEND_FINAL_DIR} en la Raspberry Pi..."
+    # Aunque rsync puede crearlo, un mkdir -p explícito asegura la base.
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "mkdir -p ${FRONTEND_FINAL_DIR}"
+
+    # 7. Copiar los archivos construidos desde 'dist/' (en el runner) al directorio final (en la Raspberry Pi) usando rsync.
+    # -a: modo archivo (preserva permisos, tiempos, etc.)
+    # -v: verboso
+    # -z: comprimir datos durante la transferencia
+    # -h: salida en formato humano
+    # --delete: Elimina archivos en el destino que no existen en el origen (sincronización limpia).
+    # dist/: La barra final en 'dist/' es CRUCIAL. Significa "copiar el CONTENIDO de dist".
+    - echo "Copiando archivos del frontend directamente a ${FRONTEND_FINAL_DIR} en la Raspberry Pi usando rsync..."
+    - rsync -avzh --delete -e "ssh -o StrictHostKeyChecking=no" dist/ babenza@5.34.149.250:"${FRONTEND_FINAL_DIR}/"
+
+    # 8. Ejecutar el script de despliegue (simplificado) en la Raspberry Pi.
+    # Este script ahora solo se encargará de ajustar permisos y recargar Nginx.
+    # No necesita argumentos, ya que rsync ya copió los archivos al destino final.
+    - echo "Ejecutando script de post-despliegue en la Raspberry Pi (ajustando permisos y recargando Nginx)..."
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "bash /home/babenza/deploy_frontend.sh"
+
+  # Caching de node_modules para acelerar builds posteriores.
+  cache:
+    paths:
+      - node_modules/
