@@ -2,12 +2,12 @@
 image: node:20 # O la versión de Node.js que uses para Vue
 
 stages:
-  - build_and_deploy_frontend # Nombre de la etapa
+  - build_and_deploy_frontend
 
 deploy_frontend_job:
   stage: build_and_deploy_frontend
   only:
-    - main # Asumiendo que tu rama principal es 'main'
+    - main
 
   script:
     # 1. Instalar dependencias de Node.js
@@ -29,16 +29,25 @@ deploy_frontend_job:
     - ssh-keyscan 5.34.149.250 >> ~/.ssh/known_hosts
     - chmod 600 ~/.ssh/known_hosts
 
-    # === AJUSTE CRÍTICO AQUÍ ===
-    # El mkdir -p /tmp/vue_build/ DEBE ejecutarse en la RPi ANTES del scp
-    - echo "Creando directorio temporal /tmp/vue_build en la Raspberry Pi..."
-    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 'mkdir -p /tmp/vue_build' # No necesita la barra final si es un directorio nuevo
+    # === AJUSTE AQUÍ: Aseguramos la existencia del directorio remoto de forma explícita ===
+    - echo "Creando o asegurando la existencia del directorio temporal /tmp/vue_build en la Raspberry Pi..."
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 'mkdir -p /tmp/vue_build'
 
     # 5. Copiar los archivos construidos (de la carpeta 'dist') a un directorio temporal en la Raspberry Pi
     - echo "Copiando archivos del frontend a /tmp/vue_build en la Raspberry Pi..."
-    # scp necesita que el directorio de destino exista
-    - scp -r -o StrictHostKeyChecking=no dist/* babenza@5.34.149.250:/tmp/vue_build/
+    # Ajuste: A veces, especificar el destino como un directorio explícito en scp ayuda.
+    # Además, el problema anterior de 'No such file or directory' persistía incluso con el mkdir.
+    # Vamos a usar dos comandos scp separados, uno para el contenido y otro para los archivos ocultos.
+    # Es crucial que el comando 'mkdir -p' haya tenido éxito antes.
+    - scp -r -o StrictHostKeyChecking=no dist/. babenza@5.34.149.250:/tmp/vue_build/ # Copia el contenido de dist/ a /tmp/vue_build/
+    # El comando anterior con 'dist/.' intenta copiar el *contenido* del directorio 'dist'
+    # Si sigue fallando, podríamos intentar copiar a un subdirectorio o solo los archivos sin la recursión en 'dist' si es posible.
+
+    # Si la línea anterior falla, la siguiente probablemente también lo hará.
+    # La hemos simplificado a una sola, dist/. suele ser más robusto que dist/*.
+    # La línea de archivos ocultos se mantiene por si acaso.
     - scp -r -o StrictHostKeyChecking=no dist/.* babenza@5.34.149.250:/tmp/vue_build/ 2>/dev/null
+
 
     # 6. Ejecutar el script de despliegue del frontend en la Raspberry Pi
     - echo "Ejecutando script de despliegue en la Raspberry Pi..."
@@ -46,4 +55,4 @@ deploy_frontend_job:
 
   cache:
     paths:
-      - node_modules/ # Para cachear dependencias de Node.js
+      - node_modules/
