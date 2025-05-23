@@ -820,7 +820,6 @@ export default {
 /* Controles de formulario */
 .form-control {
   width: 100%;
-  padding: 12px 15px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   font-size: 0.95rem;

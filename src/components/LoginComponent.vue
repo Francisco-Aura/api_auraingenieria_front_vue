@@ -6,6 +6,14 @@
         <img src="@/assets/logo.png" alt="Aura Ingeniería" class="logo">
         <h1>Aura Ingeniería</h1>
       </div>
+      <!-- Mensaje de error -->
+      <div v-if="loginError" class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle alert-icon"></i>
+        <div class="alert-content">
+          <div class="alert-title">Error de autenticación</div>
+          <div class="alert-message">Usuario o contraseña incorrectos.</div>
+        </div>
+      </div>
       
       <!-- Formulario de inicio de sesión -->
       <form @submit.prevent="submitForm" class="login-form">
@@ -49,12 +57,14 @@ export default {
   data() {
     return {
       username: '', // Almacena el nombre de usuario ingresado
-      password: ''  // Almacena la contraseña ingresada
+      password: '',  // Almacena la contraseña ingresada
+      loginError: false // NUEVO: para mostrar el mensaje de error
     };
   },
   methods: {
     // Método para manejar el envío del formulario
     async submitForm() {
+      this.loginError = false;
       try {
         // Realiza una solicitud GET a la API de autenticación
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/usuarios/login`, {
@@ -72,13 +82,12 @@ export default {
           // Redirige al usuario al dashboard después del inicio de sesión exitoso
           this.$router.push('/dashboard/clientes');
         } else {
-          // Maneja cualquier respuesta que no sea exitosa
-          alert('Error en la autenticación');
+          this.loginError = true;
         }
       } catch (error) {
+        this.loginError = true;
         // Maneja errores en la solicitud, como credenciales incorrectas o problemas del servidor
         console.error('Error en la solicitud:', error);
-        alert('Usuario o contraseña incorrectos');
       }
     },
 
@@ -244,5 +253,30 @@ export default {
   .input-field {
     padding: 10px 12px 10px 35px;
   }
+}
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border-left: 4px solid #e74c3c;
+  display: flex;
+  align-items: center;
+  background-color: rgba(231, 76, 60, 0.08);
+  color: #c0392b;
+}
+.alert-icon {
+  margin-right: 12px;
+  font-size: 1.2rem;
+}
+.alert-content {
+  flex: 1;
+}
+.alert-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.alert-message {
+  font-size: 0.95rem;
 }
 </style>

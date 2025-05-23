@@ -222,7 +222,6 @@ body {
 .form-control {
   display: block;
   width: 100%;
-  padding: 10px 12px;
   font-size: 14px;
   line-height: 1.5;
   color: var(--text-primary);

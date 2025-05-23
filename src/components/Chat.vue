@@ -1,5 +1,5 @@
 <template>
-  <div class="chat-widget" :class="{ 'expanded': isExpanded }">
+  <div class="chat-widget" :class="{ 'expanded': isExpanded }" :hidden="true">
     <!-- Botón de chat minimizado -->
     <div class="chat-minimized" @click="toggleChat">
       <div class="minimized-content">

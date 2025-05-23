@@ -70,7 +70,7 @@
             <i class="fas fa-file-excel"></i>
             <span>Excel</span>
           </button>
-          <button class="btn btn-export btn-pdf" @click="exportarPDF" title="Exportar a PDF">
+          <button class="btn btn-export btn-pdf" @click="exportarPDF" title="Exportar a PDF" v-show="false">
             <i class="fas fa-file-pdf"></i>
             <span>PDF</span>
           </button>
@@ -596,6 +596,17 @@ export default {
         console.error('Error al exportar a PDF:', error);
         this.$toast.error('Error al exportar a PDF');
       }
+    },
+
+    mostrarNotificacionSubidaPDF() {
+      this.$swal.fire({
+        title: 'Subir Contrato',
+        text: 'Por favor, selecciona el archivo PDF del contrato',
+        icon: 'info',
+        confirmButtonText: 'Aceptar'
+      }).then(() => {
+        this.$refs.pdfInput.click();
+      });
     },
   },
   async mounted() {

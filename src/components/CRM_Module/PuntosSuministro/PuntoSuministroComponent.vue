@@ -62,7 +62,7 @@
           <button class="btn btn-outline" title="Exportar a Excel">
             <i class="fas fa-file-excel"></i>
           </button>
-          <button class="btn btn-outline" title="Exportar a PDF">
+          <button class="btn btn-outline" title="Exportar a PDF" :hidden="true">
             <i class="fas fa-file-pdf"></i>
           </button>
         </div>
