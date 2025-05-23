@@ -1,15 +1,19 @@
 <template>
-  <div class="spinner-overlay" v-if="isLoading">
-    <div class="spinner"></div>
+  <div v-if="isLoading" class="spinner-overlay">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <div class="loading-text">Cargando...</div>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
+  name: "SpinnerComponent",
   props: {
     isLoading: {
       type: Boolean,
-      required: true,
+      default: false,
     },
   },
 };
@@ -22,29 +26,48 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.7); /* Más oscuro para mayor visibilidad */
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* Alinea el spinner arriba */
+  align-items: center;
   z-index: 9999;
-  padding-top: 100px; /* Da espacio desde la parte superior */
+  backdrop-filter: blur(4px);
+}
+
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .spinner {
-  border: 6px solid rgba(255, 255, 255, 0.3); /* Grosor incrementado */
-  border-top: 6px solid #fff; /* Blanco puro para mayor contraste */
+  width: 60px;
+  height: 60px;
+  border: 5px solid var(--border-color);
+  border-top: 5px solid var(--primary-color);
   border-radius: 50%;
-  width: 80px; /* Tamaño aumentado */
-  height: 80px;
-  animation: spin 0.8s linear infinite; /* Velocidad de rotación más rápida */
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  margin-top: 15px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

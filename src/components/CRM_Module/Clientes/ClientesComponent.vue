@@ -1,84 +1,208 @@
 <template>
   <!-- Contenedor principal del módulo de gestión de clientes -->
-  <div class="clientes-container">
-    <!-- Muestra un spinner mientras se realizan solicitudes al servidor -->
-    <Spinner :isLoading="loading" />  
-    <!-- Sección de filtro y botón de creación de clientes -->
-    <div class="filter-container">
-      <button class="btn btn-crear" @click="abrirFormularioCrearCliente">Crear Cliente</button>
-      <input
-        type="text"
-        placeholder="Buscar cliente..."
-        v-model="filter"
-        class="filter-input"
-      />
+  <div class="clientes-container fade-in">
+    <!-- Loading spinner -->
+    <Spinner :isLoading="loading" />
+
+    <!-- Panel superior con stats y botón de crear cliente -->
+    <div class="stats-panel">
+      <div class="stats-container">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ clientes.length }}</div>
+            <div class="stat-label">Total Clientes</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ totalPuntosSuministro }}</div>
+            <div class="stat-label">Puntos Suministro</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-industry"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ sectores.length }}</div>
+            <div class="stat-label">Sectores</div>
+          </div>
+        </div>
+      </div>
+      <div class="action-card">
+        <button class="btn btn-primary" @click="abrirFormularioCrearCliente">
+          <i class="fas fa-plus"></i>
+          <span>Crear Cliente</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Tabla para mostrar la lista de clientes -->
-    <table class="clientes-table">
-      <thead>
-        <tr>
-          <th>Nombre Cliente</th>
-          <th>CIF</th>
-          <th>Dirección Fiscal</th>
-          <th>PS</th> <!-- Número de puntos de suministro -->
-          <th>Usuario</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="cliente in filteredClientes" :key="cliente.idCliente">
-          <td>{{ cliente.nombre }}</td>
-          <td>{{ cliente.cif }}</td>
-          <td>{{ cliente.direccionFiscal }}</td>
-          <td>
-            {{ cliente.numeroPuntosSuministro }}
-            <button class="btn btn-ojo" @click="verPuntosSuministro(cliente)" title="Ver puntos de suministro">👁️</button>
-          </td>
-          <td>{{ cliente.usuarioAsignado }}</td>
-          <td>
-            <button class="btn btn-consultar" @click="cargarDatosCliente(cliente.idCliente)">
-              Consultar Cliente
+    <!-- Panel de búsqueda y filtros -->
+    <div class="card filter-panel">
+      <div class="filter-header">
+        <h2><i class="fas fa-filter"></i> Filtros</h2>
+      </div>
+      <div class="filter-controls">
+        <div class="search-container">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Buscar por nombre o CIF..."
+            v-model="filter"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de clientes con nuevo diseño -->
+    <div class="card table-panel">
+      <div class="table-header">
+        <h2><i class="fas fa-users"></i> Cartera de Clientes</h2>
+        <div class="table-actions-horizontal">
+          <button class="btn btn-export btn-excel" @click="exportarExcel" title="Exportar a Excel">
+            <i class="fas fa-file-excel"></i>
+            <span>Excel</span>
+          </button>
+          <button class="btn btn-export btn-pdf" @click="exportarPDF" title="Exportar a PDF">
+            <i class="fas fa-file-pdf"></i>
+            <span>PDF</span>
+          </button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <div class="table-controls">
+          <div class="records-per-page">
+            <label for="recordsPerPage">Registros por página:</label>
+            <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th @click="sortBy('nombre')" class="sortable" style="width: 20%">
+                <i class="fas fa-user mr-2"></i>Nombre Cliente
+                <i :class="getSortIcon('nombre')"></i>
+              </th>
+              <th @click="sortBy('cif')" class="sortable" style="width: 15%">
+                <i class="fas fa-id-card mr-2"></i>CIF
+                <i :class="getSortIcon('cif')"></i>
+              </th>
+              <th @click="sortBy('direccionFiscal')" class="sortable" style="width: 25%">
+                <i class="fas fa-map-marker-alt mr-2"></i>Dirección Fiscal
+                <i :class="getSortIcon('direccionFiscal')"></i>
+              </th>
+              <th @click="sortBy('numeroPuntosSuministro')" class="sortable" style="width: 15%">
+                <i class="fas fa-bolt mr-2"></i>PS
+                <i :class="getSortIcon('numeroPuntosSuministro')"></i>
+              </th>
+              <th @click="sortBy('usuarioAsignado')" class="sortable" style="width: 15%">
+                <i class="fas fa-user-tie mr-2"></i>Usuario
+                <i :class="getSortIcon('usuarioAsignado')"></i>
+              </th>
+              <th style="width: 10%"><i class="fas fa-cogs mr-2"></i>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="cliente in paginatedClientes" :key="cliente.idCliente">
+              <td class="text-truncate" :title="cliente.nombre">{{ cliente.nombre }}</td>
+              <td class="text-truncate" :title="cliente.cif">{{ cliente.cif }}</td>
+              <td class="text-truncate" :title="cliente.direccionFiscal">{{ cliente.direccionFiscal }}</td>
+              <td>
+                <div class="ps-cell">
+                  <span class="ps-badge">{{ cliente.numeroPuntosSuministro }}</span>
+                  <button class="btn-icon btn-view" @click="verPuntosSuministro(cliente)" title="Ver puntos de suministro">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </td>
+              <td class="text-truncate" :title="cliente.usuarioAsignado">{{ cliente.usuarioAsignado }}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-icon btn-edit" @click="cargarDatosCliente(cliente.idCliente)" title="Consultar Cliente">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn-icon btn-add" @click="abrirFormularioNuevoPunto(cliente)" title="Crear Punto de Suministro">
+                    <i class="fas fa-plus-circle"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="paginatedClientes.length === 0">
+              <td colspan="6" class="text-center py-4">
+                <div class="empty-state">
+                  <i class="fas fa-search fa-3x text-muted"></i>
+                  <p class="mt-3">No se encontraron clientes que coincidan con la búsqueda</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pagination-controls">
+          <div class="pagination-info">
+            Mostrando {{ paginationStart }} - {{ paginationEnd }} de {{ filteredClientes.length }} registros
+          </div>
+          <div class="pagination-buttons">
+            <button 
+              class="btn btn-outline" 
+              :disabled="currentPage === 1"
+              @click="currentPage--"
+            >
+              <i class="fas fa-chevron-left"></i>
             </button>
-            <button class="btn btn-crearPS" @click="abrirFormularioNuevoPunto(cliente)">
-              Crear PS
+            <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+            <button 
+              class="btn btn-outline" 
+              :disabled="currentPage === totalPages"
+              @click="currentPage++"
+            >
+              <i class="fas fa-chevron-right"></i>
             </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <!-- Modal: Detalle de puntos de suministro -->
-      <PuntosSuministroClienteComponent
-        v-if="isModalPuntosOpen"
-        :cliente="clienteSeleccionado"
-        :puntosSuministro="puntosSuministro"
-        @cerrar-modal="cerrarModalPuntos"
-      />
+    <!-- Modales -->
+    <PuntosSuministroClienteComponent
+      v-if="isModalPuntosOpen"
+      :cliente="clienteSeleccionado"
+      :puntosSuministro="puntosSuministro"
+      @cerrar-modal="cerrarModalPuntos"
+    />
 
-      <!-- Modal: Crear o actualizar cliente -->
-      <CreaActualizaClienteComponent
-        :formularioVisible="formularioVisible"
-        :modoActualizar="modoActualizar"
-        :nuevoCliente="clienteSeleccionado"
-        :sectores="sectores"
-        :usuarios="usuarios"
-        :subtipologias="subtipologias"
-        @cancelar-formulario="formularioVisible = false"
-        @crear-cliente="crearCliente"
-        @actualizar-cliente="actualizarCliente"
-      />
+    <CreaActualizaClienteComponent
+      :formularioVisible="formularioVisible"
+      :modoActualizar="modoActualizar"
+      :nuevoCliente="clienteSeleccionado"
+      :sectores="sectores"
+      :usuarios="usuarios"
+      :subtipologias="subtipologias"
+      @cancelar-formulario="formularioVisible = false"
+      @crear-cliente="crearCliente"
+      @actualizar-cliente="actualizarCliente"
+    />
 
-      <!-- Modal: Crear punto de suministro -->
-      <CrearPuntosSuministroComponent
-        v-if="showModalPS"
-        :ShowModalPS="showModalPS"
-        :formulario-visible="showModalPS"
-        :cliente="clienteSeleccionado"
-        :nuevo-punto="nuevoPunto"
-        @guardar-punto-suministro="crearPuntoSuministro"
-        @cerrar-formulario="cerrarFormularioNuevoPuntoSuministro"
-      />    
+    <CrearPuntosSuministroComponent
+      v-if="showModalPS"
+      :ShowModalPS="showModalPS"
+      :formulario-visible="showModalPS"
+      :cliente="clienteSeleccionado"
+      :nuevo-punto="nuevoPunto"
+      @guardar-punto-suministro="crearPuntoSuministro"
+      @cerrar-formulario="cerrarFormularioNuevoPuntoSuministro"
+    />
   </div>
 </template>
 
@@ -88,6 +212,9 @@ import Spinner from "@/components/SpinnerComponent.vue";
 import PuntosSuministroClienteComponent from "@/components/CRM_Module/Clientes/PuntosSuministroClienteComponent.vue";
 import CreaActualizaClienteComponent from "@/components/CRM_Module/Clientes/CreaActualizaClientesComponent.vue";
 import CrearPuntosSuministroComponent from "@/components/CRM_Module/Clientes/CrearPuntosSuministroComponent.vue";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export default {
   name: "ClientesComponent",
@@ -102,7 +229,7 @@ export default {
       clientes: [], // Lista de clientes
       filter: "", // Texto del filtro
       puntosSuministro: [],        // Lista de puntos de suministro
-      clienteSeleccionado: {},  // 🔹 Cambiar null por un objeto vacío
+      clienteSeleccionado: {},  // Cliente seleccionado
       isModalPuntosOpen: false,    // Estado para controlar la visibilidad del modal
       loading: false,              // Estado para mostrar un spinner de carga
       formularioVisible: false, // Control de visibilidad del formulario cliente
@@ -114,6 +241,10 @@ export default {
       isSubmitting: false, // Evita múltiples envíos del formulario
       showModalPS: false, // Estado del modal de puntos de suministro
       nuevoPunto: this.resetFormularioPuntoSuministro(), // Datos del nuevo punto de suministro
+      currentPage: 1,
+      recordsPerPage: 10,
+      sortKey: null,
+      sortOrder: null,
     };
   },
   computed: {
@@ -129,6 +260,49 @@ export default {
         );
       });
     },
+    // Total de puntos de suministro de todos los clientes
+    totalPuntosSuministro() {
+      return this.clientes.reduce((total, cliente) => {
+        return total + (cliente.numeroPuntosSuministro || 0);
+      }, 0);
+    },
+    sortedClientes() {
+      const sorted = [...this.filteredClientes].sort((a, b) => {
+        let aValue = a[this.sortKey];
+        let bValue = b[this.sortKey];
+        
+        // Si el valor es null o undefined, lo tratamos como cadena vacía
+        aValue = aValue ?? '';
+        bValue = bValue ?? '';
+        
+        if (this.sortOrder === 'asc') {
+          return aValue > bValue ? 1 : -1;
+        } else {
+          return aValue < bValue ? 1 : -1;
+        }
+      });
+      
+      return sorted;
+    },
+    
+    paginatedClientes() {
+      const start = (this.currentPage - 1) * this.recordsPerPage;
+      const end = start + this.recordsPerPage;
+      return this.sortedClientes.slice(start, end);
+    },
+    
+    totalPages() {
+      return Math.ceil(this.filteredClientes.length / this.recordsPerPage);
+    },
+    
+    paginationStart() {
+      return (this.currentPage - 1) * this.recordsPerPage + 1;
+    },
+    
+    paginationEnd() {
+      const end = this.currentPage * this.recordsPerPage;
+      return end > this.filteredClientes.length ? this.filteredClientes.length : end;
+    }
   },
   methods: {
     // Carga la lista de clientes desde el backend
@@ -321,6 +495,108 @@ export default {
         console.error("Error al crear punto de suministro:", error);
       }
     },    
+    sortBy(key) {
+      if (this.sortKey === key) {
+        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.sortKey = key;
+        this.sortOrder = 'asc';
+      }
+    },
+    
+    getSortIcon(key) {
+      if (this.sortKey !== key) return 'fas fa-sort';
+      return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+    },
+
+    exportarExcel() {
+      try {
+        const data = this.filteredClientes.map(cliente => ({
+          'Nombre Cliente': cliente.nombre,
+          'CIF': cliente.cif,
+          'Dirección Fiscal': cliente.direccionFiscal,
+          'Puntos Suministro': cliente.numeroPuntosSuministro,
+          'Usuario Asignado': cliente.usuarioAsignado
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
+        
+        // Ajustar el ancho de las columnas
+        const wscols = [
+          {wch: 30}, // Nombre Cliente
+          {wch: 15}, // CIF
+          {wch: 40}, // Dirección Fiscal
+          {wch: 15}, // Puntos Suministro
+          {wch: 20}  // Usuario Asignado
+        ];
+        ws['!cols'] = wscols;
+
+        XLSX.writeFile(wb, 'Cartera_Clientes.xlsx');
+      } catch (error) {
+        console.error('Error al exportar a Excel:', error);
+        this.$toast.error('Error al exportar a Excel');
+      }
+    },
+
+    exportarPDF() {
+      try {
+        const doc = new jsPDF();
+        
+        // Añadir logo
+        const logo = new Image();
+        logo.src = require('@/assets/logo.png');
+        doc.addImage(logo, 'PNG', 14, 10, 30, 30);
+        
+        // Título
+        doc.setFontSize(16);
+        doc.setTextColor(51, 51, 51); // Color gris oscuro para el título
+        doc.text('Cartera de Clientes', 50, 25);
+        
+        // Fecha de exportación
+        doc.setFontSize(10);
+        const fecha = new Date().toLocaleDateString();
+        doc.text(`Exportado el: ${fecha}`, 14, 45);
+
+        // Datos de la tabla
+        const data = this.filteredClientes.map(cliente => [
+          cliente.nombre,
+          cliente.cif,
+          cliente.direccionFiscal,
+          cliente.numeroPuntosSuministro,
+          cliente.usuarioAsignado
+        ]);
+
+        doc.autoTable({
+          head: [['Nombre Cliente', 'CIF', 'Dirección Fiscal', 'PS', 'Usuario']],
+          body: data,
+          startY: 50,
+          styles: { 
+            fontSize: 8,
+            cellPadding: 3
+          },
+          headStyles: { 
+            fillColor: [255, 193, 7],
+            textColor: [51, 51, 51],
+            fontStyle: 'bold',
+            halign: 'center'
+          },
+          columnStyles: {
+            0: { cellWidth: 40 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: 60 },
+            3: { cellWidth: 15 },
+            4: { cellWidth: 25 }
+          }
+        });
+
+        doc.save('Cartera_Clientes.pdf');
+      } catch (error) {
+        console.error('Error al exportar a PDF:', error);
+        this.$toast.error('Error al exportar a PDF');
+      }
+    },
   },
   async mounted() {
     this.loading = true; // Forzar la visibilidad del spinner
@@ -342,23 +618,382 @@ export default {
     } catch (error) {
       console.error("Error al cargar datos iniciales:", error);
     }
+  },
+  watch: {
+    recordsPerPage() {
+      this.currentPage = 1;
+    }
   }
 };
 </script>
 
 <style scoped>
-/* Botones con estilo "ojo" */
-.btn-ojo {
-  background-color: transparent;
-  border: none;
-  font-size: 1.2rem;
-  color: #f5c600;
-  cursor: pointer;
+/* Grid layout para el contenedor principal */
+.clientes-container {
+  display: grid;
+  grid-template-rows: auto auto auto 1fr;
+  gap: 20px;
+  padding: 20px;
+  max-width: 1600px;
+  margin: 0 auto;
 }
-/* Efecto hover para los botones "ojo" */
-.btn-ojo:hover {
-  color: #333;
-  background-color: transparent;
+
+/* Panel de estadísticas */
+.stats-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.stats-container {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+}
+
+.stat-card {
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background-color: var(--primary-light);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin-right: 16px;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.action-card {
+  background-color: var(--primary-color);
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  padding: 16px 20px;
+  min-width: 200px;
+}
+
+.action-card:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.action-card .btn {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+}
+
+.filter-header h2 i,
+.table-header h2 i {
+  margin-right: 10px;
+  color: var(--primary-color);
+}
+
+.table-header {
+  background-color: white;
+  color: var(--text-primary);
+  padding: 15px 20px;
+  border-top-left-radius: var(--border-radius);
+  border-top-right-radius: var(--border-radius);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-actions-horizontal {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-excel {
+  background-color: #217346;
+  color: white;
+  border: none;
+}
+
+.btn-excel:hover {
+  background-color: #1e6b3d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(33, 115, 70, 0.2);
+}
+
+.btn-pdf {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+}
+
+.btn-pdf:hover {
+  background-color: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+}
+
+.btn-export i {
+  font-size: 1.2em;
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-icon.btn-edit {
+  color: #2196f3; /* Azul para editar */
+}
+.btn-icon.btn-edit:hover {
+  background-color: rgba(33,150,243,0.1);
+}
+
+.btn-icon.btn-view {
+  color: #43a047; /* Verde para ver */
+}
+.btn-icon.btn-view:hover {
+  background-color: rgba(67,160,71,0.1);
+}
+
+.btn-icon.btn-add {
+  color: #ff9800; /* Naranja para agregar */
+}
+.btn-icon.btn-add:hover {
+  background-color: rgba(255,152,0,0.1);
+}
+
+.ps-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.ps-badge {
+  background-color: var(--primary-light);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.table-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.records-per-page {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: white;
+  padding: 8px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.records-per-page label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.records-per-page select {
+  width: auto;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: white;
+  color: var(--text-primary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.records-per-page select:hover {
+  border-color: var(--primary-color);
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  background-color: var(--hover-color);
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background-color: var(--surface-color);
+  border-top: 1px solid var(--border-color);
+}
+
+.pagination-info {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  background-color: white;
+  padding: 8px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: white;
+  padding: 8px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.page-info {
+  color: var(--text-primary);
+  font-weight: 500;
+  padding: 0 10px;
+}
+
+.btn-outline {
+  background: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 0;
+}
+
+.data-table th {
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 15px;
+  text-align: left;
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.data-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+  height: 52px; /* Altura fija para las filas */
+}
+
+.text-truncate {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  background-color: white;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  min-width: 120px; /* Ancho mínimo para los botones de acción */
 }
 </style>
 

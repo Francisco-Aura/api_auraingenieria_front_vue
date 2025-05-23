@@ -177,4 +177,83 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.18);
+  z-index: 1000;
+}
+.modal-content {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  max-width: 1100px;
+  min-width: 600px;
+  max-height: 90vh;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 32px 0 32px;
+}
+.modal-content h1, .modal-content h2 {
+  margin: 0;
+  padding: 24px 32px 0 32px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+form {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 24px 32px 0 32px;
+}
+.modal-footer {
+  background: #fff;
+  padding: 18px 32px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+}
+.form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+.input-with-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.input-with-checkbox input[type="text"] {
+  flex: 1;
+}
+.input-with-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+@media (max-width: 700px) {
+  .modal-content {
+    min-width: 0;
+    width: 98vw;
+    max-width: 98vw;
+    padding: 0 8px;
+  }
+}
+</style>

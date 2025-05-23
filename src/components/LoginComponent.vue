@@ -1,50 +1,50 @@
 <template>
   <!-- Contenedor principal para la pantalla de inicio de sesión -->
   <div class="login-wrapper">
-    <!-- Contenedor interno centrado -->
-    <div class="container">
-      <!-- Título de la página de inicio de sesión -->
-      <h2>Iniciar sesión</h2>
-
+    <div class="login-container">
+      <div class="logo-container">
+        <img src="@/assets/logo.png" alt="Aura Ingeniería" class="logo">
+        <h1>Aura Ingeniería</h1>
+      </div>
+      
       <!-- Formulario de inicio de sesión -->
-      <form @submit.prevent="submitForm"> <!-- Evita la recarga de página al enviar el formulario -->
-        <!-- Campo de entrada para el nombre de usuario -->
-        <input type="text" placeholder="Usuario" v-model="username" required />
-        
-        <!-- Campo de entrada para la contraseña -->
-        <input type="password" placeholder="Contraseña" v-model="password" required />
-        
-        <!-- Contenedor para el botón de envío y el enlace de recuperación de contraseña -->
-        <div class="button-container">
-          <!-- Botón para enviar el formulario -->
-          <button type="submit">Acceder</button>
-
-          <!-- Enlace para la recuperación de contraseña -->
-          <a href="#" @click.prevent="showRecoverPasswordMessage">¿Olvidaste tu contraseña?</a>
+      <form @submit.prevent="submitForm" class="login-form">
+        <div class="input-group">
+          <i class="fas fa-user"></i>
+          <input 
+            type="text" 
+            v-model="username" 
+            placeholder="Usuario" 
+            required 
+            class="input-field"
+          />
         </div>
+        
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input 
+            type="password" 
+            v-model="password" 
+            placeholder="Contraseña" 
+            required 
+            class="input-field"
+          />
+        </div>
+        
+        <button type="submit" class="login-button">
+          <span>Acceder</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
       </form>
     </div>
   </div>
-  <!--
-  ICONOS PARA TABLAS
-      Editar	✏️	fas fa-edit
-      Eliminar	🗑️	fas fa-trash
-      Ver detalles	🔍	fas fa-eye
-      Guardar	💾	fas fa-save
-      Cancelar	❌	fas fa-times
-      Agregar nuevo	➕	fas fa-plus
-      Refrescar	🔄	fas fa-sync-alt
-      Descargar	⬇️	fas fa-download
-      Subir archivo	📤	fas fa-upload
-      Filtrar	🔎	fas fa-filter
-      Imprimir	🖨️	fas fa-print
-  -->
 </template>
 
 <script>
 import axios from 'axios'; // Importa Axios para realizar solicitudes HTTP
 
 export default {
+  name: 'LoginComponent',
   // Define el estado reactivo del componente
   data() {
     return {
@@ -70,7 +70,7 @@ export default {
           // Guardamos los datos del usuario en localStorage
           localStorage.setItem('usuario', JSON.stringify(userData));
           // Redirige al usuario al dashboard después del inicio de sesión exitoso
-          this.$router.push('/dashboard');
+          this.$router.push('/dashboard/clientes');
         } else {
           // Maneja cualquier respuesta que no sea exitosa
           alert('Error en la autenticación');
@@ -91,32 +91,158 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+
+:root {
+  --accent-color: #FFC107;
+  --primary-color: #333333;
+  --secondary-color: #444444;
+  --light-gray: #F5F5F5;
+  --medium-gray: #E0E0E0;
+  --dark-gray: #666666;
+  --white: #FFFFFF;
+  --surface-color: #FFFFFF;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --border-color: #E0E0E0;
+}
+
 .login-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
+  background-image: url('@/assets/background_energy.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 20px;
 }
 
-.container {
-  background-color: #d9d9d9;
+.login-container {
+  background: rgba(255, 255, 255, 0.562);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   padding: 40px;
-  border-radius: 10px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  width: 300px;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.007);
+  width: 100%;
+  max-width: 500px;
+  border: 1px solid rgba(255, 255, 255, 0.068);
+}
+
+.logo-container {
   text-align: center;
+  margin-bottom: 40px;
 }
 
-input {
-  padding: 10px;
+.logo {
+  width: 120px;
+  height: auto;
   margin-bottom: 20px;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  font-size: 16px;
-  transition: box-shadow 0.3s ease;
 }
 
-input:focus {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+.logo-container h1 {
+  color: var(--text-primary);
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-group i {
+  position: absolute;
+  left: 15px;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px 15px 12px 40px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.input-field:focus {
+  border-color: var(--accent-color);
+  outline: none;
+  box-shadow: 0 0 0 1px var(--accent-color);
+}
+
+.input-field::placeholder {
+  color: var(--text-secondary);
+}
+
+.login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login-button:hover {
+  background: var(--secondary-color);
+  transform: translateY(-1px);
+}
+
+.links-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.forgot-password {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.2s ease;
+}
+
+.forgot-password:hover {
+  color: var(--accent-color);
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 30px 20px;
+  }
+  
+  .logo {
+    width: 100px;
+  }
+  
+  .input-field {
+    padding: 10px 12px 10px 35px;
+  }
 }
 </style>
