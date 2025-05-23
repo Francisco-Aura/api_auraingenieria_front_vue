@@ -12,37 +12,38 @@ deploy_frontend_job:
   script:
     # 1. Instalar dependencias de Node.js
     - echo "Instalando dependencias de Node.js..."
-    - npm install --production=false --ci # Usa --ci para installs en CI, --production=false para instalar devDeps también
+    - npm install --production=false --ci
 
     # 2. Construir la aplicación Vue (generar archivos estáticos)
     - echo "Construyendo la aplicación Vue..."
-    - npm run build # Este comando genera la carpeta 'dist' (o 'build') por defecto
+    - npm run build
 
-    # 3. Configurar SSH para usar el Secure File
-    - echo "Configurando SSH con Secure File..."
+    # 3. Configurar SSH usando ssh-agent
+    - echo "Configurando SSH con ssh-agent..."
     - apt-get update -y && apt-get install -y openssh-client
+    - eval $(ssh-agent -s) # Inicia el agente SSH
+    - echo "$SSH_PRIVATE_KEY" | ssh-add - # Añade la clave privada desde la variable al agente SSH
+
+    # 4. Añadir la huella digital del servidor (known_hosts)
     - mkdir -p ~/.ssh
-    # Copia el Secure File a la ubicación esperada por SSH y le da permisos
-    # GitLab monta los Secure Files en el directorio '$CI_SECURE_FILES_DIR'
-    - cp "$CI_SECURE_FILES_DIR/id_rpi_bitbucket" ~/.ssh/id_rsa_gitlab # Nombre del archivo en Secure Files
-    - chmod 600 ~/.ssh/id_rsa_gitlab # Permisos correctos para la clave privada
+    - ssh-keyscan 5.34.149.250 >> ~/.ssh/known_hosts
+    - chmod 600 ~/.ssh/known_hosts
 
-    - ssh-keyscan 5.34.149.250 >> ~/.ssh/known_hosts # Añade la huella digital del servidor de la RPi
-    - chmod 600 ~/.ssh/known_hosts # Asegura permisos para known_hosts
-
-    # 4. Crear el directorio temporal en la Raspberry Pi para los archivos de build
+    # 5. Crear el directorio temporal en la Raspberry Pi para los archivos de build
     - echo "Creando directorio temporal /tmp/vue_build en la Raspberry Pi..."
-    # Usamos -i ~/.ssh/id_rsa_gitlab porque hemos copiado la clave a esa ruta
-    - ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_gitlab babenza@5.34.149.250 'mkdir -p /tmp/vue_build/'
+    # Ya no necesitas -i ~/.ssh/id_rsa_gitlab porque la clave está en el agente
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 'mkdir -p /tmp/vue_build/'
 
-    # 5. Copiar los archivos construidos (de la carpeta 'dist') a un directorio temporal en la Raspberry Pi
+    # 6. Copiar los archivos construidos (de la carpeta 'dist') a un directorio temporal en la Raspberry Pi
     - echo "Copiando archivos del frontend a /tmp/vue_build en la Raspberry Pi..."
-    - scp -r -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_gitlab dist/* babenza@5.34.149.250:/tmp/vue_build/
-    - scp -r -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_gitlab dist/.* babenza@5.34.149.250:/tmp/vue_build/ 2>/dev/null
+    # Ya no necesitas -i ~/.ssh/id_rsa_gitlab
+    - scp -r -o StrictHostKeyChecking=no dist/* babenza@5.34.149.250:/tmp/vue_build/
+    - scp -r -o StrictHostKeyChecking=no dist/.* babenza@5.34.149.250:/tmp/vue_build/ 2>/dev/null
 
-    # 6. Ejecutar el script de despliegue del frontend en la Raspberry Pi
+    # 7. Ejecutar el script de despliegue del frontend en la Raspberry Pi
     - echo "Ejecutando script de despliegue en la Raspberry Pi..."
-    - ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_gitlab babenza@5.34.149.250 'bash /home/babenza/deploy_frontend.sh'
+    # Ya no necesitas -i ~/.ssh/id_rsa_gitlab
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 'bash /home/babenza/deploy_frontend.sh'
 
   cache:
     paths:
