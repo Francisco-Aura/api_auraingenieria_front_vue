@@ -1,5 +1,5 @@
 # En la raíz de tu proyecto frontend
-image: node:20 # O la versión de Node.js que uses para Vue
+image: node:20
 
 stages:
   - build_and_deploy_frontend
@@ -10,48 +10,41 @@ deploy_frontend_job:
     - main
 
   script:
-    # 1. Instalar dependencias de Node.js
-    - echo "Instalando dependencias de Node.js..."
-    - npm install --production=false --ci
+    # ... (Instalación de dependencias y build de Vue - todo igual) ...
 
-    # 2. Construir la aplicación Vue (generar archivos estáticos)
-    - echo "Construyendo la aplicación Vue..."
-    - npm run build
-
-    # 3. Configurar SSH usando ssh-agent
+    # 3. Configurar SSH usando ssh-agent (igual)
     - echo "Configurando SSH con ssh-agent..."
     - apt-get update -y && apt-get install -y openssh-client
-    - eval $(ssh-agent -s) # Inicia el agente SSH
-    - echo "$SSH_PRIVATE_KEY" | ssh-add - # Añade la clave privada desde la variable al agente SSH
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | ssh-add -
 
-    # 4. Añadir la huella digital del servidor (known_hosts)
+    # 4. Añadir la huella digital del servidor (known_hosts) (igual)
     - mkdir -p ~/.ssh
     - ssh-keyscan 5.34.149.250 >> ~/.ssh/known_hosts
     - chmod 600 ~/.ssh/known_hosts
 
-    # === AJUSTE AQUÍ: Aseguramos la existencia del directorio remoto de forma explícita ===
-    - echo "Creando o asegurando la existencia del directorio temporal /tmp/vue_build en la Raspberry Pi..."
-    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 'mkdir -p /tmp/vue_build'
+    # === AJUSTE CRÍTICO AQUÍ: Cambiamos el directorio temporal a la home del usuario ===
+    - export REMOTE_TMP_DIR="/home/babenza/tmp_vue_build" # Nueva variable para el directorio temporal
+    - echo "Creando o asegurando la existencia del directorio temporal ${REMOTE_TMP_DIR} en la Raspberry Pi..."
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "mkdir -p ${REMOTE_TMP_DIR}"
 
-    # 5. Copiar los archivos construidos (de la carpeta 'dist') a un directorio temporal en la Raspberry Pi
-    - echo "Copiando archivos del frontend a /tmp/vue_build en la Raspberry Pi..."
-    # Ajuste: A veces, especificar el destino como un directorio explícito en scp ayuda.
-    # Además, el problema anterior de 'No such file or directory' persistía incluso con el mkdir.
-    # Vamos a usar dos comandos scp separados, uno para el contenido y otro para los archivos ocultos.
-    # Es crucial que el comando 'mkdir -p' haya tenido éxito antes.
-    - scp -r -o StrictHostKeyChecking=no dist/. babenza@5.34.149.250:/tmp/vue_build/ # Copia el contenido de dist/ a /tmp/vue_build/
-    # El comando anterior con 'dist/.' intenta copiar el *contenido* del directorio 'dist'
-    # Si sigue fallando, podríamos intentar copiar a un subdirectorio o solo los archivos sin la recursión en 'dist' si es posible.
-
-    # Si la línea anterior falla, la siguiente probablemente también lo hará.
-    # La hemos simplificado a una sola, dist/. suele ser más robusto que dist/*.
-    # La línea de archivos ocultos se mantiene por si acaso.
-    - scp -r -o StrictHostKeyChecking=no dist/.* babenza@5.34.149.250:/tmp/vue_build/ 2>/dev/null
+    # 5. Limpiar el directorio temporal remoto antes de copiar (opcional, pero buena práctica)
+    - echo "Limpiando contenido antiguo del directorio temporal remoto..."
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "rm -rf ${REMOTE_TMP_DIR}/*"
 
 
-    # 6. Ejecutar el script de despliegue del frontend en la Raspberry Pi
+    # 6. Copiar los archivos construidos (de la carpeta 'dist') al directorio temporal en la Raspberry Pi
+    - echo "Copiando archivos del frontend a ${REMOTE_TMP_DIR} en la Raspberry Pi..."
+    - scp -r -o StrictHostKeyChecking=no dist/. babenza@5.34.149.250:"${REMOTE_TMP_DIR}/" # Copia el contenido de dist/
+    - scp -r -o StrictHostKeyChecking=no dist/.* babenza@5.34.149.250:"${REMOTE_TMP_DIR}/" 2>/dev/null # Para archivos ocultos
+
+    # 7. Ejecutar el script de despliegue del frontend en la Raspberry Pi
+    # IMPORTANTE: Tu script deploy_frontend.sh en la RPi debe saber dónde buscar los archivos.
+    # Necesitamos pasarle el directorio temporal o ajustarlo.
+    # La forma más fácil es cambiar BUILD_DIR en deploy_frontend.sh
+    # O, pasarle el directorio como argumento:
     - echo "Ejecutando script de despliegue en la Raspberry Pi..."
-    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 'bash /home/babenza/deploy_frontend.sh'
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "bash /home/babenza/deploy_frontend.sh ${REMOTE_TMP_DIR}"
 
   cache:
     paths:
