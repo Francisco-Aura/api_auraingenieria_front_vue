@@ -1,5 +1,5 @@
 # En la raíz de tu proyecto frontend
-image: node:20
+image: node:20 # Asegúrate de que esta versión de Node.js sea compatible con tu Vue CLI
 
 stages:
   - build_and_deploy_frontend
@@ -10,39 +10,50 @@ deploy_frontend_job:
     - main
 
   script:
-    # ... (Instalación de dependencias y build de Vue - todo igual) ...
+    # 1. Instalar dependencias de Node.js
+    - echo "Instalando dependencias de Node.js..."
+    - npm install --production=false --ci # --production=false asegura que se instalen las devDependencies necesarias para 'build'
 
-    # 3. Configurar SSH usando ssh-agent (igual)
+    # 2. Construir la aplicación Vue (generar archivos estáticos)
+    - echo "Construyendo la aplicación Vue..."
+    - npm run build
+
+    # === PASOS DE DEPURACIÓN CLAVE AQUÍ ===
+    # Listar el contenido del directorio actual para ver si 'dist' se ha creado
+    - echo "--- Contenido del directorio de trabajo actual después del build ---"
+    - ls -la .
+    # Listar el contenido de la carpeta 'dist' si existe
+    - echo "--- Contenido de la carpeta 'dist/' (si existe) ---"
+    - ls -la dist/ || echo "Directorio dist/ no encontrado o vacío." # Muestra un mensaje si 'dist/' no existe
+
+    # 3. Configurar SSH usando ssh-agent
     - echo "Configurando SSH con ssh-agent..."
     - apt-get update -y && apt-get install -y openssh-client
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" | ssh-add -
 
-    # 4. Añadir la huella digital del servidor (known_hosts) (igual)
+    # 4. Añadir la huella digital del servidor (known_hosts)
     - mkdir -p ~/.ssh
     - ssh-keyscan 5.34.149.250 >> ~/.ssh/known_hosts
     - chmod 600 ~/.ssh/known_hosts
 
-    # === AJUSTE CRÍTICO AQUÍ: Cambiamos el directorio temporal a la home del usuario ===
-    - export REMOTE_TMP_DIR="/home/babenza/tmp_vue_build" # Nueva variable para el directorio temporal
+    # 5. Asegurar la existencia del directorio temporal en la Raspberry Pi
+    - export REMOTE_TMP_DIR="/home/babenza/tmp_vue_build"
     - echo "Creando o asegurando la existencia del directorio temporal ${REMOTE_TMP_DIR} en la Raspberry Pi..."
     - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "mkdir -p ${REMOTE_TMP_DIR}"
 
-    # 5. Limpiar el directorio temporal remoto antes de copiar (opcional, pero buena práctica)
+    # 6. Limpiar el directorio temporal remoto (opcional, buena práctica)
     - echo "Limpiando contenido antiguo del directorio temporal remoto..."
     - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "rm -rf ${REMOTE_TMP_DIR}/*"
 
-
-    # 6. Copiar los archivos construidos (de la carpeta 'dist') al directorio temporal en la Raspberry Pi
+    # 7. Copiar los archivos construidos al directorio temporal en la Raspberry Pi
     - echo "Copiando archivos del frontend a ${REMOTE_TMP_DIR} en la Raspberry Pi..."
-    - scp -r -o StrictHostKeyChecking=no dist/. babenza@5.34.149.250:"${REMOTE_TMP_DIR}/" # Copia el contenido de dist/
-    - scp -r -o StrictHostKeyChecking=no dist/.* babenza@5.34.149.250:"${REMOTE_TMP_DIR}/" 2>/dev/null # Para archivos ocultos
+    # Se mantienen los dos scp por robustez, asumiendo que dist/ existe y contiene archivos/directorios.
+    # El error actual indica que 'dist/' no existe localmente, por lo que este scp va a fallar.
+    - scp -r -o StrictHostKeyChecking=no dist/. babenza@5.34.149.250:"${REMOTE_TMP_DIR}/"
+    - scp -r -o StrictHostKeyChecking=no dist/.* babenza@5.34.149.250:"${REMOTE_TMP_DIR}/" 2>/dev/null
 
-    # 7. Ejecutar el script de despliegue del frontend en la Raspberry Pi
-    # IMPORTANTE: Tu script deploy_frontend.sh en la RPi debe saber dónde buscar los archivos.
-    # Necesitamos pasarle el directorio temporal o ajustarlo.
-    # La forma más fácil es cambiar BUILD_DIR en deploy_frontend.sh
-    # O, pasarle el directorio como argumento:
+    # 8. Ejecutar el script de despliegue del frontend en la Raspberry Pi
     - echo "Ejecutando script de despliegue en la Raspberry Pi..."
     - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "bash /home/babenza/deploy_frontend.sh ${REMOTE_TMP_DIR}"
 
