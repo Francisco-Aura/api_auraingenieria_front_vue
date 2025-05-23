@@ -29,20 +29,19 @@ deploy_frontend_job:
     - ssh-keyscan 5.34.149.250 >> ~/.ssh/known_hosts
     - chmod 600 ~/.ssh/known_hosts
 
-    # 5. Crear el directorio temporal en la Raspberry Pi para los archivos de build
+    # === AJUSTE CRÍTICO AQUÍ ===
+    # El mkdir -p /tmp/vue_build/ DEBE ejecutarse en la RPi ANTES del scp
     - echo "Creando directorio temporal /tmp/vue_build en la Raspberry Pi..."
-    # Ya no necesitas -i ~/.ssh/id_rsa_gitlab porque la clave está en el agente
-    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 'mkdir -p /tmp/vue_build/'
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 'mkdir -p /tmp/vue_build' # No necesita la barra final si es un directorio nuevo
 
-    # 6. Copiar los archivos construidos (de la carpeta 'dist') a un directorio temporal en la Raspberry Pi
+    # 5. Copiar los archivos construidos (de la carpeta 'dist') a un directorio temporal en la Raspberry Pi
     - echo "Copiando archivos del frontend a /tmp/vue_build en la Raspberry Pi..."
-    # Ya no necesitas -i ~/.ssh/id_rsa_gitlab
+    # scp necesita que el directorio de destino exista
     - scp -r -o StrictHostKeyChecking=no dist/* babenza@5.34.149.250:/tmp/vue_build/
     - scp -r -o StrictHostKeyChecking=no dist/.* babenza@5.34.149.250:/tmp/vue_build/ 2>/dev/null
 
-    # 7. Ejecutar el script de despliegue del frontend en la Raspberry Pi
+    # 6. Ejecutar el script de despliegue del frontend en la Raspberry Pi
     - echo "Ejecutando script de despliegue en la Raspberry Pi..."
-    # Ya no necesitas -i ~/.ssh/id_rsa_gitlab
     - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 'bash /home/babenza/deploy_frontend.sh'
 
   cache:
