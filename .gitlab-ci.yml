@@ -1,5 +1,5 @@
-# En la raíz de tu proyecto frontend (no en el backend)
-image: node:20 # O la versión de Node.js que uses para Vue (ej. node:18, node:latest)
+# En la raíz de tu proyecto frontend
+image: node:20 # O la versión de Node.js que uses para Vue
 
 stages:
   - build_and_deploy_frontend # Nombre de la etapa
@@ -17,26 +17,28 @@ deploy_frontend_job:
     # 2. Construir la aplicación Vue (generar archivos estáticos)
     - echo "Construyendo la aplicación Vue..."
     - npm run build # Este comando genera la carpeta 'dist' (o 'build') por defecto
-                    # Asegúrate de que tu script 'build' en package.json sea correcto
 
-    # 3. Configurar SSH para que use la clave privada de la variable (necesaria para SCP y SSH)
-    - echo "Configurando SSH..."
+    # 3. Configurar SSH para usar el Secure File
+    - echo "Configurando SSH con Secure File..."
     - apt-get update -y && apt-get install -y openssh-client
     - mkdir -p ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa_gitlab # Usa la variable segura que ya tienes en GitLab
-    - chmod 600 ~/.ssh/id_rsa_gitlab
+    # Copia el Secure File a la ubicación esperada por SSH y le da permisos
+    # GitLab monta los Secure Files en el directorio '$CI_SECURE_FILES_DIR'
+    - cp "$CI_SECURE_FILES_DIR/id_rpi_bitbucket" ~/.ssh/id_rsa_gitlab # Nombre del archivo en Secure Files
+    - chmod 600 ~/.ssh/id_rsa_gitlab # Permisos correctos para la clave privada
+
     - ssh-keyscan 5.34.149.250 >> ~/.ssh/known_hosts # Añade la huella digital del servidor de la RPi
-    - chmod 600 ~/.ssh/known_hosts
+    - chmod 600 ~/.ssh/known_hosts # Asegura permisos para known_hosts
 
     # 4. Crear el directorio temporal en la Raspberry Pi para los archivos de build
     - echo "Creando directorio temporal /tmp/vue_build en la Raspberry Pi..."
+    # Usamos -i ~/.ssh/id_rsa_gitlab porque hemos copiado la clave a esa ruta
     - ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_gitlab babenza@5.34.149.250 'mkdir -p /tmp/vue_build/'
 
     # 5. Copiar los archivos construidos (de la carpeta 'dist') a un directorio temporal en la Raspberry Pi
-    # Asumiendo que 'npm run build' crea una carpeta 'dist'
     - echo "Copiando archivos del frontend a /tmp/vue_build en la Raspberry Pi..."
     - scp -r -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_gitlab dist/* babenza@5.34.149.250:/tmp/vue_build/
-    - scp -r -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_gitlab dist/.* babenza@5.34.149.250:/tmp/vue_build/ 2>/dev/null # Para archivos ocultos como .htaccess
+    - scp -r -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa_gitlab dist/.* babenza@5.34.149.250:/tmp/vue_build/ 2>/dev/null
 
     # 6. Ejecutar el script de despliegue del frontend en la Raspberry Pi
     - echo "Ejecutando script de despliegue en la Raspberry Pi..."
@@ -44,4 +46,4 @@ deploy_frontend_job:
 
   cache:
     paths:
-      - node_modules/ # Para cachear dependencias de Node.js y acelerar builds futuros
+      - node_modules/ # Para cachear dependencias de Node.js
