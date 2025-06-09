@@ -56,6 +56,19 @@
               <i class="fas fa-chevron-right"></i>
             </div>
           </div>
+
+          <div class="card informe-card" @click="preguntarModo('servicios-pendientes-pago')">
+            <div class="informe-icon">
+              <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="informe-info">
+              <h3>Servicios Pendientes de Pago</h3>
+              <p>Listado de servicios que están pendientes de pago</p>
+            </div>
+            <div class="informe-action">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -65,8 +78,8 @@
       <div class="table-header">
         <h2><i class="fas fa-table"></i> {{ tituloInforme }}</h2>
         <div class="table-actions">
-          <button class="btn btn-outline" @click="crearPDF(datosInforme, tipoSeleccionado)" title="Exportar a PDF">
-            <i class="fas fa-file-pdf"></i> Exportar PDF
+          <button class="btn btn-export btn-excel" @click="exportarExcel" title="Excel">
+            <i class="fas fa-file-excel"></i> Excel
           </button>
         </div>
       </div>
@@ -74,17 +87,63 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th v-for="columna in encabezados" :key="columna">
-                <i class="fas fa-sort mr-2"></i>{{ columna }}
+              <th v-for="columna in encabezados" :key="columna" class="sortable">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy(columna)">
+                    <span class="column-text">{{ formatearColumna(columna) }}</span>
+                    <i :class="getSortIcon(columna)"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters[columna]" 
+                      @input="filterByColumn(columna, $event.target.value)"
+                      placeholder="Filtrar..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
               </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(fila, index) in datosInforme" :key="index">
+            <tr v-for="(fila, index) in paginatedData" :key="index">
               <td v-for="columna in encabezados" :key="columna">{{ fila[columna] ?? '' }}</td>
             </tr>
           </tbody>
         </table>
+      </div>
+      <div class="pagination-controls">
+        <div class="records-per-page">
+          <label for="recordsPerPage">Registros por página:</label>
+          <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <div class="pagination-info">
+          Mostrando {{ (currentPage - 1) * recordsPerPage + 1 }} - {{ Math.min(currentPage * recordsPerPage, filteredData.length) }} de {{ filteredData.length }} registros
+        </div>
+        <div class="pagination-buttons">
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === 1"
+            @click="currentPage--"
+          >
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === totalPages"
+            @click="currentPage++"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -129,17 +188,63 @@
 import axios from 'axios';
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from 'xlsx';
 
 export default {
   data() {
     return {
-      mostrarModal: false, // Control de visibilidad del modal
-      mostrarTabla: false, // Control de visibilidad de la tabla
-      datosInforme: [], // Almacena los datos del informe para la tabla
-      encabezados: [], // Encabezados de la tabla
-      tipoSeleccionado: "", // Guarda el tipo de informe seleccionado
-      tituloInforme: "" // Almacena el título del informe para la tabla
+      mostrarModal: false,
+      mostrarTabla: false,
+      datosInforme: [],
+      encabezados: [],
+      tipoSeleccionado: "",
+      tituloInforme: "",
+      columnFilters: {},
+      sortKey: null,
+      sortOrder: null,
+      recordsPerPage: 10,
+      currentPage: 1
     };
+  },
+  computed: {
+    filteredData() {
+      let result = [...this.datosInforme];
+
+      // Aplicar filtros por columna
+      Object.entries(this.columnFilters).forEach(([column, value]) => {
+        if (value) {
+          result = result.filter(item => 
+            String(item[column] || '').toLowerCase().includes(value.toLowerCase())
+          );
+        }
+      });
+
+      // Aplicar ordenamiento
+      if (this.sortKey && this.sortOrder) {
+        result.sort((a, b) => {
+          let aValue = a[this.sortKey] || '';
+          let bValue = b[this.sortKey] || '';
+          
+          if (this.sortOrder === 'asc') {
+            return aValue > bValue ? 1 : -1;
+          } else {
+            return aValue < bValue ? 1 : -1;
+          }
+        });
+      }
+
+      return result;
+    },
+
+    paginatedData() {
+      const start = (this.currentPage - 1) * this.recordsPerPage;
+      const end = start + this.recordsPerPage;
+      return this.filteredData.slice(start, end);
+    },
+
+    totalPages() {
+      return Math.ceil(this.filteredData.length / this.recordsPerPage);
+    }
   },
   methods: {
     // Abre el modal para preguntar el modo de visualización
@@ -182,7 +287,10 @@ export default {
         ],
         "puntos-suministro-sin-contrato": [
           "cliente", "direccion", "codigoPostal", "poblacion", "provincia", "cupsLuz", "cupsGas"
-        ] 
+        ],
+        "servicios-pendientes-pago": [
+          "cliente", "servicio", "fechaVencimiento", "importe", "estado"
+        ]
       };
 
       if (columnasPermitidas[this.tipoSeleccionado]) {
@@ -207,6 +315,9 @@ export default {
         ],
         "puntos-suministro-sin-contrato": [
           "cliente", "direccion", "codigoPostal", "poblacion", "provincia", "cupsLuz", "cupsGas"
+        ],
+        "servicios-pendientes-pago": [
+          "cliente", "servicio", "fechaVencimiento", "importe", "estado"
         ]
       };
 
@@ -336,6 +447,68 @@ export default {
         .replace(/([A-Z])/g, ' $1')
         .replace(/^./, str => str.toUpperCase())
         .trim();
+    },
+
+    // Métodos para ordenamiento y filtrado
+    sortBy(key) {
+      if (this.sortKey === key) {
+        if (this.sortOrder === 'asc') {
+          this.sortOrder = 'desc';
+        } else if (this.sortOrder === 'desc') {
+          this.sortKey = null;
+          this.sortOrder = null;
+        }
+      } else {
+        this.sortKey = key;
+        this.sortOrder = 'asc';
+      }
+    },
+
+    getSortIcon(key) {
+      if (this.sortKey !== key) return 'fas fa-sort';
+      if (!this.sortOrder) return 'fas fa-sort';
+      return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+    },
+
+    filterByColumn(column, value) {
+      this.columnFilters[column] = value;
+    },
+
+    exportarExcel() {
+      try {
+        // Usar los datos filtrados (incluyendo ordenamiento y filtros)
+        const data = this.filteredData.map(item => {
+          const rowData = {};
+          // Mapear las columnas según los encabezados actuales y formatear los nombres
+          this.encabezados.forEach(columnaKey => {
+            const formattedColumnaName = this.formatearColumna(columnaKey);
+            rowData[formattedColumnaName] = item[columnaKey] ?? '';
+          });
+          return rowData;
+        });
+
+        if (data.length === 0) {
+          alert("No hay datos para exportar a Excel.");
+          return;
+        }
+
+        // Crear un libro de trabajo y una hoja de cálculo
+        const ws = XLSX.utils.json_to_sheet(data);
+
+        // Opcional: Ajustar anchos de columna (aproximado)
+        const wscols = this.encabezados.map(() => ({ wch: 20 })); // Ancho por defecto de 20
+        ws['!cols'] = wscols;
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, this.formatearTitulo(this.tipoSeleccionado));
+
+        // Generar el archivo y descargarlo
+        XLSX.writeFile(wb, `${this.formatearTitulo(this.tipoSeleccionado)}.xlsx`);
+
+      } catch (error) {
+        console.error("Error al exportar a Excel:", error);
+        alert("Ocurrió un error al exportar a Excel.");
+      }
     }
   }
 };
@@ -348,7 +521,7 @@ export default {
   grid-template-rows: auto auto auto;
   gap: 20px;
   padding: 20px;
-  max-width: 1600px;
+  max-width: 90%;
   margin: 0 auto;
 }
 
@@ -506,8 +679,8 @@ export default {
 }
 
 .table-header {
-  background-color: white;
-  color: white;
+  background-color: var(--surface-color);
+  color: var(--text-primary);
   padding: 15px 20px;
   border-top-left-radius: var(--border-radius);
   border-top-right-radius: var(--border-radius);
@@ -535,14 +708,14 @@ export default {
 
 .table-actions .btn {
   background: transparent;
-  border-color: rgba(255, 255, 255, 0.5);
-  color: white;
+  border-color: var(--border-color);
+  color: var(--text-primary);
   padding: 6px 10px;
   font-size: 0.9rem;
 }
 
 .table-actions .btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--hover-color);
 }
 
 /* Modal de selección */
@@ -670,5 +843,191 @@ export default {
   .informe-opciones {
     grid-template-columns: 1fr;
   }
+}
+
+.table-responsive {
+  overflow-x: auto;
+  background-color: white;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+/* Estilos para los filtros y ordenamiento */
+.column-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.column-title {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.column-text {
+  margin-right: 8px;
+}
+
+.column-title:hover {
+  background-color: var(--hover-color);
+}
+
+.column-filter-container {
+  position: relative;
+}
+
+.column-filter {
+  width: 100%;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.column-filter:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.column-filter::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+/* Estilos para la paginación */
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background-color: var(--surface-color);
+  border-top: 1px solid var(--border-color);
+}
+
+.pagination-info {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  background-color: white;
+  padding: 8px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: white;
+  padding: 8px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.page-info {
+  color: var(--text-primary);
+  font-weight: 500;
+  padding: 0 10px;
+}
+
+.btn-outline {
+  background: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  min-width: 40px;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+/* Estilos para la tabla */
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 0;
+}
+
+.data-table th {
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.data-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+  height: auto;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.text-truncate {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  background-color: var(--hover-color);
+}
+
+/* Estilos para el botón de exportar Excel (copias de ClientesComponent.vue) */
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-excel {
+  background-color: #217346 !important;
+  color: white !important;
+  border: none !important;
+}
+
+.btn-excel:hover {
+  background-color: #1e6b3d !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(33, 115, 70, 0.2) !important;
 }
 </style>

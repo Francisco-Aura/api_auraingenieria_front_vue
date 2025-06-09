@@ -26,7 +26,7 @@
                 <th><i class="fas fa-map-marker-alt"></i> Dirección</th>
                 <th><i class="fas fa-bolt"></i> CUPS Luz</th>
                 <th><i class="fas fa-fire"></i> CUPS Gas</th>
-                <th><i class="fas fa-cogs"></i> Acciones</th>
+                <th class="actions-header"><i class="fas fa-cogs"></i> Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -36,7 +36,7 @@
                 </td>
                 <td class="text-truncate" :title="punto.cupsluz">{{ punto.cupsluz }}</td>
                 <td class="text-truncate" :title="punto.cupsgas">{{ punto.cupsgas }}</td>
-                <td>
+                <td class="actions-cell">
                   <div class="action-buttons">
                     <button class="btn-icon btn-view" @click="verDetallePunto(punto)" title="Ver Detalles">
                       <i class="fas fa-eye"></i>
@@ -55,6 +55,66 @@
 
       <div class="modal-footer">
         <button @click="$emit('cerrar-modal')" class="btn btn-primary">
+          <i class="fas fa-times"></i>
+          <span>Cerrar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Detalles -->
+  <div v-if="showDetalleModal" class="modal-overlay fade-in">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-info-circle"></i> Detalles del Punto de Suministro</h2>
+        <button class="btn-icon" @click="showDetalleModal = false">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div v-if="puntoSeleccionado" class="details-grid">
+          <div class="detail-item">
+            <strong>ID:</strong> {{ puntoSeleccionado.id }}
+          </div>
+          <div class="detail-item">
+            <strong>Cliente:</strong> {{ puntoSeleccionado.nombreCliente }}
+          </div>
+          <div class="detail-item full-width">
+            <strong>Dirección:</strong> {{ puntoSeleccionado.direccion }}, {{ puntoSeleccionado.codigoPostal }}, {{ puntoSeleccionado.poblacion }}, {{ puntoSeleccionado.provincia }}
+          </div>
+          <div class="detail-item">
+            <strong>CUPS Luz:</strong> {{ puntoSeleccionado.cupsluz || '-' }}
+          </div>
+          <div class="detail-item">
+            <strong>CUPS Gas:</strong> {{ puntoSeleccionado.cupsgas || '-' }}
+          </div>
+          <div class="detail-item">
+            <strong>Contador:</strong> {{ puntoSeleccionado.contador || '-' }}
+          </div>
+          <div class="detail-item">
+            <strong>Propiedad Contador:</strong> {{ puntoSeleccionado.propiedadContador == 1 ? 'Sí' : 'No' }}
+          </div>
+          <div class="detail-item">
+            <strong>Modem:</strong> {{ puntoSeleccionado.modem || '-' }}
+          </div>
+          <div class="detail-item">
+            <strong>Propiedad Modem:</strong> {{ puntoSeleccionado.propiedadModem == 1 ? 'Sí' : 'No' }}
+          </div>
+          <div class="detail-item full-width">
+            <strong>Observaciones:</strong> {{ puntoSeleccionado.observaciones || '-' }}
+          </div>
+          <div class="detail-item">
+            <strong>Fecha Instalación:</strong> {{ puntoSeleccionado.fechaInstalacion || '-' }}
+          </div>
+          <div class="detail-item" v-if="puntoSeleccionado.fechaBaja">
+            <strong>Fecha Baja:</strong> {{ puntoSeleccionado.fechaBaja }}
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button @click="showDetalleModal = false" class="btn btn-primary">
           <i class="fas fa-times"></i>
           <span>Cerrar</span>
         </button>
@@ -81,6 +141,8 @@ export default {
   data() {
     return {
       filterPuntos: "",
+      showDetalleModal: false,
+      puntoSeleccionado: null
     };
   },
   computed: {
@@ -108,8 +170,9 @@ export default {
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
     },
-    verDetallePunto(punto) {      
-      alert(`Detalles del Punto de SUMINISTRO ID: ${punto.id}\n${JSON.stringify(punto, null, 2)}`);
+    verDetallePunto(punto) {
+      this.puntoSeleccionado = punto;
+      this.showDetalleModal = true;
     },
   },
 };
@@ -148,11 +211,15 @@ export default {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-color);
   background-color: var(--surface-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
+  font-weight: 600;
   color: var(--text-primary);
   display: flex;
   align-items: center;
@@ -164,7 +231,11 @@ export default {
 }
 
 .cliente-info {
-  margin-top: 8px;
+  background-color: var(--primary-light);
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .cliente-nombre {
@@ -198,13 +269,13 @@ export default {
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .search-input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
   outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
 }
 
 .table-responsive {
@@ -218,6 +289,7 @@ export default {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
+  margin-bottom: 0;
 }
 
 .data-table th {
@@ -233,6 +305,13 @@ export default {
 .data-table th i {
   margin-right: 8px;
   color: var(--primary-color);
+}
+
+.actions-header {
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .data-table td {
@@ -254,6 +333,13 @@ export default {
   justify-content: center;
 }
 
+.actions-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
 .btn-icon {
   background: transparent;
   border: none;
@@ -264,8 +350,18 @@ export default {
   border-radius: 50%;
   display: flex;
   align-items: center;
-  justify-content: left;
+  justify-content: center;
   transition: all 0.2s ease;
+  padding: 0;
+  margin: 0;
+}
+
+.btn-icon i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .btn-icon.btn-view {
@@ -277,41 +373,46 @@ export default {
 }
 
 .empty-state {
-  padding: 40px;
   text-align: center;
+  padding: 40px 20px;
   color: var(--text-secondary);
 }
 
 .empty-state i {
   margin-bottom: 16px;
+  opacity: 0.5;
 }
 
 .modal-footer {
-  padding: 20px 24px;
+  padding: 16px 24px;
   border-top: 1px solid var(--border-color);
   background-color: var(--surface-color);
   display: flex;
   justify-content: flex-end;
+  gap: 12px;
 }
 
-.btn-primary {
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 500;
+  transition: all 0.2s ease;
   cursor: pointer;
-  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: black;
+  border: none;
 }
 
 .btn-primary:hover {
   background-color: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .fade-in {
@@ -343,5 +444,35 @@ export default {
   .data-table td {
     padding: 10px;
   }
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding: 20px;
+}
+
+.detail-item {
+  background-color: var(--surface-color);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.detail-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.detail-item strong {
+  display: block;
+  color: black;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.detail-item:not(strong) {
+  color: var(--text-primary);
+  font-size: 1rem;
 }
 </style>

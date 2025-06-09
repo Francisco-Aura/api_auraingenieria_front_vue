@@ -1,154 +1,362 @@
 <template>
   <div v-if="visible" class="modal-overlay">
     <div class="modal-content">
-      <button type="button" @click="cerrarModal" class="close-button" aria-label="Cerrar">
-        <i class="fas fa-times"></i>
-      </button>
-      <h2>Gestión de Servicios</h2>
-      <!-- Tabs para alternar entre las vistas de servicios -->
-      <div class="tabs">
-        <button :class="['tab-btn', { active: pestañaActiva === 'nuevo' }]" @click="pestañaActiva = 'nuevo'">Nuevo Servicio</button>
-        <button :class="['tab-btn', { active: pestañaActiva === 'actual' }]" @click="pestañaActiva = 'actual'">Servicio Actual</button>
-        <button :class="['tab-btn', { active: pestañaActiva === 'historico' }]" @click="pestañaActiva = 'historico'">Servicios Históricos</button>
+      <!-- Encabezado del modal -->
+      <div class="modal-header">
+        <h1 class="modal-title">Gestión de Servicios</h1>
+        <button type="button" @click="cerrarModal" class="close-button" aria-label="Cerrar">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
+
+      <!-- Pestañas para organizar el contenido -->
+      <div class="form-tabs">
+        <button
+          type="button"
+          class="tab-btn"
+          :class="{ active: pestañaActiva === 'nuevo' }"
+          @click="pestañaActiva = 'nuevo'"
+        >
+          <i class="fas fa-plus"></i>
+          <span class="tab-text">{{ modoEdicion ? 'Editar' : 'Nuevo' }}</span>
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          :class="{ active: pestañaActiva === 'actual' }"
+          @click="pestañaActiva = 'actual'"
+        >
+          <i class="fas fa-clipboard-list"></i>
+          <span class="tab-text">Actual</span>
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          :class="{ active: pestañaActiva === 'historico' }"
+          @click="pestañaActiva = 'historico'"
+        >
+          <i class="fas fa-history"></i>
+          <span class="tab-text">Histórico</span>
+        </button>
+      </div>
+
       <!-- Contenido dinámico según la pestaña activa -->
-      <div class="tab-content">
-        <!-- Crear nuevo servicio -->
-        <div v-if="pestañaActiva === 'nuevo'">
-          <h3>Crear Nuevo Servicio</h3>
-          <h2>{{ cliente?.nombre || 'Desconocido' }}</h2>
-          <form @submit.prevent="crearNuevoServicio">
-            <div class="form-row">
-              <!-- Primera columna -->
-              <div class="form-column">
-                <div class="form-group">
-                  <label for="fecha">Fecha </label>
-                  <input type="date" id="fecha" v-model="nuevoServicio.fecha" required />
-                </div>
-                <div class="form-group">
-                  <label for="fechaInicioServicio">Fecha Inicio Servicio</label>
-                  <input type="date" id="fechaInicioServicio" v-model="nuevoServicio.fechaInicioServicio" required />
-                </div>
-                <div class="form-group">
-                  <label for="fechaFinServicio">Fecha Fin Servicio</label>
-                  <input type="date" id="fechaFinServicio" v-model="nuevoServicio.fechaFinServicio" required />
-                </div>
-                <div class="form-group">
-                  <label for="descripcion">Descripcion Servicio</label>
-                  <input type="text" id="descripcion" v-model="nuevoServicio.descripcion" required />
-                </div>
-                <div class="form-group">
-                  <label for="gestora">Gestora</label>
-                  <select id="gestora" v-model="nuevoServicio.idGestora" required>
-                    <option v-for="gestora in gestoras" :value="gestora.id" :key="gestora.id">
-                      {{ gestora.nombre }}
-                    </option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="producto">Producto</label>
-                  <select id="producto" v-model="nuevoServicio.idProducto" required>
-                    <option v-for="producto in productos" :value="producto.id" :key="producto.id">
-                      {{ producto.nombre }}
-                    </option>
-                  </select>
-                </div>                
-              </div> 
-            </div> 
-            <!-- Botones de acción -->
-            <div class="form-actions">
-              <button type="button" @click="cerrarModal" class="btn btn-secondary">Cancelar</button>
-              <button type="submit" class="btn btn-primary">Guardar Servicio</button>
+      <div class="tab-content-container">
+        <!-- Crear/Editar servicio -->
+        <div v-if="pestañaActiva === 'nuevo'" class="tab-content">
+          <!-- Banner del cliente -->
+          <div class="client-banner">
+            <div class="client-info">
+              <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Desconocido' }}</h4>
+              <span>DNI/CIF: {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'No disponible' }}</span>
             </div>
-          </form>
-        </div>
-        <!-- Visualizar servicio actual -->
-        <div v-if="pestañaActiva === 'actual'">
-          <h3>Actualizar Servicio Actual</h3>
-          <div v-if="servicioActual">
-            <form @submit.prevent="actualizarServicio">
-              <div class="form-row">
-                <!-- Primera columna -->
-                <div class="form-column">
-                  <div class="form-group">
-                    <label for="fecha">Fecha </label>
-                    <input type="date" id="fecha" v-model="servicioActualCopia.fecha" required />
+          </div>
+
+          <form @submit.prevent="guardarServicio" class="modern-form">
+            <div class="form-grid-modern">
+              <!-- Sección de Fechas -->
+              <div class="form-section-modern">
+                <div class="section-header-modern">
+                  <i class="fas fa-calendar-alt"></i>
+                  <h3>Fechas del Servicio</h3>
+                </div>
+
+                <div class="form-group-modern">
+                  <label for="fecha">Fecha <span class="required">*</span></label>
+                  <div class="input-with-icon-modern">
+                    <i class="fas fa-calendar icon-prefix"></i>
+                    <input
+                      type="date"
+                      id="fecha"
+                      v-model="nuevoServicio.fecha"
+                      class="form-control-modern"
+                      required
+                    />
                   </div>
-                  <div class="form-group">
-                    <label for="fechaInicioServicio">Fecha Inicio Servicio</label>
-                    <input type="date" id="fechaInicioServicio" v-model="servicioActualCopia.fechaInicioServicio" required />
+                </div>
+
+                <div class="form-group-modern">
+                  <label for="fechaInicioServicio">Fecha Inicio <span class="required">*</span></label>
+                  <div class="input-with-icon-modern">
+                    <i class="fas fa-play icon-prefix"></i>
+                    <input
+                      type="date"
+                      id="fechaInicioServicio"
+                      v-model="nuevoServicio.fechaInicioServicio"
+                      class="form-control-modern"
+                      required
+                    />
                   </div>
-                  <div class="form-group">
-                    <label for="fechaFinServicio">Fecha Fin Servicio</label>
-                    <input type="date" id="fechaFinServicio" v-model="servicioActualCopia.fechaFinServicio" required />
+                </div>
+
+                <div class="form-group-modern">
+                  <label for="fechaFinServicio">Fecha Fin <span class="required">*</span></label>
+                  <div class="input-with-icon-modern">
+                    <i class="fas fa-stop icon-prefix"></i>
+                    <input
+                      type="date"
+                      id="fechaFinServicio"
+                      v-model="nuevoServicio.fechaFinServicio"
+                      class="form-control-modern"
+                      required
+                    />
                   </div>
-                  <div class="form-group">
-                    <label for="descripcion">Descripcion Servicio</label>
-                    <input type="text" id="descripcion" v-model="servicioActualCopia.descripcion" required />
+                </div>
+              </div>
+
+              <!-- Sección de Información del Servicio -->
+              <div class="form-section-modern">
+                <div class="section-header-modern">
+                  <i class="fas fa-info-circle"></i>
+                  <h3>Información del Servicio</h3>
+                </div>
+
+                <div class="form-group-modern">
+                  <label for="descripcion">Descripción <span class="required">*</span></label>
+                  <div class="input-with-icon-modern">
+                    <i class="fas fa-file-alt icon-prefix"></i>
+                    <input
+                      type="text"
+                      id="descripcion"
+                      v-model="nuevoServicio.descripcion"
+                      class="form-control-modern"
+                      required
+                    />
                   </div>
-                  <div class="form-group">
-                    <label for="gestora">Gestora</label>
-                    <select id="gestora" v-model="servicioActualCopia.idGestora" required>
+                </div>
+
+                <div class="form-group-modern">
+                  <label for="gestora">Gestora <span class="required">*</span></label>
+                  <div class="select-container-modern">
+                    <select
+                      id="gestora"
+                      v-model="nuevoServicio.idGestora"
+                      class="form-select-modern"
+                      required
+                    >
+                      <option value="">Seleccione...</option>
                       <option v-for="gestora in gestoras" :value="gestora.id" :key="gestora.id">
                         {{ gestora.nombre }}
                       </option>
                     </select>
+                    <i class="fas fa-chevron-down select-icon"></i>
                   </div>
-                  <div class="form-group">
-                    <label for="producto">Producto</label>
-                    <select id="producto" v-model="servicioActualCopia.idProducto" required>
+                </div>
+
+                <div class="form-group-modern">
+                  <label for="producto">Producto <span class="required">*</span></label>
+                  <div class="select-container-modern">
+                    <select
+                      id="producto"
+                      v-model="nuevoServicio.idProducto"
+                      class="form-select-modern"
+                      required
+                    >
+                      <option value="">Seleccione...</option>
                       <option v-for="producto in productos" :value="producto.id" :key="producto.id">
                         {{ producto.nombre }}
                       </option>
                     </select>
-                  </div>                
-                </div> 
-              </div> 
-              <!-- Botones de acción -->
-              <div class="form-actions">
-                <button type="button" @click="cerrarModal" class="btn btn-secondary">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Actualizar Servicio</button>
+                    <i class="fas fa-chevron-down select-icon"></i>
+                  </div>
+                </div>
               </div>
-            </form>
+
+              <!-- Sección de Observaciones (asumiendo que existe un campo observaciones) -->
+              <div class="form-section-modern full-width">
+                <div class="section-header-modern">
+                  <i class="fas fa-sticky-note"></i>
+                  <h3>Observaciones</h3>
+                </div>
+
+                 <div class="form-group-modern">
+                      <textarea
+                        id="observaciones"
+                        v-model="nuevoServicio.observaciones"
+                        class="form-control-modern textarea-modern"
+                        rows="4"
+                        placeholder="Añada aquí cualquier observación relevante sobre el servicio..."
+                      ></textarea>
+                    </div>
+              </div>
+            </div>
+
+            <!-- Botones de acción dentro del formulario -->
+            <div class="modal-footer-modern">
+              <div class="required-legend"><span class="required">*</span> Campos obligatorios</div>
+              <div class="action-buttons">
+                <button type="button" @click="cerrarModal" class="btn-modern btn-secondary">
+                  <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn-modern btn-primary">
+                  <i class="fas fa-save"></i> {{ modoEdicion ? 'Guardar Cambios' : 'Guardar Servicio' }}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Visualizar servicio actual -->
+        <div v-if="pestañaActiva === 'actual'" class="tab-content">
+          <h3>Servicio Actual</h3>
+          <div v-if="servicioActual" class="modern-contract-card">
+            <div class="contract-header">
+              <div class="contract-info">
+                <h4>Servicio <span class="contract-number">#{{ servicioActual.id }}</span></h4>
+                <p class="contract-dates"><i class="fas fa-calendar-alt"></i> Vigente desde <b>{{ formatDate(servicioActual.fechaInicioServicio) }}</b> hasta <b>{{ formatDate(servicioActual.fechaFinServicio) }}</b></p>
+              </div>
+              <div class="contract-actions">
+                <button @click="editarServicio" class="btn btn-primary">
+                  <i class="fas fa-edit"></i> Editar
+                </button>
+              </div>
+            </div>
+            <div class="modern-grid">
+              <div class="modern-section">
+                <div class="section-header">
+                  <i class="fas fa-info-circle"></i>
+                  <h5>Información General</h5>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Fecha</span>
+                  <span class="info-value"><i class="fas fa-calendar"></i> {{ formatDate(servicioActual.fecha) }}</span>
+                </div>
+                 <div class="info-row">
+                  <span class="info-label">Descripción</span>
+                  <span class="info-value"><i class="fas fa-file-alt"></i> {{ servicioActual.descripcion }}</span>
+                </div>
+              </div>
+              <div class="modern-section">
+                <div class="section-header">
+                  <i class="fas fa-building"></i>
+                  <h5>Entidades</h5>
+                </div>
+                 <div class="info-row">
+                  <span class="info-label">Gestora</span>
+                  <span class="info-value"><i class="fas fa-building"></i> {{ getGestoraNombre(servicioActual.idGestora) }}</span>
+                </div>
+                 <div class="info-row">
+                  <span class="info-label">Producto</span>
+                  <span class="info-value"><i class="fas fa-box"></i> {{ getProductoNombre(servicioActual.idProducto) }}</span>
+                </div>
+              </div>
+            </div>
+            <!-- Sección de Observaciones -->
+             <div class="modern-notes" v-if="servicioActual.observaciones">
+              <h5><i class="fas fa-sticky-note"></i> Observaciones</h5>
+              <p>{{ servicioActual.observaciones }}</p>
+            </div>
           </div>
-          <div v-else>
-            <p>No hay servicios actuales.</p>
+          <div v-else class="no-contract">
+            <i class="fas fa-clipboard-list"></i>
+            <p>No hay servicio actual activo</p>
           </div>
         </div>
-        <!-- Listado de servicios históricos -->
-        <div v-if="pestañaActiva === 'historico'">
-          <h3>Servicios Históricos {{ cliente?.nombre || 'Cliente Desconocido' }} </h3>
-            <div v-if="Array.isArray(serviciosHistoricos) && serviciosHistoricos.length">
-              <table class="historical-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Fecha </th>
-                    <th>Fecha Inicio</th>
-                    <th>Fecha Fin</th>
-                    <th>Descripcion</th>
-                    <th>Gestora</th>
-                    <th>Producto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="servicio in serviciosHistoricos" :key="servicio.id">
-                    <td>{{ servicio.id }}</td>
-                    <td>{{ servicio.fecha }}</td>
-                    <td>{{ servicio.fechaInicioServicio }}</td>
-                    <td>{{ servicio.fechaFinServicio }}</td>
-                    <td>{{ servicio.descripcion }}</td>
-                    <td>{{ servicio.idGestora }}</td>
-                    <td>{{ servicio.idProducto }}</td>
-                    <td>
-                      <button @click="verDetalleServicio(servicio)">Ver Detalle</button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+
+        <!-- Histórico de servicios -->
+        <div v-if="pestañaActiva === 'historico'" class="tab-content">
+          <h3>Histórico de Servicios</h3>
+          <div v-if="serviciosHistoricosOrdenados.length" class="history-table-container">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Fecha</th>
+                  <th>Fecha Inicio</th>
+                  <th>Fecha Fin</th>
+                  <th>Descripción</th>
+                  <th>Gestora</th>
+                  <th>Producto</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="servicio in serviciosHistoricosOrdenados" :key="servicio.id" class="history-row">
+                  <td class="contract-number">#{{ servicio.id }}</td>
+                  <td>{{ formatDate(servicio.fecha) }}</td>
+                  <td>{{ formatDate(servicio.fechaInicioServicio) }}</td>
+                  <td>{{ formatDate(servicio.fechaFinServicio) }}</td>
+                  <td>{{ servicio.descripcion }}</td>
+                  <td>{{ getGestoraNombre(servicio.idGestora) }}</td>
+                  <td>{{ getProductoNombre(servicio.idProducto) }}</td>
+                  <td class="action-buttons">
+                    <button @click="verDetalleServicio(servicio)" class="btn-icon btn-view" title="Ver Detalle">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="no-history">
+            <i class="fas fa-history"></i>
+            <p>No hay servicios históricos disponibles</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DETALLE SERVICIO - FUERA DEL MODAL PRINCIPAL -->
+    <div v-if="mostrarModalDetalleServicio" class="modal-overlay detalle-contrato-modal">
+      <div class="modal-content detalle-contrato-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-clipboard-list"></i> Detalle del Servicio</h2>
+          <button type="button" @click="cerrarModalDetalleServicio" class="close-button" aria-label="Cerrar">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="detalle-contrato-pdf">
+          <div class="detalle-contrato-header">
+            <div class="cliente-info">
+              <h4><i class="fas fa-user"></i> Información del Cliente</h4>
+              <div class="info-row">
+                <span class="info-label">Nombre:</span>
+                <span class="info-value">{{ cliente?.nombre || 'Desconocido' }}</span>
+              </div>
+               <div class="info-row">
+                <span class="info-label">DNI/CIF:</span>
+                <span class="info-value">{{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'No disponible' }}</span>
+              </div>
             </div>
-          <div v-else>
-            <p>No hay servicios históricos disponibles.</p>
+            <div class="contrato-info">
+              <h4><i class="fas fa-file-alt"></i> Información del Servicio</h4>
+              <div class="info-row">
+                <span class="info-label">ID Servicio:</span>
+                <span class="info-value">#{{ servicioDetalle?.id }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Fecha:</span>
+                <span class="info-value">{{ formatDate(servicioDetalle?.fecha) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Vigencia:</span>
+                <span class="info-value">{{ formatDate(servicioDetalle?.fechaInicioServicio) }} - {{ formatDate(servicioDetalle?.fechaFinServicio) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="detalle-contrato-section">
+            <h4><i class="fas fa-info-circle"></i> Datos del Servicio</h4>
+            <div class="info-grid">
+               <div class="info-row">
+                  <span class="info-label">Descripción:</span>
+                  <span class="info-value"><i class="fas fa-file-alt"></i> {{ servicioDetalle?.descripcion }}</span>
+                </div>
+               <div class="info-row">
+                <span class="info-label">Gestora:</span>
+                <span class="info-value"><i class="fas fa-building"></i> {{ getGestoraNombre(servicioDetalle?.idGestora) }}</span>
+              </div>
+               <div class="info-row">
+                <span class="info-label">Producto:</span>
+                <span class="info-value"><i class="fas fa-box"></i> {{ getProductoNombre(servicioDetalle?.idProducto) }}</span>
+              </div>
+              <!-- Añadir aquí más detalles del servicio si es necesario -->
+            </div>
+          </div>
+           <div class="detalle-contrato-section" v-if="servicioDetalle?.observaciones">
+            <h4><i class="fas fa-sticky-note"></i> Observaciones</h4>
+            <div class="observaciones-content">
+              {{ servicioDetalle?.observaciones }}
+            </div>
           </div>
         </div>
       </div>
@@ -167,21 +375,25 @@ export default {
       required: true,
     },
     servicioActual: {
+      type: Object,
+      default: () => ({ // Use a factory function for object default
         id: "",
         fecha: "",
         fechaInicioServicio: "",
         fechaFinServicio: "",
         descripcion: "",
-        idGestora:0,
-        idProducto:0,
+        idGestora: 0,
+        idProducto: 0,
+        observaciones: "", // Added observations field
+      }),
     },
     serviciosHistoricos: {
       type: Array,
       required: true,
     },
     cliente: {
-      type: Object,
-      default: () => ({}), // 👈 Esto evita que sea null y previene errores
+      type: [Object, Number],
+      required: true
     },
     gestoras: {
       type: Array,
@@ -195,187 +407,965 @@ export default {
   data() {
     return {
       pestañaActiva: "actual",
+      modoEdicion: false, // Added modoEdicion
+      servicioEditandoId: null, // Added servicioEditandoId
       nuevoServicio: {
         id: "",
         fecha: "",
         fechaInicioServicio: "",
         fechaFinServicio: "",
         descripcion: "",
-        idGestora:0,
-        idProducto:0,
+        idGestora: 0,
+        idProducto: 0,
+        observaciones: "", // Added observations field
       },
-      servicioActualCopia: { ...this.servicioActual }, // Copia local de la prop      
+      mostrarModalDetalleServicio: false,
+      servicioDetalle: null,
     };
   },
+  computed: {
+    serviciosHistoricosOrdenados() {
+      // Sort historical services by fechaInicioServicio from newest to oldest
+      return [...this.serviciosHistoricos].sort((a, b) => {
+        return new Date(b.fechaInicioServicio) - new Date(a.fechaInicioServicio);
+      });
+    }
+  },
+  watch: {
+    servicioActual: { // Watch for changes in servicioActual prop
+      handler(newValue) {
+        if (!this.modoEdicion) { // Only update if not in edit mode
+           this.nuevoServicio = { ...newValue, observaciones: newValue.observaciones || "" }; // Copy serviceActual to nuevoServicio and handle potential null observations
+        }
+      },
+      immediate: true, // Run handler immediately on component mount
+    },
+     visible(newValue) {
+      if (newValue && !this.modoEdicion) {
+        // Reset to actual tab and copy current service when modal becomes visible
+        this.pestañaActiva = 'actual';
+         this.nuevoServicio = { ...this.servicioActual, observaciones: this.servicioActual.observaciones || "" };
+         this.modoEdicion = false; // Ensure modoEdicion is false when opening modal for actual service
+      }
+       if (!newValue) {
+         // Reset state when modal is closed
+         this.resetModalState();
+       }
+    }
+  },
   methods: {
+     resetModalState() {
+       this.pestañaActiva = 'actual';
+       this.modoEdicion = false;
+       this.servicioEditandoId = null;
+       this.nuevoServicio = { // Reset nuevoServicio to default empty state
+         id: "",
+         fecha: "",
+         fechaInicioServicio: "",
+         fechaFinServicio: "",
+         descripcion: "",
+         idGestora: 0,
+         idProducto: 0,
+         observaciones: "",
+       };
+       this.mostrarModalDetalleServicio = false;
+       this.servicioDetalle = null;
+     },
+    handleFileUpload(event) {
+      // Implement file upload logic if needed for services
+      console.log("File upload handled", event.target.files[0]);
+    },
+    formatDate(date) {
+      if (!date) return '';
+       // Ensure date is a valid Date object before formatting
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) {
+          return 'Fecha inválida';
+      }
+      return dateObj.toLocaleDateString('es-ES');
+    },
+    getGestoraNombre(id) {
+      const gestora = this.gestoras.find(g => g.id === id);
+      return gestora ? gestora.nombre : 'No especificada';
+    },
+    getProductoNombre(id) {
+      const producto = this.productos.find(p => p.id === id);
+      return producto ? producto.nombre : 'No especificado';
+    },
+    editarServicio() {
+      this.pestañaActiva = 'nuevo';
+      this.modoEdicion = true;
+      this.servicioEditandoId = this.servicioActual.id;
+      // Copy actual service data to nuevoServicio for editing
+      this.nuevoServicio = { ...this.servicioActual, observaciones: this.servicioActual.observaciones || "" };
+    },
+
+    async guardarServicio() { // Renamed from crearNuevoServicio to handle both create and update
+      try {
+         // Add cliente and puntoSuministro IDs to the service data
+        const servicioPayload = {
+          ...this.nuevoServicio,
+          idCliente: typeof this.cliente === 'object' ? this.cliente.id : this.cliente, // Handle case where cliente might be just the ID
+          idPuntoSuministro: typeof this.puntoSuministro === 'object' ? this.puntoSuministro.id : this.puntoSuministro, // Handle case where puntoSuministro might be just the ID
+        };
+
+        let response;
+        if (this.modoEdicion && this.servicioEditandoId) {
+          // Assuming a PUT endpoint for updates
+          response = await axios.put(
+            `${process.env.VUE_APP_API_URL}/api/servicios/${this.servicioEditandoId}`,
+            servicioPayload
+          );
+        } else {
+          // Assuming a POST endpoint for creation
+          response = await axios.post(
+            `${process.env.VUE_APP_API_URL}/api/servicios`,
+            servicioPayload
+          );
+        }
+
+        this.$emit("servicio-guardado", response.data); // Emitting a generic saved event
+        alert("Servicio guardado con éxito.");
+        this.cerrarModal();
+      } catch (error) {
+        console.error("Error al guardar el servicio:", error);
+        alert("Error al guardar el servicio. Por favor, verifica los datos e inténtalo de nuevo.");
+      }
+    },
+
+    // Removed duplicated actualizarServicio method
+
+    verDetalleServicio(servicio) {
+      this.servicioDetalle = servicio;
+      this.mostrarModalDetalleServicio = true;
+    },
+
     cerrarModal() {
       this.$emit("cerrar-modal");
+      this.resetModalState(); // Reset state when closing
     },
-    async crearNuevoServicio() {
-      try {
-        const respuesta = await axios.post("/api/servicios", this.nuevoServicio);
-        alert("Servicio creado con éxito: " + respuesta.data.id);
-        this.$emit("servicio-creado", respuesta.data);
-        this.cerrarModal();
-      } catch (error) {
-        console.error("Error al crear el servicio", error);
-        alert("Ocurrió un error al crear el servicio.");
-      }
-    },
-    async actualizarServicio() {
-      try {
-        const respuesta = await axios.post("/api/servicios", this.nuevoServicio);
-        alert("Servicio creado con éxito: " + respuesta.data.id);
-        this.$emit("servicio-creado", respuesta.data);
-        this.cerrarModal();
-      } catch (error) {
-        console.error("Error al crear el servicio", error);
-        alert("Ocurrió un error al crear el servicio.");
-      }
-    },
-    verDetalleServicio(servicio) {
-      alert(`Detalles del servicio ID: ${servicio.id}\n${JSON.stringify(servicio, null, 2)}`);
+
+    cerrarModalDetalleServicio() {
+      this.mostrarModalDetalleServicio = false;
+      this.servicioDetalle = null;
     },
   },
 };
 </script>
 
 <style scoped>
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+/* Estilos base del modal modernizado (copia de ModalContratos.vue) */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.18);
+  background: rgba(0,0,0,0.5);
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 15px;
 }
+
 .modal-content {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 90vw;
-  max-width: 1100px;
-  min-width: 600px;
-  max-height: 90vh;
+  width: 90%;
+  max-width: 90%;
+  height: 90%;
+  max-height: 90%;
   background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 0 32px 0 32px;
-}
-.modal-content h2, .modal-content h3 {
-  margin: 0;
-  padding: 24px 32px 0 32px;
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: #fff;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-form {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding: 24px 32px 0 32px;
-}
-.form-actions {
-  background: #fff;
-  padding: 18px 32px;
-  border-top: 1px solid #eee;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
-}
-@media (max-width: 700px) {
-  .modal-content {
-    min-width: 0;
-    width: 98vw;
-    max-width: 98vw;
-    padding: 0 8px;
-  }
-}
-.form-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-}
-.form-column {
-  flex: 1;
-}
-.historical-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  font-size: 14px;
-}
-.historical-table th,
-.historical-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
-}
-.historical-table th {
-  background-color: #f4f4f4;
-  font-weight: bold;
-}
-.historical-table tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-.historical-table tr:hover {
-  background-color: #f1f1f1;
 }
 
-.tabs {
+.modal-header {
+  padding: 18px 25px;
+  border-bottom: 1px solid #e0e0e0;
+  background: rgba(252, 215, 0); /* Assuming same theme color */
+  color: white;
+  position: relative;
   display: flex;
-  justify-content: flex-start;
-  gap: 10px;
-  margin-bottom: 10px;
-  padding: 0 32px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.tab-btn {
-  padding: 10px 22px;
-  border: none;
-  border-radius: 8px 8px 0 0;
-  background: var(--surface-color);
-  color: var(--primary-color);
+
+.modal-title {
+  margin: 0;
+  font-size: 1.4rem;
   font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-  outline: none;
-}
-.tab-btn.active, .tab-btn:hover {
-  background: var(--primary-color);
-  color: #fff;
 }
 
 .close-button {
   position: absolute;
-  top: 18px;
-  right: 18px;
-  background: none;
+  top: 1rem;
+  right: 1rem;
+  background-color: #e74c3c;
   border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: white;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.6rem;
-  color: var(--primary-color);
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  border-radius: 50%;
+  transition: all 0.3s ease;
   z-index: 10;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
+
 .close-button:hover {
-  background: var(--primary-light);
-  color: #fff;
+  background-color: #c0392b;
+  color: white;
+  transform: rotate(90deg);
 }
-.close-button i {
-  pointer-events: none;
+
+/* Sistema de pestañas moderno (copia de ModalContratos.vue) */
+.form-tabs {
+  display: flex;
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  padding: 15px 25px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  flex: 1; /* Allow tabs to fill space */
+  justify-content: center;
+}
+
+.tab-btn:hover {
+  background-color: #f8f9fa;
+}
+
+.tab-btn.active {
+  border-bottom-color: rgba(252, 215, 0); /* Assuming same theme color */
+  background-color: #fcfbf9;
+  color: #333;
+}
+
+.tab-text {
+  font-size: 0.95rem;
+}
+
+/* Contenedor de pestañas (copia de ModalContratos.vue) */
+.tab-content-container {
+  flex: 1;
+  background-color: #f8f9fa;
+  min-height: 0; /* Allows content to shrink */
+  overflow: hidden; /* Handles content overflow */
+}
+
+.tab-content {
+  padding: 20px;
+  height: 100%; /* Make tab content take full height */
+  overflow-y: auto; /* Enable scrolling for content */
+}
+
+/* Banner del cliente (copia de ModalContratos.vue) */
+.client-banner {
+  background: linear-gradient(135deg, #fff3cd 0%, #fffbe6 100%); /* Adjust if needed */
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin-bottom: 18px;
+  border: 1px solid #ffe082; /* Adjust if needed */
+}
+
+.client-info h4 {
+  margin: 0 0 4px 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.client-info span {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Formulario moderno (copia de ModalContratos.vue) */
+.modern-form {
+  display: flex;
+  flex-direction: column;
+   height: calc(100% - 70px); /* Account for client banner */
+}
+
+/* Grid modernizado (copia de ModalContratos.vue) */
+.form-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Adjust columns as needed for service fields */
+  gap: 18px;
+  max-width: 100%;
+  flex: 1; /* Allow form grid to take available space */
+  overflow-y: auto; /* Add scrolling if content overflows */
+  padding-right: 10px; /* Add padding for scrollbar */
+}
+
+.form-section-modern {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  padding: 18px;
+}
+
+.form-section-modern.full-width {
+  grid-column: 1 / -1; /* Span across all columns */
+}
+
+/* Encabezados modernos (copia de ModalContratos.vue) */
+.section-header-modern {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.section-header-modern i {
+  font-size: 1.1rem;
+  color: black; /* Adjust if needed */
+  width: 18px;
+}
+
+.section-header-modern h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+/* Grupos de formulario modernos (copia de ModalContratos.vue) */
+.form-group-modern {
+  margin-bottom: 12px;
+}
+
+.form-group-modern label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: black; /* Adjust if needed */
+}
+
+.form-row-modern {
+  display: grid;
+  grid-template-columns: 1fr 2fr; /* Adjust as needed */
+  gap: 18px;
+  margin-bottom: 0;
+}
+
+.required {
+  color: #e74c3c;
+  margin-left: 2px;
+}
+
+/* Inputs modernos (copia de ModalContratos.vue) */
+.input-with-icon-modern {
+  position: relative;
+}
+
+.icon-prefix {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+  font-size: 0.9rem;
+  width: 14px;
+}
+
+.input-with-icon-modern .form-control-modern {
+  padding-left: 32px; /* Make space for icon */
+}
+
+.form-control-modern {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  color: #333;
+  background-color: #fff;
+  height: 38px; /* Standard height */
+}
+
+.form-control-modern:focus {
+  border-color: rgba(252, 215, 0); /* Assuming same theme color */
+  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1); /* Adjust color */
+  outline: none;
+}
+
+.textarea-modern {
+  height: auto !important;
+  resize: vertical;
+  min-height: 80px; /* Minimum height */
+  line-height: 1.4;
+}
+
+/* Selectores modernos (copia de ModalContratos.vue) */
+.select-container-modern {
+  position: relative;
+  width: 100%;
+}
+
+.form-select-modern {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  color: #333;
+  background-color: #fff;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none; /* Remove default arrow */
+  cursor: pointer;
+  height: 38px; /* Standard height */
+}
+
+.form-select-modern:focus {
+  border-color: rgba(252, 215, 0); /* Assuming same theme color */
+  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1); /* Adjust color */
+  outline: none;
+}
+
+.select-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #555;
+  pointer-events: none; /* Ensure clicks go through */
+  font-size: 0.8rem;
+}
+
+/* Área de subida de PDF (Not applicable for services, but keeping relevant styles) */
+/* Checkboxes modernos (Not applicable for services, but keeping relevant styles) */
+/* Botones modernos (copia de ModalContratos.vue) */
+.btn-modern {
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  border: none;
+  outline: none;
+}
+
+.btn-modern:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: rgba(252, 215, 0); /* Assuming same theme color */
+  color: black; /* Adjust if needed */
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: rgb(222, 189, 0); /* Darker shade for hover */
+  transform: translateY(-1px); /* Slight lift effect */
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #5a6268;
+  transform: translateY(-1px);
+}
+
+/* Pie del modal (copia de ModalContratos.vue) */
+.modal-footer-modern {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0; /* Prevent shrinking */
+  margin-top: 20px; /* Space above footer */
+}
+
+.required-legend {
+  font-size: 0.9rem; /* Adjusted size */
+  color: #777;
+  font-weight: 500; /* Adjusted weight */
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+/* Estilos originales para visualización (copia y adaptación de ModalContratos.vue) */
+.modern-contract-card { /* Renamed from contract-details */
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+  padding: 2rem; /* Adjusted padding */
+  margin-bottom: 1.5rem;
+  border: 1px solid #f3f3f3;
+}
+
+.contract-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem; /* Adjusted margin */
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.contract-info h4 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+  font-size: 1.2rem;
+}
+
+.contract-number { /* Used for service ID */
+  color: black; /* Adjust if needed */
+  font-weight: 800;
+}
+
+.contract-dates { /* Used for service validity dates */
+  color: #444;
+  font-size: 1rem;
+  margin-top: 0.2rem;
+}
+
+.contract-actions { /* Used for Edit button */
+  display: flex;
+  gap: 10px;
+}
+
+.modern-grid { /* Used for sections within service details */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjust columns for service details */
+  gap: 1.5rem; /* Adjusted gap */
+  margin-bottom: 1.2rem;
+}
+
+.modern-section {
+  background: #f7f8fa;
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem; /* Adjusted padding */
+  box-shadow: 0 2px 8px rgba(255,196,12,0.04); /* Adjust color */
+  border: 1px solid #f3f3f3;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+.section-header h5 {
+  color: #333;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.7rem;
+  border-radius: 6px;
+  margin-bottom: 0.4rem;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+}
+
+.info-label {
+  color: #888;
+  font-size: 0.97rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  color: #222;
+  font-size: 1.08rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modern-status { /* Adapt or remove if not applicable for services */
+  display: flex;
+  gap: 1rem;
+  margin: 1.2rem 0 0.5rem 0;
+}
+
+.status-chip { /* Adapt or remove if not applicable for services */
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
+  background: #f7f8fa;
+  color: #888;
+  font-weight: 600;
+  border: 1.5px solid #f0f0f0;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.status-chip.active { /* Adapt or remove */
+  background: rgba(252, 215, 0); /* Adjust color */
+  color:black;
+  border-color: rgba(252, 215, 0); /* Adjust color */
+}
+
+.status-chip.denuncia.active { /* Adapt or remove */
+  background: #e74c3c;
+  color: #fff;
+  border-color: #e74c3c;
+}
+
+.modern-notes { /* Used for observations */
+  background: #f7f8fa;
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+  margin-top: 1.2rem;
+  border: 1px solid #f3f3f3;
+}
+
+.modern-notes h5 {
+  color: black; /* Adjust if needed */
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.modern-notes p {
+  color: #444;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.no-contract { /* Used for no current service */
+  text-align: center;
+  padding: 3rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  color: #6c757d;
+}
+
+.no-contract i {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #adb5bd;
+}
+
+/* Estilos para histórico (copia y adaptación de ModalContratos.vue) */
+.history-table-container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  overflow: hidden; /* Hide scrollbar */
+  margin-top: 1rem;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.history-table th {
+  background: #f8f9fa;
+  color: #495057;
+  font-weight: 600;
+  text-align: left;
+  padding: 1rem;
+  border-bottom: 2px solid #e9ecef;
+  white-space: nowrap;
+}
+
+.history-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+}
+
+.history-row:hover {
+  background-color: #f8f9fa;
+}
+
+.status-indicators { /* Adapt or remove if not applicable for services */
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.status-badge { /* Adapt or remove if not applicable for services */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.status-badge.autoconsumo { /* Adapt or remove */
+  background-color: rgba(252, 215, 0, 0.1); /* Adjust color */
+  color: #856404;
+}
+
+.status-badge.denuncia { /* Adapt or remove */
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.status-badge.normal { /* Adapt or remove */
+  background-color: rgba(25, 135, 84, 0.1);
+  color: #198754;
+}
+
+.action-buttons { /* Used for view detail button */
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-start; /* Align to start */
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px; /* Adjusted border-radius */
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #f8f9fa;
+  color: #495057;
+}
+
+.btn-icon:hover {
+  background: rgba(252, 215, 0, 0.1); /* Adjust hover color */
+  color: rgba(252, 215, 0); /* Adjust hover color */
+}
+
+.btn-icon.btn-view:hover {
+  background: rgba(13, 110, 253, 0.1); /* Blue hover color */
+  color: #0d6efd;
+}
+
+.btn-icon.btn-download:hover { /* Keep if download is added later */
+  background: rgba(25, 135, 84, 0.1);
+  color: #198754;
+}
+
+.no-history { /* Used for no historical services */
+  text-align: center;
+  padding: 3rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  color: #6c757d;
+}
+
+.no-history i {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #adb5bd;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem; /* Adjusted padding */
+  border: none;
+  border-radius: 8px; /* Adjusted border-radius */
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+/* Modal de detalle (copia y adaptación de ModalContratos.vue) */
+.detalle-contrato-modal { /* Renamed from detalle-servicio-modal */
+  z-index: 2000;
+  background: rgba(0,0,0,0.35);
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detalle-contrato-content { /* Renamed from detalle-servicio-content */
+  background: #fff;
+  border-radius: 16px;
+  max-width: 60%; /* Adjusted max width */
+  width: 60%;
+  max-height: 80%;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  position: relative;
+  animation: modalFadeIn 0.3s; /* Assuming animation exists */
+}
+
+.detalle-contrato-content .modal-header { /* Ensure header styles are applied */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem; /* Adjusted padding */
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa; /* Adjusted background */
+  border-radius: 16px 16px 0 0; /* Rounded top corners */
+}
+
+.detalle-contrato-content .modal-header h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detalle-contrato-content .modal-header h2 i {
+  color: rgba(252, 215, 0); /* Adjust color */
+}
+
+.detalle-contrato-pdf { /* Renamed for consistency, used as content wrapper */
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Adjusted gap */
+}
+
+.detalle-contrato-header { /* Used for client and service info in detail modal */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjust columns */
+  gap: 2rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.cliente-info, .contrato-info { /* Renamed contrato-info from servicio-info */
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cliente-info h4, .contrato-info h4 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cliente-info h4 i, .contrato-info h4 i {
+  color: rgba(252, 215, 0); /* Adjust color */
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Adjust columns for detail info */
+  gap: 1rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem; /* Adjusted padding */
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.info-label {
+  color: #666;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.info-value {
+  color: #2c3e50;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.observaciones-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  color: #2c3e50;
+  line-height: 1.5;
+}
+
+/* Media Queries (copia y adaptación de ModalContratos.vue) */
+@media (max-width: 768px) {
+  .form-grid-modern {
+    grid-template-columns: 1fr; /* Stack columns on small screens */
+  }
+  .form-row-modern {
+    grid-template-columns: 1fr; /* Stack columns in form rows */
+    gap: 12px; /* Adjust gap */
+  }
+  .detalle-contrato-header {
+    grid-template-columns: 1fr; /* Stack columns in detail header */
+    gap: 1rem;
+  }
+  .info-grid {
+    grid-template-columns: 1fr; /* Stack columns in detail info grid */
+  }
+  .detalle-contrato-content {
+    width: 95vw; /* Use a percentage of viewport width */
+    max-width: 95vw; /* Ensure it doesn't exceed viewport */
+    margin: 10px; /* Add some margin */
+  }
+  .modal-content {
+     width: 95vw;
+     max-width: 95vw;
+      margin: 10px;
+  }
 }
 </style>

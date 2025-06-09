@@ -42,25 +42,7 @@
         </button>
       </div>
     </div>
-
-    <!-- Panel de búsqueda y filtros -->
-    <div class="card filter-panel">
-      <div class="filter-header">
-        <h2><i class="fas fa-filter"></i> Filtros</h2>
-      </div>
-      <div class="filter-controls">
-        <div class="search-container">
-          <i class="fas fa-search search-icon"></i>
-          <input
-            type="text"
-            class="form-control search-input"
-            placeholder="Buscar por nombre o CIF..."
-            v-model="filter"
-          />
-        </div>
-      </div>
-    </div>
-
+    
     <!-- Tabla de clientes con nuevo diseño -->
     <div class="card table-panel">
       <div class="table-header">
@@ -77,7 +59,7 @@
         </div>
       </div>
       <div class="table-responsive">
-        <div class="table-controls">
+        <div class="table-controls" hidden>
           <div class="records-per-page">
             <label for="recordsPerPage">Registros por página:</label>
             <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
@@ -91,33 +73,128 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th @click="sortBy('nombre')" class="sortable" style="width: 20%">
-                <i class="fas fa-user mr-2"></i>Nombre Cliente
-                <i :class="getSortIcon('nombre')"></i>
+              <th class="sortable" style="width: 20%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('nombre')">
+                    <i class="fas fa-user mr-2"></i>Nombre Cliente
+                    <i :class="getSortIcon('nombre')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.nombre" 
+                      @input="filterByColumn('nombre', $event.target.value)"
+                      placeholder="Filtrar..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
               </th>
-              <th @click="sortBy('cif')" class="sortable" style="width: 15%">
-                <i class="fas fa-id-card mr-2"></i>CIF
-                <i :class="getSortIcon('cif')"></i>
+              <th class="sortable" style="width: 15%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('cif')">
+                    <i class="fas fa-id-card mr-2"></i>CIF
+                    <i :class="getSortIcon('cif')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.cif" 
+                      @input="filterByColumn('cif', $event.target.value)"
+                      placeholder="Filtrar..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
               </th>
-              <th @click="sortBy('direccionFiscal')" class="sortable" style="width: 25%">
-                <i class="fas fa-map-marker-alt mr-2"></i>Dirección Fiscal
-                <i :class="getSortIcon('direccionFiscal')"></i>
+              <th class="sortable" style="width: 15%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('nombreComercial')">
+                    <i class="fas fa-building mr-2"></i>Grupo Empresarial
+                    <i :class="getSortIcon('nombreComercial')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.nombreComercial" 
+                      @input="filterByColumn('nombreComercial', $event.target.value)"
+                      placeholder="Filtrar..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
               </th>
-              <th @click="sortBy('numeroPuntosSuministro')" class="sortable" style="width: 15%">
-                <i class="fas fa-bolt mr-2"></i>PS
-                <i :class="getSortIcon('numeroPuntosSuministro')"></i>
+              <th class="sortable" style="width: 25%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('direccionFiscal')">
+                    <i class="fas fa-map-marker-alt mr-2"></i>Dirección Fiscal
+                    <i :class="getSortIcon('direccionFiscal')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.direccionFiscal" 
+                      @input="filterByColumn('direccionFiscal', $event.target.value)"
+                      placeholder="Filtrar..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
               </th>
-              <th @click="sortBy('usuarioAsignado')" class="sortable" style="width: 15%">
-                <i class="fas fa-user-tie mr-2"></i>Usuario
-                <i :class="getSortIcon('usuarioAsignado')"></i>
+              <th class="sortable" style="width: 15%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('numeroPuntosSuministro')">
+                    <i class="fas fa-bolt mr-2"></i>PS
+                    <i :class="getSortIcon('numeroPuntosSuministro')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.numeroPuntosSuministro" 
+                      @input="filterByColumn('numeroPuntosSuministro', $event.target.value)"
+                      placeholder="Filtrar..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
               </th>
-              <th style="width: 10%"><i class="fas fa-cogs mr-2"></i>Acciones</th>
+              <th class="sortable" style="width: 15%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('usuarioAsignado')">
+                    <i class="fas fa-user-tie mr-2"></i>Usuario
+                    <i :class="getSortIcon('usuarioAsignado')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.usuarioAsignado" 
+                      @input="filterByColumn('usuarioAsignado', $event.target.value)"
+                      placeholder="Filtrar..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
+              </th>
+              <th style="width: 10%">
+                <div class="column-header">
+                  <div class="column-title">
+                    <i class="fas fa-cogs mr-2"></i>Acciones
+                  </div>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="cliente in paginatedClientes" :key="cliente.idCliente">
               <td class="text-truncate" :title="cliente.nombre">{{ cliente.nombre }}</td>
               <td class="text-truncate" :title="cliente.cif">{{ cliente.cif }}</td>
+              <td class="text-truncate" :title="cliente.nombreComercial">{{ cliente.nombreComercial }}</td>
               <td class="text-truncate" :title="cliente.direccionFiscal">{{ cliente.direccionFiscal }}</td>
               <td>
                 <div class="ps-cell">
@@ -150,6 +227,15 @@
           </tbody>
         </table>
         <div class="pagination-controls">
+          <div class="records-per-page">
+            <label for="recordsPerPage">Registros por página:</label>
+            <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
           <div class="pagination-info">
             Mostrando {{ paginationStart }} - {{ paginationEnd }} de {{ filteredClientes.length }} registros
           </div>
@@ -228,6 +314,14 @@ export default {
     return {
       clientes: [], // Lista de clientes
       filter: "", // Texto del filtro
+      columnFilters: {
+        nombre: '',
+        cif: '',
+        nombreComercial: '',
+        direccionFiscal: '',
+        numeroPuntosSuministro: '',
+        usuarioAsignado: ''
+      },
       puntosSuministro: [],        // Lista de puntos de suministro
       clienteSeleccionado: {},  // Cliente seleccionado
       isModalPuntosOpen: false,    // Estado para controlar la visibilidad del modal
@@ -250,14 +344,20 @@ export default {
   computed: {
     // Lista de clientes filtrados según el texto de búsqueda
     filteredClientes() {
-      const filtro = this.filter.toLowerCase();
       return this.clientes.filter((cliente) => {
-        const nombre = cliente.nombre || ""; // Si es null, usa cadena vacía
-        const cif = cliente.cif || ""; // Si es null, usa cadena vacía
-        return (
-          nombre.toLowerCase().includes(filtro) ||
-          cif.toLowerCase().includes(filtro)
+        // Primero aplicamos el filtro general
+        const generalFilter = Object.values(cliente).some((value) =>
+          String(value).toLowerCase().includes(this.filter.toLowerCase())
         );
+
+        // Luego aplicamos los filtros por columna
+        const columnFilters = Object.entries(this.columnFilters).every(([key, value]) => {
+          if (!value) return true; // Si no hay filtro para esta columna, no filtra
+          const fieldValue = String(cliente[key] || '').toLowerCase();
+          return fieldValue.includes(value.toLowerCase());
+        });
+
+        return generalFilter && columnFilters;
       });
     },
     // Total de puntos de suministro de todos los clientes
@@ -267,11 +367,12 @@ export default {
       }, 0);
     },
     sortedClientes() {
+      if (!this.sortKey || !this.sortOrder) return this.filteredClientes;
+      
       const sorted = [...this.filteredClientes].sort((a, b) => {
         let aValue = a[this.sortKey];
         let bValue = b[this.sortKey];
         
-        // Si el valor es null o undefined, lo tratamos como cadena vacía
         aValue = aValue ?? '';
         bValue = bValue ?? '';
         
@@ -333,7 +434,7 @@ export default {
     resetFormularioCliente() {
       return {
         nombre: '',
-        nombreComercial: '',
+        grupoEmpresarial: '',
         cif: '',
         direccion: '',
         codigoPostal: '',
@@ -497,7 +598,13 @@ export default {
     },    
     sortBy(key) {
       if (this.sortKey === key) {
-        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+        // Ciclo: asc -> desc -> null
+        if (this.sortOrder === 'asc') {
+          this.sortOrder = 'desc';
+        } else if (this.sortOrder === 'desc') {
+          this.sortKey = null;
+          this.sortOrder = null;
+        }
       } else {
         this.sortKey = key;
         this.sortOrder = 'asc';
@@ -506,6 +613,7 @@ export default {
     
     getSortIcon(key) {
       if (this.sortKey !== key) return 'fas fa-sort';
+      if (!this.sortOrder) return 'fas fa-sort';
       return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
     },
 
@@ -514,6 +622,7 @@ export default {
         const data = this.filteredClientes.map(cliente => ({
           'Nombre Cliente': cliente.nombre,
           'CIF': cliente.cif,
+          'Grupo Empresarial': cliente.nombreComercial,
           'Dirección Fiscal': cliente.direccionFiscal,
           'Puntos Suministro': cliente.numeroPuntosSuministro,
           'Usuario Asignado': cliente.usuarioAsignado
@@ -527,6 +636,7 @@ export default {
         const wscols = [
           {wch: 30}, // Nombre Cliente
           {wch: 15}, // CIF
+          {wch: 25}, // Grupo Empresarial
           {wch: 40}, // Dirección Fiscal
           {wch: 15}, // Puntos Suministro
           {wch: 20}  // Usuario Asignado
@@ -607,6 +717,10 @@ export default {
       }).then(() => {
         this.$refs.pdfInput.click();
       });
+    },
+
+    filterByColumn(column, value) {
+      this.columnFilters[column] = value;
     },
   },
   async mounted() {
@@ -720,27 +834,26 @@ export default {
   min-width: 200px;
 }
 
-.action-card:hover {
-  background-color: var(--primary-dark);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-}
-
 .action-card .btn {
   width: 100%;
   height: 100%;
   background: transparent;
-  color: white;
-  font-size: 1rem;
+  color: black;
+  font-size: 1.3rem;
   font-weight: 600;
-  border: none;
+  border-radius: 8px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
-.filter-header h2 i,
-.table-header h2 i {
-  margin-right: 10px;
-  color: var(--primary-color);
+.action-card .btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: white;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
+
 
 .table-header {
   background-color: white;
@@ -809,6 +922,16 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  padding: 0;
+  margin: 0;
+}
+
+.btn-icon i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .btn-icon.btn-edit {
@@ -841,7 +964,7 @@ export default {
 
 .ps-badge {
   background-color: var(--primary-light);
-  color: white;
+  color: black;
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 0.9rem;
@@ -861,31 +984,22 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
-  background-color: white;
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .records-per-page label {
   color: var(--text-secondary);
   font-weight: 500;
+  font-size: 14px; /* Reducir tamaño de fuente */
 }
 
 .records-per-page select {
-  width: auto;
-  padding: 6px 12px;
+  width: auto; /* Ajustar ancho */
+  padding: 6px 8px; /* Ajustar padding */
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 4px;
   background-color: white;
   color: var(--text-primary);
-  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.records-per-page select:hover {
-  border-color: var(--primary-color);
 }
 
 .sortable {
@@ -941,9 +1055,6 @@ export default {
   transition: all 0.2s ease;
   font-weight: 500;
   min-width: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .btn-outline:hover:not(:disabled) {
@@ -1005,6 +1116,73 @@ export default {
   gap: 8px;
   justify-content: center;
   min-width: 120px; /* Ancho mínimo para los botones de acción */
+}
+
+.column-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.column-title {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.column-title:hover {
+  background-color: var(--hover-color);
+}
+
+.column-filter-container {
+  position: relative;
+}
+
+.column-filter {
+  width: 100%;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.column-filter:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.column-filter::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.data-table th {
+  padding: 12px;
+  vertical-align: top;
+  background-color: var(--surface-color);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.data-table th i {
+  margin-left: 4px;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+.sortable .column-title {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.sortable .column-title:hover {
+  color: var(--primary-color);
 }
 </style>
 

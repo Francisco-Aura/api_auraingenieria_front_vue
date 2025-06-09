@@ -22,9 +22,9 @@ export default {
 
 :root {
   /* Colores principales */
-  --primary-color: #ffc40c;
-  --primary-dark: #ffc40c;
-  --primary-light: #ffc40c;
+  --primary-color: rgb(252, 215, 0);
+  --primary-dark: rgb(252, 215, 0);
+  --primary-light: rgb(252, 215, 0);
   --secondary-color: #2c3e50;
   --accent-color: #f39c12;
   
@@ -115,13 +115,13 @@ body {
 
 .btn-primary {
   background-color: var(--primary-color);
-  color: white;
+  color: black;
 }
 
 .btn-primary:hover {
   background-color: var(--primary-dark);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+  box-shadow: 0 6px 15px rgba(255, 196, 12, 0.3);
 }
 
 .btn-secondary {

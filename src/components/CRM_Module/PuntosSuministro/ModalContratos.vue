@@ -1,80 +1,140 @@
 <template>
   <div v-if="visible" class="modal-overlay">
     <div class="modal-content">
-      <button type="button" @click="cerrarModal" class="close-button" aria-label="Cerrar">&times;</button>
-      <h2>Gestión de Contratos</h2>
-      
-      <!-- Tabs para alternar entre las vistas de contratos -->
-      <div class="tabs">
-        <button :class="{ active: pestañaActiva === 'nuevo' }" @click="pestañaActiva = 'nuevo'">
-          <i class="fas fa-plus"></i> Nuevo Contrato
+      <!-- Encabezado del modal -->
+      <div class="modal-header">
+        <h1 class="modal-title">Gestión de Contratos</h1>
+        <button type="button" @click="cerrarModal" class="close-button" aria-label="Cerrar">
+          <i class="fas fa-times"></i>
         </button>
-        <button :class="{ active: pestañaActiva === 'actual' }" @click="pestañaActiva = 'actual'">
-          <i class="fas fa-file-contract"></i> Contrato Actual
+      </div>
+
+      <!-- Pestañas para organizar el contenido -->
+      <div class="form-tabs">
+        <button 
+          type="button" 
+          class="tab-btn" 
+          :class="{ active: pestañaActiva === 'nuevo' }" 
+          @click="pestañaActiva = 'nuevo'"
+        >
+          <i class="fas fa-plus"></i> 
+          <span class="tab-text">{{ modoEdicion ? 'Editar' : 'Nuevo' }}</span>
         </button>
-        <button :class="{ active: pestañaActiva === 'historico' }" @click="pestañaActiva = 'historico'">
-          <i class="fas fa-history"></i> Histórico
+        <button 
+          type="button" 
+          class="tab-btn" 
+          :class="{ active: pestañaActiva === 'actual' }" 
+          @click="pestañaActiva = 'actual'"
+        >
+          <i class="fas fa-file-contract"></i> 
+          <span class="tab-text">Actual</span>
+        </button>
+        <button 
+          type="button" 
+          class="tab-btn" 
+          :class="{ active: pestañaActiva === 'historico' }" 
+          @click="pestañaActiva = 'historico'"
+        >
+          <i class="fas fa-history"></i> 
+          <span class="tab-text">Histórico</span>
         </button>
       </div>
 
       <!-- Contenido dinámico según la pestaña activa -->
-      <div class="tab-content">
-        <!-- Crear nuevo contrato -->
-        <div v-if="pestañaActiva === 'nuevo'" class="form-container wide-form">
-          <div class="cliente-banner compact-banner">
-            <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Desconocido' }}</h4>
-            <span>DNI: {{ cliente?.dni || 'No disponible' }}</span>
+      <div class="tab-content-container">
+        <!-- Crear/Editar contrato -->
+        <div v-if="pestañaActiva === 'nuevo'" class="tab-content">
+          <!-- Banner del cliente -->
+          <div class="client-banner">
+            <div class="client-info">
+              <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Desconocido' }}</h4>
+              <span>DNI/CIF: {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'No disponible' }}</span>
+            </div>
           </div>
-          <h3 class="form-title">
-            {{ modoEdicion ? 'Editar Contrato' : 'Crear Nuevo Contrato' }}
-          </h3>
+
           <form @submit.prevent="crearNuevoContrato" class="modern-form">
-            <div class="form-grid grid-3-cols">
+            <div class="form-grid-modern">
               <!-- Sección de Fechas -->
-              <div class="form-section card">
-                <div class="section-header">
+              <div class="form-section-modern">
+                <div class="section-header-modern">
                   <i class="fas fa-calendar-alt"></i>
                   <h3>Fechas del Contrato</h3>
                 </div>
-                <div class="form-group">
-                  <label for="fechaEnvioContrato">Fecha Envío</label>
-                  <div class="input-with-icon">
+                
+                <div class="form-group-modern">
+                  <label for="fechaEnvioContrato">Fecha Envío <span class="required">*</span></label>
+                  <div class="input-with-icon-modern">
                     <i class="fas fa-paper-plane icon-prefix"></i>
-                    <input type="date" id="fechaEnvioContrato" v-model="nuevoContrato.fechaEnvio" required />
+                    <input 
+                      type="date" 
+                      id="fechaEnvioContrato" 
+                      v-model="nuevoContrato.fechaEnvio" 
+                      class="form-control-modern" 
+                      required 
+                    />
                   </div>
                 </div>
-                <div class="form-group">
-                  <label for="fechaInicioContrato">Fecha Inicio</label>
-                  <div class="input-with-icon">
+
+                <div class="form-group-modern">
+                  <label for="fechaInicioContrato">Fecha Inicio <span class="required">*</span></label>
+                  <div class="input-with-icon-modern">
                     <i class="fas fa-play icon-prefix"></i>
-                    <input type="date" id="fechaInicioContrato" v-model="nuevoContrato.fechaInicio" required />
+                    <input 
+                      type="date" 
+                      id="fechaInicioContrato" 
+                      v-model="nuevoContrato.fechaInicio" 
+                      class="form-control-modern" 
+                      required 
+                    />
                   </div>
                 </div>
-                <div class="form-group">
-                  <label for="fechaFinContrato">Fecha Fin</label>
-                  <div class="input-with-icon">
+
+                <div class="form-group-modern">
+                  <label for="fechaFinContrato">Fecha Fin <span class="required">*</span></label>
+                  <div class="input-with-icon-modern">
                     <i class="fas fa-stop icon-prefix"></i>
-                    <input type="date" id="fechaFinContrato" v-model="nuevoContrato.fechaFin" required />
+                    <input 
+                      type="date" 
+                      id="fechaFinContrato" 
+                      v-model="nuevoContrato.fechaFin" 
+                      class="form-control-modern" 
+                      required 
+                    />
                   </div>
                 </div>
               </div>
+
               <!-- Sección de Información del Contrato -->
-              <div class="form-section card">
-                <div class="section-header">
+              <div class="form-section-modern">
+                <div class="section-header-modern">
                   <i class="fas fa-file-contract"></i>
                   <h3>Información del Contrato</h3>
                 </div>
-                <div class="form-group">
-                  <label for="contrato">Número de Contrato</label>
-                  <div class="input-with-icon">
+                
+                <div class="form-group-modern">
+                  <label for="contrato">Número de Contrato <span class="required">*</span></label>
+                  <div class="input-with-icon-modern">
                     <i class="fas fa-hashtag icon-prefix"></i>
-                    <input type="text" id="contrato" v-model="nuevoContrato.contrato" required />
+                    <input 
+                      type="text" 
+                      id="contrato" 
+                      v-model="nuevoContrato.contrato" 
+                      class="form-control-modern" 
+                      required 
+                    />
                   </div>
                 </div>
-                <div class="form-group">
-                  <label for="tarifaGas">Tarifa Gas</label>
-                  <div class="select-container">
-                    <select id="tarifaGas" v-model="nuevoContrato.idTarifaGas" required>
+
+                <div class="form-group-modern">
+                  <label for="tarifaGas">Tarifa Gas <span class="required">*</span></label>
+                  <div class="select-container-modern">
+                    <select 
+                      id="tarifaGas" 
+                      v-model="nuevoContrato.idTarifaGas" 
+                      class="form-select-modern" 
+                      required
+                    >
+                      <option value="">Seleccione...</option>
                       <option v-for="tarifa in tarifasGas" :value="tarifa.id" :key="tarifa.id">
                         {{ tarifa.nombre }}
                       </option>
@@ -82,10 +142,17 @@
                     <i class="fas fa-chevron-down select-icon"></i>
                   </div>
                 </div>
-                <div class="form-group">
-                  <label for="tarifaLuz">Tarifa Luz</label>
-                  <div class="select-container">
-                    <select id="tarifaLuz" v-model="nuevoContrato.idTarifaLuz" required>
+
+                <div class="form-group-modern">
+                  <label for="tarifaLuz">Tarifa Luz <span class="required">*</span></label>
+                  <div class="select-container-modern">
+                    <select 
+                      id="tarifaLuz" 
+                      v-model="nuevoContrato.idTarifaLuz" 
+                      class="form-select-modern" 
+                      required
+                    >
+                      <option value="">Seleccione...</option>
                       <option v-for="tarifa in tarifasLuz" :value="tarifa.id" :key="tarifa.id">
                         {{ tarifa.nombre }}
                       </option>
@@ -94,71 +161,107 @@
                   </div>
                 </div>
               </div>
-              <!-- Sección de archivo PDF -->
-              <div class="form-section card">
-                <div class="section-header">
+
+              <!-- Sección de Documento PDF -->
+              <div class="form-section-modern">
+                <div class="section-header-modern">
                   <i class="fas fa-file-pdf"></i>
                   <h3>Documento del Contrato</h3>
                 </div>
-                <div class="pdf-dropzone" @click="mostrarNotificacionSubidaPDF">
-                  <div class="pdf-icon-circle">
+                
+                <div class="pdf-upload-area" @click="mostrarNotificacionSubidaPDF">
+                  <div class="pdf-icon">
                     <i class="fas fa-file-pdf"></i>
                   </div>
-                  <div class="pdf-dropzone-text">
-                    <span class="dropzone-title">Subir contrato PDF</span>
-                    <span class="dropzone-desc">Arrastra el archivo aquí o haz clic para seleccionar</span>
+                  <div class="pdf-text">
+                    <span class="pdf-title">Subir contrato PDF</span>
+                    <span class="pdf-desc">Clic para seleccionar archivo</span>
                   </div>
-                  <input type="file" ref="pdfInput" @change="handleFileUpload" accept=".pdf" style="display:none" />
+                  <input 
+                    type="file" 
+                    ref="pdfInput" 
+                    @change="handleFileUpload" 
+                    accept=".pdf" 
+                    style="display:none" 
+                  />
                 </div>
-                <div v-if="selectedFile" class="file-name-selected">
-                  <i class="fas fa-file-pdf"></i> {{ selectedFile.name }}
+                
+                <div v-if="selectedFile" class="file-selected">
+                  <i class="fas fa-file-pdf"></i> 
+                  {{ selectedFile.name }}
                 </div>
               </div>
+
               <!-- Sección de Opciones y Observaciones -->
-              <div class="form-section card">
-                <div class="section-header">
+              <div class="form-section-modern full-width">
+                <div class="section-header-modern">
                   <i class="fas fa-cog"></i>
                   <h3>Opciones y Observaciones</h3>
                 </div>
-                <div class="form-row">
-                  <div class="checkbox-group">
-                    <label class="checkbox-label">
-                      <input type="checkbox" v-model="nuevoContrato.autoconsumo" />
-                      <span>Autoconsumo</span>
-                    </label>
-                    <label class="checkbox-label">
-                      <input type="checkbox" v-model="nuevoContrato.denunciaContrato" />
-                      <span>Denuncia Contrato</span>
-                    </label>
+                
+                <div class="form-row-modern">
+                  <div class="checkbox-section">
+                    <div class="checkbox-group-modern">
+                      <label class="checkbox-modern">
+                        <input type="checkbox" v-model="nuevoContrato.autoconsumo" />
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">Autoconsumo</span>
+                      </label>
+                      
+                      <label class="checkbox-modern">
+                        <input type="checkbox" v-model="nuevoContrato.denunciaContrato" />
+                        <span class="checkmark"></span>
+                        <span class="checkbox-text">Denuncia Contrato</span>
+                      </label>
+                    </div>
+                    
+                    <div v-if="nuevoContrato.denunciaContrato" class="form-group-modern">
+                      <label for="fechaDenunciaContrato">Fecha Denuncia <span class="required">*</span></label>
+                      <div class="input-with-icon-modern">
+                        <i class="fas fa-exclamation-triangle icon-prefix"></i>
+                        <input 
+                          type="date" 
+                          id="fechaDenunciaContrato" 
+                          v-model="nuevoContrato.fechaDenunciaContrato" 
+                          class="form-control-modern" 
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div class="form-group" v-if="nuevoContrato.denunciaContrato">
-                    <label for="fechaDenunciaContrato">Fecha Denuncia</label>
-                    <div class="input-with-icon">
-                      <i class="fas fa-exclamation-triangle icon-prefix"></i>
-                      <input type="date" id="fechaDenunciaContrato" v-model="nuevoContrato.fechaDenunciaContrato" />
+                  
+                  <div class="observations-section">
+                    <div class="form-group-modern">
+                      <label for="observaciones">Observaciones</label>
+                      <textarea 
+                        id="observaciones" 
+                        v-model="nuevoContrato.observaciones" 
+                        class="form-control-modern textarea-modern" 
+                        rows="4"
+                        placeholder="Añada aquí cualquier observación relevante sobre el contrato..."
+                      ></textarea>
                     </div>
                   </div>
                 </div>
-                <div class="form-group">
-                  <label for="observaciones">Observaciones</label>
-                  <textarea id="observaciones" v-model="nuevoContrato.observaciones" rows="3" 
-                    placeholder="Añada aquí cualquier observación relevante sobre el contrato..."></textarea>
-                </div>
               </div>
             </div>
-            <div class="form-actions sticky-actions">
-              <button type="button" @click="cerrarModal" class="btn btn-secondary">
-                <i class="fas fa-times"></i> Cancelar
-              </button>
-              <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> {{ modoEdicion ? 'Guardar Cambios' : 'Guardar Contrato' }}
-              </button>
+
+            <!-- Botones de acción dentro del formulario -->
+            <div class="modal-footer-modern">
+              <div class="required-legend"><span class="required">*</span> Campos obligatorios</div>
+              <div class="action-buttons">
+                <button type="button" @click="cerrarModal" class="btn-modern btn-secondary">
+                  <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" class="btn-modern btn-primary">
+                  <i class="fas fa-save"></i> {{ modoEdicion ? 'Guardar Cambios' : 'Guardar Contrato' }}
+                </button>
+              </div>
             </div>
           </form>
         </div>
 
         <!-- Visualizar contrato actual -->
-        <div v-if="pestañaActiva === 'actual'" class="current-contract">
+        <div v-if="pestañaActiva === 'actual'" class="tab-content">
           <h3>Contrato Actual</h3>
           <div v-if="contratoActual" class="contract-details modern-contract-card">
             <div class="contract-header">
@@ -208,6 +311,38 @@
                   <span class="info-value"><i class="fas fa-history"></i> {{ getComercializadoraNombre(contratoActual.idComercializadoraAnterior) }}</span>
                 </div>
               </div>
+              <div class="contract-section modern-section">
+                <div class="section-header">
+                  <i class="fas fa-bolt"></i>
+                  <h5>Potencias Contratadas</h5>
+                </div>
+                <div class="potencia-grid">
+                  <div class="potencia-item">
+                    <span class="potencia-label">P1:</span>
+                    <span class="potencia-value">{{ contratoActual.potencia1 }} kW</span>
+                  </div>
+                  <div class="potencia-item">
+                    <span class="potencia-label">P2:</span>
+                    <span class="potencia-value">{{ contratoActual.potencia2 }} kW</span>
+                  </div>
+                  <div class="potencia-item">
+                    <span class="potencia-label">P3:</span>
+                    <span class="potencia-value">{{ contratoActual.potencia3 }} kW</span>
+                  </div>
+                  <div class="potencia-item">
+                    <span class="potencia-label">P4:</span>
+                    <span class="potencia-value">{{ contratoActual.potencia4 }} kW</span>
+                  </div>
+                  <div class="potencia-item">
+                    <span class="potencia-label">P5:</span>
+                    <span class="potencia-value">{{ contratoActual.potencia5 }} kW</span>
+                  </div>
+                  <div class="potencia-item">
+                    <span class="potencia-label">P6:</span>
+                    <span class="potencia-value">{{ contratoActual.potencia6 }} kW</span>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="contract-status modern-status">
               <div class="status-chip" :class="{ active: contratoActual.autoconsumo }">
@@ -228,32 +363,53 @@
           </div>
         </div>
         
-        <!-- Histórico de contratos -->
-        <div v-if="pestañaActiva === 'historico'" class="contract-history">
+        <!-- Histórico de contratos - ORIGINAL -->
+        <div v-if="pestañaActiva === 'historico'" class="tab-content">
           <h3>Histórico de Contratos</h3>
-          <div v-if="contratosHistoricos.length" class="history-timeline">
-            <div v-for="contrato in contratosHistoricos" :key="contrato.id" class="history-item">
-              <div class="history-date">
-                <span class="date">{{ formatDate(contrato.fechaInicio) }}</span>
-                <span class="year">{{ new Date(contrato.fechaInicio).getFullYear() }}</span>
-              </div>
-              <div class="history-content">
-                <h4>Contrato #{{ contrato.contrato }}</h4>
-                <div class="history-details">
-                  <p><strong>Período:</strong> {{ formatDate(contrato.fechaInicio) }} - {{ formatDate(contrato.fechaFin) }}</p>
-                  <p><strong>Tarifa Luz:</strong> {{ getTarifaLuzNombre(contrato.idTarifaLuz) }}</p>
-                  <p><strong>Tarifa Gas:</strong> {{ getTarifaGasNombre(contrato.idTarifaGas) }}</p>
-                </div>
-                <div class="history-actions">
-                  <button @click="verDetalleContrato(contrato)" class="btn btn-secondary">
-                    <i class="fas fa-eye"></i> Ver Detalle
-                  </button>
-                  <button @click="descargarPDF(contrato)" class="btn btn-secondary" v-if="contrato.rutaArchivoContrato">
-                    <i class="fas fa-download"></i> PDF
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div v-if="contratosHistoricosOrdenados.length" class="history-table-container">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Contrato</th>
+                  <th>Fecha Inicio</th>
+                  <th>Fecha Fin</th>
+                  <th>Tarifa Luz</th>
+                  <th>Tarifa Gas</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="contrato in contratosHistoricosOrdenados" :key="contrato.id" class="history-row">
+                  <td class="contract-number">#{{ contrato.contrato }}</td>
+                  <td>{{ formatDate(contrato.fechaInicio) }}</td>
+                  <td>{{ formatDate(contrato.fechaFin) }}</td>
+                  <td>{{ getTarifaLuzNombre(contrato.idTarifaLuz) }}</td>
+                  <td>{{ getTarifaGasNombre(contrato.idTarifaGas) }}</td>
+                  <td>
+                    <div class="status-indicators">
+                      <span v-if="contrato.autoconsumo" class="status-badge autoconsumo">
+                        <i class="fas fa-solar-panel"></i> Autoconsumo
+                      </span>
+                      <span v-if="contrato.denunciaContrato" class="status-badge denuncia">
+                        <i class="fas fa-exclamation-triangle"></i> Denunciado
+                      </span>
+                      <span v-if="!contrato.autoconsumo && !contrato.denunciaContrato" class="status-badge normal">
+                        <i class="fas fa-check-circle"></i> Normal
+                      </span>
+                    </div>
+                  </td>
+                  <td class="action-buttons">
+                    <button @click="verDetalleContrato(contrato)" class="btn-icon btn-view" title="Ver Detalle">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button @click="descargarPDF(contrato)" class="btn-icon btn-download" title="Descargar PDF" v-if="contrato.rutaArchivoContrato">
+                      <i class="fas fa-download"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
           <div v-else class="no-history">
             <i class="fas fa-history"></i>
@@ -261,41 +417,84 @@
           </div>
         </div>
       </div>
-      <!-- MODAL DETALLE CONTRATO -->
-      <div v-if="mostrarModalDetalleContrato" class="modal-overlay detalle-contrato-modal">
-        <div class="modal-content detalle-contrato-content">
-          <button type="button" @click="cerrarModalDetalleContrato" class="close-button" aria-label="Cerrar">&times;</button>
-          <div class="detalle-contrato-pdf">
-            <h2><i class="fas fa-file-contract"></i> Detalle del Contrato</h2>
-            <div class="detalle-contrato-header">
-              <div>
-                <strong>Cliente:</strong> {{ cliente?.nombre || 'Desconocido' }}<br>
-                <strong>DNI:</strong> {{ cliente?.dni || 'No disponible' }}
+    </div>
+
+    <!-- MODAL DETALLE CONTRATO - FUERA DEL MODAL PRINCIPAL -->
+    <div v-if="mostrarModalDetalleContrato" class="modal-overlay detalle-contrato-modal">
+      <div class="modal-content detalle-contrato-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-file-contract"></i> Detalle del Contrato</h2>
+          <button type="button" @click="cerrarModalDetalleContrato" class="close-button" aria-label="Cerrar">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="detalle-contrato-pdf">
+          <div class="detalle-contrato-header">
+            <div class="cliente-info">
+              <h4><i class="fas fa-user"></i> Información del Cliente</h4>
+              <div class="info-row">
+                <span class="info-label">Nombre:</span>
+                <span class="info-value">{{ clienteDetalle?.nombre || 'Desconocido' }}</span>
               </div>
-              <div>
-                <strong>Nº Contrato:</strong> {{ contratoDetalle?.contrato }}<br>
-                <strong>Vigencia:</strong> {{ formatDate(contratoDetalle?.fechaInicio) }} - {{ formatDate(contratoDetalle?.fechaFin) }}
+              <div class="info-row">
+                <span class="info-label">DNI/CIF:</span>
+                <span class="info-value">{{ clienteDetalle?.dniAutorizado?.trim() || clienteDetalle?.cif?.trim() || 'No disponible' }}</span>
               </div>
             </div>
-            <div class="detalle-contrato-section">
-              <h4>Datos del Contrato</h4>
-              <ul>
-                <li><b>Tarifa Luz:</b> {{ getTarifaLuzNombre(contratoDetalle?.idTarifaLuz) }}</li>
-                <li><b>Tarifa Gas:</b> {{ getTarifaGasNombre(contratoDetalle?.idTarifaGas) }}</li>
-                <li><b>Comercializadora Actual:</b> {{ getComercializadoraNombre(contratoDetalle?.idComercializadoraActual) }}</li>
-                <li><b>Comercializadora Anterior:</b> {{ getComercializadoraNombre(contratoDetalle?.idComercializadoraAnterior) }}</li>
-                <li><b>Autoconsumo:</b> <span v-if="contratoDetalle?.autoconsumo">Sí</span><span v-else>No</span></li>
-                <li><b>Denuncia Contrato:</b> <span v-if="contratoDetalle?.denunciaContrato">Sí ({{ formatDate(contratoDetalle?.fechaDenunciaContrato) }})</span><span v-else>No</span></li>
-                <li><b>Observaciones:</b> {{ contratoDetalle?.observaciones || 'Ninguna' }}</li>
-              </ul>
+            <div class="contrato-info">
+              <h4><i class="fas fa-file-alt"></i> Información del Contrato</h4>
+              <div class="info-row">
+                <span class="info-label">Nº Contrato:</span>
+                <span class="info-value">#{{ contratoDetalle?.contrato }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Vigencia:</span>
+                <span class="info-value">{{ formatDate(contratoDetalle?.fechaInicio) }} - {{ formatDate(contratoDetalle?.fechaFin) }}</span>
+              </div>
             </div>
-            <div class="detalle-contrato-actions">
-              <button v-if="contratoDetalle?.rutaArchivoContrato" @click="descargarPDF(contratoDetalle)" class="btn btn-primary">
-                <i class="fas fa-download"></i> Descargar PDF
-              </button>
-              <button v-else @click="generarPDFContrato(contratoDetalle)" class="btn btn-primary">
-                <i class="fas fa-file-pdf"></i> Generar PDF
-              </button>
+          </div>
+          <div class="detalle-contrato-section">
+            <h4><i class="fas fa-info-circle"></i> Datos del Contrato</h4>
+            <div class="info-grid">
+              <div class="info-row">
+                <span class="info-label">Tarifa Luz:</span>
+                <span class="info-value"><i class="fas fa-bolt"></i> {{ getTarifaLuzNombre(contratoDetalle?.idTarifaLuz) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Tarifa Gas:</span>
+                <span class="info-value"><i class="fas fa-fire"></i> {{ getTarifaGasNombre(contratoDetalle?.idTarifaGas) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Comercializadora Actual:</span>
+                <span class="info-value"><i class="fas fa-building"></i> {{ getComercializadoraNombre(contratoDetalle?.idComercializadoraActual) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Comercializadora Anterior:</span>
+                <span class="info-value"><i class="fas fa-history"></i> {{ getComercializadoraNombre(contratoDetalle?.idComercializadoraAnterior) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Autoconsumo:</span>
+                <span class="info-value">
+                  <span class="status-chip" :class="{ active: contratoDetalle?.autoconsumo }">
+                    <i class="fas fa-solar-panel"></i> {{ contratoDetalle?.autoconsumo ? 'Sí' : 'No' }}
+                  </span>
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Denuncia Contrato:</span>
+                <span class="info-value">
+                  <span class="status-chip denuncia" :class="{ active: contratoDetalle?.denunciaContrato }">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    {{ contratoDetalle?.denunciaContrato ? `Sí (${formatDate(contratoDetalle?.fechaDenunciaContrato)})` : 'No' }}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="detalle-contrato-section" v-if="contratoDetalle?.observaciones">
+            <h4><i class="fas fa-sticky-note"></i> Observaciones</h4>
+            <div class="observaciones-content">
+              {{ contratoDetalle?.observaciones }}
             </div>
           </div>
         </div>
@@ -351,12 +550,12 @@ export default {
       default: () => [],
     },
     cliente: {
-      type: Object,
-      default: () => ({}),
+      type: [Object, Number],
+      required: true
     },
     puntoSuministro: {
-      type: Object,
-      default: () => ({}),
+      type: [Object, Number],
+      required: true
     },
     tarifasGas: {
       type: Array,
@@ -404,6 +603,7 @@ export default {
       selectedFile: null,
       mostrarModalDetalleContrato: false,
       contratoDetalle: null,
+      clienteDetalle: null,
     };
   },
 
@@ -498,6 +698,7 @@ export default {
 
     verDetalleContrato(contrato) {
       this.contratoDetalle = contrato;
+      this.clienteDetalle = contrato.cliente || this.cliente;
       this.mostrarModalDetalleContrato = true;
     },
 
@@ -536,6 +737,7 @@ export default {
     cerrarModalDetalleContrato() {
       this.mostrarModalDetalleContrato = false;
       this.contratoDetalle = null;
+      this.clienteDetalle = null;
     },
 
     generarPDFContrato(contrato) {
@@ -562,7 +764,7 @@ export default {
         ],
         theme: 'grid',
         styles: { fontSize: 10 },
-        headStyles: { fillColor: [255, 196, 12] },
+        headStyles: { fillColor: [252, 215, 0] },
       });
       doc.save(`contrato_${contrato.contrato || 'detalle'}.pdf`);
     },
@@ -573,283 +775,790 @@ export default {
         text: 'La funcionalidad de subida de contratos PDF será implementada según las indicaciones del cliente.',
         icon: 'info',
         confirmButtonText: 'Entendido',
-        confirmButtonColor: '#ffc107'
+        confirmButtonColor: 'rgba(252, 215, 0)'
       });
     },
+  },
+
+  computed: {
+    contratosHistoricosOrdenados() {
+      return [...this.contratosHistoricos].sort((a, b) => {
+        return new Date(b.fechaInicio) - new Date(a.fechaInicio);
+      });
+    }
   },
 };
 </script>
 
 <style scoped>
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+/* Estilos base del modal modernizado */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;    
   width: 100%;
   height: 100%;
+  padding: 15px;
 }
 
 .modal-content {
-  background: #ffffff;
-  border-radius: 12px;
-  width: 95%;
+  width: 90%;
   max-width: 90%;
+  height: 90%;
   max-height: 90%;
-  overflow-y: auto;
-  position: relative;
-  padding: 2rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  animation: modalFadeIn 0.3s ease-out;
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.tabs {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
   display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  border-bottom: 2px solid #ffe082;
-  padding-bottom: 1rem;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.tabs button {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 1rem;
-  color: black;
-  border-radius: 8px 8px 0 0;
-  transition: all 0.3s ease;
+.modal-header {
+  padding: 18px 25px;
+  border-bottom: 1px solid #e0e0e0;
+  background: rgba(252, 215, 0);
+  color: white;
   position: relative;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.4rem;
   font-weight: 600;
 }
 
-.tabs button:hover {
-  background: #fffbe6;
-  color: black;
-}
-
-.tabs button.active {
-  background: #ffc40c;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(255, 196, 12, 0.15);
-}
-
-.tabs button i {
-  margin-right: 0.5rem;
-  font-size: 1.1rem;
-}
-
-.form-container {
-  max-width: 95%;
-  margin: 0 auto;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.form-section {
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-  padding: 20px;
-  transition: box-shadow 0.3s ease;
-}
-
-.form-section:hover {
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.section-header {
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: #e74c3c;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: white;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
-  gap: 10px;
-  padding-bottom: 10px;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.close-button:hover {
+  background-color: #c0392b;
+  color: white;
+  transform: rotate(90deg);
+}
+
+/* Sistema de pestañas moderno */
+.form-tabs {
+  display: flex;
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  padding: 15px 25px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.tab-btn:hover {
+  background-color: #f8f9fa;
+}
+
+.tab-btn.active {
+  border-bottom-color: rgba(252, 215, 0);
+  background-color: #fcfbf9;
+  color: #333;
+}
+
+.tab-text {
+  font-size: 0.95rem;
+}
+
+/* Contenedor de pestañas */
+.tab-content-container {
+  flex: 1;
+  background-color: #f8f9fa;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tab-content {
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* Banner del cliente */
+.client-banner {
+  background: linear-gradient(135deg, #fff3cd 0%, #fffbe6 100%);
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin-bottom: 18px;
+  border: 1px solid #ffe082;
+}
+
+.client-info h4 {
+  margin: 0 0 4px 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.client-info span {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Formulario moderno */
+.modern-form {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 70px);
+}
+
+/* Grid modernizado */
+.form-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 100%;
+  flex: 1;
+}
+
+.form-section-modern {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  padding: 18px;
+}
+
+.form-section-modern.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Encabezados modernos */
+.section-header-modern {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+  padding-bottom: 8px;
   border-bottom: 1px solid #f0f0f0;
 }
 
-.section-header i {
-  font-size: 1.2rem;
-  color: #ffc40c;
+.section-header-modern i {
+  font-size: 1.1rem;
+  color: black;
+  width: 18px;
 }
 
-.section-header h3 {
-  font-size: 1.1rem;
+.section-header-modern h3 {
+  font-size: 1rem;
   font-weight: 600;
   color: #333;
   margin: 0;
 }
 
-.form-group {
-  margin-bottom: 18px;
+/* Grupos de formulario modernos */
+.form-group-modern {
+  margin-bottom: 12px;
 }
 
-.form-group label {
+.form-group-modern label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 0.9rem;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
   font-weight: 500;
-  color: #555;
+  color: black;
 }
 
-.input-with-icon {
+.form-row-modern {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 18px;
+  margin-bottom: 0;
+}
+
+.required {
+  color: #e74c3c;
+  margin-left: 2px;
+}
+
+/* Inputs modernos */
+.input-with-icon-modern {
   position: relative;
 }
 
 .icon-prefix {
   position: absolute;
-  left: 12px;
+  left: 10px;
   top: 50%;
   transform: translateY(-50%);
   color: #aaa;
   font-size: 0.9rem;
+  width: 14px;
 }
 
-.input-with-icon input {
-  padding-left: 38px;
+.input-with-icon-modern .form-control-modern {
+  padding-left: 32px;
 }
 
-.form-control {
+.form-control-modern {
   width: 100%;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
   transition: all 0.2s;
   color: #333;
-  background-color: #f9fafc;
-}
-
-.form-control:focus {
-  border-color: #ffc40c;
-  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.15);
-  outline: none;
   background-color: #fff;
+  height: 38px;
 }
 
-.select-container {
+.form-control-modern:focus {
+  border-color: rgba(252, 215, 0);
+  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1);
+  outline: none;
+}
+
+.textarea-modern {
+  height: auto !important;
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.4;
+}
+
+/* Selectores modernos */
+.select-container-modern {
   position: relative;
   width: 100%;
 }
 
-select {
+.form-select-modern {
   width: 100%;
-  padding: 12px 15px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
   transition: all 0.2s;
   color: #333;
-  background-color: #f9fafc;
+  background-color: #fff;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
   cursor: pointer;
+  height: 38px;
 }
 
-select:focus {
-  border-color: #ffc40c;
-  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.15);
+.form-select-modern:focus {
+  border-color: rgba(252, 215, 0);
+  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1);
   outline: none;
-  background-color: #fff;
 }
 
 .select-icon {
   position: absolute;
-  right: 15px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: #555;
   pointer-events: none;
+  font-size: 0.8rem;
 }
 
-.file-upload-section {
-  margin: 1rem 0;
-  text-align: center;
+/* Área de subida de PDF */
+.pdf-upload-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8f9fa;
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.file-upload-label {
+.pdf-upload-area:hover {
+  border-color: rgba(252, 215, 0);
+  background: #fff9e6;
+}
+
+.pdf-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e74c3c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.pdf-text {
+  flex: 1;
+}
+
+.pdf-title {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.pdf-desc {
+  display: block;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.file-selected {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fff6f4;
+  border: 1px solid #ffe0db;
+  border-radius: 6px;
+  color: #e74c3c;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Checkboxes modernos */
+.checkbox-section {
+  flex: 1;
+}
+
+.checkbox-group-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.checkbox-modern {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  position: relative;
+}
+
+.checkbox-modern input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ddd;
+  border-radius: 3px;
+  position: relative;
+  transition: all 0.2s;
+  background: #fff;
+}
+
+.checkbox-modern input[type="checkbox"]:checked + .checkmark {
+  background: rgba(252, 215, 0);
+  border-color: rgba(252, 215, 0);
+}
+
+.checkbox-modern input[type="checkbox"]:checked + .checkmark::after {
+  content: '\f00c';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 10px;
+}
+
+.checkbox-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: black;
+}
+
+.observations-section {
+  flex: 2;
+}
+
+/* Botones modernos */
+.btn-modern {
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1.25rem 2rem;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  border: none;
+  outline: none;
+}
+
+.btn-modern:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: rgba(252, 215, 0);
+  color: black;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: rgb(222, 189, 0);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #5a6268;
+  transform: translateY(-1px);
+}
+
+/* Pie del modal */
+.modal-footer-modern {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.required-legend {
+  font-size: 1rem;
+  color: #777;
+  font-weight: bold;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+/* Estilos originales para contrato actual */
+.modern-contract-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+  padding: 2rem 2rem 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #f3f3f3;
+}
+
+.contract-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.contract-info h4 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+  font-size: 1.2rem;
+}
+
+.contract-number {
+  color: black;
+  font-weight: 800;
+}
+
+.contract-dates {
+  color: #444;
+  font-size: 1rem;
+  margin-top: 0.2rem;
+}
+
+.contract-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.modern-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 1.2rem;
+}
+
+.modern-section {
+  background: #f7f8fa;
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem 1rem 1.5rem;
+  box-shadow: 0 2px 8px rgba(255,196,12,0.04);
+  border: 1px solid #f3f3f3;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+.section-header h5 {
+  color: #333;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.7rem;
+  border-radius: 6px;
+  margin-bottom: 0.4rem;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+}
+
+.info-label {
+  color: #888;
+  font-size: 0.97rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  color: #222;
+  font-size: 1.08rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modern-status {
+  display: flex;
+  gap: 1rem;
+  margin: 1.2rem 0 0.5rem 0;
+}
+
+.status-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
+  background: #f7f8fa;
+  color: #888;
+  font-weight: 600;
+  border: 1.5px solid #f0f0f0;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.status-chip.active {
+  background: rgba(252, 215, 0);
+  color:black;
+  border-color: rgba(252, 215, 0);
+}
+
+.status-chip.denuncia.active {
+  background: #e74c3c;
+  color: #fff;
+  border-color: #e74c3c;
+}
+
+.modern-notes {
+  background: #f7f8fa;
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+  margin-top: 1.2rem;
+  border: 1px solid #f3f3f3;
+}
+
+.modern-notes h5 {
+  color: black;
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.modern-notes p {
+  color: #444;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.no-contract {
+  text-align: center;
+  padding: 3rem;
   background: #f8f9fa;
-  border: 2px dashed #ffc40c;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: #ffc40c;
+  border-radius: 12px;
+  color: #6c757d;
+}
+
+.no-contract i {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #adb5bd;
+}
+
+/* Estilos originales para histórico */
+.history-table-container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.history-table th {
+  background: #f8f9fa;
+  color: #495057;
+  font-weight: 600;
+  text-align: left;
+  padding: 1rem;
+  border-bottom: 2px solid #e9ecef;
+  white-space: nowrap;
+}
+
+.history-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+}
+
+.history-row:hover {
+  background-color: #f8f9fa;
+}
+
+.status-indicators {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
   font-weight: 500;
 }
 
-.file-upload-label:hover {
-  background: rgba(255, 196, 12, 0.05);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 196, 12, 0.1);
+.status-badge.autoconsumo {
+  background-color: rgba(252, 215, 0, 0.1);
+  color: #856404;
 }
 
-.checkbox-group {
+.status-badge.denuncia {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.status-badge.normal {
+  background-color: rgba(25, 135, 84, 0.1);
+  color: #198754;
+}
+
+.action-buttons {
   display: flex;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
+  gap: 0.5rem;
+  justify-content: flex-start;
 }
 
-.checkbox-label {
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
   cursor: pointer;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   background: #f8f9fa;
+  color: #495057;
 }
 
-.checkbox-label:hover {
-  background: #e9ecef;
+.btn-icon:hover {
+  background: rgba(252, 215, 0, 0.1);
+  color: rgba(252, 215, 0);
 }
 
-.checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #ffc40c;
-  border-radius: 4px;
-  cursor: pointer;
+.btn-icon.btn-view:hover {
+  background: rgba(13, 110, 253, 0.1);
+  color: #0d6efd;
 }
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid #f0f0f0;
+.btn-icon.btn-download:hover {
+  background: rgba(25, 135, 84, 0.1);
+  color: #198754;
+}
+
+.no-history {
+  text-align: center;
+  padding: 3rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  color: #6c757d;
+}
+
+.no-history i {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #adb5bd;
 }
 
 .btn {
@@ -865,621 +1574,7 @@ select:focus {
   font-weight: 500;
 }
 
-.btn-primary {
-  background: #ffc40c;
-  color: white;
-  box-shadow: 0 4px 12px rgba(255, 196, 12, 0.2);
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.2);
-}
-
-.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-}
-
-.full-width {
-  grid-column: 1 / -1;
-}
-
-@media (max-width: 768px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .checkbox-group {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-  
-  .btn {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-.cliente-info {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  border: 1px solid #e0e0e0;
-}
-
-.cliente-info h4 {
-  color: #2c3e50;
-  margin: 0 0 0.5rem 0;
-  font-size: 1.2rem;
-}
-
-.cliente-info p {
-  color: #666;
-  margin: 0;
-}
-
-.contract-details {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.contract-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e0e0e0;
-}
-
-.contract-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
-.contract-section {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
-
-.contract-section h5 {
-  margin: 0 0 1rem 0;
-  color: #2c3e50;
-  font-size: 1.1rem;
-}
-
-.info-grid {
-  display: grid;
-  gap: 1rem;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 6px;
-}
-
-.info-item .label {
-  color: #666;
-  font-weight: 500;
-}
-
-.info-item .value {
-  color: #2c3e50;
-  font-weight: 600;
-  text-align: left;
-}
-
-.contract-status {
-  display: flex;
-  gap: 1rem;
-  margin: 2rem 0;
-}
-
-.status-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  color: #666;
-  transition: all 0.3s ease;
-  border: 1px solid #e0e0e0;
-}
-
-.status-item.active {
-  background: #28a745;
-  color: white;
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
-}
-
-.contract-notes {
-  background: #f8f9fa;
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
-
-.history-timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.history-item {
-  display: flex;
-  gap: 2rem;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  border: 1px solid #e0e0e0;
-}
-
-.history-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-}
-
-.history-date {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 100px;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.history-date .date {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #007bff;
-}
-
-.history-date .year {
-  color: #666;
-}
-
-.history-content {
-  flex: 1;
-}
-
-.history-details {
-  margin: 1rem 0;
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 8px;
-}
-
-.history-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-.no-contract,
-.no-history {
-  text-align: center;
-  padding: 3rem;
-  color: #666;
-  background: #f8f9fa;
-  border-radius: 12px;
-  border: 2px dashed #e0e0e0;
-}
-
-.no-contract i,
-.no-history i {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  color: #007bff;
-  opacity: 0.5;
-}
-
-.close-button {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #666;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-.close-button:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #333;
-  transform: rotate(90deg);
-}
-
-/* Animaciones para las transiciones de pestañas */
-.tab-content > div {
-  animation: fadeIn 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Estilos para los botones de acción */
-.history-actions .btn {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-}
-
-.history-actions .btn i {
-  font-size: 1rem;
-}
-
-/* Mejoras en los inputs de fecha */
-input[type="date"] {
-  font-family: inherit;
-  cursor: pointer;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  padding: 0.5rem;
-  margin-right: -0.5rem;
-  opacity: 0.6;
-  transition: opacity 0.3s ease;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
-}
-
-/* Estilos para el scrollbar */
-.modal-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.modal-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.modal-content::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-.modal-content::-webkit-scrollbar-thumb:hover {
-  background: #666;
-}
-
-.centered-form {
-  max-width: 900px;
-  margin: 0 auto;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 6px 32px rgba(0,0,0,0.08);
-  padding: 2.5rem 2rem 2rem 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.cliente-banner {
-  width: 100%;
-  background: linear-gradient(90deg, #fffbe6 0%, #fff3cd 100%);
-  border-radius: 10px;
-  padding: 1rem 2rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 2px 8px rgba(255,196,12,0.07);
-  border: 1px solid #ffe082;
-}
-.cliente-banner h4 {
-  margin: 0;
-  color: #333;
-  font-size: 1.1rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.cliente-banner span {
-  color: #666;
-  font-size: 1rem;
-}
-
-.form-title {
-  width: 100%;
-  text-align: left;
-  margin-bottom: 1.5rem;
-  color: #222;
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-
-.horizontal-grid {
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
-  width: 100%;
-  margin-bottom: 24px;
-}
-
-@media (max-width: 900px) {
-  .horizontal-grid {
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
-  .centered-form {
-    padding: 1.2rem 0.5rem;
-  }
-}
-
-.wide-form {
-  max-width: 90%;
-  width: 90vw;
-  margin: 2.5rem auto 0 auto;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 6px 32px rgba(0,0,0,0.08);
-  padding: 1.5rem 1.5rem 1rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-.compact-banner {
-  min-height: 48px;
-  padding: 0.5rem 1.5rem;
-  margin-bottom: 1rem;
-  font-size: 1rem;
-}
-.grid-3-cols {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  width: 100%;
-  margin-bottom: 18px;
-}
-.form-section.card {
-  min-width: 0;
-  padding: 16px 14px 10px 14px;
-  margin-bottom: 0;
-}
-.form-title {
-  margin-bottom: 1rem;
-  font-size: 1.15rem;
-}
-.sticky-actions {
-  position: sticky;
-  bottom: 0;
-  background: #fff;
-  padding: 1rem 0 0.5rem 0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  z-index: 10;
-  border-top: 1px solid #ffe082;
-}
-@media (max-width: 1200px) {
-  .grid-3-cols {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-@media (max-width: 900px) {
-  .grid-3-cols {
-    grid-template-columns: 1fr;
-  }
-  .wide-form {
-    padding: 0.5rem 0.2rem;
-  }
-  .sticky-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-.modern-contract-card {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
-  padding: 2rem 2rem 1.5rem 2rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid #f3f3f3;
-}
-.modern-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 1.2rem;
-}
-.modern-section {
-  background: #f7f8fa;
-  border-radius: 12px;
-  padding: 1.2rem 1.5rem 1rem 1.5rem;
-  box-shadow: 0 2px 8px rgba(255,196,12,0.04);
-  border: 1px solid #f3f3f3;
-}
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 1rem;
-}
-.section-header i {
-  color: #ffc40c;
-}
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0.7rem;
-  border-radius: 6px;
-  margin-bottom: 0.4rem;
-  background: #fff;
-  border: 1px solid #f0f0f0;
-}
-.info-label {
-  color: #888;
-  font-size: 0.97rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.info-value {
-  color: #222;
-  font-size: 1.08rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.contract-number {
-  color: #ffc40c;
-  font-weight: 800;
-}
-.contract-dates {
-  color: #444;
-  font-size: 1rem;
-  margin-top: 0.2rem;
-}
-.modern-status {
-  display: flex;
-  gap: 1rem;
-  margin: 1.2rem 0 0.5rem 0;
-}
-.status-chip {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0.5rem 1.2rem;
-  border-radius: 20px;
-  background: #f7f8fa;
-  color: #888;
-  font-weight: 600;
-  border: 1.5px solid #f0f0f0;
-  font-size: 1rem;
-  transition: all 0.2s;
-}
-.status-chip.active {
-  background: #ffc40c;
-  color: #fff;
-  border-color: #ffc40c;
-}
-.status-chip.denuncia.active {
-  background: #e74c3c;
-  color: #fff;
-  border-color: #e74c3c;
-}
-.modern-notes {
-  background: #f7f8fa;
-  border-radius: 10px;
-  padding: 1rem 1.5rem;
-  margin-top: 1.2rem;
-  border: 1px solid #f3f3f3;
-}
-.modern-notes h5 {
-  color: #ffc40c;
-  font-size: 1.05rem;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.modern-notes p {
-  color: #444;
-  font-size: 1rem;
-  margin: 0;
-}
-@media (max-width: 900px) {
-  .modern-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  .modern-contract-card {
-    padding: 1rem 0.5rem 1rem 0.5rem;
-  }
-}
-.pdf-dropzone {
-  display: flex;
-  align-items: center;
-  gap: 1.2rem;
-  background: #f7f8fa;
-  border: 2px dashed #bbb;
-  border-radius: 10px;
-  padding: 1.2rem 1.5rem;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  margin-bottom: 0.5rem;
-}
-.pdf-dropzone:hover {
-  border-color: #ffc40c;
-  box-shadow: 0 2px 8px rgba(255,196,12,0.08);
-}
-.pdf-icon-circle {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #e74c3c;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 2rem;
-  box-shadow: 0 2px 8px rgba(231,76,60,0.10);
-}
-.pdf-dropzone-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-.dropzone-title {
-  color: #222;
-  font-weight: 700;
-  font-size: 1.08rem;
-}
-.dropzone-desc {
-  color: #888;
-  font-size: 0.97rem;
-}
-.file-name-selected {
-  margin-top: 0.5rem;
-  color: #e74c3c;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  background: #fff6f4;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  border: 1px solid #ffe0db;
-}
+/* Modal de detalle - estilos originales */
 .detalle-contrato-modal {
   z-index: 2000;
   background: rgba(0,0,0,0.35);
@@ -1489,53 +1584,177 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   align-items: center;
   justify-content: center;
 }
+
 .detalle-contrato-content {
   background: #fff;
   border-radius: 16px;
-  max-width: 600px;
-  width: 95vw;
+  max-width: 60%;
+  width: 60%;
+  max-height: 80%;
+  overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  padding: 2.5rem 2rem 2rem 2rem;
   position: relative;
   animation: modalFadeIn 0.3s;
 }
-.detalle-contrato-pdf {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-}
-.detalle-contrato-header {
+
+.detalle-contrato-content .modal-header {
   display: flex;
   justify-content: space-between;
-  background: #f7f8fa;
-  border-radius: 8px;
-  padding: 1rem 1.5rem;
-  font-size: 1.05rem;
-  margin-bottom: 0.5rem;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  border-radius: 16px 16px 0 0;
 }
-.detalle-contrato-section {
-  background: #f9fafc;
-  border-radius: 8px;
-  padding: 1rem 1.5rem;
-  margin-bottom: 0.5rem;
-}
-.detalle-contrato-section h4 {
-  color: #ffc40c;
-  margin-bottom: 0.7rem;
-}
-.detalle-contrato-section ul {
-  list-style: none;
-  padding: 0;
+
+.detalle-contrato-content .modal-header h2 {
   margin: 0;
-}
-.detalle-contrato-section li {
-  margin-bottom: 0.4rem;
-  font-size: 1.01rem;
-}
-.detalle-contrato-actions {
+  color: #2c3e50;
+  font-size: 1.5rem;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.detalle-contrato-content .modal-header h2 i {
+  color: rgba(252, 215, 0);
+}
+
+.detalle-contrato-pdf {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.detalle-contrato-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.cliente-info, .contrato-info {
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
-  margin-top: 1rem;
+}
+
+.cliente-info h4, .contrato-info h4 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cliente-info h4 i, .contrato-info h4 i {
+  color: rgba(252, 215, 0);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.info-label {
+  color: #666;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.info-value {
+  color: #2c3e50;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.observaciones-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  color: #2c3e50;
+  line-height: 1.5;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: #f8f9fa;
+  color: #666;
+  border: 1px solid #e0e0e0;
+}
+
+.status-chip.denuncia.active {
+  background: #e74c3c;
+  color: #fff;
+  border-color: #e74c3c;
+}
+
+.potencia-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.potencia-item {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+
+.potencia-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 600;
+}
+
+.potencia-value {
+  font-size: 1rem;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .detalle-contrato-header {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .detalle-contrato-content {
+    width: 95vw;
+    margin: 10px;
+  }
 }
 </style>

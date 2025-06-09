@@ -36,39 +36,19 @@
       </div>
     </div>
 
-    <!-- Panel de búsqueda y filtros -->
-    <div class="card filter-panel">
-      <div class="filter-header">
-        <h2><i class="fas fa-filter"></i> Filtros</h2>
-      </div>
-      <div class="filter-controls">
-        <div class="search-container">
-          <i class="fas fa-search search-icon"></i>
-          <input
-            type="text"
-            class="form-control search-input"
-            placeholder="Buscar por dirección, CUPS, cliente..."
-            v-model="filter"
-          />
-        </div>
-      </div>
-    </div>
-
     <!-- Tabla de puntos de suministro con nuevo diseño -->
     <div class="card table-panel">
       <div class="table-header">
         <h2><i class="fas fa-bolt"></i> Puntos de Suministro</h2>
         <div class="table-actions">
-          <button class="btn btn-outline" title="Exportar a Excel">
+          <button class="btn btn-export btn-excel" @click="exportarExcel" title="Exportar a Excel">
             <i class="fas fa-file-excel"></i>
-          </button>
-          <button class="btn btn-outline" title="Exportar a PDF" :hidden="true">
-            <i class="fas fa-file-pdf"></i>
+            <span>Excel</span>
           </button>
         </div>
       </div>
       <div class="table-responsive">
-        <div class="table-controls">
+        <div class="table-controls" hidden>
           <div class="records-per-page">
             <label for="recordsPerPage">Registros por página:</label>
             <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
@@ -82,23 +62,103 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th @click="sortBy('cliente')" class="sortable" style="width: 20%">
-                <i class="fas fa-user mr-2"></i>Cliente
-                <i :class="getSortIcon('cliente')"></i>
+              <th class="sortable" style="width: 20%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('cliente')">
+                    <i class="fas fa-user mr-2"></i>Cliente
+                    <i :class="getSortIcon('cliente')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.cliente" 
+                      @input="filterByColumn('cliente', $event.target.value)"
+                      placeholder="Filtrar..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
               </th>
-              <th @click="sortBy('direccion')" class="sortable" style="width: 35%">
-                <i class="fas fa-map-marker-alt mr-2"></i>Dirección
-                <i :class="getSortIcon('direccion')"></i>
+              <th class="sortable" style="width: 35%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('direccion')">
+                    <i class="fas fa-map-marker-alt mr-2"></i>Dirección
+                    <i :class="getSortIcon('direccion')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.direccion" 
+                      @input="filterByColumn('direccion', $event.target.value)"
+                      placeholder="Filtrar..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
               </th>
-              <th @click="sortBy('cupsluz')" class="sortable" style="width: 20%">
-                <i class="fas fa-bolt mr-2"></i>CUPS Luz
-                <i :class="getSortIcon('cupsluz')"></i>
+              <th class="sortable" style="width: 20%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('cupsluz')">
+                    <i class="fas fa-bolt mr-2"></i>CUPS
+                    <i :class="getSortIcon('cupsluz')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.cupsluz" 
+                      @input="filterByColumn('cupsluz', $event.target.value)"
+                      placeholder="Filtrar CUPS..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
               </th>
-              <th @click="sortBy('cupsgas')" class="sortable" style="width: 15%">
-                <i class="fas fa-fire mr-2"></i>CUPS Gas
-                <i :class="getSortIcon('cupsgas')"></i>
+              <th style="width: 10%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('tipo')">
+                    <i class="fas fa-tag mr-2"></i>Tipo
+                    <i :class="getSortIcon('tipo')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.tipo" 
+                      @input="filterByColumn('tipo', $event.target.value)"
+                      placeholder="Filtrar tipo..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
               </th>
-              <th style="width: 10%"><i class="fas fa-cogs mr-2"></i>Acciones</th>
+              <th style="width: 10%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('tarifa')">
+                    <i class="fas fa-tag mr-2"></i>Tarifa
+                    <i :class="getSortIcon('tarifa')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.tarifa" 
+                      @input="filterByColumn('tarifa', $event.target.value)"
+                      placeholder="Filtrar tarifa..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
+              </th>
+              <th style="width: 10%">
+                <div class="column-header">
+                  <div class="column-title">
+                    <i class="fas fa-cogs mr-2"></i>Acciones
+                  </div>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -108,10 +168,25 @@
                 {{ suministro.direccion }}, {{ suministro.codigoPostal }}, 
                 {{ suministro.poblacion }}, {{ suministro.provincia }}
               </td>
-              <td class="text-truncate" :title="suministro.cupsluz">{{ suministro.cupsluz }}</td>
-              <td class="text-truncate" :title="suministro.cupsgas">{{ suministro.cupsgas }}</td>
+              <td class="text-truncate" :title="suministro.cupsluz || suministro.cupsgas">
+                {{ suministro.cupsluz || suministro.cupsgas }}
+              </td>
+              <td style="text-align: center;">
+                <div class="tipo-indicator" :class="{ 'is-gas': isGas(suministro), 'is-luz': isLuz(suministro) }">
+                  <i v-if="getTipoCups(suministro) !== ''" :class="isGas(suministro) ? 'fas fa-fire' : 'fas fa-bolt'"></i>
+                  <span>{{ getTipoCups(suministro) !== '' ? getTipoCups(suministro) : '-' }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="tipo-indicator" :class="{ 'is-gas': isGas(suministro), 'is-luz': isLuz(suministro) }">
+                  <span>{{ getTarifa(suministro) }}</span>
+                </div>
+              </td>
               <td>
                 <div class="action-buttons">
+                  <button class="btn-icon btn-view-details" @click="abrirModalPSConsulta(suministro)" title="Consultar punto de suministro">
+                    <i class="fas fa-eye"></i>
+                  </button>
                   <button class="btn-icon btn-edit" @click="abrirFormularioPSActualizar(suministro)" title="Modificar punto de suministro">
                     <i class="fas fa-edit"></i>
                   </button>
@@ -135,6 +210,15 @@
           </tbody>
         </table>
         <div class="pagination-controls">
+          <div class="records-per-page">
+            <label for="recordsPerPage">Registros por página:</label>
+            <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
           <div class="pagination-info">
             Mostrando {{ paginationStart }} - {{ paginationEnd }} de {{ filteredPuntosSuministro.length }} registros
           </div>
@@ -163,6 +247,7 @@
     <ModalActualizarPuntoSuministro 
       v-if="formularioVisible" 
       :modificarPunto="modificarPunto" 
+      :modoConsulta="modoConsulta"
       @cerrar-modal="cerrarModal"
       @actualizar-punto-suministro="actualizarPS"
     />
@@ -203,6 +288,7 @@ import ModalContratos from './ModalContratos.vue';
 import ModalServicios from './ModalServicios.vue';
 import axios from "axios"; // Librería para hacer peticiones HTTP
 import Spinner from "@/components/SpinnerComponent.vue";
+import * as XLSX from 'xlsx/xlsx.mjs';
 
 
 export default {
@@ -218,7 +304,15 @@ export default {
       loading: false,               // Estado para mostrar un spinner de carga
       puntosSuministro: [],         // Lista de puntos de suministro
       filter: "",                   // Filtro de búsqueda
+      columnFilters: {
+        cliente: '',
+        direccion: '',
+        cupsluz: '',
+        tipo: '',
+        tarifa: ''
+      },
       formularioVisible: false,     // Control de visibilidad del formulario de actualización
+      modoConsulta: false,          // Nuevo flag para controlar el modo consulta
       
       // Datos del formulario para modificar un punto de suministro
       modificarPunto: {
@@ -298,11 +392,35 @@ export default {
   computed: {
     // Filtra los puntos de suministro según el término ingresado en "filter"
     filteredPuntosSuministro() {
-      return this.puntosSuministro.filter((suministro) =>
-        Object.values(suministro).some((value) =>
+      return this.puntosSuministro.filter((suministro) => {
+        // Primero aplicamos el filtro general
+        const generalFilter = Object.values(suministro).some((value) =>
           String(value).toLowerCase().includes(this.filter.toLowerCase())
-        )
-      );
+        );
+
+        // Luego aplicamos los filtros por columna
+        const columnFilters = Object.entries(this.columnFilters).every(([key, value]) => {
+          if (!value) return true; // Si no hay filtro para esta columna, no filtra
+          
+          // Caso especial para el filtro de CUPS
+          if (key === 'cupsluz') {
+            const cupsValue = this.getCupsValue(suministro);
+            return cupsValue.toLowerCase().includes(value.toLowerCase());
+          }
+          
+          // Caso especial para el filtro de tipo
+          if (key === 'tipo') {
+            const tipo = this.getTipoCups(suministro);
+            return tipo.toLowerCase().includes(value.toLowerCase());
+          }
+          
+          // Para el resto de columnas
+          const fieldValue = String(suministro[key] || '').toLowerCase();
+          return fieldValue.includes(value.toLowerCase());
+        });
+
+        return generalFilter && columnFilters;
+      });
     },
 
     // Obtiene el contrato actual (aquel cuya fecha de finalización es posterior a hoy)
@@ -348,11 +466,29 @@ export default {
     },
 
     sortedPuntosSuministro() {
-      if (!this.sortKey) return this.filteredPuntosSuministro;
+      if (!this.sortKey || !this.sortOrder) return this.filteredPuntosSuministro;
       
       const sorted = [...this.filteredPuntosSuministro].sort((a, b) => {
-        let aValue = a[this.sortKey];
-        let bValue = b[this.sortKey];
+        let aValue, bValue;
+        
+        if (this.sortKey === 'tipo') {
+          // Primero ordenamos por tipo (Gas o Luz)
+          const aTipo = this.getTipoCups(a);
+          const bTipo = this.getTipoCups(b);
+          
+          if (aTipo !== bTipo) {
+            return this.sortOrder === 'asc' 
+              ? aTipo.localeCompare(bTipo)
+              : bTipo.localeCompare(aTipo);
+          }
+          
+          // Si son del mismo tipo, ordenamos por el valor del CUPS
+          aValue = this.getCupsValue(a);
+          bValue = this.getCupsValue(b);
+        } else {
+          aValue = a[this.sortKey];
+          bValue = b[this.sortKey];
+        }
         
         aValue = aValue ?? '';
         bValue = bValue ?? '';
@@ -412,6 +548,7 @@ export default {
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
         this.modificarPunto = { ...response.data };
+        this.modoConsulta = false;
         this.formularioVisible = true;
       } catch (error) {
         console.error("Error al obtener el punto de suministro:", error);
@@ -421,6 +558,7 @@ export default {
     // Cierra el formulario de actualización
     cerrarModal() {
       this.formularioVisible = false;
+      this.modoConsulta = false;
     },
 
     // Actualiza un punto de suministro en la API
@@ -436,13 +574,18 @@ export default {
     // Abre el modal de contratos con los datos del punto de suministro seleccionado
     async abrirModalContratos(idPuntoSuministro,idCliente) {
       try {
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${idPuntoSuministro}`);
-        this.contratos = response.data;
+        // Obtener los contratos
+        const responseContratos = await axios.get(`${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${idPuntoSuministro}`);
+        this.contratos = responseContratos.data;
+        
+        // Obtener la información completa del cliente
+        const responseCliente = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`);
+        this.modalCliente = responseCliente.data;
+        
         this.modalPuntoSuministro = idPuntoSuministro;  
-        this.modalCliente = idCliente;   
         this.mostrarModalContratos = true;
       } catch (error) {
-        console.error("Error al cargar contratos:", error);
+        console.error("Error al cargar datos:", error);
       }
     },
 
@@ -456,8 +599,12 @@ export default {
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios/punto-suministro/${idPuntoSuministro}`);
         this.servicios = response.data;
+        
+        // Obtener la información completa del cliente
+        const responseCliente = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`);
+        this.modalCliente = responseCliente.data;
+
         this.modalPuntoSuministro = idPuntoSuministro;  
-        this.modalCliente = idCliente; 
         this.mostrarModalServicios = true;
       } catch (error) {
         console.error("Error al cargar servicios:", error);
@@ -471,7 +618,13 @@ export default {
 
     sortBy(key) {
       if (this.sortKey === key) {
-        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+        // Ciclo: asc -> desc -> null
+        if (this.sortOrder === 'asc') {
+          this.sortOrder = 'desc';
+        } else if (this.sortOrder === 'desc') {
+          this.sortKey = null;
+          this.sortOrder = null;
+        }
       } else {
         this.sortKey = key;
         this.sortOrder = 'asc';
@@ -480,7 +633,116 @@ export default {
     
     getSortIcon(key) {
       if (this.sortKey !== key) return 'fas fa-sort';
+      if (!this.sortOrder) return 'fas fa-sort';
       return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+    },
+
+    filterByColumn(column, value) {
+      this.columnFilters[column] = value;
+    },
+
+    isGas(suministro) {
+      return suministro.cupsgas && suministro.cupsgas.trim() !== '' && 
+             (!suministro.cupsluz || suministro.cupsluz.trim() === '');
+    },
+
+    isLuz(suministro) {
+      return suministro.cupsluz && suministro.cupsluz.trim() !== '' && 
+             (!suministro.cupsgas || suministro.cupsgas.trim() === '');
+    },
+
+    getCupsValue(suministro) {
+      // Si tiene CUPS de luz y no está vacío, lo mostramos
+      if (suministro.cupsluz && suministro.cupsluz.trim() !== '') {
+        return suministro.cupsluz;
+      }
+      // Si tiene CUPS de gas y no está vacío, lo mostramos
+      if (suministro.cupsgas && suministro.cupsgas.trim() !== '') {
+        return suministro.cupsgas;
+      }
+      return '';
+    },
+
+    getTipoCups(suministro) {
+      // Primero verificamos si tiene CUPS de luz válido
+      if (suministro.cupsluz && suministro.cupsluz.trim() !== '') {
+        return 'Luz';
+      }
+      // Luego verificamos si tiene CUPS de gas válido
+      if (suministro.cupsgas && suministro.cupsgas.trim() !== '') {
+        return 'Gas';
+      }
+      return '';
+    },
+
+    getTarifa(suministro) {
+      if (this.isGas(suministro)) {
+        return '3.1';
+      } else if (this.isLuz(suministro)) {
+        return '2.0TD';
+      }
+      return '-';
+    },
+
+    // Abre un modal para consultar los detalles de un punto de suministro
+    async abrirModalPSConsulta(ps) {
+      if (!ps.id) return alert("Punto de suministro no válido");
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
+        this.modificarPunto = { ...response.data };
+        this.modoConsulta = true;
+        this.formularioVisible = true;
+      } catch (error) {
+        console.error("Error al obtener el punto de suministro:", error);
+        alert("Error al cargar los detalles del punto de suministro.");
+      }
+    },
+
+    exportarExcel() {
+      try {
+        // Verificar si hay datos para exportar
+        if (!this.filteredPuntosSuministro || this.filteredPuntosSuministro.length === 0) {
+          alert('No hay datos para exportar');
+          return;
+        }
+
+        // Preparar los datos para la exportación con solo las columnas visibles
+        const data = this.filteredPuntosSuministro.map(punto => ({
+          'Cliente': punto.cliente || '-',
+          'Dirección': `${punto.direccion}, ${punto.codigoPostal}, ${punto.poblacion}, ${punto.provincia}`,
+          'CUPS': punto.cupsluz || punto.cupsgas || '-',
+          'Tipo': this.getTipoCups(punto) || '-',
+          'Tarifa': this.getTarifa(punto) || '-'
+        }));
+
+        // Crear la hoja de cálculo
+        const ws = XLSX.utils.json_to_sheet(data);
+
+        // Ajustar el ancho de las columnas
+        const wscols = [
+          {wch: 30}, // Cliente
+          {wch: 50}, // Dirección
+          {wch: 25}, // CUPS
+          {wch: 10}, // Tipo
+          {wch: 10}  // Tarifa
+        ];
+        ws['!cols'] = wscols;
+
+        // Crear el libro de Excel
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'PuntosSuministro');
+
+        // Generar nombre de archivo con fecha
+        const fecha = new Date().toISOString().split('T')[0];
+        const nombreArchivo = `Puntos_Suministro_${fecha}.xlsx`;
+
+        // Exportar el archivo
+        XLSX.writeFile(wb, nombreArchivo);
+
+      } catch (error) {
+        console.error('Error al exportar a Excel:', error);
+        alert('Error al exportar a Excel. Por favor, intente nuevamente.');
+      }
     }
   },
 
@@ -512,6 +774,25 @@ export default {
   watch: {
     recordsPerPage() {
       this.currentPage = 1;
+    },
+    // Añadir watchers para los filtros
+    'columnFilters.cliente'() {
+      this.currentPage = 1;
+    },
+    'columnFilters.direccion'() {
+      this.currentPage = 1;
+    },
+    'columnFilters.cupsluz'() {
+      this.currentPage = 1;
+    },
+    'columnFilters.tipo'() {
+      this.currentPage = 1;
+    },
+    'columnFilters.tarifa'() {
+      this.currentPage = 1;
+    },
+    filter() {
+      this.currentPage = 1;
     }
   }
 };
@@ -524,7 +805,7 @@ export default {
   grid-template-rows: auto auto auto 1fr;
   gap: 20px;
   padding: 20px;
-  max-width: 1600px;
+  max-width: 90%;
   margin: 0 auto;
 }
 
@@ -538,37 +819,31 @@ export default {
 
 .stats-container {
   display: flex;
-  flex: 1;
   gap: 20px;
+  flex-wrap: wrap;
 }
 
 .stat-card {
-  background-color: var(--surface-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--card-shadow);
-  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
   display: flex;
   align-items: center;
-  transition: all 0.3s ease;
-  flex: 1;
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  gap: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  min-width: 200px;
 }
 
 .stat-icon {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
-  background-color: var(--primary-light);
-  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
-  margin-right: 16px;
+  font-size: 24px;
+  background: var(--primary-color);
+  color: white;
 }
 
 .stat-content {
@@ -576,82 +851,26 @@ export default {
 }
 
 .stat-value {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--text-color);
 }
 
 .stat-label {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-top: 4px;
-}
-
-/* Panel de filtros */
-.filter-panel {
-  padding: 0;
-  overflow: hidden;
-}
-
-.filter-header {
-  background-color: white;
-  color: var(--text-primary);
-  padding: 15px 20px;
-  border-top-left-radius: var(--border-radius);
-  border-top-right-radius: var(--border-radius);
-}
-
-.filter-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  color: var(--text-primary);
-}
-
-.filter-header h2 i {
-  margin-right: 10px;
-  color: var(--primary-color);
-}
-
-.filter-controls {
-  padding: 20px;
-  display: flex;
-  align-items: center;
-}
-
-.search-container {
-  position: relative;
-  flex: 1;
-}
-
-.search-icon {
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
+  font-size: 14px;
   color: var(--text-secondary);
 }
 
-.search-input {
-  padding-left: 40px;
-  width: 100%;
-}
-
-/* Panel de tabla */
+/* Tabla */
 .table-panel {
-  padding: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   overflow: hidden;
 }
 
 .table-header {
-  background-color: white;
-  color: var(--text-primary);
-  padding: 15px 20px;
-  border-top-left-radius: var(--border-radius);
-  border-top-right-radius: var(--border-radius);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -660,53 +879,113 @@ export default {
 .table-header h2 {
   margin: 0;
   font-size: 1.5rem;
-  font-weight: 600;
   display: flex;
   align-items: center;
-  color: var(--text-primary);
-}
-
-.table-header h2 i {
-  margin-right: 10px;
-  color: var(--primary-color);
+  gap: 10px;
 }
 
 .table-actions {
   display: flex;
+  gap: 10px;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  background: var(--surface-color);
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-color);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.data-table td {
+  padding: 15px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.column-header {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.table-actions .btn {
-  background: transparent;
-  border-color: rgba(255, 255, 255, 0.5);
-  color: white;
-  padding: 6px 10px;
-  font-size: 0.9rem;
+.column-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
 }
 
-.table-actions .btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+.column-filter-container {
+  position: relative;
 }
 
-/* Estilos dentro de la tabla */
+.column-filter {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.tipo-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  justify-content: center;
+}
+
+.tipo-indicator.is-gas {
+  background-color: rgba(255, 152, 0, 0.1);
+  color: #ff9800;
+}
+
+.tipo-indicator.is-luz {
+  background-color: rgba(255, 235, 59, 0.2);
+  color: #fbc02d;
+}
+
+/* Estilo para el texto dentro de los indicadores, forzando color negro */
+.tipo-indicator span {
+  color: #000; /* Negro */
+}
+
 .action-buttons {
   display: flex;
   gap: 8px;
-  justify-content: center;
 }
 
 .btn-icon {
-  background: transparent;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   border: none;
-  font-size: 1.1rem;
-  cursor: pointer;
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface-color);
+  color: var(--text-color);
+}
+
+.btn-icon:hover {
+  background: var(--primary-color);
+  color: white;
 }
 
 .btn-icon.btn-edit {
@@ -730,110 +1009,58 @@ export default {
   background-color: rgba(255,152,0,0.1);
 }
 
-/* Estado vacío */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 0;
-  color: var(--text-muted);
+.btn-icon.btn-view-details {
+  color: #007bff; /* Azul para ver detalles */
+}
+.btn-icon.btn-view-details:hover {
+  background-color: rgba(0,123,255,0.1);
 }
 
-/* Responsive adjustments */
-@media (max-width: 992px) {
-  .stats-container {
-    flex-direction: column;
-  }
-  
-  .stats-panel {
-    flex-direction: column;
-  }
-}
-
-@media (max-width: 768px) {
-  .filter-controls {
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .search-input {
-    width: 100%;
-  }
-}
-
-.table-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  background-color: var(--surface-color);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.records-per-page {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background-color: white;
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.records-per-page label {
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.records-per-page select {
-  width: auto;
-  padding: 6px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background-color: white;
-  color: var(--text-primary);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.records-per-page select:hover {
-  border-color: var(--primary-color);
-}
-
+/* Paginación */
 .pagination-controls {
+  padding: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  background-color: var(--surface-color);
   border-top: 1px solid var(--border-color);
-}
-
-.pagination-info {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  background-color: white;
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .pagination-buttons {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background-color: white;
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  gap: 10px;
 }
 
 .page-info {
-  color: var(--text-primary);
-  font-weight: 500;
-  padding: 0 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Estado vacío */
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+}
+
+.empty-state i {
+  margin-bottom: 16px;
+}
+
+/* Animaciones */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .btn-outline {
@@ -846,9 +1073,6 @@ export default {
   transition: all 0.2s ease;
   font-weight: 500;
   min-width: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .btn-outline:hover:not(:disabled) {
@@ -865,51 +1089,48 @@ export default {
   background-color: #f5f5f5;
 }
 
-.data-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-bottom: 0;
-}
-
-.data-table th {
-  background-color: var(--surface-color);
-  color: var(--text-primary);
-  font-weight: 600;
-  padding: 15px;
-  text-align: left;
-  border-bottom: 2px solid var(--border-color);
-  white-space: nowrap;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.data-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
-  height: 52px; /* Altura fija para las filas */
-}
-
-.text-truncate {
-  max-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.table-responsive {
-  overflow-x: auto;
-  background-color: white;
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
-}
-
-.action-buttons {
+.btn-export {
   display: flex;
+  align-items: center;
   gap: 8px;
-  justify-content: center;
-  min-width: 120px; /* Ancho mínimo para los botones de acción */
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-excel {
+  background-color: #217346;
+  color: white;
+  border: none;
+}
+
+.btn-excel:hover {
+  background-color: #1e6b3d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(33, 115, 70, 0.2);
+}
+
+.records-per-page {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.records-per-page label {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 14px; /* Reducir tamaño de fuente */
+}
+
+.records-per-page select {
+  width: auto; /* Ajustar ancho */
+  padding: 6px 8px; /* Ajustar padding */
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: white;
+  color: var(--text-primary);
+  cursor: pointer;
 }
 </style>
 

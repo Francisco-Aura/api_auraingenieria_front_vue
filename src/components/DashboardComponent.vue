@@ -5,7 +5,7 @@
       <!-- Logo container -->
       <div class="sidebar-header">
         <div class="logo-container">
-          <i class="fas fa-bolt logo-icon"></i>
+          <img v-if="!sidebarCollapsed" src="@/assets/logo.png" alt="AURA Logo" class="logo-icon" />
           <span v-if="!sidebarCollapsed" class="logo-text">AURA</span>
         </div>
         <button class="toggle-sidebar" @click="toggleSidebar">
@@ -63,14 +63,6 @@
           </div>
         </div>
         <div v-if="userMenuOpen && !sidebarCollapsed" class="user-menu">
-          <div class="menu-option">
-            <i class="fas fa-user-cog"></i>
-            <span>Mi perfil</span>
-          </div>
-          <div class="menu-option">
-            <i class="fas fa-key"></i>
-            <span>Cambiar contraseña</span>
-          </div>
           <div class="menu-option" @click="cerrarSesion">
             <i class="fas fa-sign-out-alt"></i>
             <span>Cerrar sesión</span>
@@ -177,7 +169,7 @@ export default {
 
 /* Sidebar styles */
 .sidebar {
-  background: linear-gradient(to bottom, #454545, #707070);
+  background: linear-gradient(to bottom, rgba(152,153,155,1), rgba(100,101,103,0.8));
   color: var(--text-light);
   height: 100vh;
   width: 260px;
@@ -210,10 +202,11 @@ export default {
 }
 
 .logo-icon {
-  font-size: 2rem;
-  color: #f39c12;
-  margin-right: 12px;
-  filter: drop-shadow(0 0 3px rgba(243, 156, 18, 0.5));
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-right: 5px;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.5));
+  object-fit: contain; /* Ensures the image scales properly */
 }
 
 .logo-text {
@@ -232,8 +225,8 @@ export default {
   font-size: 1.2rem;
   padding: 6px;
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -249,10 +242,10 @@ export default {
 }
 
 .sidebar-collapsed .toggle-sidebar {
-  background: #222;
+  background: rgba(255, 255, 255, 0.2);
   color: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  border: 2px solid #ffc40c;
+  border: 2px solid rgba(252, 215, 0);
   left: 10px;
   position: absolute;
   top: 16px;
@@ -260,9 +253,9 @@ export default {
 }
 
 .sidebar-collapsed .toggle-sidebar:hover {
-  background: #ffc40c;
+  background: rgba(252, 215, 0);
   color: #222;
-  border-color: #ffc40c;
+  border-color: rgba(252, 215, 0);
 }
 
 /* Sidebar menu */
@@ -293,7 +286,7 @@ export default {
 .menu-item.active {
   background: linear-gradient(to right, rgba(52, 152, 219, 0.2), transparent);
   color: white;
-  border-left: 3px solid #ffc40c;
+  border-left: 3px solid rgba(252, 215, 0);
 }
 
 .menu-icon {
@@ -301,11 +294,13 @@ export default {
   width: 28px;
   text-align: center;
   margin-right: 16px;
+  color: white;
 }
 
 .menu-text {
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
+  color:white;
 }
 
 /* Tooltip for collapsed sidebar */
@@ -368,7 +363,7 @@ export default {
 .avatar {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #ffc40c,rgb(252, 209, 79));
+  background: linear-gradient(135deg, rgba(252, 215, 0),rgba(252, 209, 79));
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -461,6 +456,7 @@ export default {
   cursor: pointer;
   color: rgba(255, 255, 255, 0.8);
   transition: all 0.2s ease;
+  background-color: rgba(152,153,155)
 }
 
 .menu-option:hover {
@@ -581,7 +577,6 @@ export default {
 /* Content area */
 .content-wrapper {
   flex: 1;
-  padding: 32px;
   overflow: auto;
   background-color: #f7f9fc;
 }
@@ -727,7 +722,7 @@ export default {
 }
 
 .sidebar:not(.sidebar-collapsed) .dropdown-icon:hover {
-  background: #ffc40c;
+  background: rgba(252, 215, 0);
   color: #222;
 }
 

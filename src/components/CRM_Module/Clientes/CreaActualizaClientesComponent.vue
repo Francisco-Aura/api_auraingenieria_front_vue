@@ -4,185 +4,143 @@
       <!-- Encabezado del modal -->
       <div class="modal-header">
         <h2 class="modal-title">{{ modoActualizar ? 'Actualizar Cliente' : 'Alta de Cliente' }}</h2>
+        <button type="button" class="close-button" @click="cancelarFormulario">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
 
       <!-- Formulario principal -->
-      <form @submit.prevent="modoActualizar ? actualizarCliente() : crearCliente()" class="scrollable-form">
+      <form @submit.prevent="modoActualizar ? actualizarCliente() : crearCliente()">
         <!-- Pestañas para organizar el contenido -->
         <div class="form-tabs">
           <button type="button" class="tab-btn" :class="{ active: activeTab === 'principal' }" @click="activeTab = 'principal'">
-            <i class="fas fa-user-tie"></i> Datos Principales
+            <i class="fas fa-user-tie"></i> <span class="tab-text">Datos Principales</span>
           </button>
           <button type="button" class="tab-btn" :class="{ active: activeTab === 'contactos' }" @click="activeTab = 'contactos'">
-            <i class="fas fa-address-book"></i> Contactos
-          </button>
-          <button type="button" class="tab-btn" :class="{ active: activeTab === 'adicional' }" @click="activeTab = 'adicional'">
-            <i class="fas fa-cog"></i> Datos Adicionales
+            <i class="fas fa-address-book"></i> <span class="tab-text">Contactos & Adicionales</span>
           </button>
         </div>
 
-        <div class="tab-container" :style="{ minHeight: tabMinHeight + 'px' }">
+        <div class="tab-container">
           <!-- Contenido de la pestaña Datos Principales -->
-          <div v-show="activeTab === 'principal'" class="tab-content" ref="principalTab">
-            <div class="form-grid">
-              <!-- Sección de identificación del cliente -->
-              <div class="form-section card">
-                <div class="section-header">
+          <div v-show="activeTab === 'principal'" class="tab-content">
+            <div class="form-grid-compact">
+              <!-- Identificación y Dirección en una fila -->
+              <div class="form-section-compact">
+                <div class="section-header-compact">
                   <i class="fas fa-id-card"></i>
-                  <h3>Identificación del Cliente</h3>
+                  <h3>Identificación</h3>
                 </div>
-                <div class="form-group">
-                  <label for="nombre">Nombre <span class="required">*</span></label>
-                  <input type="text" id="nombre" v-model="clienteLocal.nombre" class="form-control" required />
-                </div>
-
-                <div class="form-group">
-                  <label for="nombreComercial">Nombre Comercial <span class="required">*</span></label>
-                  <input type="text" id="nombreComercial" v-model="clienteLocal.nombreComercial" class="form-control" required />
-                </div>
-                
-                <div class="form-group">
-                  <label for="cif">CIF <span class="required">*</span></label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-fingerprint icon-prefix"></i>
-                    <input type="text" id="cif" v-model="clienteLocal.cif" class="form-control" required />
+                <div class="form-row-compact">
+                  <div class="form-group-compact">
+                    <label for="nombre">Nombre <span class="required">*</span></label>
+                    <input type="text" id="nombre" v-model="clienteLocal.nombre" class="form-control-compact" required />
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="grupoEmpresarial">Grupo Empresarial <span class="required">*</span></label>
+                    <input type="text" id="grupoEmpresarial" v-model="clienteLocal.grupoEmpresarial" class="form-control-compact" required />
                   </div>
                 </div>
-
-                <div class="form-group">
-                  <label for="actividad">Actividad</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-briefcase icon-prefix"></i>
-                    <input type="text" id="actividad" v-model="clienteLocal.actividad" class="form-control" />
+                <div class="form-row-compact">
+                  <div class="form-group-compact">
+                    <label for="cif">CIF <span class="required">*</span></label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-fingerprint icon-prefix"></i>
+                      <input type="text" id="cif" v-model="clienteLocal.cif" class="form-control-compact" required />
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="actividad">Actividad</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-briefcase icon-prefix"></i>
+                      <input type="text" id="actividad" v-model="clienteLocal.actividad" class="form-control-compact" />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Sección de dirección -->
-              <div class="form-section card">
-                <div class="section-header">
+              <div class="form-section-compact">
+                <div class="section-header-compact">
                   <i class="fas fa-map-marker-alt"></i>
                   <h3>Dirección</h3>
                 </div>
-                <div class="form-group">
+                <div class="form-group-compact">
                   <label for="direccionFiscal">Dirección Fiscal <span class="required">*</span></label>
-                  <div class="input-with-icon">
+                  <div class="input-with-icon-compact">
                     <i class="fas fa-home icon-prefix"></i>
-                    <input type="text" id="direccionFiscal" v-model="clienteLocal.direccion" class="form-control" required />
+                    <input type="text" id="direccionFiscal" v-model="clienteLocal.direccion" class="form-control-compact" required />
                   </div>
                 </div>
-
-                <div class="form-row">
-                  <div class="form-group half">
+                <div class="form-row-compact">
+                  <div class="form-group-compact">
                     <label for="poblacion">Población <span class="required">*</span></label>
-                    <input type="text" id="poblacion" v-model="clienteLocal.poblacion" class="form-control" required />
+                    <input type="text" id="poblacion" v-model="clienteLocal.poblacion" class="form-control-compact" required />
                   </div>
-
-                  <div class="form-group half">
+                  <div class="form-group-compact">
                     <label for="provincia">Provincia <span class="required">*</span></label>
-                    <input type="text" id="provincia" v-model="clienteLocal.provincia" class="form-control" required />
+                    <input type="text" id="provincia" v-model="clienteLocal.provincia" class="form-control-compact" required />
                   </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="codigoPostal">Código Postal <span class="required">*</span></label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-mail-bulk icon-prefix"></i>
-                    <input type="text" id="codigoPostal" v-model="clienteLocal.codigoPostal" class="form-control" required />
+                  <div class="form-group-compact">
+                    <label for="codigoPostal">C.P. <span class="required">*</span></label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-mail-bulk icon-prefix"></i>
+                      <input type="text" id="codigoPostal" v-model="clienteLocal.codigoPostal" class="form-control-compact" required />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Sección de datos financieros -->
-              <div class="form-section card">
-                <div class="section-header">
+              <!-- Datos Financieros y Clasificación -->
+              <div class="form-section-compact">
+                <div class="section-header-compact">
                   <i class="fas fa-university"></i>
                   <h3>Datos Financieros</h3>
                 </div>
-                <div class="form-group">
+                <div class="form-group-compact">
                   <label for="iban">IBAN <span class="required">*</span></label>
-                  <div class="input-with-icon">
+                  <div class="input-with-icon-compact">
                     <i class="fas fa-credit-card icon-prefix"></i>
-                    <input type="text" id="iban" v-model="clienteLocal.iban" class="form-control" required />
+                    <input type="text" id="iban" v-model="clienteLocal.iban" class="form-control-compact" required />
                   </div>
                 </div>
               </div>
 
-              <!-- Sección del autorizado -->
-              <div class="form-section card">
-                <div class="section-header">
-                  <i class="fas fa-user-check"></i>
-                  <h3>Persona Autorizada</h3>
-                </div>
-                <div class="form-group">
-                  <label for="nombreAutorizado">Nombre Autorizado <span class="required">*</span></label>
-                  <input type="text" id="nombreAutorizado" v-model="clienteLocal.nombreAutorizado" class="form-control" required />
-                </div>
-
-                <div class="form-row">
-                  <div class="form-group half">
-                    <label for="dniAutorizado">DNI Autorizado <span class="required">*</span></label>
-                    <div class="input-with-icon">
-                      <i class="fas fa-id-badge icon-prefix"></i>
-                      <input type="text" id="dniAutorizado" v-model="clienteLocal.dniAutorizado" class="form-control" required />
-                    </div>
-                  </div>
-
-                  <div class="form-group half">
-                    <label for="telefonoAutorizado">Teléfono Autorizado <span class="required">*</span></label>
-                    <div class="input-with-icon">
-                      <i class="fas fa-phone icon-prefix"></i>
-                      <input type="text" id="telefonoAutorizado" v-model="clienteLocal.telefonoAutorizado" class="form-control" required />
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="emailAutorizado">Email Autorizado <span class="required">*</span></label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-envelope icon-prefix"></i>
-                    <input type="email" id="emailAutorizado" v-model="clienteLocal.emailAutorizado" class="form-control" required />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Sección de clasificación -->
-              <div class="form-section card">
-                <div class="section-header">
+              <div class="form-section-compact">
+                <div class="section-header-compact">
                   <i class="fas fa-tags"></i>
                   <h3>Clasificación</h3>
                 </div>
-                <div class="form-group">
-                  <label for="codigoSector">Sector <span class="required">*</span></label>
-                  <div class="select-container">
-                    <select id="codigoSector" v-model="clienteLocal.codigoSector" class="form-select" required>
-                      <option value="">Seleccione un sector</option>
-                      <option v-for="sector in sectores" :key="sector.id" :value="sector.id">
-                        {{ sector.nombre }}
-                      </option>
-                    </select>
-                    <i class="fas fa-chevron-down select-icon"></i>
+                <div class="form-row-compact">
+                  <div class="form-group-compact">
+                    <label for="codigoSector">Sector <span class="required">*</span></label>
+                    <div class="select-container-compact">
+                      <select id="codigoSector" v-model="clienteLocal.codigoSector" class="form-select-compact" required>
+                        <option value="">Seleccione...</option>
+                        <option v-for="sector in sectores" :key="sector.id" :value="sector.id">
+                          {{ sector.nombre }}
+                        </option>
+                      </select>
+                      <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="codigoSubtipologia">Subtipología <span class="required">*</span></label>
+                    <div class="select-container-compact">
+                      <select id="codigoSubtipologia" v-model="clienteLocal.codigoSubtipologia" class="form-select-compact" required>
+                        <option value="">Seleccione...</option>
+                        <option v-for="subtipologia in subtipologias" :key="subtipologia.id" :value="subtipologia.id">
+                          {{ subtipologia.nombre }}
+                        </option>
+                      </select>
+                      <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
                   </div>
                 </div>
-
-                <div class="form-group">
-                  <label for="codigoSubtipologia">Subtipología <span class="required">*</span></label>
-                  <div class="select-container">
-                    <select id="codigoSubtipologia" v-model="clienteLocal.codigoSubtipologia" class="form-select" required>
-                      <option value="">Seleccione una subtipología</option>
-                      <option v-for="subtipologia in subtipologias" :key="subtipologia.id" :value="subtipologia.id">
-                        {{ subtipologia.nombre }}
-                      </option>
-                    </select>
-                    <i class="fas fa-chevron-down select-icon"></i>
-                  </div>
-                </div>
-
-                <div class="form-group">
+                <div class="form-group-compact">
                   <label for="usuario">Usuario Asignado <span class="required">*</span></label>
-                  <div class="select-container">
-                    <select id="usuario" v-model="clienteLocal.idUsuario" class="form-select" required>
-                      <option value="">Seleccione un usuario</option>
+                  <div class="select-container-compact">
+                    <select id="usuario" v-model="clienteLocal.idUsuario" class="form-select-compact" required>
+                      <option value="">Seleccione...</option>
                       <option v-for="usuario in usuarios" :key="usuario.id" :value="usuario.id">
                         {{ usuario.nombre }}
                       </option>
@@ -191,192 +149,200 @@
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- Contenido de la pestaña Contactos -->
-          <div v-show="activeTab === 'contactos'" class="tab-content" ref="contactosTab">
-            <div class="form-grid">
-              <!-- Contacto 1 -->
-              <div class="form-section card">
-                <div class="section-header">
-                  <i class="fas fa-user"></i>
-                  <h3>Contacto Principal</h3>
+              <!-- Persona Autorizada -->
+              <div class="form-section-compact full-width">
+                <div class="section-header-compact">
+                  <i class="fas fa-user-check"></i>
+                  <h3>Persona Autorizada</h3>
                 </div>
-                <div class="form-group">
-                  <label for="nombreContacto1">Nombre</label>
-                  <input type="text" id="nombreContacto1" v-model="clienteLocal.nombreContacto1" class="form-control" />
-                </div>
-
-                <div class="form-group">
-                  <label for="cargoContacto1">Cargo</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-user-tag icon-prefix"></i>
-                    <input type="text" id="cargoContacto1" v-model="clienteLocal.cargoContacto1" class="form-control" />
+                <div class="form-row-compact">
+                  <div class="form-group-compact">
+                    <label for="nombreAutorizado">Nombre <span class="required">*</span></label>
+                    <input type="text" id="nombreAutorizado" v-model="clienteLocal.nombreAutorizado" class="form-control-compact" required />
                   </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="telefonoContacto1">Teléfono</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-phone icon-prefix"></i>
-                    <input type="text" id="telefonoContacto1" v-model="clienteLocal.telefonoContacto1" class="form-control" />
+                  <div class="form-group-compact">
+                    <label for="dniAutorizado">DNI <span class="required">*</span></label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-id-badge icon-prefix"></i>
+                      <input type="text" id="dniAutorizado" v-model="clienteLocal.dniAutorizado" class="form-control-compact" required />
+                    </div>
                   </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="emailContacto1">Email</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-envelope icon-prefix"></i>
-                    <input type="email" id="emailContacto1" v-model="clienteLocal.emailContacto1" class="form-control" />
+                  <div class="form-group-compact">
+                    <label for="telefonoAutorizado">Teléfono <span class="required">*</span></label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-phone icon-prefix"></i>
+                      <input type="text" id="telefonoAutorizado" v-model="clienteLocal.telefonoAutorizado" class="form-control-compact" required />
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              <!-- Contacto 2 -->
-              <div class="form-section card">
-                <div class="section-header">
-                  <i class="fas fa-user"></i>
-                  <h3>Contacto Secundario</h3>
-                </div>
-                <div class="form-group">
-                  <label for="nombreContacto2">Nombre</label>
-                  <input type="text" id="nombreContacto2" v-model="clienteLocal.nombreContacto2" class="form-control" />
-                </div>
-
-                <div class="form-group">
-                  <label for="cargoContacto2">Cargo</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-user-tag icon-prefix"></i>
-                    <input type="text" id="cargoContacto2" v-model="clienteLocal.cargoContacto2" class="form-control" />
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="telefonoContacto2">Teléfono</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-phone icon-prefix"></i>
-                    <input type="text" id="telefonoContacto2" v-model="clienteLocal.telefonoContacto2" class="form-control" />
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="emailContacto2">Email</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-envelope icon-prefix"></i>
-                    <input type="email" id="emailContacto2" v-model="clienteLocal.emailContacto2" class="form-control" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Contacto 3 -->
-              <div class="form-section card">
-                <div class="section-header">
-                  <i class="fas fa-user"></i>
-                  <h3>Contacto Adicional</h3>
-                </div>
-                <div class="form-group">
-                  <label for="nombreContacto3">Nombre</label>
-                  <input type="text" id="nombreContacto3" v-model="clienteLocal.nombreContacto3" class="form-control" />
-                </div>
-
-                <div class="form-group">
-                  <label for="cargoContacto3">Cargo</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-user-tag icon-prefix"></i>
-                    <input type="text" id="cargoContacto3" v-model="clienteLocal.cargoContacto3" class="form-control" />
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="telefonoContacto3">Teléfono</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-phone icon-prefix"></i>
-                    <input type="text" id="telefonoContacto3" v-model="clienteLocal.telefonoContacto3" class="form-control" />
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="emailContacto3">Email</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-envelope icon-prefix"></i>
-                    <input type="email" id="emailContacto3" v-model="clienteLocal.emailContacto3" class="form-control" />
+                  <div class="form-group-compact">
+                    <label for="emailAutorizado">Email <span class="required">*</span></label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-envelope icon-prefix"></i>
+                      <input type="email" id="emailAutorizado" v-model="clienteLocal.emailAutorizado" class="form-control-compact" required />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Contenido de la pestaña Datos Adicionales -->
-          <div v-show="activeTab === 'adicional'" class="tab-content" ref="adicionalTab">
-            <div class="form-grid">
-              <!-- Datos Telemedida -->
-              <div class="form-section card">
-                <div class="section-header">
-                  <i class="fas fa-tachometer-alt"></i>
-                  <h3>Telemedida</h3>
-                </div>
-                <div class="form-group">
-                  <label for="userTelemedida">Usuario Telemedida</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-user-cog icon-prefix"></i>
-                    <input type="text" id="userTelemedida" v-model="clienteLocal.userTelemedida" class="form-control" />
+          <!-- Contenido de la pestaña Contactos y Datos Adicionales -->
+          <div v-show="activeTab === 'contactos'" class="tab-content">
+            <div class="form-grid-compact">
+              <!-- Tres contactos en fila -->
+              <div class="contacts-row">
+                <!-- Contacto 1 -->
+                <div class="contact-card">
+                  <div class="section-header-compact">
+                    <i class="fas fa-user"></i>
+                    <h3>Contacto Principal</h3>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="nombreContacto1">Nombre</label>
+                    <input type="text" id="nombreContacto1" v-model="clienteLocal.nombreContacto1" class="form-control-compact" />
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="cargoContacto1">Cargo</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-user-tag icon-prefix"></i>
+                      <input type="text" id="cargoContacto1" v-model="clienteLocal.cargoContacto1" class="form-control-compact" />
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="telefonoContacto1">Teléfono</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-phone icon-prefix"></i>
+                      <input type="text" id="telefonoContacto1" v-model="clienteLocal.telefonoContacto1" class="form-control-compact" />
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="emailContacto1">Email</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-envelope icon-prefix"></i>
+                      <input type="email" id="emailContacto1" v-model="clienteLocal.emailContacto1" class="form-control-compact" />
+                    </div>
                   </div>
                 </div>
-                
-                <div class="form-group">
-                  <label for="passTelemedida">Contraseña Telemedida</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-key icon-prefix"></i>
-                    <input type="password" id="passTelemedida" v-model="clienteLocal.passTelemedida" class="form-control" />
-                    <button type="button" class="icon-suffix toggle-password" @click="togglePasswordVisibility">
-                      <i class="fas fa-eye"></i>
-                    </button>
+
+                <!-- Contacto 2 -->
+                <div class="contact-card">
+                  <div class="section-header-compact">
+                    <i class="fas fa-user"></i>
+                    <h3>Contacto Secundario</h3>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="nombreContacto2">Nombre</label>
+                    <input type="text" id="nombreContacto2" v-model="clienteLocal.nombreContacto2" class="form-control-compact" />
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="cargoContacto2">Cargo</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-user-tag icon-prefix"></i>
+                      <input type="text" id="cargoContacto2" v-model="clienteLocal.cargoContacto2" class="form-control-compact" />
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="telefonoContacto2">Teléfono</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-phone icon-prefix"></i>
+                      <input type="text" id="telefonoContacto2" v-model="clienteLocal.telefonoContacto2" class="form-control-compact" />
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="emailContacto2">Email</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-envelope icon-prefix"></i>
+                      <input type="email" id="emailContacto2" v-model="clienteLocal.emailContacto2" class="form-control-compact" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Contacto 3 -->
+                <div class="contact-card">
+                  <div class="section-header-compact">
+                    <i class="fas fa-user"></i>
+                    <h3>Contacto Adicional</h3>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="nombreContacto3">Nombre</label>
+                    <input type="text" id="nombreContacto3" v-model="clienteLocal.nombreContacto3" class="form-control-compact" />
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="cargoContacto3">Cargo</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-user-tag icon-prefix"></i>
+                      <input type="text" id="cargoContacto3" v-model="clienteLocal.cargoContacto3" class="form-control-compact" />
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="telefonoContacto3">Teléfono</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-phone icon-prefix"></i>
+                      <input type="text" id="telefonoContacto3" v-model="clienteLocal.telefonoContacto3" class="form-control-compact" />
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="emailContacto3">Email</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-envelope icon-prefix"></i>
+                      <input type="email" id="emailContacto3" v-model="clienteLocal.emailContacto3" class="form-control-compact" />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Notas -->
-              <div class="form-section card full-width">
-                <div class="section-header">
-                  <i class="fas fa-sticky-note"></i>
-                  <h3>Notas y Observaciones</h3>
+              <!-- Datos Adicionales en la parte inferior -->
+              <div class="additional-data-row">
+                <div class="form-section-compact">
+                  <div class="section-header-compact">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <h3>Telemedida</h3>
+                  </div>
+                  <div class="form-row-compact">
+                    <div class="form-group-compact">
+                      <label for="userTelemedida">Usuario</label>
+                      <div class="input-with-icon-compact">
+                        <i class="fas fa-user-cog icon-prefix"></i>
+                        <input type="text" id="userTelemedida" v-model="clienteLocal.userTelemedida" class="form-control-compact" />
+                      </div>
+                    </div>
+                    <div class="form-group-compact">
+                      <label for="passTelemedida">Contraseña</label>
+                      <div class="input-with-icon-compact">
+                        <i class="fas fa-key icon-prefix"></i>
+                        <input type="password" id="passTelemedida" v-model="clienteLocal.passTelemedida" class="form-control-compact" />
+                        <button type="button" class="icon-suffix toggle-password" @click="togglePasswordVisibility">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="form-group">
-                  <textarea id="notas" v-model="clienteLocal.notas" class="form-control" rows="8" 
-                    placeholder="Añada aquí cualquier nota o comentario relevante sobre el cliente..."></textarea>
+
+                <div class="form-section-compact notes-section">
+                  <div class="section-header-compact">
+                    <i class="fas fa-sticky-note"></i>
+                    <h3>Notas</h3>
+                  </div>
+                  <div class="form-group-compact">
+                    <textarea id="notas" v-model="clienteLocal.notas" class="form-control-compact notes-textarea" 
+                      placeholder="Notas y observaciones..."></textarea>
+                  </div>
                 </div>
-              </div>
-              
-              <!-- Espacio extra para mantener el tamaño del modal -->
-              <div class="form-section card invisible-spacer">
-                <div class="section-header">
-                  <i class="fas fa-info-circle"></i>
-                  <h3>Información Adicional</h3>
-                </div>
-                <div class="spacer-content"></div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Indicador de progreso y botones de navegación -->
-        <div class="form-progress">
-          <div class="progress-indicator">
-            <div class="progress-step" :class="{ active: activeTab === 'principal', done: visitedTabs.includes('principal') }"></div>
-            <div class="progress-step" :class="{ active: activeTab === 'contactos', done: visitedTabs.includes('contactos') }"></div>
-            <div class="progress-step" :class="{ active: activeTab === 'adicional', done: visitedTabs.includes('adicional') }"></div>
           </div>
         </div>
 
         <!-- Botones de acción -->
-        <div class="modal-footer">
+        <div class="modal-footer-compact">
           <div class="required-legend"><span class="required">*</span> Campos obligatorios</div>            
           <div class="action-buttons">
-            <button type="button" class="btn btn-secondary" @click="cancelarFormulario">
+            <button type="button" class="btn-compact btn-secondary" @click="cancelarFormulario">
               <i class="fas fa-times"></i> Cancelar
             </button>
-            <button type="submit" :disabled="isSubmitting" class="btn btn-primary">
+            <button type="submit" :disabled="isSubmitting" class="btn-compact btn-primary">
               <i class="fas" :class="modoActualizar ? 'fa-save' : 'fa-plus-circle'"></i>
               {{ modoActualizar ? 'Actualizar' : 'Crear' }}
             </button>
@@ -406,9 +372,7 @@ export default {
   data() {
     return {
       activeTab: 'principal',
-      visitedTabs: ['principal'],
       showPassword: false,
-      tabMinHeight: 600, // Altura mínima inicial para el contenedor de pestañas
       clienteLocal: this.modoActualizar
         ? { ...this.nuevoCliente }
         : this.crearClienteVacio(),
@@ -421,16 +385,18 @@ export default {
           ? { ...this.nuevoCliente }
           : this.crearClienteVacio();
         this.activeTab = 'principal';
-        this.visitedTabs = ['principal'];
-        // Actualizar altura después de mostrar
-        this.$nextTick(() => this.updateTabHeight());
       }
     },
     nuevoCliente: {
       immediate: true,
       deep: true,
       handler(newVal) {
-        this.clienteLocal = { ...newVal };
+        if (newVal) {
+          this.clienteLocal = { 
+            ...newVal,
+            grupoEmpresarial: newVal.nombreComercial || newVal.grupoEmpresarial || ''
+          };
+        }
       },
     },
     usuarios(newVal) {
@@ -440,25 +406,7 @@ export default {
         );
         this.clienteLocal.usuario = usuario || null;
       }
-    },
-    activeTab(newVal) {
-      if (!this.visitedTabs.includes(newVal)) {
-        this.visitedTabs.push(newVal);
-      }
-      // Actualizar la altura cuando cambia la pestaña
-      this.$nextTick(() => this.updateTabHeight());
     }
-  },
-  mounted() {
-    // Calcular la altura inicial después de montar el componente
-    this.$nextTick(() => this.updateTabHeight());
-    
-    // Agregar listener para resize
-    window.addEventListener('resize', this.updateTabHeight);
-  },
-  beforeUnmount() {
-    // Eliminar el listener cuando el componente se destruye
-    window.removeEventListener('resize', this.updateTabHeight);
   },
   methods: {
     crearClienteVacio() {
@@ -471,6 +419,7 @@ export default {
         codigoPostal: "",
         telefonoAutorizado: "",
         emailAutorizado: "",
+        grupoEmpresarial: "",
         nombreComercial: "",
         fechaAlta: "",
         actividad: "",
@@ -502,7 +451,11 @@ export default {
       this.$emit("cancelar-formulario");
     },
     crearCliente() {
-      this.$emit("crear-cliente", this.clienteLocal);
+      const clienteParaEnviar = {
+        ...this.clienteLocal,
+        nombreComercial: this.clienteLocal.grupoEmpresarial
+      };
+      this.$emit("crear-cliente", clienteParaEnviar);
     },
     actualizarCliente() {
       if (!this.clienteLocal.id) {
@@ -513,7 +466,11 @@ export default {
         console.error("El cliente no tiene un usuario asignado.");
         return;
       }
-      this.$emit("actualizar-cliente", this.clienteLocal);
+      const clienteParaEnviar = {
+        ...this.clienteLocal,
+        nombreComercial: this.clienteLocal.grupoEmpresarial
+      };
+      this.$emit("actualizar-cliente", clienteParaEnviar);
     },
     togglePasswordVisibility() {
       this.showPassword = !this.showPassword;
@@ -526,34 +483,15 @@ export default {
           eyeIcon.className = this.showPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
         }
       }
-    },
-    updateTabHeight() {
-      // Obtener referencias a todas las pestañas
-      if (!this.$refs.principalTab) return;
-      
-      // Calcular la altura máxima entre todas las pestañas
-      const heights = [
-        this.$refs.principalTab.scrollHeight,
-        this.$refs.contactosTab ? this.$refs.contactosTab.scrollHeight : 0,
-        this.$refs.adicionalTab ? this.$refs.adicionalTab.scrollHeight : 0
-      ];
-      
-      // Filtrar las alturas válidas (mayores que cero)
-      const validHeights = heights.filter(h => h > 0);
-      
-      // Establecer la altura mínima al máximo de las alturas o al valor predeterminado
-      const maxHeight = Math.max(...validHeights, 600);
-      this.tabMinHeight = maxHeight;
     }
   },
 };
 </script>
 
 <style scoped>
-
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 
-/* Estilos base del modal */
+/* Estilos base del modal - tamaño optimizado */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -564,15 +502,16 @@ export default {
   justify-content: center;    
   width: 100%;
   height: 100%;
+  padding: 15px;
 }
 
 .modal-content {
-  width: 95%;
-  max-width: 100%;
-  max-height: 100%;
-  min-height: 700px;
+  width: 90%;
+  max-width: 90%;
+  height: 90%;
+  max-height: 90%;
   background: #fff;
-  border-radius: 12px;
+  border-radius: 10px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
   display: flex;
   flex-direction: column;
@@ -580,32 +519,47 @@ export default {
 }
 
 .modal-header {
-  padding: 20px 30px;
-  border-bottom: 1px solid #f0f0f0;
-  background: #ffc40c;
+  padding: 18px 25px;
+  border-bottom: 1px solid #e0e0e0;
+  background: rgba(252, 215, 0);
   color: white;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .modal-title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 600;
 }
 
-/* Estilos del contenido del formulario */
-.scrollable-form {
-  overflow-y: auto;
-  flex: 1;
-  padding: 0;
-  background-color: #f9fafc;
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: #e74c3c;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: white;
+  width: 32px;
+  height: 32px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-/* Contenedor para mantener altura constante entre pestañas */
-.tab-container {
-  flex: 1;
-  position: relative;
+.close-button:hover {
+  background-color: #c0392b;
+  color: white;
+  transform: rotate(90deg);
 }
 
 /* Sistema de pestañas */
@@ -613,10 +567,7 @@ export default {
   display: flex;
   background-color: #fff;
   border-bottom: 1px solid #e0e0e0;
-  padding: 0;
-  position: sticky;
-  top: 0;
-  z-index: 5;
+  flex-shrink: 0;
 }
 
 .tab-btn {
@@ -627,138 +578,160 @@ export default {
   font-weight: 500;
   color: #666;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 1rem;
+  flex: 1;
+  justify-content: center;
 }
 
 .tab-btn:hover {
-  color: #ffc40c;
-  background-color: #f9fafc;
+  background-color: #f8f9fa;
 }
 
 .tab-btn.active {
-  color: #ffc40c;
-  border-bottom-color: #ffc40c;
-  background-color: #f9fafc;
+  border-bottom-color: rgba(252, 215, 0);
+  background-color: #fcfbf9;
+  color: #333;
 }
 
-.tab-btn i {
-  font-size: 1rem;
+.tab-text {
+  font-size: 0.95rem;
+}
+
+/* Contenedor de pestañas optimizado */
+.tab-container {
+  flex: 1;
+  min-height: 0;
 }
 
 .tab-content {
-  padding: 30px;
   height: 100%;
+  overflow-y: auto; /* Mantenemos el scroll solo en el contenido de las pestañas */
+  padding-right: 5px; /* Añadido para evitar que el scroll tape contenido */
 }
 
-/* Sistema de cuadrícula para los campos */
-.form-grid {
+/* Grid optimizado */
+.form-grid-compact {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 100%;
 }
 
-/* Tarjetas para agrupar campos relacionados */
-.card {
+.form-section-compact {
   background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-  padding: 20px;
-  transition: box-shadow 0.3s ease;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  padding: 18px;
 }
 
-.card:hover {
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+.form-section-compact.full-width {
+  grid-column: 1 / -1;
 }
 
-/* Tarjeta espaciadora invisible para mantener tamaño */
-.invisible-spacer {
-  visibility: visible; /* Cambiado a visible para que ocupe espacio real */
-  opacity: 0.5; /* Semi-transparente para indicar que es un espacio de relleno */
+/* Secciones específicas para contactos */
+.contacts-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 18px;
 }
 
-.spacer-content {
-  height: 220px; /* Altura para compensar y mantener tamaño constante */
+.contact-card {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  padding: 18px;
 }
 
-/* Encabezados de sección */
-.section-header {
+.additional-data-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 18px;
+}
+
+.notes-section {
+  grid-column: 2;
+}
+
+/* Encabezados */
+.section-header-compact {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
-  gap: 10px;
-  padding-bottom: 10px;
+  margin-bottom: 12px;
+  gap: 8px;
+  padding-bottom: 8px;
   border-bottom: 1px solid #f0f0f0;
 }
 
-.section-header i {
-  font-size: 1.2rem;
-  color: #ffc40c;
+.section-header-compact i {
+  font-size: 1.1rem;
+  color:black;
+  width: 18px;
 }
 
-.section-header h3 {
-  font-size: 1.1rem;
+.section-header-compact h3 {
+  font-size: 1rem;
   font-weight: 600;
   color: #333;
   margin: 0;
 }
 
-/* Estilos de campo de formulario */
-.form-group {
-  margin-bottom: 18px;
+/* Grupos de formulario */
+.form-group-compact {
+  margin-bottom: 12px;
 }
 
-.form-group label {
+.form-group-compact label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 0.9rem;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
   font-weight: 500;
-  color: #555;
+  color: black;
 }
 
-.form-row {
+.form-row-compact {
   display: flex;
-  gap: 15px;
+  gap: 12px;
   margin-bottom: 0;
 }
 
-.form-group.half {
-  width: 50%;
-  margin-bottom: 18px;
-}
-
-.form-group.full-width {
-  grid-column: 1 / -1;
+.form-row-compact .form-group-compact {
+  flex: 1;
+  margin-bottom: 12px;
 }
 
 .required {
   color: #e74c3c;
-  margin-left: 3px;
+  margin-left: 2px;
 }
 
-/* Estilos para inputs con iconos */
-.input-with-icon {
+/* Inputs con iconos */
+.input-with-icon-compact {
   position: relative;
 }
 
 .icon-prefix {
   position: absolute;
-  left: 12px;
+  left: 10px;
   top: 50%;
   transform: translateY(-50%);
   color: #aaa;
   font-size: 0.9rem;
+  width: 14px;
 }
 
-.input-with-icon input {
-  padding-left: 38px;
+.input-with-icon-compact .form-control-compact {
+  padding-left: 32px;
 }
 
 .icon-suffix {
   position: absolute;
-  right: 12px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
@@ -766,125 +739,82 @@ export default {
   cursor: pointer;
   color: #aaa;
   padding: 0;
+  font-size: 0.9rem;
 }
 
 .toggle-password:hover {
-  color: #ffc40c;
+  color: rgba(252, 215, 0);
 }
 
-/* Nuevo estilo para selectores para evitar flechas duplicadas */
-.select-container {
+/* Controles de formulario */
+.form-control-compact {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  color: #333;
+  background-color: #fff;
+  height: 38px;
+}
+
+.form-control-compact:focus {
+  border-color: rgba(252, 215, 0);
+  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1);
+  outline: none;
+}
+
+.notes-textarea {
+  height: 100px !important;
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Selectores */
+.select-container-compact {
   position: relative;
   width: 100%;
 }
 
-.form-select {
+.form-select-compact {
   width: 100%;
-  padding: 12px 15px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
   transition: all 0.2s;
   color: #333;
-  background-color: #f9fafc;
+  background-color: #fff;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
   cursor: pointer;
+  height: 38px;
 }
 
-.form-select:focus {
-  border-color: #ffc40c;
-  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.15);
+.form-select-compact:focus {
+  border-color: rgba(252, 215, 0);
+  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1);
   outline: none;
-  background-color: #fff;
 }
 
 .select-icon {
   position: absolute;
-  right: 15px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: #555;
   pointer-events: none;
-}
-
-/* Estilo para las opciones del select */
-.form-select option {
-  padding: 12px;
-  font-size: 0.95rem;
-  background-color: white;
-  color: #333;
-}
-
-/* Controles de formulario */
-.form-control {
-  width: 100%;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  transition: all 0.2s;
-  color: #333;
-  background-color: #f9fafc;
-}
-
-.form-control:focus {
-  border-color: #ffc40c;
-  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.15);
-  outline: none;
-  background-color: #fff;
-}
-
-textarea.form-control {
-  resize: vertical;
-  min-height: 120px;
-}
-
-/* Indicador de progreso */
-.form-progress {
-  padding: 20px 30px;
-  background: #fff;
-  border-top: 1px solid #f0f0f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  bottom: 0;
-}
-
-.progress-indicator {
-  display: flex;
-  gap: 5px;
-}
-
-.progress-step {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: #e0e0e0;
-  transition: all 0.3s;
-}
-
-.progress-step.active {
-  background-color: #ffc40c;
-  transform: scale(1.2);
-}
-
-.progress-step.done {
-  background-color: #2ecc71;
-}
-
-.tab-navigation {
-  display: flex;
-  gap: 10px;
+  font-size: 0.8rem;
 }
 
 /* Botones */
-.btn {
-  padding: 10px 20px;
-  border-radius: 8px;
+.btn-compact {
+  padding: 12px 20px;
+  border-radius: 6px;
   font-weight: 500;
-  transition: all 0.3s;
+  transition: all 0.2s;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -895,20 +825,19 @@ textarea.form-control {
   outline: none;
 }
 
-.btn:disabled {
+.btn-compact:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
 .btn-primary {
-  background-color: #ffc40c;
-  color: white;
+  background-color: rgba(252, 215, 0);
+  color: black;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #ffb400;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(255, 196, 12, 0.3);
+  background-color: rgb(222, 189, 0);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -918,94 +847,82 @@ textarea.form-control {
 
 .btn-secondary:hover:not(:disabled) {
   background-color: #5a6268;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+  transform: translateY(-1px);
 }
 
-.btn-outline {
-  background-color: transparent;
-  border: 1px solid #e0e0e0;
-  color: #666;
-}
-
-.btn-outline:hover:not(:disabled) {
-  border-color: #ffc40c;
-  color: #ffc40c;
-  background-color: rgba(255, 196, 12, 0.05);
-}
-
-/* Pie del modal */
-.modal-footer {
-  padding: 20px 30px;
-  border-top: 1px solid #f0f0f0;
+/* Pie del modal - fijo */
+.modal-footer-compact {
+  padding: 16px 25px;
+  border-top: 1px solid #e0e0e0;
   background: #fff;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .required-legend {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: #777;
+  font-weight: bold;
 }
 
 .action-buttons {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 /* Responsive */
-@media (max-width: 992px) {
-  .form-grid {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+@media (max-width: 1200px) {
+  .contacts-row {
+    grid-template-columns: repeat(2, 1fr);
   }
-}
-
-@media (max-width: 768px) {
-  .form-grid {
+  
+  .additional-data-row {
     grid-template-columns: 1fr;
   }
   
+  .notes-section {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 900px) {
   .modal-content {
-    width: 95vw;
-    max-height: 95vh;
+    width: 95%;
+    height: 85vh;
   }
   
-  .form-tabs {
-    overflow-x: auto;
-    padding-bottom: 5px;
+  .form-grid-compact {
+    grid-template-columns: 1fr;
   }
   
-  .tab-btn {
-    padding: 12px 15px;
-    white-space: nowrap;
-    font-size: 0.9rem;
+  .contacts-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-row-compact {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .tab-text {
+    display: none;
   }
   
   .tab-content {
-    padding: 20px;
+    padding: 15px;
   }
-  
-  .form-row {
+}
+
+@media (max-width: 600px) {
+  .modal-footer-compact {
     flex-direction: column;
-    gap: 0;
-  }
-  
-  .form-group.half {
-    width: 100%;
-  }
-  
-  .modal-footer {
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .required-legend {
-    order: 2;
+    gap: 10px;
+    padding: 12px 20px;
   }
   
   .action-buttons {
-    order: 1;
     width: 100%;
     justify-content: space-between;
   }

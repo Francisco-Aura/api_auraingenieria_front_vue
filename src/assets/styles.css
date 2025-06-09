@@ -12,11 +12,12 @@ body {
 }
 
 a {
-  color: #ffc40c;
+  color: rgb(252, 215, 0);
   text-decoration: none;
   font-size: 14px;
   transition: color 0.3s ease;
 }
+
 
 a:hover {
   color: #2980b9;
@@ -37,17 +38,18 @@ h2 {
   border: none;
   font-size: 1rem;
   color: white;
-  background-color: #ffc40c;
+  background-color: rgb(252, 215, 0);
   border-radius: 6px;
   transition: all 0.3s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-weight: bold;
 }
 
 /* Estilo de los botones al pasar el ratón */
 .btn:hover {
-  background-color: #2980b9;
+  background-color: #b9a829;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -68,7 +70,7 @@ button {
   border: none;
   font-size: 1rem;
   color: white;
-  background-color: #ffc40c;
+  background-color: rgb(252, 215, 0);
   border-radius: 6px;
   transition: all 0.3s ease;
 }
@@ -209,7 +211,7 @@ table th, table td {
 
 table th {
   background-color: #333;
-  color: #f5c600;
+  color: black;
 }
 
 table tr:nth-child(even) {
@@ -336,8 +338,8 @@ input:-webkit-autofill:focus {
 
 .modal-title {
   font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--heading-color);
+  font-weight: bold;
+  color: black;
   margin: 0;
 }
 

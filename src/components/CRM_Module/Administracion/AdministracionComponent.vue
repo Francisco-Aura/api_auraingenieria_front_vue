@@ -46,15 +46,6 @@
             <h2><i class="fas fa-database"></i> Gestión de Tablas del Sistema</h2>
             <p>Selecciona una tabla para comenzar a administrar sus datos</p>
           </div>
-          <div class="search-container-main">
-            <i class="fas fa-search search-icon"></i>
-            <input
-              type="text"
-              class="search-input-main"
-              placeholder="Buscar tablas..."
-              v-model="globalFilter"
-            />
-          </div>
         </div>
 
         <div class="tables-grid">
@@ -581,9 +572,9 @@ export default {
 <style scoped>
 /* Variables CSS - mantenemos los colores originales */
 :root {
-  --primary-color: #ffc40c;
-  --primary-dark: #e6b000;
-  --primary-light: #ffcc33;
+  --primary-color: rgba(252, 215, 0);
+  --primary-dark: rgba(252, 215, 0);
+  --primary-light: rgba(252, 215, 0);
   --surface-color: #f8f9fa;
   --text-primary: #333;
   --text-secondary: #666;
@@ -705,39 +696,6 @@ export default {
   margin: 0 0 30px 0;
   color: var(--text-secondary);
   font-size: 1rem;
-}
-
-.search-container-main {
-  position: relative;
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.search-icon {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-  font-size: 1rem;
-  pointer-events: none;
-}
-
-.search-input-main {
-  width: 100%;
-  padding: 15px 20px 15px 50px;
-  border: 2px solid var(--border-color);
-  border-radius: 30px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  background: var(--surface-color);
-}
-
-.search-input-main:focus {
-  border-color: var(--primary-color);
-  background: var(--white);
-  box-shadow: 0 0 0 4px rgba(255, 196, 12, 0.1);
-  outline: none;
 }
 
 /* Grid de tablas */
@@ -966,12 +924,14 @@ export default {
 
 .btn-primary {
   background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-  color: white;
+  color: black;
+  font-weight: 600;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 15px rgba(255, 196, 12, 0.3);
+  
 }
 
 .btn-excel {
@@ -1421,7 +1381,7 @@ export default {
 
 .btn-save {
   background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-  color: white;
+  color: black;
 }
 
 .btn-save:hover:not(:disabled) {

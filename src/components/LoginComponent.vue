@@ -105,7 +105,7 @@ export default {
 
 
 :root {
-  --accent-color: #FFC107;
+  --accent-color: rgba(252, 215, 0);
   --primary-color: #333333;
   --secondary-color: #444444;
   --light-gray: #F5F5F5;

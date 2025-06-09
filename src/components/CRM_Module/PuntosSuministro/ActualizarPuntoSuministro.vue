@@ -1,145 +1,229 @@
 <template>
   <div class="modal-overlay">
     <div class="modal-content">
-      <h1>Actualizar Punto de Suministro</h1>
-      <h2>{{ puntoLocal.cliente.nombre || 'Desconocido' }}</h2>
+      <!-- Encabezado del modal -->
+      <div class="modal-header">
+        <div class="header-content">
+          <h1 class="modal-title">{{ modoConsulta ? 'Consultar' : 'Actualizar' }} Punto de Suministro - {{ puntoLocal.cliente.nombre || 'Desconocido' }}</h1>
+        </div>
+        <button type="button" class="close-button" @click="cerrarModal">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
 
-      <!-- Formulario para actualizar el punto de suministro -->
-      <form @submit.prevent="actualizarPS">
-        <div class="form-grid">
-          <!-- Primera Columna del formulario -->
-          <div class="form-column">
-            <div class="form-group">
-              <label for="direccion">Dirección</label>
-              <input 
-                type="text" 
-                id="direccion" 
-                v-model="puntoLocal.direccion" 
-                class="form-control" 
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label for="codigoPostal">Código Postal</label>
-              <input 
-                type="text" 
-                id="codigoPostal" 
-                v-model="puntoLocal.codigoPostal" 
-                class="form-control" 
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label for="poblacion">Población</label>
-              <input 
-                type="text" 
-                id="poblacion" 
-                v-model="puntoLocal.poblacion" 
-                class="form-control" 
-                required
-              />
-            </div>
-            <div class="form-group">
-              <label for="provincia">Provincia</label>
-              <input 
-                type="text" 
-                id="provincia" 
-                v-model="puntoLocal.provincia" 
-                class="form-control" 
-                required
-              />
-            </div>
-          </div>
-
-          <!-- Segunda Columna del formulario -->
-          <div class="form-column">
-            <div class="form-group">
-              <label for="cupsluz">CUPS Luz</label>
-              <input 
-                type="text" 
-                id="cupsluz" 
-                v-model="puntoLocal.cupsluz" 
-                class="form-control" 
-              />
-            </div>
-            <div class="form-group">
-              <label for="cupsgas">CUPS Gas</label>
-              <input 
-                type="text" 
-                id="cupsgas" 
-                v-model="puntoLocal.cupsgas" 
-                class="form-control" 
-              />
-            </div>
-            <div class="form-group">
-              <label for="contador">Contador</label>
-              <div class="input-with-checkbox">
-                <input 
-                  type="text" 
-                  id="contador" 
-                  v-model="puntoLocal.contador" 
-                  class="form-control" 
-                  @input="puntoLocal.propiedadContador = !!puntoLocal.contador"
-                />
-                <label>
-                  <input 
-                    type="checkbox" 
-                    v-model="puntoLocal.propiedadContador"
-                    disabled
-                  />
-                  Propiedad
-                </label>
+      <!-- Formulario compacto para punto de suministro -->
+      <form @submit.prevent="actualizarPS" class="compact-form">
+        <div class="form-sections-container">
+          <!-- Panel izquierdo - Ubicación y Suministros -->
+          <div class="panel-left">
+            <!-- Sección de Ubicación -->
+            <div class="form-section">
+              <div class="section-header">
+                <i class="fas fa-map-marker-alt"></i>
+                <h3>Ubicación</h3>
+              </div>
+              <div class="form-compact-group">
+                <label for="direccion">Dirección <span class="required">*</span></label>
+                <div class="input-with-icon">
+                  <i class="fas fa-home icon-prefix"></i>
+                  <input type="text" id="direccion" v-model="puntoLocal.direccion" :readonly="modoConsulta" required />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-compact-group half">
+                  <label for="codigoPostal">CP <span class="required">*</span></label>
+                  <input type="text" id="codigoPostal" v-model="puntoLocal.codigoPostal" :readonly="modoConsulta" required />
+                </div>
+                <div class="form-compact-group half">
+                  <label for="poblacion">Población <span class="required">*</span></label>
+                  <input type="text" id="poblacion" v-model="puntoLocal.poblacion" :readonly="modoConsulta" required />
+                </div>
+              </div>
+              <div class="form-compact-group">
+                <label for="provincia">Provincia <span class="required">*</span></label>
+                <input type="text" id="provincia" v-model="puntoLocal.provincia" :readonly="modoConsulta" required />
               </div>
             </div>
-            <div class="form-group">
-              <label for="modem">Modem</label>
-              <div class="input-with-checkbox">
-                <input 
-                  type="text" 
-                  id="modem" 
-                  v-model="puntoLocal.modem" 
-                  class="form-control" 
-                  @input="puntoLocal.propiedadModem = !!puntoLocal.modem"
-                />
-                <label>
-                  <input 
-                    type="checkbox" 
-                    v-model="puntoLocal.propiedadModem"
-                    disabled
-                  />
-                  Propiedad
-                </label>
+
+            <!-- Sección de Suministros -->
+            <div class="form-section">
+              <div class="section-header">
+                <i class="fas fa-bolt"></i>
+                <h3>Suministros</h3>
+              </div>
+              <div class="form-row">
+                <div class="form-compact-group half">
+                  <label for="cupsluz">CUPS Luz</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-lightbulb icon-prefix"></i>
+                    <input type="text" id="cupsluz" v-model="puntoLocal.cupsluz" :readonly="modoConsulta" />
+                  </div>
+                </div>
+                <div class="form-compact-group half">
+                  <label for="cupsgas">CUPS Gas</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-fire icon-prefix"></i>
+                    <input type="text" id="cupsgas" v-model="puntoLocal.cupsgas" :readonly="modoConsulta" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-compact-group">
+                <label for="distribuidora">Distribuidora <span class="required">*</span></label>
+                <div class="input-with-icon">
+                  <i class="fas fa-building icon-prefix"></i>
+                  <select id="distribuidora" v-model="puntoLocal.distribuidora" :disabled="modoConsulta" required>
+                    <option value="">Seleccione una distribuidora</option>
+                    <option value="IDE">IDE</option>
+                    <option value="EDISTRIBUCION">EDISTRIBUCION</option>
+                    <option value="NATURGY">NATURGY</option>
+                    <option value="OTRO">OTRO</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Sección de Información Adicional -->
+            <div class="form-section">
+              <div class="section-header">
+                <i class="fas fa-info-circle"></i>
+                <h3>Información Adicional</h3>
+              </div>
+              <div class="form-row">
+                <div class="form-compact-group half">
+                  <label for="fechaInstalacion">F. Instalación</label>
+                  <input type="date" id="fechaInstalacion" v-model="puntoLocal.fechaInstalacion" :readonly="modoConsulta" />
+                </div>
+                <div class="form-compact-group half">
+                  <label for="exencionImpuestoElectrico">Exención Imp. Eléctrico</label>
+                  <select id="exencionImpuestoElectrico" v-model="puntoLocal.exencionImpuestoElectrico" :disabled="modoConsulta">
+                    <option value="">Seleccione</option>
+                    <option value="SI">SI</option>
+                    <option value="NO">NO</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-compact-group half">
+                  <label for="porcentajeConcesion">% Concesión</label>
+                  <input type="number" id="porcentajeConcesion" v-model="puntoLocal.porcentajeConcesion" :readonly="modoConsulta" />
+                </div>
+                <div class="form-compact-group half">
+                  <label for="fechaConcesion">F. Concesión</label>
+                  <input type="date" id="fechaConcesion" v-model="puntoLocal.fechaConcesion" :readonly="modoConsulta" />
+                </div>
               </div>
             </div>
           </div>
+          
+          <!-- Panel derecho - Equipos de Medida -->
+          <div class="panel-right">
+            <!-- Sección de Equipos de Medida -->
+            <div class="form-section">
+              <div class="section-header">
+                <i class="fas fa-tachometer-alt"></i>
+                <h3>Equipos de Medida</h3>
+              </div>
+              <div class="form-row">
+                <div class="form-compact-group half">
+                  <label for="potenciaBIE">Potencia BIE</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-bolt icon-prefix"></i>
+                    <input type="number" id="potenciaBIE" v-model="puntoLocal.potenciaBIE" :readonly="modoConsulta" />
+                  </div>
+                </div>
+                <div class="form-compact-group half">
+                  <label for="potenciaTecnicaRed">Potencia Técnica Red</label>
+                  <input type="number" id="potenciaTecnicaRed" v-model="puntoLocal.potenciaTecnicaRed" :readonly="modoConsulta" />
+                </div>
+              </div>
+              <div class="form-compact-group">
+                <label for="apmCentroTransformacion">APM Centro Transformación</label>
+                <input type="text" id="apmCentroTransformacion" v-model="puntoLocal.apmCentroTransformacion" :readonly="modoConsulta" />
+              </div>
+              <div class="form-row">
+                <div class="form-compact-group half">
+                  <label for="tipoContador">Tipo Contador</label>
+                  <select id="tipoContador" v-model="puntoLocal.tipoContador" :disabled="modoConsulta">
+                    <option value="">Seleccione</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                  </select>
+                </div>
+                <div class="form-compact-group half">
+                  <label for="tipoComunicacion">Tipo Comunicación</label>
+                  <select id="tipoComunicacion" v-model="puntoLocal.tipoComunicacion" :disabled="modoConsulta">
+                    <option value="">Seleccione</option>
+                    <option value="Datadis">Datadis</option>
+                    <option value="GSM">GSM</option>
+                    <option value="IP">IP</option>
+                    <option value="Distribuidora">Distribuidora</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-compact-group half">
+                  <label for="numeroContador">Nº Contador</label>
+                  <input type="text" id="numeroContador" v-model="puntoLocal.numeroContador" :readonly="modoConsulta" />
+                </div>
+                <div class="form-compact-group half">
+                  <label for="numeroTelefono">Nº Teléfono</label>
+                  <input type="tel" id="numeroTelefono" v-model="puntoLocal.numeroTelefono" :readonly="modoConsulta" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-compact-group half">
+                  <label for="direccionEnlace">Dir. Enlace</label>
+                  <input type="text" id="direccionEnlace" v-model="puntoLocal.direccionEnlace" :readonly="modoConsulta" />
+                </div>
+                <div class="form-compact-group half">
+                  <label for="puntoMedida">Punto Medida</label>
+                  <input type="text" id="puntoMedida" v-model="puntoLocal.puntoMedida" :readonly="modoConsulta" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-compact-group half">
+                  <label for="clave">Clave</label>
+                  <input type="text" id="clave" v-model="puntoLocal.clave" :readonly="modoConsulta" />
+                </div>
+                <div class="form-compact-group half">
+                  <label for="propiedad">Propiedad</label>
+                  <select id="propiedad" v-model="puntoLocal.propiedad" :disabled="modoConsulta">
+                    <option value="">Seleccione</option>
+                    <option value="Distribuidora">Distribuidora</option>
+                    <option value="Cliente">Cliente</option>
+                    <option value="Aura">Aura</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
-          <!-- Campos que ocupan toda el ancho -->
-          <div class="form-group full-width">
-            <label for="observaciones">Observaciones</label>
-            <textarea 
-              id="observaciones" 
-              v-model="puntoLocal.observaciones" 
-              class="form-control" 
-              rows="3"
-            ></textarea>
-          </div>
-          <div class="form-group full-width">
-            <label for="fechaInstalacion">Fecha de Instalación</label>
-            <input 
-              type="date" 
-              id="fechaInstalacion" 
-              v-model="puntoLocal.fechaInstalacion" 
-              class="form-control" 
-            />
+            <!-- Observaciones -->
+            <div class="form-section">
+              <div class="section-header">
+                <i class="fas fa-comment-alt"></i>
+                <h3>Observaciones</h3>
+              </div>
+              <div class="form-compact-group">
+                <textarea id="observaciones" v-model="puntoLocal.observaciones" :readonly="modoConsulta" rows="3" placeholder="Observaciones relevantes..."></textarea>
+              </div>
+            </div>
           </div>
         </div>
-
+        
         <!-- Botones de acción -->
         <div class="modal-footer">
-          <button type="button" @click="cerrarModal" class="btn btn-secondary">
-            Cancelar
-          </button>
-          <button type="submit" class="btn btn-primary">Actualizar</button>
+          <div class="required-note" v-if="!modoConsulta"><span class="required">*</span> Campos obligatorios</div>
+          <div class="action-buttons">
+            <button type="button" @click="cerrarModal" class="btn btn-secondary">
+              <i class="fas fa-times"></i> {{ modoConsulta ? 'Cerrar' : 'Cancelar' }}
+            </button>
+            <button v-if="!modoConsulta" type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Actualizar
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -151,6 +235,10 @@ export default {
   name: 'ModalActualizarPunto',
   props: {
     modificarPunto: Object,
+    modoConsulta: {
+      type: Boolean,
+      default: false
+    }
   },
   data() {
     return {
@@ -165,95 +253,279 @@ export default {
         this.puntoLocal = { ...newVal };
       },
     },
-},
+  },
   methods: {
     cerrarModal() {
       this.$emit('cerrar-modal');
     },
     actualizarPS() {
-      this.$emit('actualizar-punto-suministro', { ...this.puntoLocal });
+      if (!this.modoConsulta) {
+        this.$emit('actualizar-punto-suministro', { ...this.puntoLocal });
+      }
     },
   },
 };
 </script>
 
 <style scoped>
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
+/* Estilos base del modal compacto */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.18);
+  background: rgba(0,0,0,0.5);
   z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;    
+  width: 100%;
+  height: 100%;
+  padding: 15px;
 }
+
 .modal-content {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 90vw;
-  max-width: 1100px;
-  min-width: 600px;
-  max-height: 90vh;
+  width: 90%;
+  max-width: 90%;
+  height: 90%;
+  max-height: 90%;
   background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 0 32px 0 32px;
 }
-.modal-content h1, .modal-content h2 {
-  margin: 0;
-  padding: 24px 32px 0 32px;
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: #fff;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-form {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding: 24px 32px 0 32px;
-}
-.modal-footer {
-  background: #fff;
-  padding: 18px 32px;
-  border-top: 1px solid #eee;
+
+.modal-header {
+  padding: 18px 25px;
+  border-bottom: 1px solid #e0e0e0;
+  background: rgba(252, 215, 0);
+  color: white;
+  position: relative;
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.form-group {
-  margin-bottom: 15px;
+
+.modal-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: #e74c3c;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: white;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.close-button:hover {
+  background-color: #c0392b;
+  color: white;
+  transform: rotate(90deg);
+}
+
+/* Formulario compacto */
+.compact-form {
   display: flex;
   flex-direction: column;
-}
-.input-with-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.input-with-checkbox input[type="text"] {
   flex: 1;
 }
-.input-with-checkbox label {
+
+.form-sections-container {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 10px;
+  gap: 10px;
+  max-height: calc(90vh - 100px); /* Ajusta según el tamaño del header y footer */
+  overflow-y: auto;
+}
+
+.panel-left, .panel-right {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Secciones de formulario */
+.form-section {
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  padding: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.section-header {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin: 0;
-  font-weight: 500;
-  font-size: 0.95rem;
+  margin-bottom: 8px;
+  gap: 5px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #f0f0f0;
 }
-@media (max-width: 700px) {
-  .modal-content {
-    min-width: 0;
-    width: 98vw;
-    max-width: 98vw;
-    padding: 0 8px;
+
+.section-header i {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.section-header h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+/* Elementos de formulario */
+.form-compact-group {
+  margin-bottom: 8px;
+}
+
+.form-compact-group label {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #555;
+}
+
+.form-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.form-compact-group.half {
+  flex: 1;
+}
+
+.form-compact-group input,
+.form-compact-group select,
+.form-compact-group textarea {
+  width: 100%;
+  padding: 5px 8px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  height: 35px;
+}
+
+.form-compact-group textarea {
+  resize: none;
+  height: 60px;
+}
+
+.input-with-icon {
+  position: relative;
+}
+
+.icon-prefix {
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+  font-size: 1rem;
+}
+
+.input-with-icon input {
+  padding-left: 30px;
+}
+
+.required {
+  color: #e74c3c;
+  margin-left: 2px;
+}
+
+/* Pie del modal */
+.modal-footer {
+  padding: 10px 15px;
+  border-top: 1px solid #e0e0e0;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.required-note {
+  font-size: 0.95rem;
+  color: #777;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 1rem;
+  border: none;
+  outline: none;
+}
+
+.btn-primary {
+  background-color: rgba(252, 215, 0);
+  color: black;
+}
+
+.btn-primary:hover {
+  background-color: rgb(222, 189, 0);
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .form-sections-container {
+    flex-direction: column;
+  }
+  
+  .panel-left, .panel-right {
+    width: 100%;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 5px;
   }
 }
 </style>
