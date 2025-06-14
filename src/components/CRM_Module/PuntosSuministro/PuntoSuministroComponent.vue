@@ -249,7 +249,7 @@
       :modificarPunto="modificarPunto" 
       :modoConsulta="modoConsulta"
       @cerrar-modal="cerrarModal"
-      @actualizar-punto-suministro="actualizarPS"
+      @actualizar-punto-suministro="handleUpdate"
     />
 
     <!-- Modal de Contratos -->
@@ -534,7 +534,20 @@ export default {
       try {
         this.loading = true;
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/all`);
-        this.puntosSuministro = response.data;
+        console.log('Datos brutos de puntos de suministro del backend:', response.data);
+        this.puntosSuministro = response.data.map(punto => {
+          const newPunto = { ...punto };
+          if (newPunto.CUPSluz !== undefined) {
+            newPunto.cupsluz = newPunto.CUPSluz;
+            delete newPunto.CUPSluz;
+          }
+          if (newPunto.CUPSgas !== undefined) {
+            newPunto.cupsgas = newPunto.CUPSgas;
+            delete newPunto.CUPSgas;
+          }
+          return newPunto;
+        });
+        console.log('Datos de puntos de suministro después de la transformación:', this.puntosSuministro);
       } catch (error) {
           console.error("Error al cargar los puntos de suministro:", error);
       } finally {
@@ -562,12 +575,23 @@ export default {
     },
 
     // Actualiza un punto de suministro en la API
-    async actualizarPS(actualizadoPunto) {
+    async handleUpdate(datosAdaptados) {
       try {
-        await axios.post(`${process.env.VUE_APP_API_URL}/api/puntos-suministro`, actualizadoPunto);
+        await axios.post(`${process.env.VUE_APP_API_URL}/api/puntos-suministro`, datosAdaptados);
+        await this.$swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Punto de suministro actualizado correctamente'
+        });
+        this.cerrarModal();
         this.fetchPuntosSuministro();
       } catch (error) {
-        console.error("Error al actualizar el punto de suministro:", error);
+        console.error('Error al actualizar punto de suministro:', error);
+        await this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al actualizar el punto de suministro: ' + (error.response?.data?.mensaje || error.message)
+        });
       }
     },
 

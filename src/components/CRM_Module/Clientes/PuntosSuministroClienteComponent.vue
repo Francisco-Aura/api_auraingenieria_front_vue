@@ -63,69 +63,23 @@
   </div>
 
   <!-- Modal de Detalles -->
-  <div v-if="showDetalleModal" class="modal-overlay fade-in">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2><i class="fas fa-info-circle"></i> Detalles del Punto de Suministro</h2>
-        <button class="btn-icon" @click="showDetalleModal = false">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <div v-if="puntoSeleccionado" class="details-grid">
-          <div class="detail-item">
-            <strong>ID:</strong> {{ puntoSeleccionado.id }}
-          </div>
-          <div class="detail-item">
-            <strong>Cliente:</strong> {{ puntoSeleccionado.nombreCliente }}
-          </div>
-          <div class="detail-item full-width">
-            <strong>Dirección:</strong> {{ puntoSeleccionado.direccion }}, {{ puntoSeleccionado.codigoPostal }}, {{ puntoSeleccionado.poblacion }}, {{ puntoSeleccionado.provincia }}
-          </div>
-          <div class="detail-item">
-            <strong>CUPS Luz:</strong> {{ puntoSeleccionado.cupsluz || '-' }}
-          </div>
-          <div class="detail-item">
-            <strong>CUPS Gas:</strong> {{ puntoSeleccionado.cupsgas || '-' }}
-          </div>
-          <div class="detail-item">
-            <strong>Contador:</strong> {{ puntoSeleccionado.contador || '-' }}
-          </div>
-          <div class="detail-item">
-            <strong>Propiedad Contador:</strong> {{ puntoSeleccionado.propiedadContador == 1 ? 'Sí' : 'No' }}
-          </div>
-          <div class="detail-item">
-            <strong>Modem:</strong> {{ puntoSeleccionado.modem || '-' }}
-          </div>
-          <div class="detail-item">
-            <strong>Propiedad Modem:</strong> {{ puntoSeleccionado.propiedadModem == 1 ? 'Sí' : 'No' }}
-          </div>
-          <div class="detail-item full-width">
-            <strong>Observaciones:</strong> {{ puntoSeleccionado.observaciones || '-' }}
-          </div>
-          <div class="detail-item">
-            <strong>Fecha Instalación:</strong> {{ puntoSeleccionado.fechaInstalacion || '-' }}
-          </div>
-          <div class="detail-item" v-if="puntoSeleccionado.fechaBaja">
-            <strong>Fecha Baja:</strong> {{ puntoSeleccionado.fechaBaja }}
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button @click="showDetalleModal = false" class="btn btn-primary">
-          <i class="fas fa-times"></i>
-          <span>Cerrar</span>
-        </button>
-      </div>
-    </div>
-  </div>
+  <ModalActualizarPuntoSuministro
+    v-if="formularioVisible"
+    :modificarPunto="modificarPunto"
+    :modoConsulta="modoConsulta"
+    @cerrar-modal="cerrarModalActualizarPunto"
+  />
 </template>
 
 <script>
+import ModalActualizarPuntoSuministro from '@/components/CRM_Module/PuntosSuministro/ActualizarPuntoSuministro.vue';
+
 export default {
   name: "PuntosSuministroClienteComponent",
+  components: {
+    ModalActualizarPuntoSuministro
+  },
+  emits: ['cerrar-modal'],
   props: {
     cliente: {
       type: Object,
@@ -141,14 +95,16 @@ export default {
   data() {
     return {
       filterPuntos: "",
-      showDetalleModal: false,
-      puntoSeleccionado: null
+      formularioVisible: false,
+      modificarPunto: null,
+      modoConsulta: false,
+      puntosSuministroLocal: [],
     };
   },
   computed: {
     filteredPuntosSuministro() {
       const filtro = this.normalizeText(this.filterPuntos);
-      return this.puntosSuministro.filter((punto) => {
+      return this.puntosSuministroLocal.filter((punto) => {
         const concatenated = [
           punto.direccion || '',
           punto.codigoPostal || '',
@@ -161,6 +117,32 @@ export default {
       });
     },
   },
+  watch: {
+    puntosSuministro: {
+      immediate: true,
+      deep: true,
+      handler(newVal) {
+        this.puntosSuministroLocal = newVal.map(punto => {
+          const newPunto = { ...punto };
+          if (newPunto.CUPSluz !== undefined) {
+            newPunto.cupsluz = newPunto.CUPSluz;
+            delete newPunto.CUPSluz;
+          }
+          if (newPunto.CUPSgas !== undefined) {
+            newPunto.cupsgas = newPunto.CUPSgas;
+            delete newPunto.CUPSgas;
+          }
+          if (newPunto.cupsluz === undefined && newPunto.cups === undefined) {
+            newPunto.cupsluz = '';
+          }
+          if (newPunto.cupsgas === undefined) {
+            newPunto.cupsgas = '';
+          }
+          return newPunto;
+        });
+      },
+    },
+  },
   methods: {
     normalizeText(text) {
       if (!text) return "";
@@ -171,8 +153,14 @@ export default {
         .toLowerCase();
     },
     verDetallePunto(punto) {
-      this.puntoSeleccionado = punto;
-      this.showDetalleModal = true;
+      this.modificarPunto = { ...punto };
+      this.modoConsulta = true;
+      this.formularioVisible = true;
+    },
+    cerrarModalActualizarPunto() {
+      this.formularioVisible = false;
+      this.modificarPunto = null;
+      this.modoConsulta = false;
     },
   },
 };

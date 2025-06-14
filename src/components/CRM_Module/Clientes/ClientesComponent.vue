@@ -271,23 +271,22 @@
     <CreaActualizaClienteComponent
       :formularioVisible="formularioVisible"
       :modoActualizar="modoActualizar"
-      :nuevoCliente="clienteSeleccionado"
+      :nuevoCliente="nuevoCliente"
       :sectores="sectores"
       :usuarios="usuarios"
       :subtipologias="subtipologias"
-      @cancelar-formulario="formularioVisible = false"
+      @cancelar-formulario="cancelarFormulario"
       @crear-cliente="crearCliente"
       @actualizar-cliente="actualizarCliente"
     />
 
-    <CrearPuntosSuministroComponent
+    <ModalActualizarPuntoSuministro
       v-if="showModalPS"
-      :ShowModalPS="showModalPS"
-      :formulario-visible="showModalPS"
-      :cliente="clienteSeleccionado"
-      :nuevo-punto="nuevoPunto"
-      @guardar-punto-suministro="crearPuntoSuministro"
-      @cerrar-formulario="cerrarFormularioNuevoPuntoSuministro"
+      :modificarPunto="modificarPunto"
+      :modoConsulta="modoConsulta"
+      :isCreating="isCreating"
+      @cerrar-modal="cerrarFormularioNuevoPuntoSuministro"
+      @actualizar-punto-suministro="handleUpdateOrCreate"
     />
   </div>
 </template>
@@ -297,7 +296,7 @@ import axios from "axios";
 import Spinner from "@/components/SpinnerComponent.vue";
 import PuntosSuministroClienteComponent from "@/components/CRM_Module/Clientes/PuntosSuministroClienteComponent.vue";
 import CreaActualizaClienteComponent from "@/components/CRM_Module/Clientes/CreaActualizaClientesComponent.vue";
-import CrearPuntosSuministroComponent from "@/components/CRM_Module/Clientes/CrearPuntosSuministroComponent.vue";
+import ModalActualizarPuntoSuministro from "@/components/CRM_Module/PuntosSuministro/ActualizarPuntoSuministro.vue";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -308,7 +307,7 @@ export default {
     Spinner,
     PuntosSuministroClienteComponent,
     CreaActualizaClienteComponent,
-    CrearPuntosSuministroComponent,
+    ModalActualizarPuntoSuministro
   },
   data() {
     return {
@@ -323,22 +322,25 @@ export default {
         usuarioAsignado: ''
       },
       puntosSuministro: [],        // Lista de puntos de suministro
-      clienteSeleccionado: {},  // Cliente seleccionado
+      clienteSeleccionado: this.resetFormularioCliente(),  // Inicializar con un objeto válido
       isModalPuntosOpen: false,    // Estado para controlar la visibilidad del modal
       loading: false,              // Estado para mostrar un spinner de carga
-      formularioVisible: false, // Control de visibilidad del formulario cliente
-      modoActualizar: false, // Indica si el formulario está en modo actualizar
-      nuevoCliente: this.resetFormularioCliente(), // Datos del nuevo cliente o cliente a actualizar
+      formularioVisible: false,     // Control de visibilidad del formulario de actualización
+      modoActualizar: false,       // Indica si el formulario está en modo actualizar
+      nuevoCliente: this.resetFormularioCliente(), // Inicializar con un objeto válido
       sectores: [], // Opciones de sectores
       usuarios: [], // Opciones de usuarios
       subtipologias: [], // Opciones de subtipologías
       isSubmitting: false, // Evita múltiples envíos del formulario
-      showModalPS: false, // Estado del modal de puntos de suministro
-      nuevoPunto: this.resetFormularioPuntoSuministro(), // Datos del nuevo punto de suministro
+      showModalPS: false,           // Control de visibilidad para el modal de crear/actualizar Punto de Suministro
+      modificarPunto: null,         // Datos del formulario para modificar/crear un punto de suministro
       currentPage: 1,
       recordsPerPage: 10,
       sortKey: null,
       sortOrder: null,
+      modoConsulta: false,          // Flag para indicar si el ModalActualizarPuntoSuministro está en modo consulta
+      isCreating: false,            // Flag para indicar si el ModalActualizarPuntoSuministro está en modo creación
+      mostrarModalContratos: false, // Control de visibilidad del modal de contratos
     };
   },
   computed: {
@@ -470,20 +472,32 @@ export default {
     // Reinicia el formulario de punto de suministro
     resetFormularioPuntoSuministro() {
       return {
+        id: null,
         direccion: '',
         codigoPostal: '',
         poblacion: '',
         provincia: '',
-        propiedadContador: 0,
-        contador: '',
+        cupsluz: '',
+        cupsgas: '',
+        distribuidora: null,
+        tipoContador: null,
+        tipoComunicacion: null,
+        propiedad: null,
         propiedadModem: 0,
-        modem: '',
         observaciones: '',
         fechaInstalacion: '',
-        idCliente: null,
-        nombreCliente: '',
-        cupsluz: '',
-        cupsgas: ''
+        potenciaBIE: 0.0,
+        potenciaTecnicaRed: 0.0,
+        apmCentroTransformacion: '',
+        numeroContador: '',
+        numeroTelefono: '',
+        direccionEnlace: '',
+        puntoMedida: '',
+        clave: '',
+        exencionImpuestoElectrico: false,
+        porcentajeConcesion: 0.0,
+        fechaConcesion: '',
+        // Cliente se asigna al abrir el modal, no en el reset general
       };
     },    
     // Muestra el modal de puntos de suministro para el cliente seleccionado
@@ -504,24 +518,29 @@ export default {
     },       
     // Muestra el modal de creación de cliente
     abrirFormularioCrearCliente() {
-      this.nuevoCliente = {}; // Asegúrate de que sea un objeto vacío
-      this.formularioVisible = true; // Muestra el formulario
-      this.modoActualizar = false; // Asegura que sea modo de creación
+      this.modoActualizar = false;
+      this.nuevoCliente = this.resetFormularioCliente();
+      this.formularioVisible = true;
     },
-    // Cierra el modal de cliente
+    // Método para cancelar el formulario
     cancelarFormulario() {
       this.formularioVisible = false;
-      this.nuevoCliente = this.resetFormularioCliente(); // Limpia los datos al cerrar
+      this.nuevoCliente = this.resetFormularioCliente();
+      this.modoActualizar = false;
     },
-    // Carga datos para actualizar un cliente
+    // Método para cargar los datos de un cliente para actualización
     async cargarDatosCliente(idCliente) {
       try {
+        this.loading = true;
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`);
-        this.clienteSeleccionado = response.data;
-        this.formularioVisible = true;
+        this.nuevoCliente = response.data;
         this.modoActualizar = true;
+        this.formularioVisible = true;
       } catch (error) {
-          console.error("Error al cargar datos del cliente:", error);
+        console.error("Error al cargar datos del cliente:", error);
+        alert("No se pudieron cargar los datos del cliente.");
+      } finally {
+        this.loading = false;
       }
     },
     // Lógica para actualizar cliente
@@ -551,51 +570,48 @@ export default {
         console.error("Error al crear cliente:", error);
       }
     },
-    // Muestra el modal para crear un punto de suministro
+    // Muestra el modal para crear un punto de suministro (reutilizando ModalActualizarPuntoSuministro)
     abrirFormularioNuevoPunto(cliente) {
       this.clienteSeleccionado = cliente;
-      this.nuevoPunto = this.resetFormularioPuntoSuministro();
-      this.nuevoPunto.idCliente = cliente.idCliente; // Asigna el idCliente
-      this.nuevoPunto.nombreCliente = cliente.nombre; // Asigna el nombreCliente
+      this.modificarPunto = {
+        ...this.resetFormularioPuntoSuministro(),
+        cliente: { id: cliente.idCliente, nombre: cliente.nombre }, // Asegura que el cliente esté bien enlazado
+      };
+      this.modoConsulta = false; // Esto es una creación/edición, no solo consulta
+      this.isCreating = true;   // Indicar que es un formulario de creación
       this.showModalPS = true;
     },
-    // Cierra el modal de puntos de suministro
+    // Cierra el modal de creación/actualización de puntos de suministro
     cerrarFormularioNuevoPuntoSuministro() {
       this.showModalPS = false;
+      this.modificarPunto = null; // Limpiar datos al cerrar
+      this.modoConsulta = false;
+      this.isCreating = false;  // Resetear el flag de creación
     },
-    // Crea un nuevo punto de suministro
-    async crearPuntoSuministro() {
+    // Maneja la creación o actualización de un punto de suministro (ahora centralizado)
+    async handleUpdateOrCreate(datosAdaptados) {
       try {
-        // Adaptamos los datos para que coincidan con el formato que requiere el backend
-        // Adaptamos los datos para que coincidan con el formato que requiere el backend
-        const datosAdaptados = {
-          direccion: this.nuevoPunto.direccion,
-          codigoPostal: this.nuevoPunto.codigoPostal,
-          poblacion: this.nuevoPunto.poblacion,
-          provincia: this.nuevoPunto.provincia,
-          propiedadContador: this.nuevoPunto.propiedadContador ? 1 : 0,
-          contador: this.nuevoPunto.contador,
-          propiedadModem: this.nuevoPunto.propiedadModem ? 1 : 0,
-          modem: this.nuevoPunto.modem,
-          observaciones: this.nuevoPunto.observaciones,
-          fechaInstalacion: this.nuevoPunto.fechaInstalacion,
-          cliente: { id: this.nuevoPunto.idCliente }, // Aquí adaptamos el formato para que coincida con el backend
-          clienteNombre: this.nuevoPunto.nombreCliente,
-          CUPSluz: this.nuevoPunto.cupsluz, // Respeta mayúsculas/minúsculas del modelo
-          CUPSgas: this.nuevoPunto.cupsgas,
-        };
-
-        await axios.post(
-          `${process.env.VUE_APP_API_URL}/api/puntos-suministro`,
-          datosAdaptados
-        );
-        alert("Punto de suministro creado.");
-        this.fetchClientes();
-        this.cerrarFormularioNuevoPuntoSuministro();
+        await axios.post(`${process.env.VUE_APP_API_URL}/api/puntos-suministro`, datosAdaptados);
+        await this.$swal.fire({
+          icon: 'success',
+          title: '¡Éxito!',
+          text: `Punto de suministro ${datosAdaptados.id ? 'actualizado' : 'creado'} correctamente`,
+        });
+        this.cerrarFormularioNuevoPuntoSuministro(); // Cierra el modal
+        this.fetchClientes(); // Refresca la lista principal de clientes (para el contador de PS)
+        // Si el modal de puntos de suministro del cliente está abierto, también refresca sus puntos
+        if (this.isModalPuntosOpen && this.clienteSeleccionado) {
+          this.fetchPuntosSuministro(this.clienteSeleccionado.idCliente);
+        }
       } catch (error) {
-        console.error("Error al crear punto de suministro:", error);
+        console.error("Error al guardar/actualizar punto de suministro:", error);
+        await this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al guardar el punto de suministro: ' + (error.response?.data?.mensaje || error.message)
+        });
       }
-    },    
+    },
     sortBy(key) {
       if (this.sortKey === key) {
         // Ciclo: asc -> desc -> null
@@ -747,6 +763,12 @@ export default {
   watch: {
     recordsPerPage() {
       this.currentPage = 1;
+    },
+    formularioVisible(newVal) {
+      if (!newVal) {
+        // Cuando el formulario se cierra, asegurarnos de que nuevoCliente tenga un valor válido
+        this.nuevoCliente = this.resetFormularioCliente();
+      }
     }
   }
 };

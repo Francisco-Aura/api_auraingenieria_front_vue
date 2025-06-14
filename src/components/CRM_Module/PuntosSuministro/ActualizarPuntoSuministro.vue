@@ -4,7 +4,10 @@
       <!-- Encabezado del modal -->
       <div class="modal-header">
         <div class="header-content">
-          <h1 class="modal-title">{{ modoConsulta ? 'Consultar' : 'Actualizar' }} Punto de Suministro - {{ puntoLocal.cliente.nombre || 'Desconocido' }}</h1>
+          <h1 class="modal-title">
+            {{ isCreating ? 'Crear nuevo' : (modoConsulta ? 'Consultar' : 'Actualizar') }} Punto de Suministro
+            {{ puntoLocal.cliente && puntoLocal.cliente.nombre ? ' - ' + puntoLocal.cliente.nombre : '' }}
+          </h1>
         </div>
         <button type="button" class="close-button" @click="cerrarModal">
           <i class="fas fa-times"></i>
@@ -68,15 +71,12 @@
                 </div>
               </div>
               <div class="form-compact-group">
-                <label for="distribuidora">Distribuidora <span class="required">*</span></label>
+                <label for="distribuidora">Distribuidora</label>
                 <div class="input-with-icon">
                   <i class="fas fa-building icon-prefix"></i>
-                  <select id="distribuidora" v-model="puntoLocal.distribuidora" :disabled="modoConsulta" required>
-                    <option value="">Seleccione una distribuidora</option>
-                    <option value="IDE">IDE</option>
-                    <option value="EDISTRIBUCION">EDISTRIBUCION</option>
-                    <option value="NATURGY">NATURGY</option>
-                    <option value="OTRO">OTRO</option>
+                  <select id="distribuidora" v-model="puntoLocal.distribuidora" :disabled="modoConsulta" class="form-control">
+                    <option :value="null">Seleccione una distribuidora</option>
+                    <option v-for="d in distribuidoras" :key="d.id" :value="d">{{ d.nombre }}</option>
                   </select>
                 </div>
               </div>
@@ -96,9 +96,9 @@
                 <div class="form-compact-group half">
                   <label for="exencionImpuestoElectrico">Exención Imp. Eléctrico</label>
                   <select id="exencionImpuestoElectrico" v-model="puntoLocal.exencionImpuestoElectrico" :disabled="modoConsulta">
-                    <option value="">Seleccione</option>
-                    <option value="SI">SI</option>
-                    <option value="NO">NO</option>
+                    <option :value="null">Seleccione</option>
+                    <option :value="true">SI</option>
+                    <option :value="false">NO</option>
                   </select>
                 </div>
               </div>
@@ -142,25 +142,24 @@
               </div>
               <div class="form-row">
                 <div class="form-compact-group half">
-                  <label for="tipoContador">Tipo Contador</label>
-                  <select id="tipoContador" v-model="puntoLocal.tipoContador" :disabled="modoConsulta">
-                    <option value="">Seleccione</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                  </select>
+                  <label for="tipoContador">Tipo de Contador</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-tachometer-alt icon-prefix"></i>
+                    <select id="tipoContador" v-model="puntoLocal.tipoContador" :disabled="modoConsulta" class="form-control">
+                      <option :value="null">Seleccione</option>
+                      <option v-for="tc in tiposContador" :key="tc.id" :value="tc">{{ tc.nombre || tc.descripcion }}</option>
+                    </select>
+                  </div>
                 </div>
                 <div class="form-compact-group half">
-                  <label for="tipoComunicacion">Tipo Comunicación</label>
-                  <select id="tipoComunicacion" v-model="puntoLocal.tipoComunicacion" :disabled="modoConsulta">
-                    <option value="">Seleccione</option>
-                    <option value="Datadis">Datadis</option>
-                    <option value="GSM">GSM</option>
-                    <option value="IP">IP</option>
-                    <option value="Distribuidora">Distribuidora</option>
-                  </select>
+                  <label for="tipoComunicacion">Tipo de Comunicación</label>
+                  <div class="input-with-icon">
+                    <i class="fas fa-broadcast-tower icon-prefix"></i>
+                    <select id="tipoComunicacion" v-model="puntoLocal.tipoComunicacion" :disabled="modoConsulta" class="form-control">
+                      <option :value="null">Seleccione</option>
+                      <option v-for="tcom in tiposComunicacion" :key="tcom.id" :value="tcom">{{ tcom.nombre || tcom.descripcion }}</option>
+                    </select>
+                  </div>
                 </div>
               </div>
               <div class="form-row">
@@ -190,12 +189,13 @@
                 </div>
                 <div class="form-compact-group half">
                   <label for="propiedad">Propiedad</label>
-                  <select id="propiedad" v-model="puntoLocal.propiedad" :disabled="modoConsulta">
-                    <option value="">Seleccione</option>
-                    <option value="Distribuidora">Distribuidora</option>
-                    <option value="Cliente">Cliente</option>
-                    <option value="Aura">Aura</option>
-                  </select>
+                  <div class="input-with-icon">
+                    <i class="fas fa-key icon-prefix"></i>
+                    <select id="propiedad" v-model="puntoLocal.propiedad" :disabled="modoConsulta" class="form-control">
+                      <option :value="null">Seleccione</option>
+                      <option v-for="p in propiedades" :key="p.id" :value="p">{{ p.nombre }}</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -231,6 +231,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'ModalActualizarPunto',
   props: {
@@ -238,29 +240,192 @@ export default {
     modoConsulta: {
       type: Boolean,
       default: false
+    },
+    isCreating: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
-      puntoLocal: { ...this.modificarPunto }
+      puntoLocal: { ...this.modificarPunto },
+      distribuidoras: [],
+      tiposContador: [],
+      tiposComunicacion: [],
+      propiedades: []
     };
+  },
+  async created() {
+    try {
+      // Cargar datos maestros
+      const [distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes] = await Promise.all([
+        axios.get(`${process.env.VUE_APP_API_URL}/api/distribuidoras`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/tipos-contador`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/tipos-comunicacion`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/propiedades`)
+      ]);
+
+      this.distribuidoras = distribuidorasRes.data;
+      this.tiposContador = tiposContadorRes.data;
+      this.tiposComunicacion = tiposComunicacionRes.data;
+      this.propiedades = propiedadesRes.data;
+
+      // Si modificarPunto ya está disponible, inicializar puntoLocal con los objetos completos
+      if (this.modificarPunto && Object.keys(this.modificarPunto).length > 0) {
+        this.initializePuntoLocal(this.modificarPunto);
+      }
+
+    } catch (error) {
+      console.error('Error al cargar datos maestros en ActualizarPuntoSuministro:', error);
+      this.$swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error al cargar los datos maestros necesarios',
+        confirmButtonColor: '#3085d6'
+      });
+    }
   },
   watch: {
     modificarPunto: {
       immediate: true,
       deep: true,
-      handler(newVal) {
-        this.puntoLocal = { ...newVal };
+      async handler(newVal) {
+        if (newVal && Object.keys(newVal).length > 0) {
+          await this.initializePuntoLocal(newVal);
+        }
       },
     },
   },
   methods: {
+    async loadMasterData() {
+      try {
+        const [distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes] = await Promise.all([
+          axios.get(`${process.env.VUE_APP_API_URL}/api/distribuidoras`),
+          axios.get(`${process.env.VUE_APP_API_URL}/api/tipos-contador`),
+          axios.get(`${process.env.VUE_APP_API_URL}/api/tipos-comunicacion`),
+          axios.get(`${process.env.VUE_APP_API_URL}/api/propiedades`)
+        ]);
+        this.distribuidoras = distribuidorasRes.data;
+        this.tiposContador = tiposContadorRes.data;
+        this.tiposComunicacion = tiposComunicacionRes.data;
+        this.propiedades = propiedadesRes.data;
+      } catch (error) {
+        console.error('Error al recargar datos maestros:', error);
+      }
+    },
+    async initializePuntoLocal(newVal) {
+      // Clonar newVal para evitar mutaciones directas y aplicar transformaciones necesarias
+      this.puntoLocal = {
+        ...newVal,
+        // Asegurar que los booleanos y números se mapeen correctamente si vienen de diferentes tipos
+        exencionImpuestoElectrico: newVal.exencionImpuestoElectrico === true || newVal.exencionImpuestoElectrico === 1,
+        propiedadModem: newVal.propiedadModem === true || newVal.propiedadModem === 1,
+        potenciaBIE: newVal.potenciaBIE || 0.0,
+        potenciaTecnicaRed: newVal.potenciaTecnicaRed || 0.0,
+        porcentajeConcesion: newVal.porcentajeConcesion || 0.0,
+        // Asegurar que cupsluz y cupsgas se asignen como cadena vacía si son null o undefined
+        cupsluz: newVal.cupsluz || '',
+        cupsgas: newVal.cupsgas || '',
+      };
+
+      console.log('puntoLocal después de la inicialización:', this.puntoLocal);
+
+      // Asegurarse de que los datos maestros estén cargados antes de intentar buscar entidades
+      if (this.distribuidoras.length === 0 || this.tiposContador.length === 0 || 
+          this.tiposComunicacion.length === 0 || this.propiedades.length === 0) {
+        await this.loadMasterData(); 
+      }
+
+      // Manejar distribuidora: puede venir como string o como objeto
+      if (typeof newVal.distribuidora === 'string') {
+        this.puntoLocal.distribuidora = this.distribuidoras.find(d => d.nombre === newVal.distribuidora) || null;
+      } else if (newVal.distribuidora && newVal.distribuidora.id) {
+        this.puntoLocal.distribuidora = this.distribuidoras.find(d => d.id === newVal.distribuidora.id) || null;
+      } else {
+        this.puntoLocal.distribuidora = null;
+      }
+
+      if (newVal.tipoContador && newVal.tipoContador.id) {
+        this.puntoLocal.tipoContador = this.tiposContador.find(tc => tc.id === newVal.tipoContador.id) || null;
+      } else {
+        this.puntoLocal.tipoContador = null;
+      }
+
+      if (newVal.tipoComunicacion && newVal.tipoComunicacion.id) {
+        this.puntoLocal.tipoComunicacion = this.tiposComunicacion.find(tcom => tcom.id === newVal.tipoComunicacion.id) || null;
+      } else {
+        this.puntoLocal.tipoComunicacion = null;
+      }
+
+      if (newVal.propiedad && newVal.propiedad.id) {
+        this.puntoLocal.propiedad = this.propiedades.find(p => p.id === newVal.propiedad.id) || null;
+      } else {
+        this.puntoLocal.propiedad = null;
+      }
+    },
     cerrarModal() {
       this.$emit('cerrar-modal');
     },
-    actualizarPS() {
+    async actualizarPS() {
       if (!this.modoConsulta) {
-        this.$emit('actualizar-punto-suministro', { ...this.puntoLocal });
+        console.log('Iniciando actualización de punto de suministro');
+
+        // Validación mejorada de campos obligatorios
+        if (!this.puntoLocal.direccion?.trim() || 
+            !this.puntoLocal.codigoPostal?.trim() || 
+            !this.puntoLocal.poblacion?.trim() || 
+            !this.puntoLocal.provincia?.trim()) {
+          await this.$swal.fire({
+            icon: 'error',
+            title: 'Campos obligatorios',
+            text: 'Por favor, complete todos los campos obligatorios marcados con *'
+          });
+          return;
+        }
+
+        // Validación de CUPS
+        if (!this.puntoLocal.cupsluz && !this.puntoLocal.cupsgas) {
+          await this.$swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Debe proporcionar al menos un CUPS (luz o gas)'
+          });
+          return;
+        }
+
+        // Adaptar los datos al formato esperado por el backend
+        const datosAdaptados = {
+          id: this.puntoLocal.id,
+          direccion: this.puntoLocal.direccion.trim(),
+          codigoPostal: this.puntoLocal.codigoPostal.trim(),
+          poblacion: this.puntoLocal.poblacion.trim(),
+          provincia: this.puntoLocal.provincia.trim(),
+          CUPSluz: this.puntoLocal.cupsluz?.trim() || null,
+          CUPSgas: this.puntoLocal.cupsgas?.trim() || null,
+          propiedadModem: this.puntoLocal.propiedadModem ? 1 : 0,
+          observaciones: this.puntoLocal.observaciones?.trim() || null,
+          fechaInstalacion: this.puntoLocal.fechaInstalacion || null,
+          cliente: { id: this.puntoLocal.cliente.id },
+          distribuidora: this.puntoLocal.distribuidora ? { id: this.puntoLocal.distribuidora.id } : null,
+          potenciaBIE: this.puntoLocal.potenciaBIE || 0.0,
+          potenciaTecnicaRed: this.puntoLocal.potenciaTecnicaRed || 0.0,
+          apmCentroTransformacion: this.puntoLocal.apmCentroTransformacion?.trim() || null,
+          tipoContador: this.puntoLocal.tipoContador ? { id: this.puntoLocal.tipoContador.id } : null,
+          tipoComunicacion: this.puntoLocal.tipoComunicacion ? { id: this.puntoLocal.tipoComunicacion.id } : null,
+          numeroContador: this.puntoLocal.numeroContador?.trim() || null,
+          numeroTelefono: this.puntoLocal.numeroTelefono?.trim() || null,
+          direccionEnlace: this.puntoLocal.direccionEnlace?.trim() || null,
+          puntoMedida: this.puntoLocal.puntoMedida?.trim() || null,
+          clave: this.puntoLocal.clave?.trim() || null,
+          propiedad: this.puntoLocal.propiedad ? { id: this.puntoLocal.propiedad.id } : null,
+          exencionImpuestoElectrico: this.puntoLocal.exencionImpuestoElectrico || false,
+          porcentajeConcesion: this.puntoLocal.porcentajeConcesion || 0.0,
+          fechaConcesion: this.puntoLocal.fechaConcesion || null
+        };
+        
+        console.log('Datos a enviar:', datosAdaptados);
+        this.$emit('actualizar-punto-suministro', datosAdaptados);
+        console.log('Evento emitido');
       }
     },
   },
@@ -451,7 +616,8 @@ export default {
   font-size: 1rem;
 }
 
-.input-with-icon input {
+.input-with-icon input,
+.input-with-icon select {
   padding-left: 30px;
 }
 

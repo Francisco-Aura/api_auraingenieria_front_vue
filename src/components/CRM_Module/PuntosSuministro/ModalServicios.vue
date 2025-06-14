@@ -45,7 +45,7 @@
         <!-- Crear/Editar servicio -->
         <div v-if="pestañaActiva === 'nuevo'" class="tab-content">
           <!-- Banner del cliente -->
-          <div class="client-banner">
+          <div class="client-banner" v-if="cliente">
             <div class="client-info">
               <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Desconocido' }}</h4>
               <span>DNI/CIF: {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'No disponible' }}</span>
@@ -54,25 +54,91 @@
 
           <form @submit.prevent="guardarServicio" class="modern-form">
             <div class="form-grid-modern">
-              <!-- Sección de Fechas -->
+              <!-- Sección de Información del Servicio -->
               <div class="form-section-modern">
                 <div class="section-header-modern">
-                  <i class="fas fa-calendar-alt"></i>
-                  <h3>Fechas del Servicio</h3>
+                  <i class="fas fa-info-circle"></i>
+                  <h3>Información del Servicio</h3>
                 </div>
 
                 <div class="form-group-modern">
-                  <label for="fecha">Fecha <span class="required">*</span></label>
-                  <div class="input-with-icon-modern">
-                    <i class="fas fa-calendar icon-prefix"></i>
-                    <input
-                      type="date"
-                      id="fecha"
-                      v-model="nuevoServicio.fecha"
-                      class="form-control-modern"
+                  <label for="cups">CUPS <span class="required">*</span></label>
+                  <div class="select-container-modern">
+                    <select
+                      id="cups"
+                      v-model="nuevoServicio.cups"
+                      class="form-select-modern"
                       required
-                    />
+                    >
+                      <option value="">Seleccione un CUPS...</option>
+                      <option v-for="punto in puntosSuministro" :key="punto.id" :value="punto.cups">
+                        {{ punto.cups }} - {{ punto.direccion }}
+                      </option>
+                    </select>
+                    <i class="fas fa-chevron-down select-icon"></i>
                   </div>
+                </div>
+
+                <div class="form-group-modern">
+                  <label for="producto">Producto <span class="required">*</span></label>
+                  <div class="select-container-modern">
+                    <select
+                      id="producto"
+                      v-model="nuevoServicio.idProducto"
+                      class="form-select-modern"
+                      required
+                    >
+                      <option value="">Seleccione...</option>
+                      <option v-for="producto in productos" :key="producto.id" :value="producto.id">
+                        {{ producto.nombre }}
+                      </option>
+                    </select>
+                    <i class="fas fa-chevron-down select-icon"></i>
+                  </div>
+                </div>
+
+                <div class="form-group-modern">
+                  <label for="gestora">Gestora <span class="required">*</span></label>
+                  <div class="select-container-modern">
+                    <select
+                      id="gestora"
+                      v-model="nuevoServicio.idGestora"
+                      class="form-select-modern"
+                      required
+                    >
+                      <option value="">Seleccione...</option>
+                      <option v-for="gestora in gestoras" :key="gestora.id" :value="gestora.id">
+                        {{ gestora.nombre }}
+                      </option>
+                    </select>
+                    <i class="fas fa-chevron-down select-icon"></i>
+                  </div>
+                </div>
+
+                <div class="form-group-modern">
+                  <label for="comercializadora">Comercializadora <span class="required">*</span></label>
+                  <div class="select-container-modern">
+                    <select
+                      id="comercializadora"
+                      v-model="nuevoServicio.idComercializadora"
+                      class="form-select-modern"
+                      required
+                    >
+                      <option value="">Seleccione...</option>
+                      <option v-for="comercializadora in comercializadorasList" :key="comercializadora.id" :value="comercializadora.id">
+                        {{ comercializadora.nombre }}
+                      </option>
+                    </select>
+                    <i class="fas fa-chevron-down select-icon"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sección de Fechas y Pagos -->
+              <div class="form-section-modern">
+                <div class="section-header-modern">
+                  <i class="fas fa-calendar-alt"></i>
+                  <h3>Fechas y Pagos</h3>
                 </div>
 
                 <div class="form-group-modern">
@@ -102,23 +168,15 @@
                     />
                   </div>
                 </div>
-              </div>
-
-              <!-- Sección de Información del Servicio -->
-              <div class="form-section-modern">
-                <div class="section-header-modern">
-                  <i class="fas fa-info-circle"></i>
-                  <h3>Información del Servicio</h3>
-                </div>
 
                 <div class="form-group-modern">
-                  <label for="descripcion">Descripción <span class="required">*</span></label>
+                  <label for="fechaPago">Fecha Pago <span class="required">*</span></label>
                   <div class="input-with-icon-modern">
-                    <i class="fas fa-file-alt icon-prefix"></i>
+                    <i class="fas fa-money-bill-wave icon-prefix"></i>
                     <input
-                      type="text"
-                      id="descripcion"
-                      v-model="nuevoServicio.descripcion"
+                      type="date"
+                      id="fechaPago"
+                      v-model="nuevoServicio.fechaPago"
                       class="form-control-modern"
                       required
                     />
@@ -126,58 +184,37 @@
                 </div>
 
                 <div class="form-group-modern">
-                  <label for="gestora">Gestora <span class="required">*</span></label>
-                  <div class="select-container-modern">
-                    <select
-                      id="gestora"
-                      v-model="nuevoServicio.idGestora"
-                      class="form-select-modern"
-                      required
-                    >
-                      <option value="">Seleccione...</option>
-                      <option v-for="gestora in gestoras" :value="gestora.id" :key="gestora.id">
-                        {{ gestora.nombre }}
-                      </option>
-                    </select>
-                    <i class="fas fa-chevron-down select-icon"></i>
-                  </div>
-                </div>
-
-                <div class="form-group-modern">
-                  <label for="producto">Producto <span class="required">*</span></label>
-                  <div class="select-container-modern">
-                    <select
-                      id="producto"
-                      v-model="nuevoServicio.idProducto"
-                      class="form-select-modern"
-                      required
-                    >
-                      <option value="">Seleccione...</option>
-                      <option v-for="producto in productos" :value="producto.id" :key="producto.id">
-                        {{ producto.nombre }}
-                      </option>
-                    </select>
-                    <i class="fas fa-chevron-down select-icon"></i>
+                  <label>Meses Cobrados</label>
+                  <div class="meses-cobrados-grid">
+                    <div v-for="mes in 12" :key="mes" class="mes-checkbox">
+                      <input
+                        type="checkbox"
+                        :id="'mes' + mes"
+                        v-model="nuevoServicio.mesesCobrados"
+                        :value="mes"
+                      />
+                      <label :for="'mes' + mes">Mes {{ mes }}</label>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Sección de Observaciones (asumiendo que existe un campo observaciones) -->
+              <!-- Sección de Observaciones -->
               <div class="form-section-modern full-width">
                 <div class="section-header-modern">
                   <i class="fas fa-sticky-note"></i>
                   <h3>Observaciones</h3>
                 </div>
 
-                 <div class="form-group-modern">
-                      <textarea
-                        id="observaciones"
-                        v-model="nuevoServicio.observaciones"
-                        class="form-control-modern textarea-modern"
-                        rows="4"
-                        placeholder="Añada aquí cualquier observación relevante sobre el servicio..."
-                      ></textarea>
-                    </div>
+                <div class="form-group-modern">
+                  <textarea
+                    id="observaciones"
+                    v-model="nuevoServicio.observaciones"
+                    class="form-control-modern textarea-modern"
+                    rows="4"
+                    placeholder="Añada aquí cualquier observación relevante sobre el servicio..."
+                  ></textarea>
+                </div>
               </div>
             </div>
 
@@ -203,7 +240,9 @@
             <div class="contract-header">
               <div class="contract-info">
                 <h4>Servicio <span class="contract-number">#{{ servicioActual.id }}</span></h4>
-                <p class="contract-dates"><i class="fas fa-calendar-alt"></i> Vigente desde <b>{{ formatDate(servicioActual.fechaInicioServicio) }}</b> hasta <b>{{ formatDate(servicioActual.fechaFinServicio) }}</b></p>
+                <p class="contract-dates">
+                  <i class="fas fa-calendar-alt"></i> Vigente desde <b>{{ formatDate(servicioActual.fechaInicioServicio) }}</b> hasta <b>{{ formatDate(servicioActual.fechaFinServicio) }}</b>
+                </p>
               </div>
               <div class="contract-actions">
                 <button @click="editarServicio" class="btn btn-primary">
@@ -218,31 +257,52 @@
                   <h5>Información General</h5>
                 </div>
                 <div class="info-row">
-                  <span class="info-label">Fecha</span>
-                  <span class="info-value"><i class="fas fa-calendar"></i> {{ formatDate(servicioActual.fecha) }}</span>
+                  <span class="info-label">CUPS</span>
+                  <span class="info-value"><i class="fas fa-barcode"></i> {{ servicioActual.cups }}</span>
                 </div>
-                 <div class="info-row">
-                  <span class="info-label">Descripción</span>
-                  <span class="info-value"><i class="fas fa-file-alt"></i> {{ servicioActual.descripcion }}</span>
+                <div class="info-row">
+                  <span class="info-label">Producto</span>
+                  <span class="info-value"><i class="fas fa-box"></i> {{ getProductoNombre(servicioActual.idProducto) }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Gestora</span>
+                  <span class="info-value"><i class="fas fa-building"></i> {{ getGestoraNombre(servicioActual.idGestora) }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Comercializadora</span>
+                  <span class="info-value"><i class="fas fa-store"></i> {{ getComercializadoraNombre(servicioActual.idComercializadora) }}</span>
                 </div>
               </div>
               <div class="modern-section">
                 <div class="section-header">
-                  <i class="fas fa-building"></i>
-                  <h5>Entidades</h5>
+                  <i class="fas fa-calendar-alt"></i>
+                  <h5>Fechas y Pagos</h5>
                 </div>
-                 <div class="info-row">
-                  <span class="info-label">Gestora</span>
-                  <span class="info-value"><i class="fas fa-building"></i> {{ getGestoraNombre(servicioActual.idGestora) }}</span>
+                <div class="info-row">
+                  <span class="info-label">Fecha Inicio</span>
+                  <span class="info-value"><i class="fas fa-play"></i> {{ formatDate(servicioActual.fechaInicioServicio) }}</span>
                 </div>
-                 <div class="info-row">
-                  <span class="info-label">Producto</span>
-                  <span class="info-value"><i class="fas fa-box"></i> {{ getProductoNombre(servicioActual.idProducto) }}</span>
+                <div class="info-row">
+                  <span class="info-label">Fecha Fin</span>
+                  <span class="info-value"><i class="fas fa-stop"></i> {{ formatDate(servicioActual.fechaFinServicio) }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Fecha Pago</span>
+                  <span class="info-value"><i class="fas fa-money-bill-wave"></i> {{ formatDate(servicioActual.fechaPago) }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Meses Cobrados</span>
+                  <span class="info-value">
+                    <div class="meses-cobrados-display">
+                      <span v-for="mes in servicioActual.mesesCobrados" :key="mes" class="mes-cobrado">
+                        Mes {{ mes }}
+                      </span>
+                    </div>
+                  </span>
                 </div>
               </div>
             </div>
-            <!-- Sección de Observaciones -->
-             <div class="modern-notes" v-if="servicioActual.observaciones">
+            <div class="modern-notes" v-if="servicioActual.observaciones">
               <h5><i class="fas fa-sticky-note"></i> Observaciones</h5>
               <p>{{ servicioActual.observaciones }}</p>
             </div>
@@ -261,24 +321,26 @@
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Fecha</th>
+                  <th>CUPS</th>
                   <th>Fecha Inicio</th>
                   <th>Fecha Fin</th>
-                  <th>Descripción</th>
-                  <th>Gestora</th>
+                  <th>Fecha Pago</th>
                   <th>Producto</th>
+                  <th>Gestora</th>
+                  <th>Comercializadora</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="servicio in serviciosHistoricosOrdenados" :key="servicio.id" class="history-row">
                   <td class="contract-number">#{{ servicio.id }}</td>
-                  <td>{{ formatDate(servicio.fecha) }}</td>
+                  <td>{{ servicio.cups }}</td>
                   <td>{{ formatDate(servicio.fechaInicioServicio) }}</td>
                   <td>{{ formatDate(servicio.fechaFinServicio) }}</td>
-                  <td>{{ servicio.descripcion }}</td>
-                  <td>{{ getGestoraNombre(servicio.idGestora) }}</td>
+                  <td>{{ formatDate(servicio.fechaPago) }}</td>
                   <td>{{ getProductoNombre(servicio.idProducto) }}</td>
+                  <td>{{ getGestoraNombre(servicio.idGestora) }}</td>
+                  <td>{{ getComercializadoraNombre(servicio.idComercializadora) }}</td>
                   <td class="action-buttons">
                     <button @click="verDetalleServicio(servicio)" class="btn-icon btn-view" title="Ver Detalle">
                       <i class="fas fa-eye"></i>
@@ -369,6 +431,7 @@ import axios from "axios";
 
 export default {
   name: "ModalServicios",
+  emits: ['cerrar-modal', 'servicio-guardado'],
   props: {
     visible: {
       type: Boolean,
@@ -376,20 +439,24 @@ export default {
     },
     servicioActual: {
       type: Object,
-      default: () => ({ // Use a factory function for object default
+      default: () => ({
         id: "",
+        cups: "",
         fecha: "",
         fechaInicioServicio: "",
         fechaFinServicio: "",
+        fechaPago: "",
+        mesesCobrados: [],
         descripcion: "",
         idGestora: 0,
         idProducto: 0,
-        observaciones: "", // Added observations field
+        idComercializadora: 0,
+        observaciones: "",
       }),
     },
     serviciosHistoricos: {
       type: Array,
-      required: true,
+      default: () => [],
     },
     cliente: {
       type: [Object, Number],
@@ -397,134 +464,165 @@ export default {
     },
     gestoras: {
       type: Array,
-      required: true,
+      default: () => [],
     },
     productos: {
       type: Array,
-      required: true,
+      default: () => [],
+    },
+    comercializadoras: {
+      type: Array,
+      default: () => [],
     },
   },
   data() {
     return {
       pestañaActiva: "actual",
-      modoEdicion: false, // Added modoEdicion
-      servicioEditandoId: null, // Added servicioEditandoId
+      modoEdicion: false,
+      servicioEditandoId: null,
       nuevoServicio: {
         id: "",
+        cups: "",
         fecha: "",
         fechaInicioServicio: "",
         fechaFinServicio: "",
+        fechaPago: "",
+        mesesCobrados: [],
         descripcion: "",
         idGestora: 0,
         idProducto: 0,
-        observaciones: "", // Added observations field
+        idComercializadora: 0,
+        observaciones: "",
       },
       mostrarModalDetalleServicio: false,
       servicioDetalle: null,
+      puntosSuministro: [],
+      comercializadorasList: [],
     };
+  },
+  async created() {
+    await this.cargarComercializadoras();
+    if (this.cliente) {
+      await this.cargarPuntosSuministro();
+    }
   },
   computed: {
     serviciosHistoricosOrdenados() {
-      // Sort historical services by fechaInicioServicio from newest to oldest
+      if (!this.serviciosHistoricos) return [];
       return [...this.serviciosHistoricos].sort((a, b) => {
         return new Date(b.fechaInicioServicio) - new Date(a.fechaInicioServicio);
       });
     }
   },
   watch: {
-    servicioActual: { // Watch for changes in servicioActual prop
+    servicioActual: {
       handler(newValue) {
-        if (!this.modoEdicion) { // Only update if not in edit mode
-           this.nuevoServicio = { ...newValue, observaciones: newValue.observaciones || "" }; // Copy serviceActual to nuevoServicio and handle potential null observations
+        if (this.modoEdicion && newValue) {
+          this.nuevoServicio = {
+            ...newValue,
+            mesesCobrados: newValue.mesesCobrados || [],
+            observaciones: newValue.observaciones || ""
+          };
         }
       },
-      immediate: true, // Run handler immediately on component mount
     },
-     visible(newValue) {
-      if (newValue && !this.modoEdicion) {
-        // Reset to actual tab and copy current service when modal becomes visible
-        this.pestañaActiva = 'actual';
-         this.nuevoServicio = { ...this.servicioActual, observaciones: this.servicioActual.observaciones || "" };
-         this.modoEdicion = false; // Ensure modoEdicion is false when opening modal for actual service
+    visible(newValue) {
+      if (newValue) {
+        if (!this.modoEdicion) {
+          this.resetNuevoServicio();
+          this.pestañaActiva = 'nuevo';
+        } else {
+          this.pestañaActiva = 'nuevo';
+        }
+      } else {
+        this.resetModalState();
       }
-       if (!newValue) {
-         // Reset state when modal is closed
-         this.resetModalState();
-       }
+    },
+    cliente: {
+      handler(newValue) {
+        if (newValue) {
+          this.cargarPuntosSuministro();
+        }
+      },
+      immediate: true
     }
   },
   methods: {
-     resetModalState() {
-       this.pestañaActiva = 'actual';
-       this.modoEdicion = false;
-       this.servicioEditandoId = null;
-       this.nuevoServicio = { // Reset nuevoServicio to default empty state
-         id: "",
-         fecha: "",
-         fechaInicioServicio: "",
-         fechaFinServicio: "",
-         descripcion: "",
-         idGestora: 0,
-         idProducto: 0,
-         observaciones: "",
-       };
-       this.mostrarModalDetalleServicio = false;
-       this.servicioDetalle = null;
-     },
-    handleFileUpload(event) {
-      // Implement file upload logic if needed for services
-      console.log("File upload handled", event.target.files[0]);
+    resetModalState() {
+      this.pestañaActiva = 'actual';
+      this.modoEdicion = false;
+      this.servicioEditandoId = null;
+      this.nuevoServicio = {
+        id: "",
+        cups: "",
+        fecha: "",
+        fechaInicioServicio: "",
+        fechaFinServicio: "",
+        fechaPago: "",
+        mesesCobrados: [],
+        descripcion: "",
+        idGestora: 0,
+        idProducto: 0,
+        idComercializadora: 0,
+        observaciones: "",
+      };
+      this.mostrarModalDetalleServicio = false;
+      this.servicioDetalle = null;
     },
     formatDate(date) {
       if (!date) return '';
-       // Ensure date is a valid Date object before formatting
       const dateObj = new Date(date);
       if (isNaN(dateObj.getTime())) {
-          return 'Fecha inválida';
+        return 'Fecha inválida';
       }
       return dateObj.toLocaleDateString('es-ES');
     },
     getGestoraNombre(id) {
+      if (!this.gestoras) return 'No especificada';
       const gestora = this.gestoras.find(g => g.id === id);
       return gestora ? gestora.nombre : 'No especificada';
     },
     getProductoNombre(id) {
+      if (!this.productos) return 'No especificado';
       const producto = this.productos.find(p => p.id === id);
       return producto ? producto.nombre : 'No especificado';
+    },
+    getComercializadoraNombre(id) {
+      if (!this.comercializadoras) return 'No especificada';
+      const comercializadora = this.comercializadoras.find(c => c.id === id);
+      return comercializadora ? comercializadora.nombre : 'No especificada';
     },
     editarServicio() {
       this.pestañaActiva = 'nuevo';
       this.modoEdicion = true;
       this.servicioEditandoId = this.servicioActual.id;
-      // Copy actual service data to nuevoServicio for editing
-      this.nuevoServicio = { ...this.servicioActual, observaciones: this.servicioActual.observaciones || "" };
+      this.nuevoServicio = { 
+        ...this.servicioActual, 
+        mesesCobrados: this.servicioActual.mesesCobrados || [],
+        observaciones: this.servicioActual.observaciones || "" 
+      };
     },
-
-    async guardarServicio() { // Renamed from crearNuevoServicio to handle both create and update
+    async guardarServicio() {
       try {
-         // Add cliente and puntoSuministro IDs to the service data
         const servicioPayload = {
           ...this.nuevoServicio,
-          idCliente: typeof this.cliente === 'object' ? this.cliente.id : this.cliente, // Handle case where cliente might be just the ID
-          idPuntoSuministro: typeof this.puntoSuministro === 'object' ? this.puntoSuministro.id : this.puntoSuministro, // Handle case where puntoSuministro might be just the ID
+          idCliente: typeof this.cliente === 'object' ? this.cliente.id : this.cliente,
         };
 
         let response;
         if (this.modoEdicion && this.servicioEditandoId) {
-          // Assuming a PUT endpoint for updates
           response = await axios.put(
             `${process.env.VUE_APP_API_URL}/api/servicios/${this.servicioEditandoId}`,
             servicioPayload
           );
         } else {
-          // Assuming a POST endpoint for creation
           response = await axios.post(
             `${process.env.VUE_APP_API_URL}/api/servicios`,
             servicioPayload
           );
         }
 
-        this.$emit("servicio-guardado", response.data); // Emitting a generic saved event
+        this.$emit("servicio-guardado", response.data);
         alert("Servicio guardado con éxito.");
         this.cerrarModal();
       } catch (error) {
@@ -532,22 +630,52 @@ export default {
         alert("Error al guardar el servicio. Por favor, verifica los datos e inténtalo de nuevo.");
       }
     },
-
-    // Removed duplicated actualizarServicio method
-
     verDetalleServicio(servicio) {
       this.servicioDetalle = servicio;
       this.mostrarModalDetalleServicio = true;
     },
-
     cerrarModal() {
       this.$emit("cerrar-modal");
-      this.resetModalState(); // Reset state when closing
+      this.resetModalState();
     },
-
     cerrarModalDetalleServicio() {
       this.mostrarModalDetalleServicio = false;
       this.servicioDetalle = null;
+    },
+    async cargarComercializadoras() {
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`);
+        this.comercializadorasList = response.data;
+      } catch (error) {
+        console.error('Error al cargar comercializadoras:', error);
+        alert('Error al cargar las comercializadoras');
+      }
+    },
+    async cargarPuntosSuministro() {
+      try {
+        const clienteId = typeof this.cliente === 'object' ? this.cliente.id : this.cliente;
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${clienteId}`);
+        this.puntosSuministro = response.data;
+      } catch (error) {
+        console.error('Error al cargar puntos de suministro:', error);
+        alert('Error al cargar los puntos de suministro del cliente');
+      }
+    },
+    resetNuevoServicio() {
+      this.nuevoServicio = {
+        id: "",
+        cups: "",
+        fecha: "",
+        fechaInicioServicio: "",
+        fechaFinServicio: "",
+        fechaPago: "",
+        mesesCobrados: [],
+        descripcion: "",
+        idGestora: 0,
+        idProducto: 0,
+        idComercializadora: 0,
+        observaciones: "",
+      };
     },
   },
 };
@@ -556,7 +684,6 @@ export default {
 <style scoped>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 
-/* Estilos base del modal modernizado (copia de ModalContratos.vue) */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -571,10 +698,10 @@ export default {
 }
 
 .modal-content {
-  width: 90%;
-  max-width: 90%;
-  height: 90%;
-  max-height: 90%;
+  width: 95%; 
+  max-width: 90%; 
+  height: 100%;
+  max-height: 100%;
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
@@ -586,7 +713,7 @@ export default {
 .modal-header {
   padding: 18px 25px;
   border-bottom: 1px solid #e0e0e0;
-  background: rgba(252, 215, 0); /* Assuming same theme color */
+  background: rgba(252, 215, 0); 
   color: white;
   position: relative;
   display: flex;
@@ -627,7 +754,6 @@ export default {
   transform: rotate(90deg);
 }
 
-/* Sistema de pestañas moderno (copia de ModalContratos.vue) */
 .form-tabs {
   display: flex;
   background-color: #fff;
@@ -648,7 +774,7 @@ export default {
   align-items: center;
   gap: 8px;
   font-size: 1rem;
-  flex: 1; /* Allow tabs to fill space */
+  flex: 1;
   justify-content: center;
 }
 
@@ -657,7 +783,7 @@ export default {
 }
 
 .tab-btn.active {
-  border-bottom-color: rgba(252, 215, 0); /* Assuming same theme color */
+  border-bottom-color: rgba(252, 215, 0); 
   background-color: #fcfbf9;
   color: #333;
 }
@@ -666,27 +792,26 @@ export default {
   font-size: 0.95rem;
 }
 
-/* Contenedor de pestañas (copia de ModalContratos.vue) */
 .tab-content-container {
   flex: 1;
   background-color: #f8f9fa;
-  min-height: 0; /* Allows content to shrink */
-  overflow: hidden; /* Handles content overflow */
+  min-height: 0; 
+  overflow: hidden; 
 }
 
 .tab-content {
   padding: 20px;
-  height: 100%; /* Make tab content take full height */
-  overflow-y: auto; /* Enable scrolling for content */
+  height: 100%; 
+  overflow-y: auto; 
 }
 
-/* Banner del cliente (copia de ModalContratos.vue) */
+
 .client-banner {
-  background: linear-gradient(135deg, #fff3cd 0%, #fffbe6 100%); /* Adjust if needed */
+  background: linear-gradient(135deg, #fff3cd 0%, #fffbe6 100%); 
   border-radius: 8px;
   padding: 12px 18px;
   margin-bottom: 18px;
-  border: 1px solid #ffe082; /* Adjust if needed */
+  border: 1px solid #ffe082; 
 }
 
 .client-info h4 {
@@ -704,22 +829,22 @@ export default {
   font-size: 0.9rem;
 }
 
-/* Formulario moderno (copia de ModalContratos.vue) */
+
 .modern-form {
   display: flex;
   flex-direction: column;
-   height: calc(100% - 70px); /* Account for client banner */
+   height: calc(100% - 70px); 
 }
 
-/* Grid modernizado (copia de ModalContratos.vue) */
+
 .form-grid-modern {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Adjust columns as needed for service fields */
+  grid-template-columns: repeat(2, 1fr); 
   gap: 18px;
   max-width: 100%;
-  flex: 1; /* Allow form grid to take available space */
-  overflow-y: auto; /* Add scrolling if content overflows */
-  padding-right: 10px; /* Add padding for scrollbar */
+  flex: 1; 
+  overflow-y: auto; 
+  padding-right: 10px; 
 }
 
 .form-section-modern {
@@ -730,10 +855,9 @@ export default {
 }
 
 .form-section-modern.full-width {
-  grid-column: 1 / -1; /* Span across all columns */
+  grid-column: 1 / -1; 
 }
 
-/* Encabezados modernos (copia de ModalContratos.vue) */
 .section-header-modern {
   display: flex;
   align-items: center;
@@ -745,7 +869,7 @@ export default {
 
 .section-header-modern i {
   font-size: 1.1rem;
-  color: black; /* Adjust if needed */
+  color: black; 
   width: 18px;
 }
 
@@ -756,7 +880,6 @@ export default {
   margin: 0;
 }
 
-/* Grupos de formulario modernos (copia de ModalContratos.vue) */
 .form-group-modern {
   margin-bottom: 12px;
 }
@@ -766,12 +889,12 @@ export default {
   margin-bottom: 4px;
   font-size: 0.85rem;
   font-weight: 500;
-  color: black; /* Adjust if needed */
+  color: black; 
 }
 
 .form-row-modern {
   display: grid;
-  grid-template-columns: 1fr 2fr; /* Adjust as needed */
+  grid-template-columns: 1fr 2fr;
   gap: 18px;
   margin-bottom: 0;
 }
@@ -781,7 +904,7 @@ export default {
   margin-left: 2px;
 }
 
-/* Inputs modernos (copia de ModalContratos.vue) */
+
 .input-with-icon-modern {
   position: relative;
 }
@@ -797,7 +920,7 @@ export default {
 }
 
 .input-with-icon-modern .form-control-modern {
-  padding-left: 32px; /* Make space for icon */
+  padding-left: 32px; 
 }
 
 .form-control-modern {
@@ -809,23 +932,22 @@ export default {
   transition: all 0.2s;
   color: #333;
   background-color: #fff;
-  height: 38px; /* Standard height */
+  height: 38px;
 }
 
 .form-control-modern:focus {
-  border-color: rgba(252, 215, 0); /* Assuming same theme color */
-  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1); /* Adjust color */
+  border-color: rgba(252, 215, 0); 
+  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1); 
   outline: none;
 }
 
 .textarea-modern {
   height: auto !important;
   resize: vertical;
-  min-height: 80px; /* Minimum height */
+  min-height: 80px; 
   line-height: 1.4;
 }
 
-/* Selectores modernos (copia de ModalContratos.vue) */
 .select-container-modern {
   position: relative;
   width: 100%;
@@ -842,14 +964,14 @@ export default {
   background-color: #fff;
   -webkit-appearance: none;
   -moz-appearance: none;
-  appearance: none; /* Remove default arrow */
+  appearance: none; 
   cursor: pointer;
-  height: 38px; /* Standard height */
+  height: 38px; 
 }
 
 .form-select-modern:focus {
-  border-color: rgba(252, 215, 0); /* Assuming same theme color */
-  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1); /* Adjust color */
+  border-color: rgba(252, 215, 0); 
+  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1); 
   outline: none;
 }
 
@@ -859,13 +981,10 @@ export default {
   top: 50%;
   transform: translateY(-50%);
   color: #555;
-  pointer-events: none; /* Ensure clicks go through */
+  pointer-events: none; 
   font-size: 0.8rem;
 }
 
-/* Área de subida de PDF (Not applicable for services, but keeping relevant styles) */
-/* Checkboxes modernos (Not applicable for services, but keeping relevant styles) */
-/* Botones modernos (copia de ModalContratos.vue) */
 .btn-modern {
   padding: 12px 20px;
   border-radius: 6px;
@@ -887,13 +1006,13 @@ export default {
 }
 
 .btn-primary {
-  background-color: rgba(252, 215, 0); /* Assuming same theme color */
-  color: black; /* Adjust if needed */
+  background-color: rgba(252, 215, 0); 
+  color: black; 
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: rgb(222, 189, 0); /* Darker shade for hover */
-  transform: translateY(-1px); /* Slight lift effect */
+  background-color: rgb(222, 189, 0); 
+  transform: translateY(-1px); 
 }
 
 .btn-secondary {
@@ -906,19 +1025,18 @@ export default {
   transform: translateY(-1px);
 }
 
-/* Pie del modal (copia de ModalContratos.vue) */
 .modal-footer-modern {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0; /* Prevent shrinking */
-  margin-top: 20px; /* Space above footer */
+  flex-shrink: 0; 
+  margin-top: 20px; 
 }
 
 .required-legend {
-  font-size: 0.9rem; /* Adjusted size */
+  font-size: 0.9rem; 
   color: #777;
-  font-weight: 500; /* Adjusted weight */
+  font-weight: 500;
 }
 
 .action-buttons {
@@ -926,12 +1044,11 @@ export default {
   gap: 12px;
 }
 
-/* Estilos originales para visualización (copia y adaptación de ModalContratos.vue) */
-.modern-contract-card { /* Renamed from contract-details */
+.modern-contract-card { 
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.07);
-  padding: 2rem; /* Adjusted padding */
+  padding: 2rem; 
   margin-bottom: 1.5rem;
   border: 1px solid #f3f3f3;
 }
@@ -940,7 +1057,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem; /* Adjusted margin */
+  margin-bottom: 2rem; 
   padding-bottom: 1rem;
   border-bottom: 2px solid #e0e0e0;
 }
@@ -951,34 +1068,33 @@ export default {
   font-size: 1.2rem;
 }
 
-.contract-number { /* Used for service ID */
-  color: black; /* Adjust if needed */
+.contract-number {
+  color: black;
   font-weight: 800;
 }
 
-.contract-dates { /* Used for service validity dates */
-  color: #444;
+.contract-dates { 
   font-size: 1rem;
   margin-top: 0.2rem;
 }
 
-.contract-actions { /* Used for Edit button */
+.contract-actions {
   display: flex;
   gap: 10px;
 }
 
-.modern-grid { /* Used for sections within service details */
+.modern-grid { 
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjust columns for service details */
-  gap: 1.5rem; /* Adjusted gap */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+  gap: 1.5rem; 
   margin-bottom: 1.2rem;
 }
 
 .modern-section {
   background: #f7f8fa;
   border-radius: 12px;
-  padding: 1.2rem 1.5rem; /* Adjusted padding */
-  box-shadow: 0 2px 8px rgba(255,196,12,0.04); /* Adjust color */
+  padding: 1.2rem 1.5rem; 
+  box-shadow: 0 2px 8px rgba(255,196,12,0.04); 
   border: 1px solid #f3f3f3;
 }
 
@@ -1024,13 +1140,13 @@ export default {
   gap: 6px;
 }
 
-.modern-status { /* Adapt or remove if not applicable for services */
+.modern-status {
   display: flex;
   gap: 1rem;
   margin: 1.2rem 0 0.5rem 0;
 }
 
-.status-chip { /* Adapt or remove if not applicable for services */
+.status-chip { 
   display: flex;
   align-items: center;
   gap: 7px;
@@ -1044,19 +1160,19 @@ export default {
   transition: all 0.2s;
 }
 
-.status-chip.active { /* Adapt or remove */
-  background: rgba(252, 215, 0); /* Adjust color */
+.status-chip.active { 
+  background: rgba(252, 215, 0); 
   color:black;
-  border-color: rgba(252, 215, 0); /* Adjust color */
+  border-color: rgba(252, 215, 0); 
 }
 
-.status-chip.denuncia.active { /* Adapt or remove */
+.status-chip.denuncia.active { 
   background: #e74c3c;
   color: #fff;
   border-color: #e74c3c;
 }
 
-.modern-notes { /* Used for observations */
+.modern-notes {
   background: #f7f8fa;
   border-radius: 10px;
   padding: 1rem 1.5rem;
@@ -1065,7 +1181,7 @@ export default {
 }
 
 .modern-notes h5 {
-  color: black; /* Adjust if needed */
+  color: black; 
   font-size: 1.05rem;
   margin-bottom: 0.5rem;
   display: flex;
@@ -1079,7 +1195,7 @@ export default {
   margin: 0;
 }
 
-.no-contract { /* Used for no current service */
+.no-contract { 
   text-align: center;
   padding: 3rem;
   background: #f8f9fa;
@@ -1093,12 +1209,11 @@ export default {
   color: #adb5bd;
 }
 
-/* Estilos para histórico (copia y adaptación de ModalContratos.vue) */
 .history-table-container {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  overflow: hidden; /* Hide scrollbar */
+  overflow: hidden; 
   margin-top: 1rem;
 }
 
@@ -1128,13 +1243,13 @@ export default {
   background-color: #f8f9fa;
 }
 
-.status-indicators { /* Adapt or remove if not applicable for services */
+.status-indicators { 
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
 }
 
-.status-badge { /* Adapt or remove if not applicable for services */
+.status-badge { 
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -1144,31 +1259,31 @@ export default {
   font-weight: 500;
 }
 
-.status-badge.autoconsumo { /* Adapt or remove */
-  background-color: rgba(252, 215, 0, 0.1); /* Adjust color */
+.status-badge.autoconsumo { 
+  background-color: rgba(252, 215, 0, 0.1); 
   color: #856404;
 }
 
-.status-badge.denuncia { /* Adapt or remove */
+.status-badge.denuncia { 
   background-color: rgba(220, 53, 69, 0.1);
   color: #dc3545;
 }
 
-.status-badge.normal { /* Adapt or remove */
+.status-badge.normal { 
   background-color: rgba(25, 135, 84, 0.1);
   color: #198754;
 }
 
-.action-buttons { /* Used for view detail button */
+.action-buttons { 
   display: flex;
   gap: 0.5rem;
-  justify-content: flex-start; /* Align to start */
+  justify-content: flex-start;
 }
 
 .btn-icon {
   width: 32px;
   height: 32px;
-  border-radius: 6px; /* Adjusted border-radius */
+  border-radius: 6px; 
   border: none;
   display: flex;
   align-items: center;
@@ -1180,21 +1295,21 @@ export default {
 }
 
 .btn-icon:hover {
-  background: rgba(252, 215, 0, 0.1); /* Adjust hover color */
-  color: rgba(252, 215, 0); /* Adjust hover color */
+  background: rgba(252, 215, 0, 0.1); 
+  color: rgba(252, 215, 0); 
 }
 
 .btn-icon.btn-view:hover {
-  background: rgba(13, 110, 253, 0.1); /* Blue hover color */
+  background: rgba(13, 110, 253, 0.1); 
   color: #0d6efd;
 }
 
-.btn-icon.btn-download:hover { /* Keep if download is added later */
+.btn-icon.btn-download:hover { 
   background: rgba(25, 135, 84, 0.1);
   color: #198754;
 }
 
-.no-history { /* Used for no historical services */
+.no-history {
   text-align: center;
   padding: 3rem;
   background: #f8f9fa;
@@ -1209,9 +1324,9 @@ export default {
 }
 
 .btn {
-  padding: 0.75rem 1.5rem; /* Adjusted padding */
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 8px; /* Adjusted border-radius */
+  border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
   display: flex;
@@ -1221,8 +1336,7 @@ export default {
   font-weight: 500;
 }
 
-/* Modal de detalle (copia y adaptación de ModalContratos.vue) */
-.detalle-contrato-modal { /* Renamed from detalle-servicio-modal */
+.detalle-contrato-modal { 
   z-index: 2000;
   background: rgba(0,0,0,0.35);
   position: fixed;
@@ -1232,26 +1346,26 @@ export default {
   justify-content: center;
 }
 
-.detalle-contrato-content { /* Renamed from detalle-servicio-content */
+.detalle-contrato-content { 
   background: #fff;
   border-radius: 16px;
-  max-width: 60%; /* Adjusted max width */
-  width: 60%;
+  max-width: 90%; 
+  width: 90%;
   max-height: 80%;
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
   position: relative;
-  animation: modalFadeIn 0.3s; /* Assuming animation exists */
+  animation: modalFadeIn 0.3s; 
 }
 
-.detalle-contrato-content .modal-header { /* Ensure header styles are applied */
+.detalle-contrato-content .modal-header { 
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 2rem; /* Adjusted padding */
+  padding: 1.5rem 2rem;
   border-bottom: 1px solid #e0e0e0;
-  background: #f8f9fa; /* Adjusted background */
-  border-radius: 16px 16px 0 0; /* Rounded top corners */
+  background: #f8f9fa; 
+  border-radius: 16px 16px 0 0;
 }
 
 .detalle-contrato-content .modal-header h2 {
@@ -1264,26 +1378,26 @@ export default {
 }
 
 .detalle-contrato-content .modal-header h2 i {
-  color: rgba(252, 215, 0); /* Adjust color */
+  color: rgba(252, 215, 0); 
 }
 
-.detalle-contrato-pdf { /* Renamed for consistency, used as content wrapper */
+.detalle-contrato-pdf { 
   padding: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem; /* Adjusted gap */
+  gap: 1.5rem; 
 }
 
-.detalle-contrato-header { /* Used for client and service info in detail modal */
+.detalle-contrato-header {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjust columns */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
   gap: 2rem;
   background: #f8f9fa;
   border-radius: 12px;
   padding: 1.5rem;
 }
 
-.cliente-info, .contrato-info { /* Renamed contrato-info from servicio-info */
+.cliente-info, .contrato-info { 
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -1299,12 +1413,12 @@ export default {
 }
 
 .cliente-info h4 i, .contrato-info h4 i {
-  color: rgba(252, 215, 0); /* Adjust color */
+  color: rgba(252, 215, 0);
 }
 
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Adjust columns for detail info */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
   gap: 1rem;
 }
 
@@ -1312,7 +1426,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1rem; /* Adjusted padding */
+  padding: 0.75rem 1rem; 
   background: #fff;
   border-radius: 8px;
   border: 1px solid #e0e0e0;
@@ -1341,31 +1455,74 @@ export default {
   line-height: 1.5;
 }
 
-/* Media Queries (copia y adaptación de ModalContratos.vue) */
 @media (max-width: 768px) {
   .form-grid-modern {
-    grid-template-columns: 1fr; /* Stack columns on small screens */
+    grid-template-columns: 1fr; 
   }
   .form-row-modern {
-    grid-template-columns: 1fr; /* Stack columns in form rows */
-    gap: 12px; /* Adjust gap */
+    grid-template-columns: 1fr; 
+    gap: 12px; 
   }
   .detalle-contrato-header {
-    grid-template-columns: 1fr; /* Stack columns in detail header */
+    grid-template-columns: 1fr; 
     gap: 1rem;
   }
   .info-grid {
-    grid-template-columns: 1fr; /* Stack columns in detail info grid */
+    grid-template-columns: 1fr; 
   }
   .detalle-contrato-content {
-    width: 95vw; /* Use a percentage of viewport width */
-    max-width: 95vw; /* Ensure it doesn't exceed viewport */
-    margin: 10px; /* Add some margin */
+    width: 95vw; 
+    max-width: 95vw; 
+    margin: 10px;
   }
   .modal-content {
      width: 95vw;
      max-width: 95vw;
       margin: 10px;
   }
+}
+
+.meses-cobrados-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.mes-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.mes-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.mes-checkbox label {
+  font-size: 0.9rem;
+  color: #495057;
+  cursor: pointer;
+}
+
+.meses-cobrados-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.mes-cobrado {
+  background: rgba(252, 215, 0, 0.1);
+  color: #856404;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(252, 215, 0, 0.2);
 }
 </style>

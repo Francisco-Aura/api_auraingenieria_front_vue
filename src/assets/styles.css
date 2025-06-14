@@ -191,7 +191,7 @@ textarea#notas {
   padding: 10px; /* Espaciado interno */
   border: 1px solid #ccc; /* Borde del campo */
   border-radius: 5px; /* Bordes redondeados */
-  font-size: 14px; /* Tamaño de la fuente */
+  font-size: 15px; /* Tamaño de la fuente */
   resize: none; /* Permite redimensionar solo verticalmente */
 }
 

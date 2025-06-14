@@ -87,7 +87,7 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th v-for="columna in encabezados" :key="columna" class="sortable">
+              <th v-for="columna in encabezados" :key="columna" class="sortable" :data-column="columna">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy(columna)">
                     <span class="column-text">{{ formatearColumna(columna) }}</span>
@@ -109,7 +109,37 @@
           </thead>
           <tbody>
             <tr v-for="(fila, index) in paginatedData" :key="index">
-              <td v-for="columna in encabezados" :key="columna">{{ fila[columna] ?? '' }}</td>
+              <td v-for="columna in encabezados" :key="columna" class="table-cell" :data-column="columna">
+                <template v-if="tipoSeleccionado === 'servicios-pendientes-pago' && columna === 'pagos'">
+                  <div class="pagos-group">
+                    <template v-for="n in 6" :key="n">
+                      <input
+                        type="checkbox"
+                        :checked="fila[`pago${n}_pagado`] === 1"
+                        :disabled="isSavingPago === fila.idServicio + '-' + n"
+                        @change="onPagoCheck(fila, n, $event.target.checked)"
+                        :title="'Pago ' + n"
+                      />
+                    </template>
+                  </div>
+                </template>
+                <template v-else>
+                  <div v-if="!esCeldaEditando(index, columna)" class="cell-content" @dblclick="iniciarEdicion(index, columna, fila[columna])">
+                    {{ mostrarValorCelda(fila, columna) }}
+                  </div>
+                  <div v-else class="cell-edit">
+                    <input 
+                      type="text" 
+                      v-model="valorEditando"
+                      class="edit-input"
+                      @blur="guardarEdicion(index, columna)"
+                      @keyup.enter="guardarEdicion(index, columna)"
+                      @keyup.esc="cancelarEdicion"
+                      ref="editInput"
+                    >
+                  </div>
+                </template>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -189,6 +219,7 @@ import axios from 'axios';
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from 'xlsx';
+import Swal from 'sweetalert2';
 
 export default {
   data() {
@@ -203,7 +234,12 @@ export default {
       sortKey: null,
       sortOrder: null,
       recordsPerPage: 10,
-      currentPage: 1
+      currentPage: 1,
+      celdaEditando: null,
+      valorEditando: '',
+      valorOriginal: '',
+      isSaving: false,
+      isSavingPago: null
     };
   },
   computed: {
@@ -282,24 +318,43 @@ export default {
     procesarDatosParaTabla(datos) {
       const columnasPermitidas = {
         "contratos-pendientes-renovacion": [
+          "codigoContrato", // identificador
           "fechaInicio", "fechaFin", "cliente", "cupsLuz", "cupsGas", 
           "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual"
         ],
         "puntos-suministro-sin-contrato": [
+          "idPS", // identificador
           "cliente", "direccion", "codigoPostal", "poblacion", "provincia", "cupsLuz", "cupsGas"
         ],
         "servicios-pendientes-pago": [
-          "cliente", "servicio", "fechaVencimiento", "importe", "estado"
+          "idServicio", // identificador
+          "cliente", "servicio", "fechaVencimiento", "importeTotal",
+          "pagos",
+          "estadoVencimiento", "estadoPago"
         ]
       };
 
       if (columnasPermitidas[this.tipoSeleccionado]) {
-        this.datosInforme = datos.map(item =>
-          Object.fromEntries(
-            Object.entries(item).filter(([key]) => columnasPermitidas[this.tipoSeleccionado].includes(key))
-          )
+        this.datosInforme = datos.map(item => {
+          // Siempre incluye el identificador aunque no esté en los encabezados visibles
+          const fila = {};
+          columnasPermitidas[this.tipoSeleccionado].forEach(key => {
+            fila[key] = item[key];
+          });
+          if (this.tipoSeleccionado === 'servicios-pendientes-pago') {
+            fila.pago1_pagado = item.primerPagoPagado;
+            fila.pago2_pagado = item.segundoPagoPagado;
+            fila.pago3_pagado = item.tercerPagoPagado;
+            fila.pago4_pagado = item.cuartoPagoPagado;
+            fila.pago5_pagado = item.quintoPagoPagado;
+            fila.pago6_pagado = item.sextoPagoPagado;
+          }
+          return fila;
+        });
+        // Quita el identificador de los encabezados visibles si no quieres mostrarlo
+        this.encabezados = columnasPermitidas[this.tipoSeleccionado].filter(
+          col => !["codigoContrato", "idPS", "idServicio"].includes(col)
         );
-        this.encabezados = columnasPermitidas[this.tipoSeleccionado];
       } else {
         this.datosInforme = datos;
         this.encabezados = Object.keys(datos[0] || {});
@@ -317,7 +372,7 @@ export default {
           "cliente", "direccion", "codigoPostal", "poblacion", "provincia", "cupsLuz", "cupsGas"
         ],
         "servicios-pendientes-pago": [
-          "cliente", "servicio", "fechaVencimiento", "importe", "estado"
+          "cliente", "servicio", "fechaVencimiento", "importeTotal", "estadoVencimiento", "estadoPago"
         ]
       };
 
@@ -343,7 +398,12 @@ export default {
       if (columnasPermitidas[tipo]) {
         encabezados = columnasPermitidas[tipo].map(col => this.formatearColumna(col));
         filas = datos.map(item =>
-          columnasPermitidas[tipo].map(col => item[col] ?? "")
+          columnasPermitidas[tipo].map(col => {
+            if (col === 'importeTotal' && tipo === 'servicios-pendientes-pago') {
+              return this.formatearImporte(item[col]);
+            }
+            return item[col] ?? "";
+          })
         );
       } else {
         encabezados = Object.keys(datos[0] || {}).map(key => this.formatearColumna(key));
@@ -449,6 +509,27 @@ export default {
         .trim();
     },
 
+    // Formatear importe con euros
+    formatearImporte(valor) {
+      if (!valor && valor !== 0) return '';
+      const numero = parseFloat(valor);
+      if (isNaN(numero)) return valor;
+      return new Intl.NumberFormat('es-ES', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(numero);
+    },
+
+    // Método auxiliar para mostrar valores en la tabla
+    mostrarValorCelda(fila, columna) {
+      if (columna === 'importeTotal' && this.tipoSeleccionado === 'servicios-pendientes-pago') {
+        return this.formatearImporte(fila[columna]);
+      }
+      return fila[columna] ?? '';
+    },
+
     // Métodos para ordenamiento y filtrado
     sortBy(key) {
       if (this.sortKey === key) {
@@ -482,7 +563,22 @@ export default {
           // Mapear las columnas según los encabezados actuales y formatear los nombres
           this.encabezados.forEach(columnaKey => {
             const formattedColumnaName = this.formatearColumna(columnaKey);
-            rowData[formattedColumnaName] = item[columnaKey] ?? '';
+            if (columnaKey === 'importeTotal' && this.tipoSeleccionado === 'servicios-pendientes-pago') {
+              rowData[formattedColumnaName] = this.formatearImporte(item[columnaKey]);
+            } else if (columnaKey === 'pagos' && this.tipoSeleccionado === 'servicios-pendientes-pago') {
+              // Construir la cadena para los meses pagados
+              const paidMonths = [];
+              // Iterar a través de las banderas de pago (asumiendo hasta 6 meses como en la interfaz actual)
+              for (let i = 1; i <= 6; i++) {
+                if (item[`pago${i}_pagado`] === 1) {
+                  paidMonths.push(`Mes ${i}`);
+                }
+              }
+              rowData[formattedColumnaName] = paidMonths.length > 0 ? paidMonths.join(', ') : 'Ninguno';
+            }
+            else {
+              rowData[formattedColumnaName] = item[columnaKey] ?? '';
+            }
           });
           return rowData;
         });
@@ -509,6 +605,198 @@ export default {
         console.error("Error al exportar a Excel:", error);
         alert("Ocurrió un error al exportar a Excel.");
       }
+    },
+
+    async iniciarEdicion(filaIndex, columna, valor) {
+      // Verificar si la columna es editable
+      if (this.tipoSeleccionado === 'contratos-pendientes-renovacion' ||
+          this.tipoSeleccionado === 'puntos-suministro-sin-contrato') {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Edición no permitida',
+          text: 'La edición en línea no está disponible para este tipo de informe.',
+          confirmButtonColor: '#3085d6'
+        });
+        return;
+      }
+
+      // Para 'servicios-pendientes-pago', solo 'estadoPago' debe ser editable a través de input de texto
+      if (this.tipoSeleccionado === 'servicios-pendientes-pago') {
+        // La columna 'pagos' se maneja con checkboxes, no con edición de texto en línea.
+        // Por lo tanto, solo 'estadoPago' es elegible para la edición de texto en línea.
+        if (columna !== 'estadoPago') {
+          await Swal.fire({
+            icon: 'warning',
+            title: 'Columna no editable',
+            text: 'Solo la columna "Estado Pago" puede ser editada directamente en este informe.',
+            confirmButtonColor: '#3085d6'
+          });
+          return;
+        }
+      }
+
+      // Mostrar confirmación antes de editar
+      const result = await Swal.fire({
+        title: '¿Editar registro?',
+        text: '¿Está seguro que desea editar este registro?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, editar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      this.celdaEditando = { filaIndex, columna };
+      
+      // Si es importeTotal, usar el valor sin formato para edición
+      if (columna === 'importeTotal' && this.tipoSeleccionado === 'servicios-pendientes-pago') {
+        this.valorEditando = valor; // valor numérico original
+      } else {
+        this.valorEditando = valor;
+      }
+      
+      this.valorOriginal = valor;
+
+      // Enfocar el input después de que se renderice
+      this.$nextTick(() => {
+        if (this.$refs.editInput) {
+          this.$refs.editInput[0].focus();
+        }
+      });
+    },
+
+    esCeldaEditando(filaIndex, columna) {
+      return this.celdaEditando && 
+             this.celdaEditando.filaIndex === filaIndex && 
+             this.celdaEditando.columna === columna;
+    },
+
+    async guardarEdicion(filaIndex, columna) {
+      if (this.isSaving) return;
+      if (this.valorEditando === this.valorOriginal) {
+        this.cancelarEdicion();
+        return;
+      }
+      this.isSaving = true;
+      try {
+        const fila = this.paginatedData[filaIndex];
+        let datosActualizados = {};
+        let idRegistro = null;
+        switch(this.tipoSeleccionado) {
+          case 'contratos-pendientes-renovacion':
+            idRegistro = fila.codigoContrato || fila.id || fila.idContrato;
+            datosActualizados = {
+              codigoContrato: fila.codigoContrato,
+              fechaInicio: fila.fechaInicio,
+              fechaFin: fila.fechaFin,
+              cliente: fila.cliente,
+              cupsLuz: fila.cupsLuz,
+              cupsGas: fila.cupsGas,
+              contrato: fila.contrato,
+              tarifaLuz: fila.tarifaLuz,
+              tarifaGas: fila.tarifaGas,
+              comercializadoraActual: fila.comercializadoraActual,
+              [columna]: this.valorEditando
+            };
+            break;
+          case 'puntos-suministro-sin-contrato':
+            idRegistro = fila.idPS || fila.id || fila.idPuntoSuministro;
+            datosActualizados = {
+              idPS: fila.idPS,
+              cliente: fila.cliente,
+              direccion: fila.direccion,
+              codigoPostal: fila.codigoPostal,
+              poblacion: fila.poblacion,
+              provincia: fila.provincia,
+              cupsLuz: fila.cupsLuz,
+              cupsGas: fila.cupsGas,
+              [columna]: this.valorEditando
+            };
+            break;
+          case 'servicios-pendientes-pago':
+            idRegistro = fila.idServicio || fila.id;
+            datosActualizados = {
+              idServicio: fila.idServicio,
+              cliente: fila.cliente,
+              servicio: fila.servicio,
+              fechaVencimiento: fila.fechaVencimiento,
+              importeTotal: fila.importeTotal,
+              pagos: fila.pagos,
+              estadoVencimiento: fila.estadoVencimiento,
+              estadoPago: fila.estadoPago,
+              [columna]: this.valorEditando
+            };
+            break;
+        }
+        if (!idRegistro) {
+          throw new Error('No se encontró el identificador del registro.');
+        }
+        const respuesta = await axios.put(
+          `${process.env.VUE_APP_API_URL}/api/informes/${this.tipoSeleccionado}/actualizar/${idRegistro}`,
+          datosActualizados,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        if (respuesta.data.success) {
+          this.datosInforme = this.datosInforme.map((item, idx) => 
+            idx === filaIndex ? { ...item, [columna]: this.valorEditando } : item
+          );
+          await Swal.fire({
+            icon: 'success',
+            title: '¡Éxito!',
+            text: 'Registro actualizado correctamente',
+            confirmButtonColor: '#3085d6'
+          });
+        } else {
+          throw new Error(respuesta.data.message || 'Error al actualizar');
+        }
+      } catch (error) {
+        console.error('Error al guardar:', error);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.response?.data?.message || error.message || 'Error al guardar los cambios',
+          confirmButtonColor: '#3085d6'
+        });
+        this.valorEditando = this.valorOriginal;
+      } finally {
+        this.isSaving = false;
+        this.cancelarEdicion();
+      }
+    },
+
+    cancelarEdicion() {
+      this.celdaEditando = null;
+      this.valorEditando = '';
+      this.valorOriginal = '';
+    },
+
+    async onPagoCheck(fila, numeroPago, checked) {
+      const key = `pago${numeroPago}_pagado`;
+      const oldValue = fila[key];
+      this.isSavingPago = fila.idServicio + '-' + numeroPago;
+      
+      // Actualización optimista (Vue 3 - sin $set)
+      fila[key] = checked ? 1 : 0;
+      
+      try {
+        await axios.put(`${process.env.VUE_APP_API_URL}/api/informes/servicios-pendientes-pago/actualizar-pago/${fila.idServicio}/${numeroPago}?pagado=${checked}`);
+        Swal.fire('¡Éxito!', 'Pago actualizado correctamente', 'success');
+      } catch (e) {
+        // Revertir si falla
+        fila[key] = oldValue;
+        Swal.fire('Error', 'No se pudo actualizar el pago', 'error');
+      } finally {
+        this.isSavingPago = null;
+      }
     }
   }
 };
@@ -521,7 +809,7 @@ export default {
   grid-template-rows: auto auto auto;
   gap: 20px;
   padding: 20px;
-  max-width: 90%;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -674,6 +962,8 @@ export default {
 
 /* Panel de tabla */
 .table-panel {
+  width: 100%;
+  margin: 0;
   padding: 0;
   overflow: hidden;
 }
@@ -846,9 +1136,8 @@ export default {
 }
 
 .table-responsive {
-  overflow-x: auto;
-  background-color: white;
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* Estilos para los filtros y ordenamiento */
@@ -965,6 +1254,7 @@ export default {
 /* Estilos para la tabla */
 .data-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
   margin-bottom: 0;
@@ -981,6 +1271,7 @@ export default {
   position: sticky;
   top: 0;
   z-index: 10;
+  min-width: 100px;
 }
 
 .data-table td {
@@ -1029,5 +1320,137 @@ export default {
   background-color: #1e6b3d !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 8px rgba(33, 115, 70, 0.2) !important;
+}
+
+/* Estilos para las celdas de la tabla */
+.table-cell {
+  position: relative;
+  min-width: 100px;
+  max-width: 180px;
+  height: 40px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+  cursor: text;
+  transition: background-color 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-content {
+  width: 100%;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  padding-right: 20px;
+}
+
+/* Estilos para la edición inline */
+.cell-edit {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.edit-input {
+  width: 100%;
+  height: 100%;
+  padding: 4px 8px;
+  border: 2px solid var(--primary-color);
+  border-radius: 4px;
+  font-size: inherit;
+  font-family: inherit;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
+}
+
+/* Indicador visual de celda editable */
+.table-cell:hover {
+  background-color: var(--hover-color);
+}
+
+.table-cell:hover::after {
+  content: 'Doble clic para editar';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+}
+
+.table-cell:hover::after {
+  opacity: 1;
+}
+
+/* Ajustes para la tabla responsiva */
+.table-responsive {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.data-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 0;
+}
+
+/* Ajuste para columnas específicas que necesitan más espacio */
+.data-table th[data-column="cliente"],
+.data-table td[data-column="cliente"] {
+  min-width: 200px;
+}
+
+.data-table th[data-column="direccion"],
+.data-table td[data-column="direccion"] {
+  min-width: 250px;
+}
+
+.data-table th[data-column="cupsLuz"],
+.data-table td[data-column="cupsLuz"],
+.data-table th[data-column="cupsGas"],
+.data-table td[data-column="cupsGas"] {
+  min-width: 150px;
+}
+
+/* Ajuste para columnas que pueden ser más estrechas */
+.data-table th[data-column="fechaInicio"],
+.data-table td[data-column="fechaInicio"],
+.data-table th[data-column="fechaFin"],
+.data-table td[data-column="fechaFin"],
+.data-table th[data-column="importe"],
+.data-table td[data-column="importe"] {
+  min-width: 100px;
+}
+
+.pagos-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.pagos-group input[type='checkbox'] {
+  accent-color: #217346;
+  width: 18px;
+  height: 18px;
 }
 </style>

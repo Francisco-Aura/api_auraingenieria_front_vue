@@ -268,6 +268,7 @@
   </div>
 </template>
 
+
 <script>
 import axios from 'axios';
 import Spinner from "@/components/SpinnerComponent.vue";
@@ -292,7 +293,11 @@ export default {
         { nombre: "Subtipologías", url: `${process.env.VUE_APP_API_URL}/api/subtipologias`, icono: "fas fa-tags" },
         { nombre: "Tarifas Gas", url: `${process.env.VUE_APP_API_URL}/api/tarifas-gas`, icono: "fas fa-fire" },
         { nombre: "Tarifas Luz", url: `${process.env.VUE_APP_API_URL}/api/tarifasLuz`, icono: "fas fa-bolt" },
-        { nombre: "Usuarios", url: `${process.env.VUE_APP_API_URL}/api/usuarios`, icono: "fas fa-users" }
+        { nombre: "Usuarios", url: `${process.env.VUE_APP_API_URL}/api/usuarios`, icono: "fas fa-users" },
+        { nombre: "Distribuidoras", url: `${process.env.VUE_APP_API_URL}/api/distribuidoras`, icono: "fas fa-truck-moving" },
+        { nombre: "Tipos de Contador", url: `${process.env.VUE_APP_API_URL}/api/tipos-contador`, icono: "fas fa-tachometer-alt" },
+        { nombre: "Tipos de Comunicación", url: `${process.env.VUE_APP_API_URL}/api/tipos-comunicacion`, icono: "fas fa-wifi" },
+        { nombre: "Propiedades", url: `${process.env.VUE_APP_API_URL}/api/propiedades`, icono: "fas fa-building" }
       ],
       tablaSeleccionada: null,
       datos: [],
@@ -413,7 +418,11 @@ export default {
         "Subtipologías": "Clasificaciones de clientes",
         "Tarifas Gas": "Tarifas de gas natural",
         "Tarifas Luz": "Tarifas de energía eléctrica",
-        "Usuarios": "Usuarios del sistema"
+        "Usuarios": "Usuarios del sistema",
+        "Distribuidoras": "Empresas distribuidoras de energía",
+        "Tipos de Contador": "Clasificación de tipos de contador",
+        "Tipos de Comunicación": "Tipos de comunicación de contadores",
+        "Propiedades": "Propiedad de equipos (Distribuidora, Cliente, Aura)"
       };
       return descripciones[nombre] || "Tabla del sistema";
     },
@@ -430,7 +439,11 @@ export default {
         "Subtipologías": 22,
         "Tarifas Gas": 35,
         "Tarifas Luz": 42,
-        "Usuarios": 28
+        "Usuarios": 28,
+        "Distribuidoras": 4,
+        "Tipos de Contador": 5,
+        "Tipos de Comunicación": 4,
+        "Propiedades": 3
       };
       return counts[nombreTabla] || 0;
     },
@@ -701,8 +714,8 @@ export default {
 /* Grid de tablas */
 .tables-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -711,11 +724,12 @@ export default {
   background: var(--white);
   border: 2px solid var(--border-color);
   border-radius: var(--border-radius);
-  padding: 25px;
+  padding: 12px 14px;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  min-height: 90px;
 }
 
 .table-card::before {
@@ -743,27 +757,27 @@ export default {
 .table-card-header {
   display: flex;
   align-items: flex-start;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .table-icon-wrapper {
-  width: 60px;
-  height: 60px;
-  border-radius: 15px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  box-shadow: 0 4px 12px rgba(255, 196, 12, 0.3);
+  font-size: 1.1rem;
+  box-shadow: 0 2px 6px rgba(255, 196, 12, 0.2);
   flex-shrink: 0;
 }
 
 .table-info h3 {
-  margin: 0 0 8px 0;
-  font-size: 1.2rem;
+  margin: 0 0 4px 0;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -771,28 +785,29 @@ export default {
 .table-info p {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 0.9rem;
-  line-height: 1.4;
+  font-size: 0.8rem;
+  line-height: 1.2;
 }
 
 .table-card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 4px;
 }
 
 .records-count {
   background: var(--surface-color);
   color: var(--text-secondary);
-  padding: 6px 12px;
-  border-radius: 15px;
-  font-size: 0.85rem;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
 .action-indicator {
-  width: 36px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--surface-color);
   color: var(--primary-color);
@@ -800,34 +815,35 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  font-size: 1rem;
 }
 
 .table-card:hover .action-indicator {
   background: var(--primary-color);
   color: white;
-  transform: translateX(5px);
+  transform: translateX(3px);
 }
 
 .no-tables-found {
   grid-column: 1 / -1;
   text-align: center;
-  padding: 60px 20px;
+  padding: 30px 10px;
   color: var(--text-secondary);
 }
 
 .no-tables-found i {
   color: var(--border-color);
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .no-tables-found h3 {
-  margin: 0 0 10px 0;
-  font-size: 1.3rem;
+  margin: 0 0 6px 0;
+  font-size: 1.1rem;
 }
 
 .no-tables-found p {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 /* Panel de gestión de tabla */

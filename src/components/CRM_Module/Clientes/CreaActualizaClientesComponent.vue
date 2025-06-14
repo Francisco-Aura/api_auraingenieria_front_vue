@@ -204,9 +204,17 @@
                   </div>
                   <div class="form-group-compact">
                     <label for="cargoContacto1">Cargo</label>
-                    <div class="input-with-icon-compact">
-                      <i class="fas fa-user-tag icon-prefix"></i>
-                      <input type="text" id="cargoContacto1" v-model="clienteLocal.cargoContacto1" class="form-control-compact" />
+                    <div class="select-container-compact">
+                      <select id="cargoContacto1" v-model="clienteLocal.cargoContacto1" class="form-select-compact">
+                        <option value="">Seleccione...</option>
+                        <option value="REPRESENTANTE LEGAL">REPRESENTANTE LEGAL</option>
+                        <option value="ADMINISTRACION">ADMINISTRACION</option>
+                        <option value="GERENTE">GERENTE</option>
+                        <option value="ASESORIA">ASESORIA</option>
+                        <option value="FACTURAS">FACTURAS</option>
+                        <option value="ENCARGADO SUM. ELECTRICO">ENCARGADO SUM. ELECTRICO</option>
+                      </select>
+                      <i class="fas fa-chevron-down select-icon"></i>
                     </div>
                   </div>
                   <div class="form-group-compact">
@@ -237,9 +245,17 @@
                   </div>
                   <div class="form-group-compact">
                     <label for="cargoContacto2">Cargo</label>
-                    <div class="input-with-icon-compact">
-                      <i class="fas fa-user-tag icon-prefix"></i>
-                      <input type="text" id="cargoContacto2" v-model="clienteLocal.cargoContacto2" class="form-control-compact" />
+                    <div class="select-container-compact">
+                      <select id="cargoContacto2" v-model="clienteLocal.cargoContacto2" class="form-select-compact">
+                        <option value="">Seleccione...</option>
+                        <option value="REPRESENTANTE LEGAL">REPRESENTANTE LEGAL</option>
+                        <option value="ADMINISTRACION">ADMINISTRACION</option>
+                        <option value="GERENTE">GERENTE</option>
+                        <option value="ASESORIA">ASESORIA</option>
+                        <option value="FACTURAS">FACTURAS</option>
+                        <option value="ENCARGADO SUM. ELECTRICO">ENCARGADO SUM. ELECTRICO</option>
+                      </select>
+                      <i class="fas fa-chevron-down select-icon"></i>
                     </div>
                   </div>
                   <div class="form-group-compact">
@@ -270,9 +286,17 @@
                   </div>
                   <div class="form-group-compact">
                     <label for="cargoContacto3">Cargo</label>
-                    <div class="input-with-icon-compact">
-                      <i class="fas fa-user-tag icon-prefix"></i>
-                      <input type="text" id="cargoContacto3" v-model="clienteLocal.cargoContacto3" class="form-control-compact" />
+                    <div class="select-container-compact">
+                      <select id="cargoContacto3" v-model="clienteLocal.cargoContacto3" class="form-select-compact">
+                        <option value="">Seleccione...</option>
+                        <option value="REPRESENTANTE LEGAL">REPRESENTANTE LEGAL</option>
+                        <option value="ADMINISTRACION">ADMINISTRACION</option>
+                        <option value="GERENTE">GERENTE</option>
+                        <option value="ASESORIA">ASESORIA</option>
+                        <option value="FACTURAS">FACTURAS</option>
+                        <option value="ENCARGADO SUM. ELECTRICO">ENCARGADO SUM. ELECTRICO</option>
+                      </select>
+                      <i class="fas fa-chevron-down select-icon"></i>
                     </div>
                   </div>
                   <div class="form-group-compact">
@@ -320,10 +344,11 @@
                   </div>
                 </div>
 
-                <div class="form-section-compact notes-section">
+                <!-- Notas en ancho completo -->
+                <div class="form-section-compact notes-section full-width">
                   <div class="section-header-compact">
                     <i class="fas fa-sticky-note"></i>
-                    <h3>Notas</h3>
+                    <h3>Notas y observaciones</h3>
                   </div>
                   <div class="form-group-compact">
                     <textarea id="notas" v-model="clienteLocal.notas" class="form-control-compact notes-textarea" 
@@ -362,7 +387,42 @@ export default {
     nuevoCliente: {
       type: Object,
       required: true,
-      default: () => ({})
+      default: () => ({
+        nombre: "",
+        cif: "",
+        direccion: "",
+        poblacion: "",
+        provincia: "",
+        codigoPostal: "",
+        telefonoAutorizado: "",
+        emailAutorizado: "",
+        grupoEmpresarial: "",
+        nombreComercial: "",
+        fechaAlta: "",
+        actividad: "",
+        codigoSector: "",
+        codigoSubtipologia: "",
+        idUsuario: "",
+        dniAutorizado: "",
+        nombreAutorizado: "",
+        notas: "",
+        nombreContacto1: "",
+        cargoContacto1: "",
+        telefonoContacto1: "",
+        emailContacto1: "",
+        nombreContacto2: "",
+        cargoContacto2: "",
+        telefonoContacto2: "",
+        emailContacto2: "",
+        nombreContacto3: "",
+        cargoContacto3: "",
+        telefonoContacto3: "",
+        emailContacto3: "",
+        iban: "",
+        userTelemedida: "",
+        passTelemedida: "",
+        usuario: null,
+      })
     },
     sectores: Array,
     usuarios: Array,
@@ -373,15 +433,13 @@ export default {
     return {
       activeTab: 'principal',
       showPassword: false,
-      clienteLocal: this.modoActualizar
-        ? { ...this.nuevoCliente }
-        : this.crearClienteVacio(),
+      clienteLocal: this.crearClienteVacio(),
     };
   },
   watch: {
     formularioVisible(newVal) {
       if (newVal) {
-        this.clienteLocal = this.modoActualizar
+        this.clienteLocal = this.modoActualizar && this.nuevoCliente
           ? { ...this.nuevoCliente }
           : this.crearClienteVacio();
         this.activeTab = 'principal';
@@ -396,6 +454,8 @@ export default {
             ...newVal,
             grupoEmpresarial: newVal.nombreComercial || newVal.grupoEmpresarial || ''
           };
+        } else {
+          this.clienteLocal = this.crearClienteVacio();
         }
       },
     },

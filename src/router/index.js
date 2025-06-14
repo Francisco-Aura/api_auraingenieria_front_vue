@@ -1,14 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import LoginComponent from '@/components/LoginComponent.vue';
 import DashboardComponent from '@/components/DashboardComponent.vue';
-import ChatComponent from '@/components/Chat.vue';
 //CRM
 import ClientesComponent from '@/components/CRM_Module/Clientes/ClientesComponent.vue';
 import PuntosSuministroComponent from '@/components/CRM_Module/PuntosSuministro/PuntoSuministroComponent.vue';
 import InformesComponent from '@/components/CRM_Module/Informes/InformesComponent.vue';
 import AdministracionComponent from '@/components/CRM_Module/Administracion/AdministracionComponent.vue';
 import KanbanComponent from '@/components/Kanban/KanbanComponent.vue';
-
 
 // Define las rutas
 const routes = [
@@ -35,10 +33,6 @@ const routes = [
       {
         path: 'administracion',
         component: AdministracionComponent
-      },
-      {
-        path: 'chat',
-        component: ChatComponent
       },
       {
         path: 'kanban',
