@@ -638,7 +638,6 @@ export default {
         const newColumn = columns.value.find(col => col.tasks.includes(task))
         if (newColumn) {
           // Aquí puedes agregar lógica adicional cuando una tarea cambia de columna
-          console.log(`Tarea ${task.title} movida a ${newColumn.title}`)
         }
       }
     }

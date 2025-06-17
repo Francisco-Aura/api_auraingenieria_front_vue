@@ -73,6 +73,7 @@
 
 <script>
 import ModalActualizarPuntoSuministro from '@/components/CRM_Module/PuntosSuministro/ActualizarPuntoSuministro.vue';
+import axios from 'axios';
 
 export default {
   name: "PuntosSuministroClienteComponent",
@@ -152,10 +153,16 @@ export default {
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
     },
-    verDetallePunto(punto) {
-      this.modificarPunto = { ...punto };
-      this.modoConsulta = true;
-      this.formularioVisible = true;
+    async verDetallePunto(punto) {
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${punto.id}`);
+        this.modificarPunto = { ...response.data };
+        this.modoConsulta = true;
+        this.formularioVisible = true;
+      } catch (error) {
+        console.error("Error al obtener el punto de suministro:", error);
+        alert("Error al cargar los detalles del punto de suministro.");
+      }
     },
     cerrarModalActualizarPunto() {
       this.formularioVisible = false;

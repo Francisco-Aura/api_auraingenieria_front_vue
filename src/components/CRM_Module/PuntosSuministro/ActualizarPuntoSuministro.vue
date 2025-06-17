@@ -15,9 +15,9 @@
       </div>
 
       <!-- Formulario compacto para punto de suministro -->
-      <form @submit.prevent="actualizarPS" class="compact-form">
+      <form @submit.prevent="actualizarPS" class="compact-form-content">
         <div class="form-sections-container">
-          <!-- Panel izquierdo - Ubicación y Suministros -->
+          <!-- Panel izquierdo - Ubicación, Suministros, Información Adicional y Observaciones -->
           <div class="panel-left">
             <!-- Sección de Ubicación -->
             <div class="form-section">
@@ -112,10 +112,24 @@
                   <input type="date" id="fechaConcesion" v-model="puntoLocal.fechaConcesion" :readonly="modoConsulta" />
                 </div>
               </div>
+              <div class="form-compact-group">
+                <label for="autoconsumo">Autoconsumo</label>
+                <select id="autoconsumo" v-model="puntoLocal.autoconsumo" :disabled="modoConsulta">
+                  <option :value="null">Seleccione</option>
+                  <option value="Compensación de excedentes simplificada">Compensación de excedentes simplificada</option>
+                  <option value="Compensación de excedentes colectiva">Compensación de excedentes colectiva</option>
+                  <option value="Autoconsumo sin excedentes">Autoconsumo sin excedentes</option>
+                </select>
+              </div>
+              <div class="form-compact-group" v-if="puntoLocal.autoconsumo">
+                <label for="fechaActivacionVertido">Fecha Activación Vertido</label>
+                <input type="date" id="fechaActivacionVertido" v-model="puntoLocal.fechaActivacionVertido" :readonly="modoConsulta" />
+              </div>
             </div>
+
           </div>
           
-          <!-- Panel derecho - Equipos de Medida -->
+          <!-- Panel derecho - Equipos de Medida y Monitorización -->
           <div class="panel-right">
             <!-- Sección de Equipos de Medida -->
             <div class="form-section">
@@ -200,19 +214,41 @@
               </div>
             </div>
 
-            <!-- Observaciones -->
+            <!-- Sección de Monitorización -->
             <div class="form-section">
               <div class="section-header">
-                <i class="fas fa-comment-alt"></i>
-                <h3>Observaciones</h3>
+                <i class="fas fa-desktop"></i>
+                <h3>Monitorización</h3>
               </div>
               <div class="form-compact-group">
-                <textarea id="observaciones" v-model="puntoLocal.observaciones" :readonly="modoConsulta" rows="3" placeholder="Observaciones relevantes..."></textarea>
+                <label for="usuarioMonitorizacion">Usuario Monitorización</label>
+                <div class="input-with-icon">
+                  <i class="fas fa-user icon-prefix"></i>
+                  <input type="text" id="usuarioMonitorizacion" v-model="puntoLocal.usuarioMonitorizacion" :readonly="modoConsulta" />
+                </div>
+              </div>
+              <div class="form-compact-group">
+                <label for="passMonitorizacion">Contraseña Monitorización</label>
+                <div class="input-with-icon">
+                  <i class="fas fa-lock icon-prefix"></i>
+                  <input type="password" id="passMonitorizacion" v-model="puntoLocal.passMonitorizacion" :readonly="modoConsulta" />
+                </div>
               </div>
             </div>
           </div>
         </div>
-        
+
+        <!-- Observaciones (MOVIDO AQUI PARA ANCHO COMPLETO) -->
+        <div class="form-section full-width-observaciones">
+          <div class="section-header">
+            <i class="fas fa-comment-alt"></i>
+            <h3>Observaciones</h3>
+          </div>
+          <div class="form-compact-group">
+            <textarea id="observaciones" v-model="puntoLocal.observaciones" :readonly="modoConsulta" rows="3" placeholder="Observaciones relevantes..."></textarea>
+          </div>
+        </div>
+
         <!-- Botones de acción -->
         <div class="modal-footer">
           <div class="required-note" v-if="!modoConsulta"><span class="required">*</span> Campos obligatorios</div>
@@ -221,10 +257,11 @@
               <i class="fas fa-times"></i> {{ modoConsulta ? 'Cerrar' : 'Cancelar' }}
             </button>
             <button v-if="!modoConsulta" type="submit" class="btn btn-primary">
-              <i class="fas fa-save"></i> Actualizar
+              <i class="fas fa-save"></i> {{ isCreating ? 'Crear' : 'Actualizar' }}
             </button>
           </div>
         </div>
+
       </form>
     </div>
   </div>
@@ -248,7 +285,13 @@ export default {
   },
   data() {
     return {
-      puntoLocal: { ...this.modificarPunto },
+      puntoLocal: { 
+        ...this.modificarPunto,
+        autoconsumo: this.modificarPunto?.autoconsumo || null,
+        fechaActivacionVertido: this.modificarPunto?.fechaActivacionVertido || null,
+        usuarioMonitorizacion: this.modificarPunto?.usuarioMonitorizacion || '',
+        passMonitorizacion: this.modificarPunto?.passMonitorizacion || ''
+      },
       distribuidoras: [],
       tiposContador: [],
       tiposComunicacion: [],
@@ -292,6 +335,40 @@ export default {
       async handler(newVal) {
         if (newVal && Object.keys(newVal).length > 0) {
           await this.initializePuntoLocal(newVal);
+        } else {
+          // Si newVal es null o vacío, resetear puntoLocal a un estado inicial limpio
+          this.puntoLocal = {
+            id: null,
+            direccion: '',
+            codigoPostal: '',
+            poblacion: '',
+            provincia: '',
+            cupsluz: '',
+            cupsgas: '',
+            distribuidora: null,
+            tipoContador: null,
+            tipoComunicacion: null,
+            propiedad: null,
+            propiedadModem: 0,
+            observaciones: '',
+            fechaInstalacion: '',
+            potenciaBIE: 0.0,
+            potenciaTecnicaRed: 0.0,
+            apmCentroTransformacion: '',
+            numeroContador: '',
+            numeroTelefono: '',
+            direccionEnlace: '',
+            puntoMedida: '',
+            clave: '',
+            exencionImpuestoElectrico: false,
+            porcentajeConcesion: 0.0,
+            fechaConcesion: '',
+            autoconsumo: null,
+            fechaActivacionVertido: null,
+            usuarioMonitorizacion: '',
+            passMonitorizacion: '',
+            cliente: this.modificarPunto?.cliente || null, // Mantener el cliente si viene en modificarPunto
+          };
         }
       },
     },
@@ -324,11 +401,15 @@ export default {
         potenciaTecnicaRed: newVal.potenciaTecnicaRed || 0.0,
         porcentajeConcesion: newVal.porcentajeConcesion || 0.0,
         // Asegurar que cupsluz y cupsgas se asignen como cadena vacía si son null o undefined
-        cupsluz: newVal.cupsluz || '',
-        cupsgas: newVal.cupsgas || '',
+        // Manejar tanto el formato del backend (CUPSluz, CUPSgas) como el del frontend (cupsluz, cupsgas)
+        cupsluz: newVal.cupsluz || newVal.CUPSluz || '',
+        cupsgas: newVal.cupsgas || newVal.CUPSgas || '',
+        // Nuevos campos
+        autoconsumo: newVal.autoconsumo || null,
+        fechaActivacionVertido: newVal.fechaActivacionVertido || null,
+        usuarioMonitorizacion: newVal.usuarioMonitorizacion || '',
+        passMonitorizacion: newVal.passMonitorizacion || ''
       };
-
-      console.log('puntoLocal después de la inicialización:', this.puntoLocal);
 
       // Asegurarse de que los datos maestros estén cargados antes de intentar buscar entidades
       if (this.distribuidoras.length === 0 || this.tiposContador.length === 0 || 
@@ -368,7 +449,6 @@ export default {
     },
     async actualizarPS() {
       if (!this.modoConsulta) {
-        console.log('Iniciando actualización de punto de suministro');
 
         // Validación mejorada de campos obligatorios
         if (!this.puntoLocal.direccion?.trim() || 
@@ -384,11 +464,21 @@ export default {
         }
 
         // Validación de CUPS
-        if (!this.puntoLocal.cupsluz && !this.puntoLocal.cupsgas) {
+        if (!this.puntoLocal.cupsluz?.trim() && !this.puntoLocal.cupsgas?.trim()) {
           await this.$swal.fire({
             icon: 'error',
             title: 'Error',
             text: 'Debe proporcionar al menos un CUPS (luz o gas)'
+          });
+          return;
+        }
+
+        // Si autoconsumo está seleccionado, fechaActivacionVertido es obligatoria
+        if (this.puntoLocal.autoconsumo && !this.puntoLocal.fechaActivacionVertido) {
+          await this.$swal.fire({
+            icon: 'error',
+            title: 'Campo obligatorio',
+            text: 'La Fecha de Activación de Vertido es obligatoria si el Autoconsumo está seleccionado.'
           });
           return;
         }
@@ -420,12 +510,23 @@ export default {
           propiedad: this.puntoLocal.propiedad ? { id: this.puntoLocal.propiedad.id } : null,
           exencionImpuestoElectrico: this.puntoLocal.exencionImpuestoElectrico || false,
           porcentajeConcesion: this.puntoLocal.porcentajeConcesion || 0.0,
-          fechaConcesion: this.puntoLocal.fechaConcesion || null
+          fechaConcesion: this.puntoLocal.fechaConcesion || null,
+          // Nuevos campos
+          autoconsumo: this.puntoLocal.autoconsumo || null,
+          fechaActivacionVertido: this.puntoLocal.autoconsumo ? (this.puntoLocal.fechaActivacionVertido || null) : null,
+          usuarioMonitorizacion: this.puntoLocal.usuarioMonitorizacion?.trim() || null,
+          passMonitorizacion: this.puntoLocal.passMonitorizacion?.trim() || null,
         };
         
-        console.log('Datos a enviar:', datosAdaptados);
+        // Debug logs para verificar los valores CUPS
+        console.log('Debug Frontend - CUPS values:');
+        console.log('cupsluz from puntoLocal:', this.puntoLocal.cupsluz);
+        console.log('cupsgas from puntoLocal:', this.puntoLocal.cupsgas);
+        console.log('CUPSluz in datosAdaptados:', datosAdaptados.CUPSluz);
+        console.log('CUPSgas in datosAdaptados:', datosAdaptados.CUPSgas);
+        console.log('Full datosAdaptados:', datosAdaptados);
+        
         this.$emit('actualizar-punto-suministro', datosAdaptados);
-        console.log('Evento emitido');
       }
     },
   },
@@ -438,28 +539,30 @@ export default {
 /* Estilos base del modal compacto */
 .modal-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
   align-items: center;
-  justify-content: center;    
+  justify-content: center;
   width: 100%;
   height: 100%;
-  padding: 15px;
 }
 
 .modal-content {
-  width: 90%;
+  background: white;
+  border-radius: 12px;
+  width: 100%;
   max-width: 90%;
-  height: 90%;
   max-height: 90%;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  flex-direction: column; /* Asegura que los hijos se apilen verticalmente */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden; /* Importante para que el scroll sea interno */
 }
 
 .modal-header {
@@ -471,17 +574,35 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  flex-shrink: 0; /* Evita que el encabezado se encoja */
+}
+
+/* Nuevo estilo para el contenido del formulario que permitirá el scroll */
+.compact-form-content {
+  flex: 1; /* Permite que este elemento ocupe el espacio disponible y empuje el footer hacia abajo */
+  overflow-y: auto; /* Habilita el scroll vertical cuando el contenido excede el espacio */
+  padding: 24px; /* Añade padding para que el contenido no esté pegado a los bordes */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Eliminar padding del modal-body si existe y se solapa con compact-form-content */
+/* .modal-body {
+  padding: 0; 
+} */
+
+.header-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 
 .modal-title {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: 600;
-  color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: black; /* Cambiar a negro para mejor contraste sobre el fondo amarillo */
+  flex-grow: 1; /* Permite que el título ocupe el espacio disponible */
 }
 
 .close-button {
@@ -510,80 +631,68 @@ export default {
   transform: rotate(90deg);
 }
 
-/* Formulario compacto */
-.compact-form {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
 .form-sections-container {
   display: flex;
-  flex-wrap: wrap;
-  padding: 10px;
-  gap: 10px;
-  max-height: calc(90vh - 100px); /* Ajusta según el tamaño del header y footer */
-  overflow-y: auto;
+  gap: 20px;
+  /* Eliminar o ajustar margin-top/bottom si se aplica padding al .compact-form-content */
 }
 
-.panel-left, .panel-right {
+.panel-left,
+.panel-right {
   flex: 1;
-  min-width: 300px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  min-width: 0; /* Permite que los paneles se encojan si no hay espacio */
 }
 
-/* Secciones de formulario */
 .form-section {
-  background: #fff;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
-  padding: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  background: var(--surface-color);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px; /* Espacio entre secciones */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.form-section.full-width-observaciones {
+  width: 100%; /* Asegura que ocupe el 100% del espacio disponible */
 }
 
 .section-header {
   display: flex;
   align-items: center;
-  margin-bottom: 8px;
-  gap: 5px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .section-header i {
-  font-size: 0.9rem;
-  color: #666;
+  color: black;
+  margin-right: 10px;
+  font-size: 1.2rem;
 }
 
 .section-header h3 {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #333;
   margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
 }
 
-/* Elementos de formulario */
 .form-compact-group {
-  margin-bottom: 8px;
+  margin-bottom: 5px; /* Reducido para mayor compactación */
 }
 
 .form-compact-group label {
   display: block;
-  margin-bottom: 2px;
-  font-size: 1rem;
+  margin-bottom: 5px;
   font-weight: 500;
-  color: #555;
+  color: var(--text-primary);
+  font-size: 0.9rem;
 }
 
 .form-row {
   display: flex;
-  gap: 8px;
-  margin-bottom: 0;
+  gap: 15px;
 }
 
-.form-compact-group.half {
+.form-row .half {
   flex: 1;
 }
 
@@ -596,11 +705,14 @@ export default {
   border: 1px solid #ddd;
   border-radius: 4px;
   height: 35px;
+  background-color: white;
+  color: var(--text-primary);
 }
 
 .form-compact-group textarea {
-  resize: none;
-  height: 60px;
+  resize: vertical; /* Cambiado a vertical para mejor usabilidad */
+  min-height: 60px;
+  height: auto; /* Permite que crezca con el contenido si resize es vertical */
 }
 
 .input-with-icon {
@@ -626,48 +738,53 @@ export default {
   margin-left: 2px;
 }
 
-/* Pie del modal */
+/* Pie del modal - ahora dentro del formulario */
 .modal-footer {
-  padding: 10px 15px;
-  border-top: 1px solid #e0e0e0;
-  background: #fff;
+  padding: 15px 0; /* Cambiar padding para que no interfiera con el del form */
+  border-top: 1px solid var(--border-color);
+  background: var(--surface-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0; /* Evita que el pie de página se encoja */
+  margin-top: auto; /* Empuja el footer hacia abajo */
 }
 
 .required-note {
   font-size: 0.95rem;
-  color: #777;
+  color: var(--text-secondary);
+  font-weight: 500; /* Añadido para mejor legibilidad */
 }
 
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 10px; /* Ajustado gap */
 }
 
 .btn {
-  padding: 6px 12px;
-  border-radius: 4px;
+  padding: 8px 16px; /* Ajustado padding */
+  border-radius: 6px; /* Ajustado border-radius */
   font-weight: 500;
   transition: all 0.2s;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 8px; /* Ajustado gap */
   font-size: 1rem;
   border: none;
   outline: none;
 }
 
 .btn-primary {
-  background-color: rgba(252, 215, 0);
+  background-color: rgba(252, 215, 0); /* Usando la variable de color principal */
   color: black;
 }
 
 .btn-primary:hover {
-  background-color: rgb(222, 189, 0);
+  background-color: rgb(222, 189, 0); /* Un tono más oscuro para el hover */
+  transform: translateY(-1px); /* Efecto sutil de levantamiento */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra para el hover */
 }
 
 .btn-secondary {
@@ -677,12 +794,14 @@ export default {
 
 .btn-secondary:hover {
   background-color: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .form-sections-container {
-    flex-direction: column;
+    flex-direction: column; /* Apila los paneles en pantallas pequeñas */
   }
   
   .panel-left, .panel-right {
@@ -691,7 +810,30 @@ export default {
   
   .form-row {
     flex-direction: column;
-    gap: 5px;
+    gap: 10px; /* Ajustado gap para consistencia */
+  }
+
+  .modal-content {
+    max-width: 95%;
+    max-height: 95%;
+  }
+
+  .modal-header,
+  .modal-footer {
+    padding: 15px; /* Reducir padding en móviles */
+  }
+
+  .compact-form-content {
+    padding: 15px; /* Reducir padding en móviles */
+  }
+
+  .form-section.full-width-observaciones {
+    margin-left: 0; /* Asegurar que no haya margen izquierdo en móvil */
+    margin-right: 0; /* Asegurar que no haya margen derecho en móvil */
+  }
+
+  .form-compact-group {
+    margin-bottom: 5px; /* Restaurar un poco de espacio en móvil si es necesario */
   }
 }
 </style>

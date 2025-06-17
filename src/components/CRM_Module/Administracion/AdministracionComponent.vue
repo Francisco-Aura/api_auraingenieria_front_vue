@@ -292,12 +292,13 @@ export default {
         { nombre: "Sectores", url: `${process.env.VUE_APP_API_URL}/api/sectores`, icono: "fas fa-industry" },
         { nombre: "Subtipologías", url: `${process.env.VUE_APP_API_URL}/api/subtipologias`, icono: "fas fa-tags" },
         { nombre: "Tarifas Gas", url: `${process.env.VUE_APP_API_URL}/api/tarifas-gas`, icono: "fas fa-fire" },
-        { nombre: "Tarifas Luz", url: `${process.env.VUE_APP_API_URL}/api/tarifasLuz`, icono: "fas fa-bolt" },
-        { nombre: "Usuarios", url: `${process.env.VUE_APP_API_URL}/api/usuarios`, icono: "fas fa-users" },
+        { nombre: "Tarifas Luz", url: `${process.env.VUE_APP_API_URL}/api/tarifasLuz`, icono: "fas fa-bolt" },        { nombre: "Usuarios", url: `${process.env.VUE_APP_API_URL}/api/usuarios`, icono: "fas fa-users" },
         { nombre: "Distribuidoras", url: `${process.env.VUE_APP_API_URL}/api/distribuidoras`, icono: "fas fa-truck-moving" },
         { nombre: "Tipos de Contador", url: `${process.env.VUE_APP_API_URL}/api/tipos-contador`, icono: "fas fa-tachometer-alt" },
         { nombre: "Tipos de Comunicación", url: `${process.env.VUE_APP_API_URL}/api/tipos-comunicacion`, icono: "fas fa-wifi" },
-        { nombre: "Propiedades", url: `${process.env.VUE_APP_API_URL}/api/propiedades`, icono: "fas fa-building" }
+        { nombre: "Propiedades", url: `${process.env.VUE_APP_API_URL}/api/propiedades`, icono: "fas fa-building" },
+        { nombre: "APP Monitorización", url: `${process.env.VUE_APP_API_URL}/api/app-monitorizacion`, icono: "fas fa-chart-line" },
+        { nombre: "Integración Sistemas FV", url: `${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`, icono: "fas fa-solar-panel" }
       ],
       tablaSeleccionada: null,
       datos: [],
@@ -418,11 +419,12 @@ export default {
         "Subtipologías": "Clasificaciones de clientes",
         "Tarifas Gas": "Tarifas de gas natural",
         "Tarifas Luz": "Tarifas de energía eléctrica",
-        "Usuarios": "Usuarios del sistema",
-        "Distribuidoras": "Empresas distribuidoras de energía",
+        "Usuarios": "Usuarios del sistema",        "Distribuidoras": "Empresas distribuidoras de energía",
         "Tipos de Contador": "Clasificación de tipos de contador",
         "Tipos de Comunicación": "Tipos de comunicación de contadores",
-        "Propiedades": "Propiedad de equipos (Distribuidora, Cliente, Aura)"
+        "Propiedades": "Propiedad de equipos (Distribuidora, Cliente, Aura)",
+        "APP Monitorización": "Aplicaciones de monitorización de instalaciones",
+        "Integración Sistemas FV": "Sistemas de integración fotovoltaica"
       };
       return descripciones[nombre] || "Tabla del sistema";
     },
@@ -439,11 +441,12 @@ export default {
         "Subtipologías": 22,
         "Tarifas Gas": 35,
         "Tarifas Luz": 42,
-        "Usuarios": 28,
-        "Distribuidoras": 4,
+        "Usuarios": 28,        "Distribuidoras": 4,
         "Tipos de Contador": 5,
         "Tipos de Comunicación": 4,
-        "Propiedades": 3
+        "Propiedades": 3,
+        "APP Monitorización": 8,
+        "Integración Sistemas FV": 8
       };
       return counts[nombreTabla] || 0;
     },
@@ -465,14 +468,12 @@ export default {
       this.registro = {};
       this.editando = false;
       this.mostrarFormulario = true;
-      console.log('Abriendo modal para nuevo registro');
     },
     
     editarRegistro(fila) {
       this.registro = { ...fila };
       this.editando = true;
       this.mostrarFormulario = true;
-      console.log('Abriendo modal para editar:', fila);
     },
     
     cerrarModalClick(event) {
@@ -483,7 +484,6 @@ export default {
     },
     
     async guardarRegistro() {
-      console.log('Intentando guardar registro:', this.registro);
       this.loading = true;
       try {
         if (this.editando) {
@@ -524,7 +524,6 @@ export default {
     },
     
     cerrarFormulario() {
-      console.log('Cerrando formulario');
       this.mostrarFormulario = false;
       this.registro = {};
       this.editando = false;

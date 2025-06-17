@@ -111,16 +111,14 @@
             <tr v-for="(fila, index) in paginatedData" :key="index">
               <td v-for="columna in encabezados" :key="columna" class="table-cell" :data-column="columna">
                 <template v-if="tipoSeleccionado === 'servicios-pendientes-pago' && columna === 'pagos'">
-                  <div class="pagos-group">
-                    <template v-for="n in 6" :key="n">
-                      <input
-                        type="checkbox"
-                        :checked="fila[`pago${n}_pagado`] === 1"
-                        :disabled="isSavingPago === fila.idServicio + '-' + n"
-                        @change="onPagoCheck(fila, n, $event.target.checked)"
-                        :title="'Pago ' + n"
-                      />
-                    </template>
+                  <div class="pagos-simple-display">
+                    <button 
+                      class="btn btn-sm btn-mark-paid"
+                      @click="marcarTodosPagados(fila, true)"
+                      :disabled="getPagosPagados(fila) === (fila.numeroCuotas || 12)"
+                    >
+                      <i class="fas fa-check-double"></i> Marcar Pagado
+                    </button>
                   </div>
                 </template>
                 <template v-else>
@@ -147,17 +145,24 @@
       <div class="pagination-controls">
         <div class="records-per-page">
           <label for="recordsPerPage">Registros por página:</label>
-          <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
+          <select v-model.number="recordsPerPageValue" @change="onRecordsPerPageChange" id="recordsPerPage" class="form-control">
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
           </select>
         </div>
         <div class="pagination-info">
           Mostrando {{ (currentPage - 1) * recordsPerPage + 1 }} - {{ Math.min(currentPage * recordsPerPage, filteredData.length) }} de {{ filteredData.length }} registros
         </div>
         <div class="pagination-buttons">
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === 1"
+            @click="currentPage = 1"
+          >
+            <i class="fas fa-angle-double-left"></i>
+          </button>
           <button 
             class="btn btn-outline" 
             :disabled="currentPage === 1"
@@ -172,6 +177,13 @@
             @click="currentPage++"
           >
             <i class="fas fa-chevron-right"></i>
+          </button>
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === totalPages"
+            @click="currentPage = totalPages"
+          >
+            <i class="fas fa-angle-double-right"></i>
           </button>
         </div>
       </div>
@@ -234,12 +246,13 @@ export default {
       sortKey: null,
       sortOrder: null,
       recordsPerPage: 10,
+      recordsPerPageValue: 10, // Nuevo campo reactivo
       currentPage: 1,
       celdaEditando: null,
       valorEditando: '',
       valorOriginal: '',
       isSaving: false,
-      isSavingPago: null
+      isSavingBulk: false,
     };
   },
   computed: {
@@ -282,7 +295,75 @@ export default {
       return Math.ceil(this.filteredData.length / this.recordsPerPage);
     }
   },
+  watch: {
+    // Watcher para asegurar que currentPage se resetee cuando cambie el número de páginas
+    totalPages(newVal) {
+      if (this.currentPage > newVal && newVal > 0) {
+        this.currentPage = newVal;
+      }
+    },
+    // Watcher para filteredData para resetear a la primera página cuando se apliquen filtros
+    filteredData() {
+      this.currentPage = 1;
+    }
+  },
   methods: {
+    // Método para manejar el cambio de registros por página
+    onRecordsPerPageChange() {
+      this.recordsPerPage = this.recordsPerPageValue;
+      this.currentPage = 1; // Resetear a la primera página
+    },
+
+    // Método para obtener el número de pagos realizados
+    getPagosPagados(fila) {
+      let pagados = 0;
+      const numCuotas = fila.numeroCuotas || 12;
+      for (let i = 1; i <= numCuotas; i++) {
+        if (fila[`pago${i}_pagado`] === 1) {
+          pagados++;
+        }
+      }
+      return pagados;
+    },
+
+    // Método para marcar todos los pagos como pagados o no pagados
+    async marcarTodosPagados(fila, pagado) {
+      this.isSavingBulk = true;
+      try {
+        const numCuotas = fila.numeroCuotas || 12;
+        const promises = [];
+        
+        for (let i = 1; i <= numCuotas; i++) {
+          if (fila[`pago${i}_pagado`] !== (pagado ? 1 : 0)) {
+            promises.push(
+              axios.put(`${process.env.VUE_APP_API_URL}/api/informes/servicios-pendientes-pago/actualizar-pago/${fila.idServicio}/${i}?pagado=${pagado}`)
+            );
+          }
+        }
+        
+        await Promise.all(promises);
+        
+        Swal.fire({
+          icon: 'success',
+          title: '¡Éxito!',
+          text: `Todos los pagos han sido ${pagado ? 'marcados como pagados' : 'desmarcados'}.`,
+          timer: 1500,
+          showConfirmButton: false
+        });
+        
+        // Recargar los datos después de la actualización exitosa
+        await this.generarInforme('pantalla');
+
+      } catch (error) {
+        console.error('Error al actualizar pagos en lote:', error);
+        Swal.fire('Error', 'No se pudieron actualizar todos los pagos', 'error');
+        // Recargar datos para revertir cambios optimistas
+        await this.generarInforme('pantalla');
+      } finally {
+        this.isSavingBulk = false;
+      }
+    },
+
     // Abre el modal para preguntar el modo de visualización
     preguntarModo(tipo) {
       this.tipoSeleccionado = tipo;
@@ -304,10 +385,14 @@ export default {
         if (modo === "pdf") {
           this.crearPDF(respuesta.data, this.tipoSeleccionado);
         } else {
-          // Filtra las columnas según el tipo de informe
+          // Filtra los datos para la tabla en pantalla
           this.procesarDatosParaTabla(respuesta.data);
           this.tituloInforme = this.formatearTitulo(this.tipoSeleccionado);
           this.mostrarTabla = true;
+          // Resetear estado de paginación
+          this.currentPage = 1;
+          this.recordsPerPage = 10;
+          this.recordsPerPageValue = 10;
         }
       } catch (error) {
         console.error("Error al obtener el informe", error);
@@ -329,31 +414,30 @@ export default {
         "servicios-pendientes-pago": [
           "idServicio", // identificador
           "cliente", "servicio", "fechaVencimiento", "importeTotal",
-          "pagos",
-          "estadoVencimiento", "estadoPago"
+          "pagos", // Esta columna se renderizará de forma personalizada
+          "estadoVencimiento", "estadoPago", "numeroCuotas" // Añadir numeroCuotas
         ]
       };
 
       if (columnasPermitidas[this.tipoSeleccionado]) {
         this.datosInforme = datos.map(item => {
-          // Siempre incluye el identificador aunque no esté en los encabezados visibles
           const fila = {};
           columnasPermitidas[this.tipoSeleccionado].forEach(key => {
             fila[key] = item[key];
           });
           if (this.tipoSeleccionado === 'servicios-pendientes-pago') {
-            fila.pago1_pagado = item.primerPagoPagado;
-            fila.pago2_pagado = item.segundoPagoPagado;
-            fila.pago3_pagado = item.tercerPagoPagado;
-            fila.pago4_pagado = item.cuartoPagoPagado;
-            fila.pago5_pagado = item.quintoPagoPagado;
-            fila.pago6_pagado = item.sextoPagoPagado;
+            // Mapear los estados de pago para todas las 12 cuotas posibles
+            for (let i = 1; i <= 12; i++) {
+              // Convertir a 1 (pagado) o 0 (no pagado) de forma robusta
+              const pagoStatus = item[`pago${i}Pagado`];
+              fila[`pago${i}_pagado`] = (pagoStatus === 1 || pagoStatus === '1' || pagoStatus === true) ? 1 : 0;
+            }
           }
           return fila;
         });
-        // Quita el identificador de los encabezados visibles si no quieres mostrarlo
+        // Quita el identificador y numeroCuotas de los encabezados visibles
         this.encabezados = columnasPermitidas[this.tipoSeleccionado].filter(
-          col => !["codigoContrato", "idPS", "idServicio"].includes(col)
+          col => !["codigoContrato", "idPS", "idServicio", "numeroCuotas"].includes(col)
         );
       } else {
         this.datosInforme = datos;
@@ -568,13 +652,14 @@ export default {
             } else if (columnaKey === 'pagos' && this.tipoSeleccionado === 'servicios-pendientes-pago') {
               // Construir la cadena para los meses pagados
               const paidMonths = [];
-              // Iterar a través de las banderas de pago (asumiendo hasta 6 meses como en la interfaz actual)
-              for (let i = 1; i <= 6; i++) {
+              // Iterar a través de las cuotas hasta el numeroCuotas definido para el servicio
+              const numCuotas = item.numeroCuotas || 12; // Usar numeroCuotas o un fallback (ej. 12)
+              for (let i = 1; i <= numCuotas; i++) {
                 if (item[`pago${i}_pagado`] === 1) {
-                  paidMonths.push(`Mes ${i}`);
+                  paidMonths.push(`Cuota ${i}`);
                 }
               }
-              rowData[formattedColumnaName] = paidMonths.length > 0 ? paidMonths.join(', ') : 'Ninguno';
+              rowData[formattedColumnaName] = paidMonths.length > 0 ? paidMonths.join(', ') : 'Ninguna';
             }
             else {
               rowData[formattedColumnaName] = item[columnaKey] ?? '';
@@ -622,7 +707,7 @@ export default {
 
       // Para 'servicios-pendientes-pago', solo 'estadoPago' debe ser editable a través de input de texto
       if (this.tipoSeleccionado === 'servicios-pendientes-pago') {
-        // La columna 'pagos' se maneja con checkboxes, no con edición de texto en línea.
+        // La columna 'pagos' se maneja con el nuevo diseño de indicadores, no con edición de texto en línea.
         // Por lo tanto, solo 'estadoPago' es elegible para la edición de texto en línea.
         if (columna !== 'estadoPago') {
           await Swal.fire({
@@ -726,7 +811,7 @@ export default {
               servicio: fila.servicio,
               fechaVencimiento: fila.fechaVencimiento,
               importeTotal: fila.importeTotal,
-              pagos: fila.pagos,
+              // No enviar 'pagos' como tal, ya que se gestiona con onPagoClick
               estadoVencimiento: fila.estadoVencimiento,
               estadoPago: fila.estadoPago,
               [columna]: this.valorEditando
@@ -778,32 +863,12 @@ export default {
       this.valorEditando = '';
       this.valorOriginal = '';
     },
-
-    async onPagoCheck(fila, numeroPago, checked) {
-      const key = `pago${numeroPago}_pagado`;
-      const oldValue = fila[key];
-      this.isSavingPago = fila.idServicio + '-' + numeroPago;
-      
-      // Actualización optimista (Vue 3 - sin $set)
-      fila[key] = checked ? 1 : 0;
-      
-      try {
-        await axios.put(`${process.env.VUE_APP_API_URL}/api/informes/servicios-pendientes-pago/actualizar-pago/${fila.idServicio}/${numeroPago}?pagado=${checked}`);
-        Swal.fire('¡Éxito!', 'Pago actualizado correctamente', 'success');
-      } catch (e) {
-        // Revertir si falla
-        fila[key] = oldValue;
-        Swal.fire('Error', 'No se pudo actualizar el pago', 'error');
-      } finally {
-        this.isSavingPago = null;
-      }
-    }
   }
 };
 </script>
 
 <style scoped>
-/* Grid layout para el contenedor principal */
+/* Estilos existentes mantenidos... */
 .informes-container {
   display: grid;
   grid-template-rows: auto auto auto;
@@ -811,6 +876,10 @@ export default {
   padding: 20px;
   width: 100%;
   margin: 0 auto;
+}
+
+:root {
+  --primary-color-rgb: 255, 193, 7; /* Definir el RGB para el color primario amarillo */
 }
 
 /* Panel de estadísticas */
@@ -1190,7 +1259,7 @@ export default {
   opacity: 0.7;
 }
 
-/* Estilos para la paginación */
+/* Estilos para la paginación mejorados */
 .pagination-controls {
   display: flex;
   justify-content: space-between;
@@ -1198,6 +1267,32 @@ export default {
   padding: 20px;
   background-color: var(--surface-color);
   border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.records-per-page {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: white;
+  padding: 8px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.records-per-page label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.records-per-page select {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: white;
+  font-size: 0.9rem;
 }
 
 .pagination-info {
@@ -1212,7 +1307,7 @@ export default {
 .pagination-buttons {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   background-color: white;
   padding: 8px 15px;
   border-radius: 8px;
@@ -1299,7 +1394,7 @@ export default {
   background-color: var(--hover-color);
 }
 
-/* Estilos para el botón de exportar Excel (copias de ClientesComponent.vue) */
+/* Estilos para el botón de exportar Excel */
 .btn-export {
   display: flex;
   align-items: center;
@@ -1443,14 +1538,59 @@ export default {
   min-width: 100px;
 }
 
-.pagos-group {
+/* NUEVOS ESTILOS PARA EL GESTOR DE PAGOS INNOVADOR */
+.pagos-simple-display {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
   justify-content: center;
+  height: 100%;
 }
-.pagos-group input[type='checkbox'] {
-  accent-color: #217346;
-  width: 18px;
-  height: 18px;
+
+.btn-mark-paid {
+  background-color: var(--primary-color);
+  color: black;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-mark-paid:hover:not(:disabled) {
+  background-color: var(--primary-dark, #e0a800);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(var(--primary-color-rgb), 0.2);
+}
+
+.btn-mark-paid:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--background-color);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+/* RE-ADJUSTADO Ajuste específico para la columna de pagos */
+.data-table th[data-column="pagos"],
+.data-table td[data-column="pagos"] {
+  min-width: 220px; /* Aumentar el ancho para el nuevo botón */
+  max-width: 300px;
+  position: relative;
+}
+
+.data-table td[data-column="pagos"] {
+  overflow: hidden !important; /* Volver a ocultar, ya no hay panel */
+  text-align: center; /* Centrar el contenido */
+}
+
+/* Mejora visual para estados de hover en la tabla */
+.data-table tbody tr:hover {
+  background-color: rgba(var(--primary-color-rgb), 0.05); /* Color primario con transparencia */
 }
 </style>

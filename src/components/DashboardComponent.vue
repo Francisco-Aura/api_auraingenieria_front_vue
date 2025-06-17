@@ -58,9 +58,6 @@
             <div class="user-name">{{ userName }}</div>
             <div class="user-role">{{ userRole }}</div>
           </div>
-          <div v-if="!sidebarCollapsed" class="dropdown-icon">
-            <i class="fas" :class="userMenuOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-          </div>
         </div>
         <div v-if="userMenuOpen && !sidebarCollapsed" class="user-menu">
           <div class="menu-option" @click="cerrarSesion">

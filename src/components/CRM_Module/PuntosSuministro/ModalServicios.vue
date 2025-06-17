@@ -21,6 +21,7 @@
           <span class="tab-text">{{ modoEdicion ? 'Editar' : 'Nuevo' }}</span>
         </button>
         <button
+          v-if="servicioActual && servicioActual.id"
           type="button"
           class="tab-btn"
           :class="{ active: pestañaActiva === 'actual' }"
@@ -52,6 +53,12 @@
             </div>
           </div>
 
+          <div v-if="puntoSuministroActivo" class="info-banner-punto">
+            <i class="fas fa-info-circle"></i>
+            Creando servicio para el punto de suministro:
+            <b>{{ puntoSuministroActivo.cupsluz || puntoSuministroActivo.cupsgas }}</b>
+          </div>
+
           <form @submit.prevent="guardarServicio" class="modern-form">
             <div class="form-grid-modern">
               <!-- Sección de Información del Servicio -->
@@ -61,22 +68,31 @@
                   <h3>Información del Servicio</h3>
                 </div>
 
-                <div class="form-group-modern">
+                <div class="form-group-modern" v-if="!puntoSuministroActivo">
                   <label for="cups">CUPS <span class="required">*</span></label>
                   <div class="select-container-modern">
                     <select
                       id="cups"
-                      v-model="nuevoServicio.cups"
+                      v-model="nuevoServicio.idPuntoSuministro"
                       class="form-select-modern"
                       required
                     >
                       <option value="">Seleccione un CUPS...</option>
-                      <option v-for="punto in puntosSuministro" :key="punto.id" :value="punto.cups">
+                      <option v-for="punto in puntosSuministro" :key="punto.id" :value="punto.id">
                         {{ punto.cups }} - {{ punto.direccion }}
                       </option>
                     </select>
                     <i class="fas fa-chevron-down select-icon"></i>
                   </div>
+                </div>
+                <div class="form-group-modern" v-else>
+                  <label for="cups">CUPS <span class="required">*</span></label>
+                  <input
+                    id="cups"
+                    class="form-control-small"
+                    :value="puntoSuministroActivo.cupsluz || puntoSuministroActivo.cupsgas"
+                    disabled
+                  />
                 </div>
 
                 <div class="form-group-modern">
@@ -88,7 +104,7 @@
                       class="form-select-modern"
                       required
                     >
-                      <option value="">Seleccione...</option>
+                      <option value="">Seleccione un producto...</option>
                       <option v-for="producto in productos" :key="producto.id" :value="producto.id">
                         {{ producto.nombre }}
                       </option>
@@ -106,7 +122,7 @@
                       class="form-select-modern"
                       required
                     >
-                      <option value="">Seleccione...</option>
+                      <option value="">Seleccione una gestora...</option>
                       <option v-for="gestora in gestoras" :key="gestora.id" :value="gestora.id">
                         {{ gestora.nombre }}
                       </option>
@@ -124,7 +140,7 @@
                       class="form-select-modern"
                       required
                     >
-                      <option value="">Seleccione...</option>
+                      <option value="">Seleccione una comercializadora...</option>
                       <option v-for="comercializadora in comercializadorasList" :key="comercializadora.id" :value="comercializadora.id">
                         {{ comercializadora.nombre }}
                       </option>
@@ -132,13 +148,32 @@
                     <i class="fas fa-chevron-down select-icon"></i>
                   </div>
                 </div>
+
+                <!-- Modalidad de pago -->
+                <div class="form-group-modern">
+                  <label for="modalidadPago">Modalidad de Pago <span class="required">*</span></label>
+                  <div class="select-container-modern">
+                    <select
+                      id="modalidadPago"
+                      v-model="nuevoServicio.idPagoPlazos"
+                      class="form-select-modern"
+                      required
+                    >
+                      <option value="">Seleccione modalidad...</option>
+                      <option v-for="plazo in modalidadesPago" :key="plazo.id" :value="plazo.id">
+                        {{ plazo.nombre }}<span v-if="plazo.descripcion"> - {{ plazo.descripcion }}</span>
+                      </option>
+                    </select>
+                    <i class="fas fa-chevron-down select-icon"></i>
+                  </div>
+                </div>
               </div>
 
-              <!-- Sección de Fechas y Pagos -->
+              <!-- Sección de Fechas y Totales -->
               <div class="form-section-modern">
                 <div class="section-header-modern">
                   <i class="fas fa-calendar-alt"></i>
-                  <h3>Fechas y Pagos</h3>
+                  <h3>Fechas y Totales</h3>
                 </div>
 
                 <div class="form-group-modern">
@@ -169,32 +204,51 @@
                   </div>
                 </div>
 
-                <div class="form-group-modern">
-                  <label for="fechaPago">Fecha Pago <span class="required">*</span></label>
-                  <div class="input-with-icon-modern">
-                    <i class="fas fa-money-bill-wave icon-prefix"></i>
+                <!-- Importe Total -->
+                <div class="form-group-modern importe-euro-group">
+                  <label>Importe Total</label>
+                  <div class="input-euro-inline">
                     <input
-                      type="date"
-                      id="fechaPago"
-                      v-model="nuevoServicio.fechaPago"
-                      class="form-control-modern"
-                      required
+                      type="number"
+                      v-model="nuevoServicio.importe"
+                      placeholder="0.00"
+                      class="form-control-small"
+                      step="0.01"
+                      min="0"
                     />
+                    <span class="euro-inline">€</span>
                   </div>
                 </div>
 
-                <div class="form-group-modern">
-                  <label>Meses Cobrados</label>
-                  <div class="meses-cobrados-grid">
-                    <div v-for="mes in 12" :key="mes" class="mes-checkbox">
-                      <input
-                        type="checkbox"
-                        :id="'mes' + mes"
-                        v-model="nuevoServicio.mesesCobrados"
-                        :value="mes"
-                      />
-                      <label :for="'mes' + mes">Mes {{ mes }}</label>
-                    </div>
+                <!-- Descuento -->
+                <div class="form-group-modern importe-euro-group">
+                  <label>Descuento</label>
+                  <div class="input-euro-inline">
+                    <input
+                      type="number"
+                      v-model="nuevoServicio.descuento"
+                      placeholder="0.00"
+                      class="form-control-small"
+                      step="0.01"
+                      min="0"
+                    />
+                    <span class="euro-inline">€</span>
+                  </div>
+                </div>
+
+                <!-- Importe Final -->
+                <div class="form-group-modern importe-euro-group">
+                  <label>Importe Final</label>
+                  <div class="input-euro-inline">
+                    <input
+                      type="number"
+                      v-model="nuevoServicio.importeFinal"
+                      class="form-control-small"
+                      step="0.01"
+                      min="0"
+                      readonly
+                    />
+                    <span class="euro-inline">€</span>
                   </div>
                 </div>
               </div>
@@ -286,22 +340,70 @@
                   <span class="info-label">Fecha Fin</span>
                   <span class="info-value"><i class="fas fa-stop"></i> {{ formatDate(servicioActual.fechaFinServicio) }}</span>
                 </div>
-                <div class="info-row">
-                  <span class="info-label">Fecha Pago</span>
-                  <span class="info-value"><i class="fas fa-money-bill-wave"></i> {{ formatDate(servicioActual.fechaPago) }}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Meses Cobrados</span>
-                  <span class="info-value">
-                    <div class="meses-cobrados-display">
-                      <span v-for="mes in servicioActual.mesesCobrados" :key="mes" class="mes-cobrado">
-                        Mes {{ mes }}
-                      </span>
-                    </div>
-                  </span>
-                </div>
               </div>
             </div>
+            
+            <!-- NUEVO DISEÑO COMPACTO DE GESTIÓN DE PAGOS -->
+            <div class="modern-section" style="margin-top: 1rem;">
+              <div class="section-header">
+                <i class="fas fa-calendar-check"></i>
+                <h5>Gestión de Pagos por Plazos/Meses</h5>
+              </div>
+              
+              <!-- Gráfico de progreso de pagos -->
+              <div class="pagos-progreso">
+                <div class="pagos-resumen-compacto">
+                  <div class="resumen-item">
+                    <span class="resumen-label">Pagadas:</span>
+                    <span class="resumen-valor">{{ cuotasPagadas }} de {{ cuotas.length }}</span>
+                  </div>
+                  <div class="resumen-item">
+                    <span class="resumen-label">Total pagado:</span>
+                    <span class="resumen-valor">{{ totalPagado.toFixed(2) }}€</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Grid de cuotas en formato tarjeta -->
+              <div v-if="cuotas.length" class="cuotas-grid">
+                <div v-for="cuota in cuotas" :key="cuota.id" class="cuota-card" :class="{ 'pagada': cuota.pagado }">
+                  <div class="cuota-header">
+                    <span class="cuota-numero">Cuota {{ cuota.numeroPago }}</span>
+                    <div class="cuota-estado" :class="{ 'pagado': cuota.pagado }">
+                      {{ cuota.pagado ? 'Pagado' : 'Pendiente' }}
+                    </div>
+                  </div>
+                  <div class="cuota-contenido">
+                    <div class="cuota-campo">
+                      <label>Fecha:</label>
+                      <input type="date" v-model="cuota.fechaPago" @change="marcarEditado(cuota)" class="form-control-compact" />
+                    </div>
+                    <div class="cuota-campo">
+                      <label>Importe:</label>
+                      <div class="input-euro-compact">
+                        <input type="number" v-model="cuota.importePago" min="0" step="0.01" @change="marcarEditado(cuota)" class="form-control-compact" />
+                        <span class="euro-symbol">€</span>
+                      </div>
+                    </div>
+                    <div class="cuota-campo checkbox-field">
+                      <label class="checkbox-label">
+                        <input type="checkbox" v-model="cuota.pagado" @change="marcarEditado(cuota)" />
+                        Marcar como pagado
+                      </label>
+                    </div>
+                  </div>
+                  <div class="cuota-footer">
+                    <button class="btn-guardar" :disabled="!cuota.editado" @click="guardarCuota(cuota)">
+                      <i class="fas fa-save"></i> Guardar
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="sin-cuotas">
+                <i class="fas fa-info-circle"></i> No hay cuotas generadas para este servicio.
+              </div>
+            </div>
+            
             <div class="modern-notes" v-if="servicioActual.observaciones">
               <h5><i class="fas fa-sticky-note"></i> Observaciones</h5>
               <p>{{ servicioActual.observaciones }}</p>
@@ -328,6 +430,8 @@
                   <th>Producto</th>
                   <th>Gestora</th>
                   <th>Comercializadora</th>
+                  <th>Pagos</th>
+                  <th>Observaciones</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -341,6 +445,21 @@
                   <td>{{ getProductoNombre(servicio.idProducto) }}</td>
                   <td>{{ getGestoraNombre(servicio.idGestora) }}</td>
                   <td>{{ getComercializadoraNombre(servicio.idComercializadora) }}</td>
+                  <td class="pagos-column">
+                    <div v-if="servicio.pagos" class="pagos-mini">
+                      <span class="pago-indicador">{{ obtenerMesesPagados(servicio.pagos) }}/6 P</span>
+                      <span class="total-indicador">{{ servicio.pagos.importeFinal || servicio.pagos.importe || 0 }}€</span>
+                    </div>
+                    <div v-else class="sin-pagos-mini">
+                      <span>--/--</span>
+                    </div>
+                  </td>
+                  <td class="observaciones-column">
+                    <span v-if="servicio.observaciones" :title="servicio.observaciones" class="observaciones-texto">
+                      {{ servicio.observaciones.length > 30 ? servicio.observaciones.substring(0, 30) + '...' : servicio.observaciones }}
+                    </span>
+                    <span v-else class="sin-observaciones">--</span>
+                  </td>
                   <td class="action-buttons">
                     <button @click="verDetalleServicio(servicio)" class="btn-icon btn-view" title="Ver Detalle">
                       <i class="fas fa-eye"></i>
@@ -474,6 +593,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    puntoSuministroSeleccionado: {
+      type: [Object, Number],
+      default: null
+    },
   },
   data() {
     return {
@@ -482,28 +605,39 @@ export default {
       servicioEditandoId: null,
       nuevoServicio: {
         id: "",
+        idCliente: typeof this.cliente === 'object' ? this.cliente.id : this.cliente,
+        idPuntoSuministro: this.puntoSuministroSeleccionado ? (typeof this.puntoSuministroSeleccionado === 'object' ? this.puntoSuministroSeleccionado.id : this.puntoSuministroSeleccionado) : "",
         cups: "",
-        fecha: "",
         fechaInicioServicio: "",
         fechaFinServicio: "",
-        fechaPago: "",
-        mesesCobrados: [],
         descripcion: "",
         idGestora: 0,
         idProducto: 0,
         idComercializadora: 0,
+        idPagoPlazos: null, // Cambiado de "" a null
+        importe: 0, // Cambiado de null a 0
+        descuento: 0, // Cambiado de null a 0
+        importeFinal: 0, // Cambiado de null a 0
         observaciones: "",
       },
       mostrarModalDetalleServicio: false,
       servicioDetalle: null,
       puntosSuministro: [],
       comercializadorasList: [],
+      modalidadesPago: [],
+      cuotas: [],
     };
   },
   async created() {
     await this.cargarComercializadoras();
+    await this.cargarModalidadesPago();
     if (this.cliente) {
       await this.cargarPuntosSuministro();
+    }
+  },
+  async mounted() {
+    if (this.servicioActual && this.servicioActual.id) {
+      await this.cargarCuotas();
     }
   },
   computed: {
@@ -512,31 +646,51 @@ export default {
       return [...this.serviciosHistoricos].sort((a, b) => {
         return new Date(b.fechaInicioServicio) - new Date(a.fechaInicioServicio);
       });
-    }
+    },
+    cuotasPagadas() {
+      return this.cuotas.filter(c => c.pagado).length;
+    },
+    totalPagado() {
+      return this.cuotas.filter(c => c.pagado).reduce((acc, c) => acc + (parseFloat(c.importePago) || 0), 0);
+    },
+    calcularImporteFinal() {
+      const imp = parseFloat(this.nuevoServicio.importe) || 0;
+      const desc = parseFloat(this.nuevoServicio.descuento) || 0;
+      return (imp - desc).toFixed(2);
+    },
+    puntoSuministroActivo() {
+      if (!this.puntoSuministroSeleccionado) return null;
+      if (typeof this.puntoSuministroSeleccionado === 'object') return this.puntoSuministroSeleccionado;
+      // Buscar el objeto en puntosSuministro si solo se pasa el ID
+      return this.puntosSuministro.find(p => p.id === this.puntoSuministroSeleccionado) || null;
+    },
   },
   watch: {
-    servicioActual: {
-      handler(newValue) {
-        if (this.modoEdicion && newValue) {
-          this.nuevoServicio = {
-            ...newValue,
-            mesesCobrados: newValue.mesesCobrados || [],
-            observaciones: newValue.observaciones || ""
-          };
-        }
-      },
-    },
     visible(newValue) {
       if (newValue) {
-        if (!this.modoEdicion) {
-          this.resetNuevoServicio();
-          this.pestañaActiva = 'nuevo';
+        if (this.servicioActual && this.servicioActual.id) {
+          this.pestañaActiva = 'actual';
         } else {
           this.pestañaActiva = 'nuevo';
+        }
+        if (!this.modoEdicion) {
+          this.resetNuevoServicio();
+        }
+        this.nuevoServicio.idCliente = typeof this.cliente === 'object' ? this.cliente.id : this.cliente;
+        if (this.puntoSuministroSeleccionado) {
+          this.nuevoServicio.idPuntoSuministro = typeof this.puntoSuministroSeleccionado === 'object' ? this.puntoSuministroSeleccionado.id : this.puntoSuministroSeleccionado;
         }
       } else {
         this.resetModalState();
       }
+    },
+    puntoSuministroSeleccionado: {
+      handler(newVal) {
+        if (newVal) {
+          this.nuevoServicio.idPuntoSuministro = typeof newVal === 'object' ? newVal.id : newVal;
+        }
+      },
+      immediate: true
     },
     cliente: {
       handler(newValue) {
@@ -545,27 +699,34 @@ export default {
         }
       },
       immediate: true
-    }
+    },
+    servicioActual: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal && newVal.id) {
+          this.cargarCuotas();
+        } else {
+          this.cuotas = [];
+        }
+        // Si el servicio tiene modalidad de pago y pagos, recargar cuotas
+        if (newVal && newVal.pagos && newVal.idPagoPlazos) {
+          this.cargarCuotas();
+        }
+      },
+    },
+    'nuevoServicio.importe': function() {
+      this.nuevoServicio.importeFinal = this.calcularImporteFinal;
+    },
+    'nuevoServicio.descuento': function() {
+      this.nuevoServicio.importeFinal = this.calcularImporteFinal;
+    },
   },
   methods: {
     resetModalState() {
       this.pestañaActiva = 'actual';
       this.modoEdicion = false;
       this.servicioEditandoId = null;
-      this.nuevoServicio = {
-        id: "",
-        cups: "",
-        fecha: "",
-        fechaInicioServicio: "",
-        fechaFinServicio: "",
-        fechaPago: "",
-        mesesCobrados: [],
-        descripcion: "",
-        idGestora: 0,
-        idProducto: 0,
-        idComercializadora: 0,
-        observaciones: "",
-      };
+      this.resetNuevoServicio();
       this.mostrarModalDetalleServicio = false;
       this.servicioDetalle = null;
     },
@@ -588,46 +749,213 @@ export default {
       return producto ? producto.nombre : 'No especificado';
     },
     getComercializadoraNombre(id) {
-      if (!this.comercializadoras) return 'No especificada';
-      const comercializadora = this.comercializadoras.find(c => c.id === id);
+      if (!this.comercializadoras && !this.comercializadorasList) return 'No especificada';
+      // Buscar en ambas listas por si acaso
+      const lista = this.comercializadorasList && this.comercializadorasList.length ? this.comercializadorasList : this.comercializadoras;
+      const comercializadora = lista.find(c => c.id === id || c.idComercializadora === id);
       return comercializadora ? comercializadora.nombre : 'No especificada';
     },
     editarServicio() {
       this.pestañaActiva = 'nuevo';
       this.modoEdicion = true;
       this.servicioEditandoId = this.servicioActual.id;
-      this.nuevoServicio = { 
-        ...this.servicioActual, 
-        mesesCobrados: this.servicioActual.mesesCobrados || [],
-        observaciones: this.servicioActual.observaciones || "" 
+      
+      // Inicializar nuevoServicio con los datos básicos del servicio actual
+      this.nuevoServicio = {
+        ...this.servicioActual,
+        observaciones: this.servicioActual.observaciones || "",
+        // Los campos de pago se cargarán después de la llamada a la API
+        idPagoPlazos: "",
+        importe: 0,
+        descuento: 0,
+        importeFinal: 0,
       };
+      
+      // Cargar los datos de pagos asociados a este servicio
+      this.cargarDatosPagosServicio(this.servicioEditandoId);
     },
     async guardarServicio() {
       try {
+        if (!this.nuevoServicio.idPuntoSuministro) {
+          await this.$swal.fire({
+            icon: 'warning',
+            title: 'Campos requeridos',
+            text: 'Por favor, seleccione un CUPS',
+            confirmButtonColor: '#3085d6'
+          });
+          return;
+        }
+        if (!this.nuevoServicio.fechaInicioServicio) {
+          await this.$swal.fire({
+            icon: 'warning',
+            title: 'Campos requeridos',
+            text: 'Por favor, ingrese la fecha de inicio del servicio',
+            confirmButtonColor: '#3085d6'
+          });
+          return;
+        }
+        if (!this.nuevoServicio.idPagoPlazos) {
+          await this.$swal.fire({
+            icon: 'warning',
+            title: 'Campos requeridos',
+            text: 'Por favor, seleccione la modalidad de pago',
+            confirmButtonColor: '#3085d6'
+          });
+          return;
+        }
+        // Validación extra: comprobar que la modalidad de pago existe en la lista
+        const modalidadValida = this.modalidadesPago.find(m => m.id === this.nuevoServicio.idPagoPlazos);
+        if (!modalidadValida) {
+          await this.$swal.fire({
+            icon: 'error',
+            title: 'Modalidad de pago inválida',
+            text: 'La modalidad de pago seleccionada no es válida. Actualice la página o contacte con soporte.',
+            confirmButtonColor: '#d33'
+          });
+          return;
+        }
+        
+        const puntoSeleccionado = this.puntosSuministro.find(p => p.id === this.nuevoServicio.idPuntoSuministro);
+        
+        // Create complete service payload with all necessary fields
         const servicioPayload = {
-          ...this.nuevoServicio,
-          idCliente: typeof this.cliente === 'object' ? this.cliente.id : this.cliente,
+          id: this.modoEdicion ? this.servicioEditandoId : null,
+          cups: puntoSeleccionado ? puntoSeleccionado.cups : this.nuevoServicio.cups,
+          fechaInicioServicio: this.nuevoServicio.fechaInicioServicio,
+          fechaFinServicio: this.nuevoServicio.fechaFinServicio,
+          descripcion: this.nuevoServicio.descripcion,
+          idGestora: this.nuevoServicio.idGestora || null,
+          idProducto: this.nuevoServicio.idProducto || null,
+          idComercializadora: this.nuevoServicio.idComercializadora || null,
+          observaciones: this.nuevoServicio.observaciones || "",
+          // DO NOT DELETE THESE IMPORTANT REFERENCE FIELDS
+          puntoSuministro: {
+            id: this.nuevoServicio.idPuntoSuministro
+          },
+          cliente: {
+            id: typeof this.cliente === 'object' ? this.cliente.id : this.cliente
+          }
+        };
+
+        // NUEVO: Generar plan de pagos desde el backend antes de guardar
+        let pagosGenerados;
+        try {
+          const generarPlanResp = await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/generar-plan`, {
+            idPagoPlazos: this.nuevoServicio.idPagoPlazos,
+            importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
+            fechaInicio: this.nuevoServicio.fechaInicioServicio // Pasa la fecha de inicio del servicio como referencia
+          });
+          pagosGenerados = generarPlanResp.data;
+        } catch (errorGenerarPlan) {
+          console.error("Error al generar el plan de pagos en el backend:", errorGenerarPlan);
+          await this.$swal.fire({
+            icon: 'error',
+            title: 'Error al generar plan de pagos',
+            text: 'No se pudo generar el plan de pagos. Por favor, inténtelo de nuevo.',
+            confirmButtonColor: '#d33'
+          });
+          return;
+        }
+
+        // Create payment payload using the generated payments from backend
+        const pagosPayload = {
+          id: this.servicioActual?.pagos?.id || null, // If editing and already has payment ID
+          pagoPlazos: {
+            id: this.nuevoServicio.idPagoPlazos
+          },
+          metodoPago: this.nuevoServicio.idMetodoPago ? { 
+            id: this.nuevoServicio.idMetodoPago 
+          } : null,
+          importe: pagosGenerados.importe, // Use importe from generated payments
+          descuento: pagosGenerados.descuento, // Use descuento from generated payments
+          importeFinal: pagosGenerados.importeFinal, // Use importeFinal from generated payments
+          // Include all payment installments from generated payments
+          primerPagoFecha: pagosGenerados.primerPagoFecha,
+          primerPagoImporte: pagosGenerados.primerPagoImporte,
+          primerPagoPagado: pagosGenerados.primerPagoPagado || false,
+          segundoPagoFecha: pagosGenerados.segundoPagoFecha,
+          segundoPagoImporte: pagosGenerados.segundoPagoImporte,
+          segundoPagoPagado: pagosGenerados.segundoPagoPagado || false,
+          tercerPagoFecha: pagosGenerados.tercerPagoFecha,
+          tercerPagoImporte: pagosGenerados.tercerPagoImporte,
+          tercerPagoPagado: pagosGenerados.tercerPagoPagado || false,
+          cuartoPagoFecha: pagosGenerados.cuartoPagoFecha,
+          cuartoPagoImporte: pagosGenerados.cuartoPagoImporte,
+          cuartoPagoPagado: pagosGenerados.cuartoPagoPagado || false,
+          quintoPagoFecha: pagosGenerados.quintoPagoFecha,
+          quintoPagoImporte: pagosGenerados.quintoPagoImporte,
+          quintoPagoPagado: pagosGenerados.quintoPagoPagado || false,
+          sextoPagoFecha: pagosGenerados.sextoPagoFecha,
+          sextoPagoImporte: pagosGenerados.sextoPagoImporte,
+          sextoPagoPagado: pagosGenerados.sextoPagoPagado || false,
+          septimoPagoFecha: pagosGenerados.septimoPagoFecha,
+          septimoPagoImporte: pagosGenerados.septimoPagoImporte,
+          septimoPagoPagado: pagosGenerados.septimoPagoPagado || false,
+          octavoPagoFecha: pagosGenerados.octavoPagoFecha,
+          octavoPagoImporte: pagosGenerados.octavoPagoImporte,
+          octavoPagoPagado: pagosGenerados.octavoPagoPagado || false,
+          novenoPagoFecha: pagosGenerados.novenoPagoFecha,
+          novenoPagoImporte: pagosGenerados.novenoPagoImporte,
+          novenoPagoPagado: pagosGenerados.novenoPagoPagado || false,
+          decimoPagoFecha: pagosGenerados.decimoPagoFecha,
+          decimoPagoImporte: pagosGenerados.decimoPagoImporte,
+          decimoPagoPagado: pagosGenerados.decimoPagoPagado || false,
+          decimoprimerPagoFecha: pagosGenerados.decimoprimerPagoFecha,
+          decimoprimerPagoImporte: pagosGenerados.decimoprimerPagoImporte,
+          decimoprimerPagoPagado: pagosGenerados.decimoprimerPagoPagado || false,
+          decimosegundoPagoFecha: pagosGenerados.decimosegundoPagoFecha,
+          decimosegundoPagoImporte: pagosGenerados.decimosegundoPagoImporte,
+          decimosegundoPagoPagado: pagosGenerados.decimosegundoPagoPagado || false
         };
 
         let response;
         if (this.modoEdicion && this.servicioEditandoId) {
-          response = await axios.put(
-            `${process.env.VUE_APP_API_URL}/api/servicios/${this.servicioEditandoId}`,
-            servicioPayload
-          );
+          // Update existing service
+          response = await axios.put(`${process.env.VUE_APP_API_URL}/api/servicios/${this.servicioEditandoId}`, servicioPayload);
+          
+          // Also update the payment record if it exists
+          if (this.servicioActual?.pagos?.id) { // Use servicioActual.pagos.id to check if payment record exists
+            pagosPayload.id = this.servicioActual.pagos.id;
+            await axios.put(
+              `${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${this.servicioEditandoId}`, 
+              pagosPayload
+            );
+          } else {
+            // Create payment record if it doesn't exist
+            pagosPayload.servicio = { id: this.servicioEditandoId }; // Link to existing service
+            await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios-pagos`, pagosPayload);
+          }
         } else {
-          response = await axios.post(
-            `${process.env.VUE_APP_API_URL}/api/servicios`,
-            servicioPayload
-          );
+          // Create new service
+          response = await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios`, servicioPayload);
+          
+          // Create associated payment record
+          pagosPayload.servicio = { id: response.data.id };
+          await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios-pagos`, pagosPayload);
         }
-
+        
         this.$emit("servicio-guardado", response.data);
-        alert("Servicio guardado con éxito.");
+        await this.$swal.fire({
+          icon: 'success',
+          title: '¡Éxito!',
+          text: this.modoEdicion ? 'Servicio actualizado correctamente' : 'Servicio creado correctamente',
+          confirmButtonColor: '#3085d6',
+          timer: 2000,
+          showConfirmButton: false
+        });
         this.cerrarModal();
       } catch (error) {
         console.error("Error al guardar el servicio:", error);
-        alert("Error al guardar el servicio. Por favor, verifica los datos e inténtalo de nuevo.");
+        let mensajeError = "Error al guardar el servicio. Por favor, verifica los datos e inténtalo de nuevo.";
+        if (error.response && error.response.data && (error.response.data.mensaje || error.response.data.message)) {
+          mensajeError = error.response.data.mensaje || error.response.data.message;
+        }
+        await this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: mensajeError,
+          confirmButtonColor: '#d33'
+        });
       }
     },
     verDetalleServicio(servicio) {
@@ -664,19 +992,151 @@ export default {
     resetNuevoServicio() {
       this.nuevoServicio = {
         id: "",
+        idCliente: typeof this.cliente === 'object' ? this.cliente.id : this.cliente,
+        idPuntoSuministro: this.puntoSuministroSeleccionado ? (typeof this.puntoSuministroSeleccionado === 'object' ? this.puntoSuministroSeleccionado.id : this.puntoSuministroSeleccionado) : "",
         cups: "",
-        fecha: "",
         fechaInicioServicio: "",
         fechaFinServicio: "",
-        fechaPago: "",
-        mesesCobrados: [],
         descripcion: "",
         idGestora: 0,
         idProducto: 0,
         idComercializadora: 0,
+        idPagoPlazos: null, // Cambiado de "" a null
+        importe: 0, // Cambiado de null a 0
+        descuento: 0, // Cambiado de null a 0
+        importeFinal: 0, // Cambiado de null a 0
         observaciones: "",
+        pagos: this.inicializarPagosServicios()
       };
     },
+    inicializarPagosServicios() {
+      return {
+        primerPagoFecha: null,
+        primerPagoImporte: null,
+        primerPagoPagado: false,
+        segundoPagoFecha: null,
+        segundoPagoImporte: null,
+        segundoPagoPagado: false,
+        tercerPagoFecha: null,
+        tercerPagoImporte: null,
+        tercerPagoPagado: false,
+        cuartoPagoFecha: null,
+        cuartoPagoImporte: null,
+        cuartoPagoPagado: false,
+        quintoPagoFecha: null,
+        quintoPagoImporte: null,
+        quintoPagoPagado: false,
+        sextoPagoFecha: null,
+        sextoPagoImporte: null,
+        sextoPagoPagado: false,
+        septimoPagoFecha: null,
+        septimoPagoImporte: null,
+        septimoPagoPagado: false,
+        octavoPagoFecha: null,
+        octavoPagoImporte: null,
+        octavoPagoPagado: false,
+        novenoPagoFecha: null,
+        novenoPagoImporte: null,
+        novenoPagoPagado: false,
+        decimoPagoFecha: null,
+        decimoPagoImporte: null,
+        decimoPagoPagado: false,
+        decimoprimerPagoFecha: null,
+        decimoprimerPagoImporte: null,
+        decimoprimerPagoPagado: false,
+        decimosegundoPagoFecha: null,
+        decimosegundoPagoImporte: null,
+        decimosegundoPagoPagado: false,
+        importe: null,
+        descuento: null,
+        importeFinal: null
+      };
+    },
+    obtenerPagosPagados(pagos) {
+      if (!pagos) return 0;
+      let contador = 0;
+      if (pagos.primerPagoPagado) contador++;
+      if (pagos.segundoPagoPagado) contador++;
+      if (pagos.tercerPagoPagado) contador++;
+      if (pagos.cuartoPagoPagado) contador++;
+      if (pagos.quintoPagoPagado) contador++;
+      if (pagos.sextoPagoPagado) contador++;
+      // Añadir las nuevas cuotas
+      if (pagos.septimoPagoPagado) contador++;
+      if (pagos.octavoPagoPagado) contador++;
+      if (pagos.novenoPagoPagado) contador++;
+      if (pagos.decimoPagoPagado) contador++;
+      if (pagos.decimoprimerPagoPagado) contador++;
+      if (pagos.decimosegundoPagoPagado) contador++;
+      return contador;
+    },
+    obtenerMesesPagados(pagos) {
+      if (!pagos) return 0;
+      return this.obtenerPagosPagados(pagos);
+    },
+    obtenerMesesCobrados(pagos) {
+      // En la nueva estructura no hay campo "cobrado", usamos pagado como referencia
+      return this.obtenerPagosPagados(pagos);
+    },
+    async cargarCuotas() {
+      if (!this.servicioActual || !this.servicioActual.id) return;
+      try {
+        const resp = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${this.servicioActual.id}/cuotas`);
+        this.cuotas = resp.data.map(c => ({ ...c, editado: false }));
+      } catch (e) {
+        this.cuotas = [];
+      }
+    },
+    marcarEditado(cuota) {
+      cuota.editado = true;
+    },
+    async guardarCuota(cuota) {
+      try {
+        await axios.put(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/cuota/${cuota.id}`, cuota);
+        cuota.editado = false;
+        this.$swal.fire({ icon: 'success', title: 'Cuota actualizada', timer: 1200, showConfirmButton: false });
+        // Recargar las cuotas para asegurar que la UI muestre el estado actualizado
+        await this.cargarCuotas();
+      } catch (e) {
+        this.$swal.fire({ icon: 'error', title: 'Error al guardar cuota', text: e.message });
+      }
+    },
+    async cargarModalidadesPago() {
+      try {
+        const resp = await axios.get(`${process.env.VUE_APP_API_URL}/api/pagos-plazos`);
+        this.modalidadesPago = resp.data;
+      } catch (e) {
+        this.modalidadesPago = [];
+      }
+    },
+    // NUEVO MÉTODO PARA CARGAR DATOS DE PAGOS DEL SERVICIO
+    async cargarDatosPagosServicio(servicioId) {
+      if (!servicioId) return;
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicioId}`);
+        const pagos = response.data;
+        if (pagos) {
+          this.nuevoServicio.idPagoPlazos = Number(pagos.pagoPlazos?.id) || null; // Asegurar que sea número o null
+          this.nuevoServicio.importe = parseFloat(pagos.importe) || 0;
+          this.nuevoServicio.descuento = parseFloat(pagos.descuento) || 0;
+          this.nuevoServicio.importeFinal = parseFloat(pagos.importeFinal) || 0;
+          
+          // Forzar la actualización de la UI después de cargar los datos de forma asíncrona
+          this.$nextTick(() => {
+            this.$forceUpdate();
+          });
+        }
+      } catch (error) {
+        console.error("Error al cargar datos de pagos del servicio:", error);
+        // Opcional: mostrar un mensaje de error al usuario
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar los detalles de pago de este servicio.',
+          confirmButtonColor: '#d33'
+        });
+      }
+    }
   },
 };
 </script>
@@ -684,6 +1144,191 @@ export default {
 <style scoped>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
 
+/* Estilos para el nuevo formato de cuotas con tarjetas */
+.cuotas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.cuota-card {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: white;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.cuota-card:hover {
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+.cuota-card.pagada {
+  border-color: #c6ebd9;
+  background: #f0fff7;
+}
+
+.cuota-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.cuota-card.pagada .cuota-header {
+  background: #d9f3e7;
+}
+
+.cuota-numero {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.cuota-estado {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  background: #ffe9e9;
+  color: #dc3545;
+}
+
+.cuota-estado.pagado {
+  background: #d1f0d9;
+  color: #198754;
+}
+
+.cuota-contenido {
+  padding: 10px;
+}
+
+.cuota-campo {
+  margin-bottom: 8px;
+}
+
+.cuota-campo label {
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 3px;
+  color: #6c757d;
+}
+
+.form-control-compact {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  height: 30px;
+}
+
+.input-euro-compact {
+  display: flex;
+  align-items: center;
+}
+
+.input-euro-compact input {
+  flex: 1;
+}
+
+.euro-symbol {
+  margin-left: 4px;
+  color: #6c757d;
+}
+
+.checkbox-field {
+  margin-top: 10px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.cuota-footer {
+  padding: 8px;
+  border-top: 1px solid #e9ecef;
+  text-align: center;
+}
+
+.btn-guardar {
+  width: 100%;
+  padding: 6px;
+  border: none;
+  border-radius: 4px;
+  background: #fcd700;
+  color: black;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+}
+
+.btn-guardar:hover:not(:disabled) {
+  background: #ecc800;
+}
+
+.btn-guardar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Estilos para el resumen de pagos compacto */
+.pagos-progreso {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 15px;
+  align-items: center;
+}
+
+.pagos-resumen-compacto {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.resumen-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.resumen-label {
+  color: #495057;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.resumen-valor {
+  color: #198754;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.sin-cuotas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  color: #6c757d;
+}
+
+/* Mantener los estilos existentes del archivo CSS que compartiste */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -805,7 +1450,6 @@ export default {
   overflow-y: auto; 
 }
 
-
 .client-banner {
   background: linear-gradient(135deg, #fff3cd 0%, #fffbe6 100%); 
   border-radius: 8px;
@@ -829,18 +1473,16 @@ export default {
   font-size: 0.9rem;
 }
 
-
 .modern-form {
   display: flex;
   flex-direction: column;
-   height: calc(100% - 70px); 
+  /* height: calc(100% - 70px); Eliminado para permitir que el formulario se ajuste dinámicamente */
 }
-
 
 .form-grid-modern {
   display: grid;
   grid-template-columns: repeat(2, 1fr); 
-  gap: 18px;
+  gap: 15px;
   max-width: 100%;
   flex: 1; 
   overflow-y: auto; 
@@ -851,7 +1493,7 @@ export default {
   background: #fff;
   border-radius: 8px;
   border: 1px solid #e9ecef;
-  padding: 18px;
+  padding: 15px;
 }
 
 .form-section-modern.full-width {
@@ -868,20 +1510,15 @@ export default {
 }
 
 .section-header-modern i {
-  font-size: 1.1rem;
-  color: black; 
-  width: 18px;
+  font-size: 1rem;
 }
 
 .section-header-modern h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
+  font-size: 0.95rem;
 }
 
 .form-group-modern {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .form-group-modern label {
@@ -904,7 +1541,6 @@ export default {
   margin-left: 2px;
 }
 
-
 .input-with-icon-modern {
   position: relative;
 }
@@ -923,19 +1559,21 @@ export default {
   padding-left: 32px; 
 }
 
-.form-control-modern {
+.form-control-modern,
+.form-select-modern {
   width: 100%;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 0.9rem;
   transition: all 0.2s;
   color: #333;
   background-color: #fff;
-  height: 38px;
+  height: 34px;
 }
 
-.form-control-modern:focus {
+.form-control-modern:focus,
+.form-select-modern:focus {
   border-color: rgba(252, 215, 0); 
   box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1); 
   outline: none;
@@ -986,7 +1624,8 @@ export default {
 }
 
 .btn-modern {
-  padding: 12px 20px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
   border-radius: 6px;
   font-weight: 500;
   transition: all 0.2s;
@@ -995,8 +1634,6 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 0.95rem;
-  border: none;
   outline: none;
 }
 
@@ -1030,7 +1667,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0; 
-  margin-top: 20px; 
+  margin-top: 15px;
 }
 
 .required-legend {
@@ -1224,19 +1861,18 @@ export default {
 }
 
 .history-table th {
-  background: #f8f9fa;
+  background-color: #f8f9fa;
   color: #495057;
   font-weight: 600;
-  text-align: left;
-  padding: 1rem;
+  text-align: center;
+  padding: 0.75rem 0.5rem;
   border-bottom: 2px solid #e9ecef;
-  white-space: nowrap;
 }
 
 .history-table td {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid #e9ecef;
-  vertical-align: middle;
+  padding: 0.5rem 0.5rem;
+  border: 1px solid #e0e0e0;
+  text-align: center;
 }
 
 .history-row:hover {
@@ -1426,7 +2062,6 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1rem; 
   background: #fff;
   border-radius: 8px;
   border: 1px solid #e0e0e0;
@@ -1471,58 +2106,103 @@ export default {
     grid-template-columns: 1fr; 
   }
   .detalle-contrato-content {
-    width: 95vw; 
-    max-width: 95vw; 
+    width: 95vw;
+    max-width: 95vw;
     margin: 10px;
   }
   .modal-content {
      width: 95vw;
      max-width: 95vw;
-      margin: 10px;
+     margin: 10px;
+  }
+  .cuotas-grid {
+    grid-template-columns: 1fr; /* Una columna en móviles */
   }
 }
 
-.meses-cobrados-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-top: 10px;
+/* Estilos responsivos específicos para la sección de cuotas */
+@media (max-width: 992px) {
+  .cuotas-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Columnas más estrechas */
+  }
 }
 
-.mes-checkbox {
+/* Estilos para el banner de puntos de suministro */
+.info-banner-punto {
+  background: #fffbe6;
+  color: #856404;
+  border: 1px solid #ffe082;
+  border-radius: 6px;
+  padding: 8px 15px; 
+  margin-bottom: 15px; 
+  font-size: 0.95rem;
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 8px;
-  background: #f8f9fa;
-  border-radius: 4px;
-  border: 1px solid #e9ecef;
+  gap: 8px;
+}
+.info-banner-punto i {
+  color: #fbc02d;
+  font-size: 1.2rem;
 }
 
-.mes-checkbox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.mes-checkbox label {
-  font-size: 0.9rem;
-  color: #495057;
-  cursor: pointer;
-}
-
-.meses-cobrados-display {
+/* Estilos para inputs con formato de euro */
+.input-euro-inline {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  align-items: center;
+  gap: 4px;
+}
+.euro-inline {
+  color: #888;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
-.mes-cobrado {
-  background: rgba(252, 215, 0, 0.1);
-  color: #856404;
-  padding: 4px 8px;
+.form-control-small {
+  padding: 5px 8px;
+  border: 1px solid #ced4da;
   border-radius: 4px;
-  font-size: 0.85rem;
-  border: 1px solid rgba(252, 215, 0, 0.2);
+  font-size: 0.8rem;
+  transition: border-color 0.15s ease-in-out;
+  height: 30px;
 }
+
+.form-control-small:focus {
+  outline: none;
+  border-color: #fcd700;
+  box-shadow: 0 0 0 0.2rem rgba(252, 215, 0, 0.25);
+}
+
+/* Animación para los elementos que cambian */
+@keyframes highlight {
+  0% { background-color: rgba(252, 215, 0, 0.2); }
+  100% { background-color: transparent; }
+}
+
+.highlight {
+  animation: highlight 1.5s ease;
+}
+
+/* Mejoras adicionales para la visualización de pagos */
+.pagos-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.pago-indicador {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.total-indicador {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #333;
+}
+
 </style>

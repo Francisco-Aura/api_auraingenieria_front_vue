@@ -270,7 +270,7 @@
     <ModalServicios v-if="modalCliente" 
       :visible="mostrarModalServicios" 
       :cliente="modalCliente"
-      :puntoSuministro="modalPuntoSuministro"
+      :puntoSuministroSeleccionado="getPuntoSuministroById(modalPuntoSuministro)"
       :servicios="servicios"
       :gestoras="gestoras"
       :productos="productos"
@@ -534,7 +534,6 @@ export default {
       try {
         this.loading = true;
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/all`);
-        console.log('Datos brutos de puntos de suministro del backend:', response.data);
         this.puntosSuministro = response.data.map(punto => {
           const newPunto = { ...punto };
           if (newPunto.CUPSluz !== undefined) {
@@ -547,7 +546,6 @@ export default {
           }
           return newPunto;
         });
-        console.log('Datos de puntos de suministro después de la transformación:', this.puntosSuministro);
       } catch (error) {
           console.error("Error al cargar los puntos de suministro:", error);
       } finally {
@@ -619,16 +617,13 @@ export default {
     },
 
     // Abre el modal de servicios con los datos del punto de suministro seleccionado
-    async abrirModalServicios(idPuntoSuministro,idCliente) {
+    async abrirModalServicios(idPuntoSuministro, idCliente) {
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios/punto-suministro/${idPuntoSuministro}`);
         this.servicios = response.data;
-        
-        // Obtener la información completa del cliente
         const responseCliente = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`);
         this.modalCliente = responseCliente.data;
-
-        this.modalPuntoSuministro = idPuntoSuministro;  
+        this.modalPuntoSuministro = idPuntoSuministro;
         this.mostrarModalServicios = true;
       } catch (error) {
         console.error("Error al cargar servicios:", error);
@@ -767,7 +762,11 @@ export default {
         console.error('Error al exportar a Excel:', error);
         alert('Error al exportar a Excel. Por favor, intente nuevamente.');
       }
-    }
+    },
+
+    getPuntoSuministroById(id) {
+      return this.puntosSuministro.find(p => p.id === id) || null;
+    },
   },
 
   // Se ejecuta cuando el componente es montado para cargar datos necesarios
@@ -843,19 +842,19 @@ export default {
 
 .stats-container {
   display: flex;
+  flex: 1;
   gap: 20px;
-  flex-wrap: wrap;
 }
 
 .stat-card {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  padding: 16px 20px;
   display: flex;
   align-items: center;
-  gap: 15px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  min-width: 200px;
+  transition: all 0.3s ease;
+  flex: 1;
 }
 
 .stat-icon {
@@ -870,19 +869,34 @@ export default {
   color: white;
 }
 
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background-color: var(--primary-light);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin-right: 16px;
+}
+
 .stat-content {
   flex: 1;
 }
 
 .stat-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: var(--text-color);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 0.85rem;
   color: var(--text-secondary);
+  margin-top: 4px;
 }
 
 /* Tabla */

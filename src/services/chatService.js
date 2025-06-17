@@ -12,7 +12,6 @@ class ChatService {
     connect(user, onMessageReceived, onUsersReceived) {
         try {
             if (this.stompClient && this.connected) {
-                console.log('Ya hay una conexión activa');
                 return;
             }
 
@@ -22,7 +21,6 @@ class ChatService {
                 onConnect: () => {
                     this.connected = true;
                     this.reconnectAttempts = 0;
-                    console.log('Conectado al servidor de chat');
                     
                     // Suscribirse a mensajes públicos
                     this.stompClient.subscribe('/topic/public', onMessageReceived);
@@ -39,12 +37,10 @@ class ChatService {
                 },
                 onDisconnect: () => {
                     this.connected = false;
-                    console.log('Desconectado del servidor de chat');
                     
                     // Intentar reconectar si no se ha alcanzado el límite
                     if (this.reconnectAttempts < this.maxReconnectAttempts) {
                         this.reconnectAttempts++;
-                        console.log(`Intentando reconectar (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
                         setTimeout(() => this.connect(user, onMessageReceived, onUsersReceived), 5000);
                     }
                 },

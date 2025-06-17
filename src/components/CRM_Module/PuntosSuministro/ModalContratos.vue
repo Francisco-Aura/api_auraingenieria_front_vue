@@ -192,55 +192,21 @@
                 </div>
               </div>
 
-              <!-- Sección de Opciones y Observaciones -->
+              <!-- Sección de Observaciones -->
               <div class="form-section-modern full-width">
                 <div class="section-header-modern">
-                  <i class="fas fa-cog"></i>
-                  <h3>Opciones y Observaciones</h3>
+                  <i class="fas fa-comment-alt"></i>
+                  <h3>Observaciones</h3>
                 </div>
                 
-                <div class="form-row-modern">
-                  <div class="checkbox-section">
-                    <div class="checkbox-group-modern">
-                      <label class="checkbox-modern">
-                        <input type="checkbox" v-model="nuevoContrato.autoconsumo" />
-                        <span class="checkmark"></span>
-                        <span class="checkbox-text">Autoconsumo</span>
-                      </label>
-                      
-                      <label class="checkbox-modern">
-                        <input type="checkbox" v-model="nuevoContrato.denunciaContrato" />
-                        <span class="checkmark"></span>
-                        <span class="checkbox-text">Denuncia Contrato</span>
-                      </label>
-                    </div>
-                    
-                    <div v-if="nuevoContrato.denunciaContrato" class="form-group-modern">
-                      <label for="fechaDenunciaContrato">Fecha Denuncia <span class="required">*</span></label>
-                      <div class="input-with-icon-modern">
-                        <i class="fas fa-exclamation-triangle icon-prefix"></i>
-                        <input 
-                          type="date" 
-                          id="fechaDenunciaContrato" 
-                          v-model="nuevoContrato.fechaDenunciaContrato" 
-                          class="form-control-modern" 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="observations-section">
-                    <div class="form-group-modern">
-                      <label for="observaciones">Observaciones</label>
-                      <textarea 
-                        id="observaciones" 
-                        v-model="nuevoContrato.observaciones" 
-                        class="form-control-modern textarea-modern" 
-                        rows="4"
-                        placeholder="Añada aquí cualquier observación relevante sobre el contrato..."
-                      ></textarea>
-                    </div>
-                  </div>
+                <div class="form-group-modern">
+                  <textarea 
+                    id="observaciones" 
+                    v-model="nuevoContrato.observaciones" 
+                    class="form-control-modern textarea-modern" 
+                    rows="4"
+                    placeholder="Añada aquí cualquier observación relevante sobre el contrato..."
+                  ></textarea>
                 </div>
               </div>
             </div>
@@ -278,6 +244,7 @@
                 </button>
               </div>
             </div>
+            
             <div class="contract-grid modern-grid">
               <div class="contract-section modern-section">
                 <div class="section-header">
@@ -311,47 +278,77 @@
                   <span class="info-value"><i class="fas fa-history"></i> {{ getComercializadoraNombre(contratoActual.idComercializadoraAnterior) }}</span>
                 </div>
               </div>
-              <div class="contract-section modern-section">
-                <div class="section-header">
-                  <i class="fas fa-bolt"></i>
-                  <h5>Potencias Contratadas</h5>
+            </div>
+            
+            <!-- Sección de Autoconsumo y Denuncia mejorada -->
+            <div class="features-section">
+              <div class="features-header">
+                <i class="fas fa-cog"></i>
+                <h5>Características Especiales</h5>
+              </div>
+              
+              <div class="feature-cards">
+                <!-- Tarjeta de autoconsumo -->
+                <div class="feature-card" :class="{'feature-active': contratoActual.autoconsumo}">
+                  <div class="feature-icon">
+                    <i class="fas fa-solar-panel"></i>
+                  </div>
+                  <div class="feature-details">
+                    <h6 class="feature-title">Autoconsumo</h6>
+                    <p class="feature-status">
+                      {{ contratoActual.autoconsumo ? 'Activado' : 'No activado' }}
+                    </p>
+                  </div>
                 </div>
-                <div class="potencia-grid">
-                  <div class="potencia-item">
-                    <span class="potencia-label">P1:</span>
-                    <span class="potencia-value">{{ contratoActual.potencia1 }} kW</span>
+                
+                <!-- Tarjeta de denuncia -->
+                <div class="feature-card denuncia" :class="{'feature-active': contratoActual.denunciaContrato}">
+                  <div class="feature-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
                   </div>
-                  <div class="potencia-item">
-                    <span class="potencia-label">P2:</span>
-                    <span class="potencia-value">{{ contratoActual.potencia2 }} kW</span>
-                  </div>
-                  <div class="potencia-item">
-                    <span class="potencia-label">P3:</span>
-                    <span class="potencia-value">{{ contratoActual.potencia3 }} kW</span>
-                  </div>
-                  <div class="potencia-item">
-                    <span class="potencia-label">P4:</span>
-                    <span class="potencia-value">{{ contratoActual.potencia4 }} kW</span>
-                  </div>
-                  <div class="potencia-item">
-                    <span class="potencia-label">P5:</span>
-                    <span class="potencia-value">{{ contratoActual.potencia5 }} kW</span>
-                  </div>
-                  <div class="potencia-item">
-                    <span class="potencia-label">P6:</span>
-                    <span class="potencia-value">{{ contratoActual.potencia6 }} kW</span>
+                  <div class="feature-details">
+                    <h6 class="feature-title">Denuncia de Contrato</h6>
+                    <p class="feature-status">
+                      {{ contratoActual.denunciaContrato ? `Denunciado el ${formatDate(contratoActual.fechaDenunciaContrato)}` : 'Sin denuncia' }}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="contract-status modern-status">
-              <div class="status-chip" :class="{ active: contratoActual.autoconsumo }">
-                <i class="fas fa-solar-panel"></i> Autoconsumo
+            
+            <div class="potencia-section">
+              <div class="section-header">
+                <i class="fas fa-bolt"></i>
+                <h5>Potencias Contratadas</h5>
               </div>
-              <div class="status-chip denuncia" :class="{ active: contratoActual.denunciaContrato }">
-                <i class="fas fa-exclamation-triangle"></i> Denuncia
+              <div class="potencia-grid">
+                <div class="potencia-item">
+                  <span class="potencia-label">P1:</span>
+                  <span class="potencia-value">{{ contratoActual.potencia1 }} kW</span>
+                </div>
+                <div class="potencia-item">
+                  <span class="potencia-label">P2:</span>
+                  <span class="potencia-value">{{ contratoActual.potencia2 }} kW</span>
+                </div>
+                <div class="potencia-item">
+                  <span class="potencia-label">P3:</span>
+                  <span class="potencia-value">{{ contratoActual.potencia3 }} kW</span>
+                </div>
+                <div class="potencia-item">
+                  <span class="potencia-label">P4:</span>
+                  <span class="potencia-value">{{ contratoActual.potencia4 }} kW</span>
+                </div>
+                <div class="potencia-item">
+                  <span class="potencia-label">P5:</span>
+                  <span class="potencia-value">{{ contratoActual.potencia5 }} kW</span>
+                </div>
+                <div class="potencia-item">
+                  <span class="potencia-label">P6:</span>
+                  <span class="potencia-value">{{ contratoActual.potencia6 }} kW</span>
+                </div>
               </div>
             </div>
+            
             <div class="contract-notes modern-notes" v-if="contratoActual.observaciones">
               <h5><i class="fas fa-sticky-note"></i> Observaciones</h5>
               <p>{{ contratoActual.observaciones }}</p>
@@ -363,7 +360,7 @@
           </div>
         </div>
         
-        <!-- Histórico de contratos - ORIGINAL -->
+        <!-- Histórico de contratos -->
         <div v-if="pestañaActiva === 'historico'" class="tab-content">
           <h3>Histórico de Contratos</h3>
           <div v-if="contratosHistoricosOrdenados.length" class="history-table-container">
@@ -952,6 +949,7 @@ export default {
 .form-grid-modern {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
   max-width: 100%;
   flex: 1;
 }
@@ -961,6 +959,7 @@ export default {
   border-radius: 8px;
   border: 1px solid #e9ecef;
   padding: 18px;
+  margin-bottom: 20px;
 }
 
 .form-section-modern.full-width {
@@ -1001,13 +1000,6 @@ export default {
   font-size: 0.85rem;
   font-weight: 500;
   color: black;
-}
-
-.form-row-modern {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 18px;
-  margin-bottom: 0;
 }
 
 .required {
@@ -1157,69 +1149,6 @@ export default {
   gap: 6px;
 }
 
-/* Checkboxes modernos */
-.checkbox-section {
-  flex: 1;
-}
-
-.checkbox-group-modern {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.checkbox-modern {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  position: relative;
-}
-
-.checkbox-modern input[type="checkbox"] {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.checkmark {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #ddd;
-  border-radius: 3px;
-  position: relative;
-  transition: all 0.2s;
-  background: #fff;
-}
-
-.checkbox-modern input[type="checkbox"]:checked + .checkmark {
-  background: rgba(252, 215, 0);
-  border-color: rgba(252, 215, 0);
-}
-
-.checkbox-modern input[type="checkbox"]:checked + .checkmark::after {
-  content: '\f00c';
-  font-family: 'Font Awesome 5 Free';
-  font-weight: 900;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 10px;
-}
-
-.checkbox-text {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: black;
-}
-
-.observations-section {
-  flex: 2;
-}
-
 /* Botones modernos */
 .btn-modern {
   padding: 12px 20px;
@@ -1266,6 +1195,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 20px 0;
   flex-shrink: 0;
 }
 
@@ -1324,6 +1254,7 @@ export default {
 .modern-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: 20px;
   margin-bottom: 1.2rem;
 }
 
@@ -1377,36 +1308,148 @@ export default {
   gap: 6px;
 }
 
-.modern-status {
-  display: flex;
-  gap: 1rem;
-  margin: 1.2rem 0 0.5rem 0;
+/* Nueva sección de características (autoconsumo y denuncia) */
+.features-section {
+  background: #f7f8fa;
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem 1rem 1.5rem;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(255,196,12,0.04);
+  border: 1px solid #f3f3f3;
 }
 
-.status-chip {
+.features-header {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 0.5rem 1.2rem;
-  border-radius: 20px;
-  background: #f7f8fa;
-  color: #888;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+.features-header i {
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.features-header h5 {
+  color: #333;
+  margin: 0;
+  font-size: 1.1rem;
   font-weight: 600;
-  border: 1.5px solid #f0f0f0;
-  font-size: 1rem;
-  transition: all 0.2s;
 }
 
-.status-chip.active {
-  background: rgba(252, 215, 0);
-  color:black;
+.feature-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.feature-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 15px;
+  transition: all 0.3s ease;
+}
+
+.feature-card.feature-active {
   border-color: rgba(252, 215, 0);
+  background-color: rgba(252, 215, 0, 0.05);
 }
 
-.status-chip.denuncia.active {
-  background: #e74c3c;
-  color: #fff;
+.feature-card.denuncia.feature-active {
   border-color: #e74c3c;
+  background-color: rgba(231, 76, 60, 0.05);
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  color: #aaa;
+  font-size: 1.5rem;
+}
+
+.feature-card.feature-active .feature-icon {
+  background-color: rgba(252, 215, 0, 0.2);
+  color: rgba(252, 215, 0);
+}
+
+.feature-card.denuncia.feature-active .feature-icon {
+  background-color: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+}
+
+.feature-details {
+  flex: 1;
+}
+
+.feature-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.feature-status {
+  font-size: 0.9rem;
+  color: #777;
+  margin: 0;
+}
+
+.feature-card.feature-active .feature-status {
+  color: black;
+  font-weight: 500;
+}
+
+.feature-card.denuncia.feature-active .feature-status {
+  color: #e74c3c;
+  font-weight: 500;
+}
+
+/* Sección de potencias */
+.potencia-section {
+  background: #f7f8fa;
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem 1rem 1.5rem;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(255,196,12,0.04);
+  border: 1px solid #f3f3f3;
+}
+
+.potencia-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.potencia-item {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+
+.potencia-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 600;
+}
+
+.potencia-value {
+  font-size: 1rem;
+  color: #2c3e50;
+  font-weight: 500;
 }
 
 .modern-notes {
@@ -1446,7 +1489,7 @@ export default {
   color: #adb5bd;
 }
 
-/* Estilos originales para histórico */
+/* Estilos para histórico */
 .history-table-container {
   background: #fff;
   border-radius: 12px;
@@ -1661,28 +1704,23 @@ export default {
   gap: 1rem;
 }
 
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
+.detalle-contrato-section {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
 }
 
-.info-label {
-  color: #666;
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.info-value {
+.detalle-contrato-section h4 {
   color: #2c3e50;
-  font-weight: 500;
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.detalle-contrato-section h4 i {
+  color: rgba(252, 215, 0);
 }
 
 .observaciones-content {
@@ -1707,42 +1745,71 @@ export default {
   border: 1px solid #e0e0e0;
 }
 
+.status-chip.active {
+  background: rgba(252, 215, 0);
+  color: black;
+  border-color: rgba(252, 215, 0);
+}
+
 .status-chip.denuncia.active {
   background: #e74c3c;
   color: #fff;
   border-color: #e74c3c;
 }
 
-.potencia-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.potencia-item {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 10px 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+/* Media queries para responsividad */
+@media (max-width: 1200px) {
+  .form-grid-modern {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .feature-cards {
+    grid-template-columns: 1fr;
+  }
 }
 
-.potencia-label {
-  font-size: 0.9rem;
-  color: #666;
-  font-weight: 600;
-}
-
-.potencia-value {
-  font-size: 1rem;
-  color: #2c3e50;
-  font-weight: 500;
+@media (max-width: 992px) {
+  .modern-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .potencia-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .detalle-contrato-content {
+    width: 80%;
+    max-width: 80%;
+  }
 }
 
 @media (max-width: 768px) {
+  .form-grid-modern {
+    grid-template-columns: 1fr;
+  }
+  
+  .contract-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .contract-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
   .detalle-contrato-header {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -1753,8 +1820,24 @@ export default {
   }
   
   .detalle-contrato-content {
-    width: 95vw;
-    margin: 10px;
+    width: 95%;
+    max-width: 95%;
+  }
+  
+  .potencia-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .tab-btn {
+    padding: 10px 15px;
+  }
+  
+  .tab-text {
+    display: none;
+  }
+  
+  .tab-btn i {
+    font-size: 1.2rem;
   }
 }
 </style>

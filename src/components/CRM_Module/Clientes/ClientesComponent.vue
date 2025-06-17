@@ -59,17 +59,6 @@
         </div>
       </div>
       <div class="table-responsive">
-        <div class="table-controls" hidden>
-          <div class="records-per-page">
-            <label for="recordsPerPage">Registros por página:</label>
-            <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-          </div>
-        </div>
         <table class="data-table">
           <thead>
             <tr>
@@ -275,6 +264,8 @@
       :sectores="sectores"
       :usuarios="usuarios"
       :subtipologias="subtipologias"
+      :appMonitorizacion="appMonitorizacion"
+      :integracionSistemasFV="integracionSistemasFV"
       @cancelar-formulario="cancelarFormulario"
       @crear-cliente="crearCliente"
       @actualizar-cliente="actualizarCliente"
@@ -331,6 +322,8 @@ export default {
       sectores: [], // Opciones de sectores
       usuarios: [], // Opciones de usuarios
       subtipologias: [], // Opciones de subtipologías
+      appMonitorizacion: [], // Opciones de aplicaciones de monitorización
+      integracionSistemasFV: [], // Opciones de integración sistemas FV
       isSubmitting: false, // Evita múltiples envíos del formulario
       showModalPS: false,           // Control de visibilidad para el modal de crear/actualizar Punto de Suministro
       modificarPunto: null,         // Datos del formulario para modificar/crear un punto de suministro
@@ -746,16 +739,24 @@ export default {
     }, 2000); // Simular carga por 2 segundos
     //Precargamos los arrays de los combos
     try {
-      const [clientes, usuarios, sectores, subtipologias] = await Promise.all([
+      const [clientes, usuarios, sectores, subtipologias, appMonitorizacion, integracionSistemasFV] = await Promise.all([
         axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/usuarios`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/sectores`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/subtipologias`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/app-monitorizacion`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`),
       ]);
       this.clientes = clientes.data;
       this.usuarios = usuarios.data;
       this.sectores = sectores.data;
       this.subtipologias = subtipologias.data;
+      this.appMonitorizacion = appMonitorizacion.data;
+      this.integracionSistemasFV = integracionSistemasFV.data;
+      
+      // Debug: verificar que se cargan los datos
+      console.log('APP Monitorización cargadas:', this.appMonitorizacion);
+      console.log('Integración Sistemas FV cargadas:', this.integracionSistemasFV);
     } catch (error) {
       console.error("Error al cargar datos iniciales:", error);
     }

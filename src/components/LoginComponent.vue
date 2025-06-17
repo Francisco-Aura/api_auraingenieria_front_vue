@@ -207,12 +207,12 @@ export default {
   justify-content: center;
   gap: 10px;
   background: var(--primary-color);
-  color: white;
+  color: black;
   border: none;
   padding: 12px 24px;
   border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }

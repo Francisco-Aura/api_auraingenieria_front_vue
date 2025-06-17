@@ -11,13 +11,15 @@
 
       <!-- Formulario principal -->
       <form @submit.prevent="modoActualizar ? actualizarCliente() : crearCliente()">
-        <!-- Pestañas para organizar el contenido -->
-        <div class="form-tabs">
+        <!-- Pestañas para organizar el contenido -->        <div class="form-tabs">
           <button type="button" class="tab-btn" :class="{ active: activeTab === 'principal' }" @click="activeTab = 'principal'">
             <i class="fas fa-user-tie"></i> <span class="tab-text">Datos Principales</span>
           </button>
           <button type="button" class="tab-btn" :class="{ active: activeTab === 'contactos' }" @click="activeTab = 'contactos'">
             <i class="fas fa-address-book"></i> <span class="tab-text">Contactos & Adicionales</span>
+          </button>
+          <button type="button" class="tab-btn" :class="{ active: activeTab === 'instalaciones' }" @click="activeTab = 'instalaciones'">
+            <i class="fas fa-tools"></i> <span class="tab-text">Instalaciones</span>
           </button>
         </div>
 
@@ -349,8 +351,7 @@
                   <div class="section-header-compact">
                     <i class="fas fa-sticky-note"></i>
                     <h3>Notas y observaciones</h3>
-                  </div>
-                  <div class="form-group-compact">
+                  </div>                  <div class="form-group-compact">
                     <textarea id="notas" v-model="clienteLocal.notas" class="form-control-compact notes-textarea" 
                       placeholder="Notas y observaciones..."></textarea>
                   </div>
@@ -358,19 +359,162 @@
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Botones de acción -->
-        <div class="modal-footer-compact">
-          <div class="required-legend"><span class="required">*</span> Campos obligatorios</div>            
-          <div class="action-buttons">
-            <button type="button" class="btn-compact btn-secondary" @click="cancelarFormulario">
-              <i class="fas fa-times"></i> Cancelar
-            </button>
-            <button type="submit" :disabled="isSubmitting" class="btn-compact btn-primary">
-              <i class="fas" :class="modoActualizar ? 'fa-save' : 'fa-plus-circle'"></i>
-              {{ modoActualizar ? 'Actualizar' : 'Crear' }}
-            </button>
+          <!-- Contenido de la pestaña Instalaciones -->
+          <div v-show="activeTab === 'instalaciones'" class="tab-content">
+            <div class="form-grid-compact">
+              <!-- Tres secciones de instalaciones en una fila -->
+              <div class="installations-row">
+                <!-- Batería de Condensadores -->
+                <div class="installation-card">
+                  <div class="section-header-compact">
+                    <i class="fas fa-battery-full"></i>
+                    <h3>Batería de Condensadores</h3>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="bateriaCondensadores">Batería de Condensadores <span class="required">*</span></label>
+                    <div class="select-container-compact">
+                      <select id="bateriaCondensadores" v-model="clienteLocal.bateriaCondensadores" class="form-select-compact" required>
+                        <option value="">Seleccione...</option>
+                        <option value="SI">SI</option>
+                        <option value="NO">NO</option>
+                      </select>
+                      <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="potenciaBateria">Potencia Batería</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-bolt icon-prefix"></i>
+                      <input type="text" id="potenciaBateria" v-model="clienteLocal.potenciaBateria" class="form-control-compact" />
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="modeloBateria">Modelo</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-tag icon-prefix"></i>
+                      <input type="text" id="modeloBateria" v-model="clienteLocal.modeloBateria" class="form-control-compact" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Instalación Fotovoltaica -->
+                <div class="installation-card">
+                  <div class="section-header-compact">
+                    <i class="fas fa-solar-panel"></i>
+                    <h3>Instalación Fotovoltaica</h3>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="instalacionFV">Instalación FV <span class="required">*</span></label>
+                    <div class="select-container-compact">
+                      <select id="instalacionFV" v-model="clienteLocal.instalacionFV" class="form-select-compact" required>
+                        <option value="">Seleccione...</option>
+                        <option value="SI">SI</option>
+                        <option value="NO">NO</option>
+                      </select>
+                      <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="kwInversor">KW Inversor</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-microchip icon-prefix"></i>
+                      <input type="text" id="kwInversor" v-model="clienteLocal.kwInversor" class="form-control-compact" />
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="kwPanelesSolares">KW Paneles Solares</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-sun icon-prefix"></i>
+                      <input type="text" id="kwPanelesSolares" v-model="clienteLocal.kwPanelesSolares" class="form-control-compact" />
+                    </div>
+                  </div>                  <div class="form-group-compact">
+                    <label for="appMonitorizacion">APP Monitorización</label>
+                    <div class="select-container-compact">
+                      <select id="appMonitorizacion" v-model="clienteLocal.appMonitorizacionId" class="form-select-compact">
+                        <option value="">Seleccione...</option>
+                        <option v-for="app in appMonitorizacion" :key="app.id" :value="app.id">
+                          {{ app.nombre }}
+                        </option>
+                      </select>
+                      <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Almacenamiento Energético -->
+                <div class="installation-card">
+                  <div class="section-header-compact">
+                    <i class="fas fa-warehouse"></i>
+                    <h3>Almacenamiento Energético</h3>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="bateriaAlmacenamiento">Batería <span class="required">*</span></label>
+                    <div class="select-container-compact">
+                      <select id="bateriaAlmacenamiento" v-model="clienteLocal.bateriaAlmacenamiento" class="form-select-compact" required>
+                        <option value="">Seleccione...</option>
+                        <option value="SI">SI</option>
+                        <option value="NO">NO</option>
+                      </select>
+                      <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="potenciaBateriaAlmacenamiento">Potencia Batería</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-bolt icon-prefix"></i>
+                      <input type="text" id="potenciaBateriaAlmacenamiento" v-model="clienteLocal.potenciaBateriaAlmacenamiento" class="form-control-compact" />
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="backup">Backup</label>
+                    <div class="select-container-compact">
+                      <select id="backup" v-model="clienteLocal.backup" class="form-select-compact">
+                        <option value="">Seleccione...</option>
+                        <option value="SI">SI</option>
+                        <option value="NO">NO</option>
+                      </select>
+                      <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="peaksaving">Peaksaving</label>
+                    <div class="select-container-compact">
+                      <select id="peaksaving" v-model="clienteLocal.peaksaving" class="form-select-compact">
+                        <option value="">Seleccione...</option>
+                        <option value="SI">SI</option>
+                        <option value="NO">NO</option>
+                      </select>
+                      <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                  </div>                  <div class="form-group-compact">
+                    <label for="integracionSistemasFV">Integración con Sistemas Fotovoltaicos</label>
+                    <div class="select-container-compact">
+                      <select id="integracionSistemasFV" v-model="clienteLocal.integracionSistemasFVId" class="form-select-compact">
+                        <option value="">Seleccione...</option>
+                        <option v-for="sistema in integracionSistemasFV" :key="sistema.id" :value="sistema.id">
+                          {{ sistema.nombre }}
+                        </option>
+                      </select>
+                      <i class="fas fa-chevron-down select-icon"></i>
+                    </div>
+                  </div>
+                </div>              </div>
+            </div>
+
+            <!-- Botones de acción solo en la última pestaña -->
+            <div class="modal-footer-compact">
+              <div class="required-legend"><span class="required">*</span> Campos obligatorios</div>            
+              <div class="action-buttons">
+                <button type="button" class="btn-compact btn-secondary" @click="cancelarFormulario">
+                  <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="submit" :disabled="isSubmitting" class="btn-compact btn-primary">
+                  <i class="fas" :class="modoActualizar ? 'fa-save' : 'fa-plus-circle'"></i>
+                  {{ modoActualizar ? 'Actualizar' : 'Crear' }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </form>
@@ -416,17 +560,35 @@ export default {
         emailContacto2: "",
         nombreContacto3: "",
         cargoContacto3: "",
-        telefonoContacto3: "",
-        emailContacto3: "",
+        telefonoContacto3: "",        emailContacto3: "",
         iban: "",
         userTelemedida: "",
-        passTelemedida: "",
-        usuario: null,
+        passTelemedida: "",        usuario: null,
+        // Campos de instalaciones
+        bateriaCondensadores: "",
+        potenciaBateria: "",
+        modeloBateria: "",
+        instalacionFV: "",
+        kwInversor: "",
+        kwPanelesSolares: "",
+        appMonitorizacionId: null,
+        bateriaAlmacenamiento: "",
+        potenciaBateriaAlmacenamiento: "",
+        backup: "",
+        peaksaving: "",
+        integracionSistemasFVId: null,
       })
-    },
-    sectores: Array,
+    },    sectores: Array,
     usuarios: Array,
     subtipologias: Array,
+    appMonitorizacion: {
+      type: Array,
+      default: () => []
+    },
+    integracionSistemasFV: {
+      type: Array,
+      default: () => []
+    },
     isSubmitting: Boolean,
   },
   data() {
@@ -457,8 +619,7 @@ export default {
         } else {
           this.clienteLocal = this.crearClienteVacio();
         }
-      },
-    },
+      },    },
     usuarios(newVal) {
       if (newVal.length && this.clienteLocal.idUsuario) {
         const usuario = newVal.find(
@@ -466,6 +627,12 @@ export default {
         );
         this.clienteLocal.usuario = usuario || null;
       }
+    },
+    appMonitorizacion(newVal) {
+      console.log('AppMonitorizacion props recibidas:', newVal);
+    },
+    integracionSistemasFV(newVal) {
+      console.log('IntegracionSistemasFV props recibidas:', newVal);
     }
   },
   methods: {
@@ -499,12 +666,23 @@ export default {
         emailContacto2: "",
         nombreContacto3: "",
         cargoContacto3: "",
-        telefonoContacto3: "",
-        emailContacto3: "",
+        telefonoContacto3: "",        emailContacto3: "",
         iban: "",
         userTelemedida: "",
-        passTelemedida: "",
-        usuario: null,
+        passTelemedida: "",        usuario: null,
+        // Campos de instalaciones
+        bateriaCondensadores: "",
+        potenciaBateria: "",
+        modeloBateria: "",
+        instalacionFV: "",
+        kwInversor: "",
+        kwPanelesSolares: "",
+        appMonitorizacionId: null,
+        bateriaAlmacenamiento: "",
+        potenciaBateriaAlmacenamiento: "",
+        backup: "",
+        peaksaving: "",
+        integracionSistemasFVId: null,
       };
     },
     cancelarFormulario() {
@@ -541,9 +719,13 @@ export default {
         passInput.type = this.showPassword ? 'text' : 'password';
         if (eyeIcon) {
           eyeIcon.className = this.showPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
-        }
-      }
+        }      }
     }
+  },
+  mounted() {
+    console.log('CreaActualizaClienteComponent mounted');
+    console.log('appMonitorizacion props:', this.appMonitorizacion);
+    console.log('integracionSistemasFV props:', this.integracionSistemasFV);
   },
 };
 </script>
@@ -981,10 +1163,44 @@ export default {
     gap: 10px;
     padding: 12px 20px;
   }
-  
-  .action-buttons {
+    .action-buttons {
     width: 100%;
     justify-content: space-between;
+  }
+}
+
+/* Estilos específicos para la sección de instalaciones */
+.installations-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.installation-card {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  padding: 18px;
+  min-height: 400px; /* Altura mínima para mantener consistencia */
+}
+
+/* Iconos específicos para instalaciones */
+.installation-card .section-header-compact i {
+  color: #28a745; /* Verde para instalaciones */
+}
+
+/* Responsive para instalaciones */
+@media (max-width: 1200px) {
+  .installations-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .installations-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>
