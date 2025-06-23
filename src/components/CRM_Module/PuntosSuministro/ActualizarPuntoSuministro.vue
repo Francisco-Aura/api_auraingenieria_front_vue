@@ -46,6 +46,20 @@
                 <label for="provincia">Provincia <span class="required">*</span></label>
                 <input type="text" id="provincia" v-model="puntoLocal.provincia" :readonly="modoConsulta" required />
               </div>
+              <div class="form-compact-group">
+                <label for="identificacion">Identificación</label>
+                <div class="input-with-icon">
+                  <i class="fas fa-id-card icon-prefix"></i>
+                  <input type="text" id="identificacion" v-model="puntoLocal.identificacion" :readonly="modoConsulta" placeholder="Identificación del punto de suministro" />
+                </div>
+              </div>
+              <div class="form-compact-group">
+                <label for="ubicacion">Ubicación (Google Maps)</label>
+                <div class="input-with-icon">
+                  <i class="fas fa-map-marker-alt icon-prefix"></i>
+                  <textarea id="ubicacion" v-model="puntoLocal.ubicacion" :readonly="modoConsulta" rows="2" placeholder="Enlace de Google Maps con la ubicación exacta"></textarea>
+                </div>
+              </div>
             </div>
 
             <!-- Sección de Suministros -->
@@ -81,8 +95,8 @@
                 </div>
               </div>
             </div>
-            
-            <!-- Sección de Información Adicional -->
+
+            <!-- Sección de Información Adicional (Parte 1) -->
             <div class="form-section">
               <div class="section-header">
                 <i class="fas fa-info-circle"></i>
@@ -111,19 +125,6 @@
                   <label for="fechaConcesion">F. Concesión</label>
                   <input type="date" id="fechaConcesion" v-model="puntoLocal.fechaConcesion" :readonly="modoConsulta" />
                 </div>
-              </div>
-              <div class="form-compact-group">
-                <label for="autoconsumo">Autoconsumo</label>
-                <select id="autoconsumo" v-model="puntoLocal.autoconsumo" :disabled="modoConsulta">
-                  <option :value="null">Seleccione</option>
-                  <option value="Compensación de excedentes simplificada">Compensación de excedentes simplificada</option>
-                  <option value="Compensación de excedentes colectiva">Compensación de excedentes colectiva</option>
-                  <option value="Autoconsumo sin excedentes">Autoconsumo sin excedentes</option>
-                </select>
-              </div>
-              <div class="form-compact-group" v-if="puntoLocal.autoconsumo">
-                <label for="fechaActivacionVertido">Fecha Activación Vertido</label>
-                <input type="date" id="fechaActivacionVertido" v-model="puntoLocal.fechaActivacionVertido" :readonly="modoConsulta" />
               </div>
             </div>
 
@@ -235,6 +236,27 @@
                 </div>
               </div>
             </div>
+
+            <!-- Sección de Información Adicional (Parte 2) -->
+            <div class="form-section">
+              <div class="section-header">
+                <i class="fas fa-info-circle"></i>
+                <h3>Información Adicional (Cont.)</h3>
+              </div>
+              <div class="form-compact-group">
+                <label for="autoconsumo">Autoconsumo</label>
+                <select id="autoconsumo" v-model="puntoLocal.autoconsumo" :disabled="modoConsulta">
+                  <option :value="null">Seleccione</option>
+                  <option value="Compensación de excedentes simplificada">Compensación de excedentes simplificada</option>
+                  <option value="Compensación de excedentes colectiva">Compensación de excedentes colectiva</option>
+                  <option value="Autoconsumo sin excedentes">Autoconsumo sin excedentes</option>
+                </select>
+              </div>
+              <div class="form-compact-group" v-if="puntoLocal.autoconsumo">
+                <label for="fechaActivacionVertido">Fecha Activación Vertido</label>
+                <input type="date" id="fechaActivacionVertido" v-model="puntoLocal.fechaActivacionVertido" :readonly="modoConsulta" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -290,7 +312,9 @@ export default {
         autoconsumo: this.modificarPunto?.autoconsumo || null,
         fechaActivacionVertido: this.modificarPunto?.fechaActivacionVertido || null,
         usuarioMonitorizacion: this.modificarPunto?.usuarioMonitorizacion || '',
-        passMonitorizacion: this.modificarPunto?.passMonitorizacion || ''
+        passMonitorizacion: this.modificarPunto?.passMonitorizacion || '',
+        identificacion: this.modificarPunto?.identificacion || '',
+        ubicacion: this.modificarPunto?.ubicacion || ''
       },
       distribuidoras: [],
       tiposContador: [],
@@ -367,6 +391,8 @@ export default {
             fechaActivacionVertido: null,
             usuarioMonitorizacion: '',
             passMonitorizacion: '',
+            identificacion: '',
+            ubicacion: '',
             cliente: this.modificarPunto?.cliente || null, // Mantener el cliente si viene en modificarPunto
           };
         }
@@ -408,7 +434,9 @@ export default {
         autoconsumo: newVal.autoconsumo || null,
         fechaActivacionVertido: newVal.fechaActivacionVertido || null,
         usuarioMonitorizacion: newVal.usuarioMonitorizacion || '',
-        passMonitorizacion: newVal.passMonitorizacion || ''
+        passMonitorizacion: newVal.passMonitorizacion || '',
+        identificacion: newVal.identificacion || '',
+        ubicacion: newVal.ubicacion || ''
       };
 
       // Asegurarse de que los datos maestros estén cargados antes de intentar buscar entidades
@@ -516,6 +544,8 @@ export default {
           fechaActivacionVertido: this.puntoLocal.autoconsumo ? (this.puntoLocal.fechaActivacionVertido || null) : null,
           usuarioMonitorizacion: this.puntoLocal.usuarioMonitorizacion?.trim() || null,
           passMonitorizacion: this.puntoLocal.passMonitorizacion?.trim() || null,
+          identificacion: this.puntoLocal.identificacion?.trim() || null,
+          ubicacion: this.puntoLocal.ubicacion?.trim() || null,
         };
         
         // Debug logs para verificar los valores CUPS
@@ -558,7 +588,7 @@ export default {
   border-radius: 12px;
   width: 100%;
   max-width: 90%;
-  max-height: 90%;
+  max-height: 100%;
   display: flex;
   flex-direction: column; /* Asegura que los hijos se apilen verticalmente */
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -646,8 +676,7 @@ export default {
 .form-section {
   background: var(--surface-color);
   border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 20px; /* Espacio entre secciones */
+  padding: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
@@ -658,7 +687,6 @@ export default {
 .section-header {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--border-color);
 }
@@ -675,13 +703,8 @@ export default {
   color: var(--text-primary);
 }
 
-.form-compact-group {
-  margin-bottom: 5px; /* Reducido para mayor compactación */
-}
-
 .form-compact-group label {
   display: block;
-  margin-bottom: 5px;
   font-weight: 500;
   color: var(--text-primary);
   font-size: 0.9rem;
@@ -815,7 +838,7 @@ export default {
 
   .modal-content {
     max-width: 95%;
-    max-height: 95%;
+    max-height: 100%;
   }
 
   .modal-header,

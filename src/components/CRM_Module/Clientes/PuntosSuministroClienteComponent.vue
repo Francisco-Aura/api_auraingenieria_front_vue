@@ -23,7 +23,8 @@
           <table v-if="puntosSuministro.length > 0" class="data-table">
             <thead>
               <tr>
-                <th><i class="fas fa-map-marker-alt"></i> Dirección</th>
+                <th><i class="fas fa-map-marker-alt"></i> Direccion</th>
+                <th><i class="fas fa-id-card"></i> Identificacion</th>
                 <th><i class="fas fa-bolt"></i> CUPS Luz</th>
                 <th><i class="fas fa-fire"></i> CUPS Gas</th>
                 <th class="actions-header"><i class="fas fa-cogs"></i> Acciones</th>
@@ -34,6 +35,7 @@
                 <td class="text-truncate" :title="`${punto.direccion}, ${punto.codigoPostal}, ${punto.poblacion}, ${punto.provincia}`">
                   {{ punto.direccion }}, {{ punto.codigoPostal }}, {{ punto.poblacion }}, {{ punto.provincia }}
                 </td>
+                <td class="text-truncate" :title="punto.identificacion">{{ punto.identificacion || '-' }}</td>
                 <td class="text-truncate" :title="punto.cupsluz">{{ punto.cupsluz }}</td>
                 <td class="text-truncate" :title="punto.cupsgas">{{ punto.cupsgas }}</td>
                 <td class="actions-cell">

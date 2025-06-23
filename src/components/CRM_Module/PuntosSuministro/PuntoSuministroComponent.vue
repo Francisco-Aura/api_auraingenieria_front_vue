@@ -98,7 +98,25 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 20%">
+              <th class="sortable" style="width: 15%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('identificacion')">
+                    <i class="fas fa-id-card mr-2"></i>Identificación
+                    <i :class="getSortIcon('identificacion')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.identificacion" 
+                      @input="filterByColumn('identificacion', $event.target.value)"
+                      placeholder="Filtrar..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
+              </th>
+              <th class="sortable" style="width: 15%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('cupsluz')">
                     <i class="fas fa-bolt mr-2"></i>CUPS
@@ -168,6 +186,9 @@
                 {{ suministro.direccion }}, {{ suministro.codigoPostal }}, 
                 {{ suministro.poblacion }}, {{ suministro.provincia }}
               </td>
+              <td class="text-truncate" :title="suministro.identificacion">
+                {{ suministro.identificacion || '-' }}
+              </td>
               <td class="text-truncate" :title="suministro.cupsluz || suministro.cupsgas">
                 {{ suministro.cupsluz || suministro.cupsgas }}
               </td>
@@ -200,7 +221,7 @@
               </td>
             </tr>
             <tr v-if="paginatedPuntosSuministro.length === 0">
-              <td colspan="5" class="text-center py-4">
+              <td colspan="6" class="text-center py-4">
                 <div class="empty-state">
                   <i class="fas fa-search fa-3x text-muted"></i>
                   <p class="mt-3">No se encontraron puntos de suministro que coincidan con la búsqueda</p>
@@ -307,6 +328,7 @@ export default {
       columnFilters: {
         cliente: '',
         direccion: '',
+        identificacion: '',
         cupsluz: '',
         tipo: '',
         tarifa: ''
@@ -604,7 +626,10 @@ export default {
         const responseCliente = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`);
         this.modalCliente = responseCliente.data;
         
-        this.modalPuntoSuministro = idPuntoSuministro;  
+        // Obtener la información completa del punto de suministro desde el backend
+        const responsePuntoSuministro = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${idPuntoSuministro}`);
+        this.modalPuntoSuministro = responsePuntoSuministro.data;
+        
         this.mostrarModalContratos = true;
       } catch (error) {
         console.error("Error al cargar datos:", error);
@@ -729,6 +754,7 @@ export default {
         const data = this.filteredPuntosSuministro.map(punto => ({
           'Cliente': punto.cliente || '-',
           'Dirección': `${punto.direccion}, ${punto.codigoPostal}, ${punto.poblacion}, ${punto.provincia}`,
+          'Identificación': punto.identificacion || '-',
           'CUPS': punto.cupsluz || punto.cupsgas || '-',
           'Tipo': this.getTipoCups(punto) || '-',
           'Tarifa': this.getTarifa(punto) || '-'
@@ -741,6 +767,7 @@ export default {
         const wscols = [
           {wch: 30}, // Cliente
           {wch: 50}, // Dirección
+          {wch: 20}, // Identificación
           {wch: 25}, // CUPS
           {wch: 10}, // Tipo
           {wch: 10}  // Tarifa
@@ -929,26 +956,49 @@ export default {
 
 .table-responsive {
   overflow-x: auto;
+  background-color: white;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
 .data-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 0;
 }
 
 .data-table th {
-  background: var(--surface-color);
-  padding: 15px;
-  text-align: left;
-  font-weight: 600;
-  color: var(--text-color);
+  padding: 12px;
+  vertical-align: top;
+  background-color: var(--surface-color);
   border-bottom: 2px solid var(--border-color);
 }
 
-.data-table td {
+.data-table th {
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+  font-weight: 600;
   padding: 15px;
+  text-align: left;
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.data-table td {
+  padding: 12px 15px;
   border-bottom: 1px solid var(--border-color);
-  color: var(--text-color);
+  vertical-align: middle;
+  height: 52px; /* Altura fija para las filas */
+}
+
+.text-truncate {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .column-header {
@@ -960,8 +1010,14 @@ export default {
 .column-title {
   display: flex;
   align-items: center;
-  gap: 8px;
   cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.column-title:hover {
+  background-color: var(--hover-color);
 }
 
 .column-filter-container {
@@ -970,10 +1026,24 @@ export default {
 
 .column-filter {
   width: 100%;
-  padding: 6px 8px;
+  padding: 6px 12px;
   border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.column-filter:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.column-filter::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
 }
 
 .tipo-indicator {
@@ -1005,25 +1075,32 @@ export default {
 .action-buttons {
   display: flex;
   gap: 8px;
+  justify-content: center;
+  min-width: 120px; /* Ancho mínimo para los botones de acción */
 }
 
 .btn-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  background: transparent;
   border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: var(--surface-color);
-  color: var(--text-color);
+  transition: all 0.2s ease;
+  padding: 0;
+  margin: 0;
 }
 
-.btn-icon:hover {
-  background: var(--primary-color);
-  color: white;
+.btn-icon i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .btn-icon.btn-edit {
@@ -1170,6 +1247,55 @@ export default {
   color: var(--text-primary);
   cursor: pointer;
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .suministro-container {
+    padding: 15px;
+  }
+
+  .stats-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 10px;
+  }
+
+  .data-table th {
+    font-size: 0.9rem;
+  }
+
+  .data-table td {
+    font-size: 0.85rem;
+    height: 48px;
+  }
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  background-color: var(--hover-color);
+}
+
+.data-table th i {
+  margin-left: 4px;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+.sortable .column-title {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.sortable .column-title:hover {
+  color: var(--primary-color);
+}
 </style>
 
- 

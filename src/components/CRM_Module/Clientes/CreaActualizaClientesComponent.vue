@@ -137,17 +137,25 @@
                       <i class="fas fa-chevron-down select-icon"></i>
                     </div>
                   </div>
-                </div>
-                <div class="form-group-compact">
+                </div>                <div class="form-group-compact">
                   <label for="usuario">Usuario Asignado <span class="required">*</span></label>
                   <div class="select-container-compact">
-                    <select id="usuario" v-model="clienteLocal.idUsuario" class="form-select-compact" required>
+                    <select 
+                      id="usuario" 
+                      v-model="clienteLocal.idUsuario" 
+                      class="form-select-compact" 
+                      :disabled="!isAdvancedUser"
+                      required
+                    >
                       <option value="">Seleccione...</option>
                       <option v-for="usuario in usuarios" :key="usuario.id" :value="usuario.id">
                         {{ usuario.nombre }}
                       </option>
                     </select>
                     <i class="fas fa-chevron-down select-icon"></i>
+                  </div>
+                  <div v-if="!isAdvancedUser" class="field-restriction-note">
+                    <i class="fas fa-info-circle"></i> Solo usuarios avanzados pueden modificar este campo
                   </div>
                 </div>
               </div>
@@ -182,9 +190,32 @@
                     <div class="input-with-icon-compact">
                       <i class="fas fa-envelope icon-prefix"></i>
                       <input type="email" id="emailAutorizado" v-model="clienteLocal.emailAutorizado" class="form-control-compact" required />
-                    </div>
-                  </div>
+                    </div>                  </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- Servicios del Cliente -->
+            <div class="services-section">
+              <div class="services-header">
+                <h3><i class="fas fa-cog"></i> Servicios del Cliente</h3>
+              </div>
+              <div class="services-checkboxes">
+                <label class="service-checkbox">
+                  <input type="checkbox" v-model="clienteLocal.gestionEnergetica" />
+                  <span class="checkmark"></span>
+                  <span class="service-label">GESTIÓN ENERGÉTICA</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" v-model="clienteLocal.telemedida" />
+                  <span class="checkmark"></span>
+                  <span class="service-label">TELEMEDIDA</span>
+                </label>
+                <label class="service-checkbox">
+                  <input type="checkbox" v-model="clienteLocal.monitorizacionEnergetica" />
+                  <span class="checkmark"></span>
+                  <span class="service-label">MONITORIZACIÓN ENERGÉTICA</span>
+                </label>
               </div>
             </div>
           </div>
@@ -497,10 +528,8 @@
                         </option>
                       </select>
                       <i class="fas fa-chevron-down select-icon"></i>
-                    </div>
-                  </div>
-                </div>              </div>
-            </div>
+                    </div>                  </div>
+                </div>              </div>            </div>
 
             <!-- Botones de acción solo en la última pestaña -->
             <div class="modal-footer-compact">
@@ -555,8 +584,7 @@ export default {
         telefonoContacto1: "",
         emailContacto1: "",
         nombreContacto2: "",
-        cargoContacto2: "",
-        telefonoContacto2: "",
+        cargoContacto2: "",        telefonoContacto2: "",
         emailContacto2: "",
         nombreContacto3: "",
         cargoContacto3: "",
@@ -577,6 +605,10 @@ export default {
         backup: "",
         peaksaving: "",
         integracionSistemasFVId: null,
+        // Servicios del cliente
+        gestionEnergetica: false,
+        telemedida: false,
+        monitorizacionEnergetica: false,
       })
     },    sectores: Array,
     usuarios: Array,
@@ -590,13 +622,18 @@ export default {
       default: () => []
     },
     isSubmitting: Boolean,
-  },
-  data() {
+  },  data() {
     return {
       activeTab: 'principal',
       showPassword: false,
       clienteLocal: this.crearClienteVacio(),
     };
+  },
+  computed: {
+    isAdvancedUser() {
+      const usuario = JSON.parse(localStorage.getItem('usuario'));
+      return usuario && usuario.nivelAcceso === 1;
+    }
   },
   watch: {
     formularioVisible(newVal) {
@@ -675,14 +712,17 @@ export default {
         potenciaBateria: "",
         modeloBateria: "",
         instalacionFV: "",
-        kwInversor: "",
-        kwPanelesSolares: "",
+        kwInversor: "",        kwPanelesSolares: "",
         appMonitorizacionId: null,
         bateriaAlmacenamiento: "",
         potenciaBateriaAlmacenamiento: "",
         backup: "",
         peaksaving: "",
         integracionSistemasFVId: null,
+        // Servicios del cliente
+        gestionEnergetica: false,
+        telemedida: false,
+        monitorizacionEnergetica: false,
       };
     },
     cancelarFormulario() {
@@ -750,8 +790,8 @@ export default {
 .modal-content {
   width: 90%;
   max-width: 90%;
-  height: 90%;
-  max-height: 90%;
+  height: 100%;
+  max-height: 100%;
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
@@ -1194,12 +1234,111 @@ export default {
 /* Responsive para instalaciones */
 @media (max-width: 1200px) {
   .installations-row {
-    grid-template-columns: repeat(2, 1fr);
-  }
+    grid-template-columns: repeat(2, 1fr);  }
+}
+
+/* Sección de servicios */
+.services-section {
+  margin: 20px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.services-header h3 {
+  color: #495057;
+  font-size: 1.1rem;
+  margin: 0 0 15px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.services-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.service-checkbox {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  padding: 10px;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.service-checkbox:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+.service-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.checkmark {
+  height: 20px;
+  width: 20px;
+  background-color: #fff;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  margin-right: 12px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.service-checkbox input[type="checkbox"]:checked + .checkmark {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.service-checkbox input[type="checkbox"]:checked + .checkmark:after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.service-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Nota de restricción de campo */
+.field-restriction-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  padding: 6px 10px;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  color: #856404;
+  font-size: 0.8rem;
+}
+
+.field-restriction-note i {
+  color: #f39c12;
 }
 
 @media (max-width: 900px) {
   .installations-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .services-checkboxes {
     grid-template-columns: 1fr;
   }
 }

@@ -25,6 +25,8 @@
           class="tab-btn" 
           :class="{ active: pestañaActiva === 'actual' }" 
           @click="pestañaActiva = 'actual'"
+          :disabled="!tieneContratoVigente"
+          :title="!tieneContratoVigente ? 'No hay contrato vigente' : ''"
         >
           <i class="fas fa-file-contract"></i> 
           <span class="tab-text">Actual</span>
@@ -192,6 +194,25 @@
                 </div>
               </div>
 
+              <!-- Sección de Autoconsumo -->
+              <div class="form-section-modern">
+                <div class="section-header-modern">
+                  <i class="fas fa-solar-panel"></i>
+                  <h3>Autoconsumo</h3>
+                </div>
+                
+                <div class="form-group-modern">
+                  <div v-if="tieneAutoconsumo" class="info-badge-modern success">
+                    <i class="fas fa-info-circle"></i>
+                    Este punto de suministro tiene autoconsumo configurado: <strong>{{ puntoSuministroData?.autoconsumo }}</strong>
+                  </div>
+                  <div v-else class="info-badge-modern neutral">
+                    <i class="fas fa-info-circle"></i>
+                    Este punto de suministro no tiene autoconsumo configurado
+                  </div>
+                </div>
+              </div>
+
               <!-- Sección de Observaciones -->
               <div class="form-section-modern full-width">
                 <div class="section-header-modern">
@@ -229,14 +250,14 @@
         <!-- Visualizar contrato actual -->
         <div v-if="pestañaActiva === 'actual'" class="tab-content">
           <h3>Contrato Actual</h3>
-          <div v-if="contratoActual" class="contract-details modern-contract-card">
+          <div v-if="contratoVigente" class="contract-details modern-contract-card">
             <div class="contract-header">
               <div class="contract-info">
-                <h4>Contrato <span class="contract-number">#{{ contratoActual.contrato }}</span></h4>
-                <p class="contract-dates"><i class="fas fa-calendar-alt"></i> Vigente desde <b>{{ formatDate(contratoActual.fechaInicio) }}</b> hasta <b>{{ formatDate(contratoActual.fechaFin) }}</b></p>
+                <h4>Contrato <span class="contract-number">#{{ contratoVigente.contrato }}</span></h4>
+                <p class="contract-dates"><i class="fas fa-calendar-alt"></i> Vigente desde <b>{{ formatDate(contratoVigente.fechaInicio) }}</b> hasta <b>{{ formatDate(contratoVigente.fechaFin) }}</b></p>
               </div>
               <div class="contract-actions">
-                <button @click="descargarPDF(contratoActual)" class="btn btn-secondary" v-if="contratoActual.rutaArchivoContrato">
+                <button @click="descargarPDF(contratoVigente)" class="btn btn-secondary" v-if="contratoVigente.rutaArchivoContrato">
                   <i class="fas fa-download"></i> Descargar PDF
                 </button>
                 <button @click="editarContrato" class="btn btn-primary">
@@ -253,15 +274,15 @@
                 </div>
                 <div class="info-row">
                   <span class="info-label">Fecha Envío</span>
-                  <span class="info-value"><i class="fas fa-paper-plane"></i> {{ formatDate(contratoActual.fechaEnvio) }}</span>
+                  <span class="info-value"><i class="fas fa-paper-plane"></i> {{ formatDate(contratoVigente.fechaEnvio) }}</span>
                 </div>
                 <div class="info-row">
                   <span class="info-label">Tarifa Luz</span>
-                  <span class="info-value"><i class="fas fa-bolt"></i> {{ getTarifaLuzNombre(contratoActual.idTarifaLuz) }}</span>
+                  <span class="info-value"><i class="fas fa-bolt"></i> {{ getTarifaLuzNombre(contratoVigente.idTarifaLuz) }}</span>
                 </div>
                 <div class="info-row">
                   <span class="info-label">Tarifa Gas</span>
-                  <span class="info-value"><i class="fas fa-fire"></i> {{ getTarifaGasNombre(contratoActual.idTarifaGas) }}</span>
+                  <span class="info-value"><i class="fas fa-fire"></i> {{ getTarifaGasNombre(contratoVigente.idTarifaGas) }}</span>
                 </div>
               </div>
               <div class="contract-section modern-section">
@@ -271,11 +292,11 @@
                 </div>
                 <div class="info-row">
                   <span class="info-label">Actual</span>
-                  <span class="info-value"><i class="fas fa-building"></i> {{ getComercializadoraNombre(contratoActual.idComercializadoraActual) }}</span>
+                  <span class="info-value"><i class="fas fa-building"></i> {{ getComercializadoraNombre(contratoVigente.idComercializadoraActual) }}</span>
                 </div>
                 <div class="info-row">
                   <span class="info-label">Anterior</span>
-                  <span class="info-value"><i class="fas fa-history"></i> {{ getComercializadoraNombre(contratoActual.idComercializadoraAnterior) }}</span>
+                  <span class="info-value"><i class="fas fa-history"></i> {{ getComercializadoraNombre(contratoVigente.idComercializadoraAnterior) }}</span>
                 </div>
               </div>
             </div>
@@ -289,27 +310,27 @@
               
               <div class="feature-cards">
                 <!-- Tarjeta de autoconsumo -->
-                <div class="feature-card" :class="{'feature-active': contratoActual.autoconsumo}">
+                <div class="feature-card" :class="{'feature-active': tieneAutoconsumo}">
                   <div class="feature-icon">
                     <i class="fas fa-solar-panel"></i>
                   </div>
                   <div class="feature-details">
                     <h6 class="feature-title">Autoconsumo</h6>
                     <p class="feature-status">
-                      {{ contratoActual.autoconsumo ? 'Activado' : 'No activado' }}
+                      {{ tieneAutoconsumo ? puntoSuministroData?.autoconsumo || 'Activado' : 'No activado' }}
                     </p>
                   </div>
                 </div>
                 
                 <!-- Tarjeta de denuncia -->
-                <div class="feature-card denuncia" :class="{'feature-active': contratoActual.denunciaContrato}">
+                <div class="feature-card denuncia" :class="{'feature-active': contratoVigente.denunciaContrato}">
                   <div class="feature-icon">
                     <i class="fas fa-exclamation-triangle"></i>
                   </div>
                   <div class="feature-details">
                     <h6 class="feature-title">Denuncia de Contrato</h6>
                     <p class="feature-status">
-                      {{ contratoActual.denunciaContrato ? `Denunciado el ${formatDate(contratoActual.fechaDenunciaContrato)}` : 'Sin denuncia' }}
+                      {{ contratoVigente.denunciaContrato ? `Denunciado el ${formatDate(contratoVigente.fechaDenunciaContrato)}` : 'Sin denuncia' }}
                     </p>
                   </div>
                 </div>
@@ -324,34 +345,34 @@
               <div class="potencia-grid">
                 <div class="potencia-item">
                   <span class="potencia-label">P1:</span>
-                  <span class="potencia-value">{{ contratoActual.potencia1 }} kW</span>
+                  <span class="potencia-value">{{ contratoVigente.potencia1 }} kW</span>
                 </div>
                 <div class="potencia-item">
                   <span class="potencia-label">P2:</span>
-                  <span class="potencia-value">{{ contratoActual.potencia2 }} kW</span>
+                  <span class="potencia-value">{{ contratoVigente.potencia2 }} kW</span>
                 </div>
                 <div class="potencia-item">
                   <span class="potencia-label">P3:</span>
-                  <span class="potencia-value">{{ contratoActual.potencia3 }} kW</span>
+                  <span class="potencia-value">{{ contratoVigente.potencia3 }} kW</span>
                 </div>
                 <div class="potencia-item">
                   <span class="potencia-label">P4:</span>
-                  <span class="potencia-value">{{ contratoActual.potencia4 }} kW</span>
+                  <span class="potencia-value">{{ contratoVigente.potencia4 }} kW</span>
                 </div>
                 <div class="potencia-item">
                   <span class="potencia-label">P5:</span>
-                  <span class="potencia-value">{{ contratoActual.potencia5 }} kW</span>
+                  <span class="potencia-value">{{ contratoVigente.potencia5 }} kW</span>
                 </div>
                 <div class="potencia-item">
                   <span class="potencia-label">P6:</span>
-                  <span class="potencia-value">{{ contratoActual.potencia6 }} kW</span>
+                  <span class="potencia-value">{{ contratoVigente.potencia6 }} kW</span>
                 </div>
               </div>
             </div>
             
-            <div class="contract-notes modern-notes" v-if="contratoActual.observaciones">
+            <div class="contract-notes modern-notes" v-if="contratoVigente.observaciones">
               <h5><i class="fas fa-sticky-note"></i> Observaciones</h5>
-              <p>{{ contratoActual.observaciones }}</p>
+              <p>{{ contratoVigente.observaciones }}</p>
             </div>
           </div>
           <div v-else class="no-contract">
@@ -569,7 +590,7 @@ export default {
   },
   data() {
     return {
-      pestañaActiva: "actual",
+      pestañaActiva: "actual", // Se determinará automáticamente en el watcher
       modoEdicion: false,
       contratoEditandoId: null,
       nuevoContrato: {
@@ -632,8 +653,8 @@ export default {
     editarContrato() {
       this.pestañaActiva = 'nuevo';
       this.modoEdicion = true;
-      this.contratoEditandoId = this.contratoActual.id;
-      this.nuevoContrato = { ...this.contratoActual };
+      this.contratoEditandoId = this.contratoVigente.id;
+      this.nuevoContrato = { ...this.contratoVigente };
       this.selectedFile = null;
     },
 
@@ -699,36 +720,63 @@ export default {
       this.mostrarModalDetalleContrato = true;
     },
 
-    cerrarModal() {
-      this.$emit("cerrar-modal");
-      this.modoEdicion = false;
-      this.contratoEditandoId = null;
+    // Determinar qué pestaña mostrar inicialmente basándose en si hay contrato vigente
+    determinarPestañaInicial() {
+      console.log('Determinando pestaña inicial:', {
+        contratoActual: this.contratoActual,
+        contratoActualCalculado: this.contratoActualCalculado,
+        tieneContratoVigente: this.tieneContratoVigente,
+        contratos: this.contratos,
+        contratosLength: this.contratos?.length || 0
+      });
+      
+      if (this.tieneContratoVigente) {
+        // Si hay contrato vigente, mostrar la pestaña "actual" para visualizar/editar
+        this.pestañaActiva = 'actual';
+        console.log('→ Mostrando pestaña ACTUAL (hay contrato vigente)');
+      } else {
+        // Si no hay contrato vigente, mostrar la pestaña "nuevo" para crear uno
+        this.pestañaActiva = 'nuevo';
+        console.log('→ Mostrando pestaña NUEVO (no hay contrato vigente)');
+      }
+    },
+
+    // Inicializar el formulario de nuevo contrato basado en el punto de suministro
+    inicializarNuevoContrato() {
       this.nuevoContrato = {
-        idCliente:"",
-        idPuntoSuministro:"",        
-        fecha:"",
-        fechaEnvio:"",
+        idCliente: this.cliente?.id || "",
+        idPuntoSuministro: this.puntoSuministroData?.id || "",        
+        fecha: "",
+        fechaEnvio: "",
         fechaInicio: "",
         fechaFin: "",
         contrato: "",
-        idTarifaGas:"",
-        idTarifaLuz:"",
-        potencia1:0,        
-        potencia2:0,
-        potencia3:0,
-        potencia4:0,
-        potencia5:0,
-        potencia6:0,
-        consumoAnual:0,
-        exencionImpuestoElectricidad:0,
-        idComercializadoraActual:0,
-        idComercializadoraAnterior:0,
-        autoconsumo:0,
-        denunciaContrato:0,
-        fechaDenunciaContrato:"",
+        idTarifaGas: "",
+        idTarifaLuz: "",
+        potencia1: 0,        
+        potencia2: 0,
+        potencia3: 0,
+        potencia4: 0,
+        potencia5: 0,
+        potencia6: 0,
+        consumoAnual: 0,
+        exencionImpuestoElectricidad: 0,
+        idComercializadoraActual: 0,
+        idComercializadoraAnterior: 0,
+        autoconsumo: this.tieneAutoconsumo ? 1 : 0,  // Configurar automáticamente basado en el punto de suministro
+        denunciaContrato: 0,
+        fechaDenunciaContrato: "",
         observaciones: "",
       };
       this.selectedFile = null;
+    },
+
+    cerrarModal() {
+      this.$emit('cerrar-modal');
+      // Resetear el modo edición al cerrar
+      this.modoEdicion = false;
+      this.contratoEditandoId = null;
+      // No resetear pestañaActiva aquí, se determinará automáticamente la próxima vez que se abra
     },
 
     cerrarModalDetalleContrato() {
@@ -782,7 +830,120 @@ export default {
       return [...this.contratosHistoricos].sort((a, b) => {
         return new Date(b.fechaInicio) - new Date(a.fechaInicio);
       });
+    },
+    
+    // Obtener los datos del punto de suministro
+    puntoSuministroData() {
+      // El puntoSuministro ahora siempre será un objeto completo
+      return this.puntoSuministro;
+    },
+    
+    // Verificar si el punto de suministro tiene autoconsumo configurado
+    tieneAutoconsumo() {
+      return this.puntoSuministroData && 
+             this.puntoSuministroData.autoconsumo && 
+             this.puntoSuministroData.autoconsumo.trim() !== '' &&
+             this.puntoSuministroData.autoconsumo !== null;
+    },
+    
+    // Calcular el contrato actual internamente basándose en los contratos recibidos
+    contratoActualCalculado() {
+      if (!this.contratos || this.contratos.length === 0) {
+        return null;
+      }
+      
+      const ahora = new Date();
+      const contratoVigente = this.contratos.find(
+        (contrato) => new Date(contrato.fechaFin) > ahora
+      );
+      
+      return contratoVigente || null;
+    },
+    
+    // Verificar si hay un contrato vigente basándose en el cálculo interno
+    tieneContratoVigente() {
+      const contrato = this.contratoActualCalculado;
+      return contrato && 
+             contrato.id && 
+             contrato.contrato &&
+             contrato.contrato.toString().trim() !== '';
+    },
+    
+    // Contrato vigente unificado (usa contratoActual del padre o calcula internamente)
+    contratoVigente() {
+      return this.contratoActual || this.contratoActualCalculado;
     }
+  },
+  watch: {
+    // Cuando se abre el modal, determinar la pestaña inicial y configurar el formulario
+    visible: {
+      handler(newVal) {
+        if (newVal) {
+          console.log('Modal abierto, determinando pestaña inicial...');
+          
+          // Usar nextTick para asegurar que todas las props estén cargadas
+          this.$nextTick(() => {
+            this.determinarPestañaInicial();
+            
+            // Si no hay contrato vigente, inicializar el formulario de nuevo contrato
+            if (!this.tieneContratoVigente && !this.modoEdicion) {
+              console.log('Inicializando formulario de nuevo contrato...');
+              this.inicializarNuevoContrato();
+            }
+          });
+        }
+      },
+      immediate: true
+    },
+    
+    // Cuando cambia el contrato actual, redeterminar la pestaña
+    contratoActual: {
+      handler(newVal, oldVal) {
+        if (this.visible && newVal !== oldVal) {
+          console.log('contratoActual cambió, redeterminando pestaña...');
+          this.$nextTick(() => {
+            this.determinarPestañaInicial();
+          });
+        }
+      },
+      deep: true
+    },
+    
+    // Cuando cambian los contratos, redeterminar la pestaña
+    contratos: {
+      handler(newVal, oldVal) {
+        if (this.visible && newVal !== oldVal) {
+          console.log('contratos cambió, redeterminando pestaña...');
+          this.$nextTick(() => {
+            this.determinarPestañaInicial();
+          });
+        }
+      },
+      deep: true
+    },
+    
+    // Cuando cambia el punto de suministro, reinicializar si estamos en modo crear
+    puntoSuministro: {
+      handler() {
+        if (this.visible && !this.tieneContratoVigente && !this.modoEdicion) {
+          this.$nextTick(() => {
+            this.inicializarNuevoContrato();
+          });
+        }
+      },
+      deep: true
+    }
+  },
+  mounted() {
+    // Debug: verificar datos del punto de suministro y contrato
+    console.log('ModalContratos mounted:', {
+      puntoSuministro: this.puntoSuministro,
+      contratoActual: this.contratoActual,
+      tieneContratoVigente: this.tieneContratoVigente,
+      tieneAutoconsumo: this.tieneAutoconsumo,
+      autoconsumoValue: this.puntoSuministroData?.autoconsumo,
+      pestañaActiva: this.pestañaActiva
+    });
   },
 };
 </script>
@@ -807,8 +968,8 @@ export default {
 .modal-content {
   width: 90%;
   max-width: 90%;
-  height: 90%;
-  max-height: 90%;
+  height: 100%;
+  max-height: 100%;
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
@@ -896,6 +1057,16 @@ export default {
   color: #333;
 }
 
+.tab-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: #999;
+}
+
+.tab-btn:disabled:hover {
+  background-color: transparent;
+}
+
 .tab-text {
   font-size: 0.95rem;
 }
@@ -949,7 +1120,7 @@ export default {
 .form-grid-modern {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 10px;
   max-width: 100%;
   flex: 1;
 }
@@ -1289,23 +1460,6 @@ export default {
   margin-bottom: 0.4rem;
   background: #fff;
   border: 1px solid #f0f0f0;
-}
-
-.info-label {
-  color: #888;
-  font-size: 0.97rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.info-value {
-  color: #222;
-  font-size: 1.08rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 /* Nueva sección de características (autoconsumo y denuncia) */
@@ -1839,5 +1993,68 @@ export default {
   .tab-btn i {
     font-size: 1.2rem;
   }
+}
+
+.checkbox-input-modern {
+  display: none;
+}
+
+.checkbox-custom-modern {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  margin-right: 12px;
+  position: relative;
+  transition: all 0.3s ease;
+  background-color: white;
+}
+
+.checkbox-input-modern:checked + .checkbox-custom-modern {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.checkbox-input-modern:checked + .checkbox-custom-modern::after {
+  content: '\f00c';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+}
+
+.checkbox-label-modern {
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-badge-modern {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.info-badge-modern.success {
+  background-color: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #059669;
+}
+
+.info-badge-modern.neutral {
+  background-color: rgba(107, 114, 128, 0.1);
+  border: 1px solid rgba(107, 114, 128, 0.3);
+  color: #374151;
 }
 </style>

@@ -93,7 +93,7 @@
                     <span class="column-text">{{ formatearColumna(columna) }}</span>
                     <i :class="getSortIcon(columna)"></i>
                   </div>
-                  <div class="column-filter-container">
+                  <div v-if="columna !== 'pagos'" class="column-filter-container">
                     <input 
                       type="text" 
                       class="column-filter" 
@@ -114,10 +114,11 @@
                   <div class="pagos-simple-display">
                     <button 
                       class="btn btn-sm btn-mark-paid"
-                      @click="marcarTodosPagados(fila, true)"
+                      @click="confirmarMarcoPagado(fila)"
                       :disabled="getPagosPagados(fila) === (fila.numeroCuotas || 12)"
+                      title="Marcar como pagado"
                     >
-                      <i class="fas fa-check-double"></i> Marcar Pagado
+                      <i class="fas fa-money-bill-wave"></i>
                     </button>
                   </div>
                 </template>
@@ -314,6 +315,40 @@ export default {
       this.currentPage = 1; // Resetear a la primera página
     },
 
+    // Método para confirmar antes de marcar como pagado
+    async confirmarMarcoPagado(fila) {
+      const pagosPagados = this.getPagosPagados(fila);
+      const totalCuotas = fila.numeroCuotas || 12;
+      const pendientes = totalCuotas - pagosPagados;
+      
+      const result = await Swal.fire({
+        title: '¿Marcar como pagado?',
+        html: `
+          <div style="text-align: left; margin: 10px 0;">
+            <p><strong>Cliente:</strong> ${fila.cliente}</p>
+            <p><strong>Servicio:</strong> ${fila.servicio}</p>
+            <p><strong>Cuotas pendientes:</strong> ${pendientes} de ${totalCuotas}</p>
+          </div>
+          <p style="margin-top: 15px;">¿Está seguro que desea marcar todas las cuotas pendientes como pagadas?</p>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#d33',
+        confirmButtonText: '<i class="fas fa-money-bill-wave"></i> Sí, marcar como pagado',
+        cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+        reverseButtons: true,
+        customClass: {
+          confirmButton: 'btn-confirm-payment',
+          cancelButton: 'btn-cancel-payment'
+        }
+      });
+
+      if (result.isConfirmed) {
+        await this.marcarTodosPagados(fila, true);
+      }
+    },
+
     // Método para obtener el número de pagos realizados
     getPagosPagados(fila) {
       let pagados = 0;
@@ -414,8 +449,8 @@ export default {
         "servicios-pendientes-pago": [
           "idServicio", // identificador
           "cliente", "servicio", "fechaVencimiento", "importeTotal",
-          "pagos", // Esta columna se renderizará de forma personalizada
-          "estadoVencimiento", "estadoPago", "numeroCuotas" // Añadir numeroCuotas
+          "estadoVencimiento", "estadoPago", "numeroCuotas", // Añadir numeroCuotas
+          "pagos" // Esta columna se renderizará de forma personalizada al final
         ]
       };
 
@@ -587,6 +622,10 @@ export default {
 
     // Formatea el nombre de la columna para mostrar
     formatearColumna(texto) {
+      // Caso especial para la columna pagos
+      if (texto === 'pagos') {
+        return 'Marcar como pagado';
+      }
       return texto
         .replace(/([A-Z])/g, ' $1')
         .replace(/^./, str => str.toUpperCase())
@@ -646,22 +685,15 @@ export default {
           const rowData = {};
           // Mapear las columnas según los encabezados actuales y formatear los nombres
           this.encabezados.forEach(columnaKey => {
+            // Excluir la columna pagos de la exportación
+            if (columnaKey === 'pagos') {
+              return;
+            }
+            
             const formattedColumnaName = this.formatearColumna(columnaKey);
             if (columnaKey === 'importeTotal' && this.tipoSeleccionado === 'servicios-pendientes-pago') {
               rowData[formattedColumnaName] = this.formatearImporte(item[columnaKey]);
-            } else if (columnaKey === 'pagos' && this.tipoSeleccionado === 'servicios-pendientes-pago') {
-              // Construir la cadena para los meses pagados
-              const paidMonths = [];
-              // Iterar a través de las cuotas hasta el numeroCuotas definido para el servicio
-              const numCuotas = item.numeroCuotas || 12; // Usar numeroCuotas o un fallback (ej. 12)
-              for (let i = 1; i <= numCuotas; i++) {
-                if (item[`pago${i}_pagado`] === 1) {
-                  paidMonths.push(`Cuota ${i}`);
-                }
-              }
-              rowData[formattedColumnaName] = paidMonths.length > 0 ? paidMonths.join(', ') : 'Ninguna';
-            }
-            else {
+            } else {
               rowData[formattedColumnaName] = item[columnaKey] ?? '';
             }
           });
@@ -1542,51 +1574,84 @@ export default {
 .pagos-simple-display {
   display: flex;
   align-items: center;
-  gap: 10px;
   justify-content: center;
   height: 100%;
+  width: 100%;
+  padding: 8px;
 }
 
 .btn-mark-paid {
-  background-color: var(--primary-color);
-  color: black;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
   border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 0;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 0.85rem;
+  font-size: 1.1rem;
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 45px;
+  height: 45px;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-mark-paid::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-mark-paid:hover::before {
+  left: 100%;
 }
 
 .btn-mark-paid:hover:not(:disabled) {
-  background-color: var(--primary-dark, #e0a800);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(var(--primary-color-rgb), 0.2);
+  background: linear-gradient(135deg, #218838 0%, #17a2b8 100%);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+}
+
+.btn-mark-paid:active {
+  transform: translateY(0) scale(1);
+  transition: all 0.1s ease;
 }
 
 .btn-mark-paid:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  background-color: var(--background-color);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, #6c757d 0%, #adb5bd 100%);
+  color: #ffffff;
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.btn-mark-paid:disabled::before {
+  display: none;
 }
 
 /* RE-ADJUSTADO Ajuste específico para la columna de pagos */
 .data-table th[data-column="pagos"],
 .data-table td[data-column="pagos"] {
-  min-width: 220px; /* Aumentar el ancho para el nuevo botón */
-  max-width: 300px;
+  min-width: 100px;
+  max-width: 120px;
   position: relative;
 }
 
 .data-table td[data-column="pagos"] {
   overflow: hidden !important; /* Volver a ocultar, ya no hay panel */
   text-align: center; /* Centrar el contenido */
+  vertical-align: middle;
+  padding: 12px 8px;
 }
 
 /* Mejora visual para estados de hover en la tabla */
