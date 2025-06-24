@@ -117,25 +117,15 @@
                       @click="confirmarMarcoPagado(fila)"
                       :disabled="getPagosPagados(fila) === (fila.numeroCuotas || 12)"
                       title="Marcar como pagado"
+                      style="background: none; border: none; box-shadow: none; padding: 0; width: auto; height: auto; min-width: unset; min-height: unset;"
                     >
-                      <i class="fas fa-money-bill-wave"></i>
+                      <i class="fas fa-money-bill-wave icono-billete-verde"></i>
                     </button>
                   </div>
                 </template>
                 <template v-else>
-                  <div v-if="!esCeldaEditando(index, columna)" class="cell-content" @dblclick="iniciarEdicion(index, columna, fila[columna])">
+                  <div class="cell-content" :title="mostrarValorCelda(fila, columna)">
                     {{ mostrarValorCelda(fila, columna) }}
-                  </div>
-                  <div v-else class="cell-edit">
-                    <input 
-                      type="text" 
-                      v-model="valorEditando"
-                      class="edit-input"
-                      @blur="guardarEdicion(index, columna)"
-                      @keyup.enter="guardarEdicion(index, columna)"
-                      @keyup.esc="cancelarEdicion"
-                      ref="editInput"
-                    >
                   </div>
                 </template>
               </td>
@@ -247,12 +237,8 @@ export default {
       sortKey: null,
       sortOrder: null,
       recordsPerPage: 10,
-      recordsPerPageValue: 10, // Nuevo campo reactivo
+      recordsPerPageValue: 10,
       currentPage: 1,
-      celdaEditando: null,
-      valorEditando: '',
-      valorOriginal: '',
-      isSaving: false,
       isSavingBulk: false,
     };
   },
@@ -361,13 +347,13 @@ export default {
       return pagados;
     },
 
-    // Método para marcar todos los pagos como pagados o no pagados
+    // Método para marcar todos los pagos como pagados o no pagados (robusto)
     async marcarTodosPagados(fila, pagado) {
       this.isSavingBulk = true;
       try {
         const numCuotas = fila.numeroCuotas || 12;
         const promises = [];
-        
+        // Marcar como pagadas todas las cuotas existentes
         for (let i = 1; i <= numCuotas; i++) {
           if (fila[`pago${i}_pagado`] !== (pagado ? 1 : 0)) {
             promises.push(
@@ -375,9 +361,14 @@ export default {
             );
           }
         }
-        
+        // Marcar como pagadas las cuotas que no existen (por encima de numeroCuotas)
+        for (let i = numCuotas + 1; i <= 12; i++) {
+          // Siempre márcalas como pagadas (true)
+          promises.push(
+            axios.put(`${process.env.VUE_APP_API_URL}/api/informes/servicios-pendientes-pago/actualizar-pago/${fila.idServicio}/${i}?pagado=true`)
+          );
+        }
         await Promise.all(promises);
-        
         Swal.fire({
           icon: 'success',
           title: '¡Éxito!',
@@ -385,14 +376,10 @@ export default {
           timer: 1500,
           showConfirmButton: false
         });
-        
-        // Recargar los datos después de la actualización exitosa
         await this.generarInforme('pantalla');
-
       } catch (error) {
         console.error('Error al actualizar pagos en lote:', error);
         Swal.fire('Error', 'No se pudieron actualizar todos los pagos', 'error');
-        // Recargar datos para revertir cambios optimistas
         await this.generarInforme('pantalla');
       } finally {
         this.isSavingBulk = false;
@@ -461,9 +448,9 @@ export default {
             fila[key] = item[key];
           });
           if (this.tipoSeleccionado === 'servicios-pendientes-pago') {
-            // Mapear los estados de pago para todas las 12 cuotas posibles
-            for (let i = 1; i <= 12; i++) {
-              // Convertir a 1 (pagado) o 0 (no pagado) de forma robusta
+            // Mapear los estados de pago solo hasta el número de cuotas real
+            const numCuotas = item.numeroCuotas || 12;
+            for (let i = 1; i <= numCuotas; i++) {
               const pagoStatus = item[`pago${i}Pagado`];
               fila[`pago${i}_pagado`] = (pagoStatus === 1 || pagoStatus === '1' || pagoStatus === true) ? 1 : 0;
             }
@@ -723,178 +710,6 @@ export default {
         alert("Ocurrió un error al exportar a Excel.");
       }
     },
-
-    async iniciarEdicion(filaIndex, columna, valor) {
-      // Verificar si la columna es editable
-      if (this.tipoSeleccionado === 'contratos-pendientes-renovacion' ||
-          this.tipoSeleccionado === 'puntos-suministro-sin-contrato') {
-        await Swal.fire({
-          icon: 'warning',
-          title: 'Edición no permitida',
-          text: 'La edición en línea no está disponible para este tipo de informe.',
-          confirmButtonColor: '#3085d6'
-        });
-        return;
-      }
-
-      // Para 'servicios-pendientes-pago', solo 'estadoPago' debe ser editable a través de input de texto
-      if (this.tipoSeleccionado === 'servicios-pendientes-pago') {
-        // La columna 'pagos' se maneja con el nuevo diseño de indicadores, no con edición de texto en línea.
-        // Por lo tanto, solo 'estadoPago' es elegible para la edición de texto en línea.
-        if (columna !== 'estadoPago') {
-          await Swal.fire({
-            icon: 'warning',
-            title: 'Columna no editable',
-            text: 'Solo la columna "Estado Pago" puede ser editada directamente en este informe.',
-            confirmButtonColor: '#3085d6'
-          });
-          return;
-        }
-      }
-
-      // Mostrar confirmación antes de editar
-      const result = await Swal.fire({
-        title: '¿Editar registro?',
-        text: '¿Está seguro que desea editar este registro?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, editar',
-        cancelButtonText: 'Cancelar'
-      });
-
-      if (!result.isConfirmed) {
-        return;
-      }
-
-      this.celdaEditando = { filaIndex, columna };
-      
-      // Si es importeTotal, usar el valor sin formato para edición
-      if (columna === 'importeTotal' && this.tipoSeleccionado === 'servicios-pendientes-pago') {
-        this.valorEditando = valor; // valor numérico original
-      } else {
-        this.valorEditando = valor;
-      }
-      
-      this.valorOriginal = valor;
-
-      // Enfocar el input después de que se renderice
-      this.$nextTick(() => {
-        if (this.$refs.editInput) {
-          this.$refs.editInput[0].focus();
-        }
-      });
-    },
-
-    esCeldaEditando(filaIndex, columna) {
-      return this.celdaEditando && 
-             this.celdaEditando.filaIndex === filaIndex && 
-             this.celdaEditando.columna === columna;
-    },
-
-    async guardarEdicion(filaIndex, columna) {
-      if (this.isSaving) return;
-      if (this.valorEditando === this.valorOriginal) {
-        this.cancelarEdicion();
-        return;
-      }
-      this.isSaving = true;
-      try {
-        const fila = this.paginatedData[filaIndex];
-        let datosActualizados = {};
-        let idRegistro = null;
-        switch(this.tipoSeleccionado) {
-          case 'contratos-pendientes-renovacion':
-            idRegistro = fila.codigoContrato || fila.id || fila.idContrato;
-            datosActualizados = {
-              codigoContrato: fila.codigoContrato,
-              fechaInicio: fila.fechaInicio,
-              fechaFin: fila.fechaFin,
-              cliente: fila.cliente,
-              cupsLuz: fila.cupsLuz,
-              cupsGas: fila.cupsGas,
-              contrato: fila.contrato,
-              tarifaLuz: fila.tarifaLuz,
-              tarifaGas: fila.tarifaGas,
-              comercializadoraActual: fila.comercializadoraActual,
-              [columna]: this.valorEditando
-            };
-            break;
-          case 'puntos-suministro-sin-contrato':
-            idRegistro = fila.idPS || fila.id || fila.idPuntoSuministro;
-            datosActualizados = {
-              idPS: fila.idPS,
-              cliente: fila.cliente,
-              direccion: fila.direccion,
-              codigoPostal: fila.codigoPostal,
-              poblacion: fila.poblacion,
-              provincia: fila.provincia,
-              cupsLuz: fila.cupsLuz,
-              cupsGas: fila.cupsGas,
-              [columna]: this.valorEditando
-            };
-            break;
-          case 'servicios-pendientes-pago':
-            idRegistro = fila.idServicio || fila.id;
-            datosActualizados = {
-              idServicio: fila.idServicio,
-              cliente: fila.cliente,
-              servicio: fila.servicio,
-              fechaVencimiento: fila.fechaVencimiento,
-              importeTotal: fila.importeTotal,
-              // No enviar 'pagos' como tal, ya que se gestiona con onPagoClick
-              estadoVencimiento: fila.estadoVencimiento,
-              estadoPago: fila.estadoPago,
-              [columna]: this.valorEditando
-            };
-            break;
-        }
-        if (!idRegistro) {
-          throw new Error('No se encontró el identificador del registro.');
-        }
-        const respuesta = await axios.put(
-          `${process.env.VUE_APP_API_URL}/api/informes/${this.tipoSeleccionado}/actualizar/${idRegistro}`,
-          datosActualizados,
-          {
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-        if (respuesta.data.success) {
-          this.datosInforme = this.datosInforme.map((item, idx) => 
-            idx === filaIndex ? { ...item, [columna]: this.valorEditando } : item
-          );
-          await Swal.fire({
-            icon: 'success',
-            title: '¡Éxito!',
-            text: 'Registro actualizado correctamente',
-            confirmButtonColor: '#3085d6'
-          });
-        } else {
-          throw new Error(respuesta.data.message || 'Error al actualizar');
-        }
-      } catch (error) {
-        console.error('Error al guardar:', error);
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: error.response?.data?.message || error.message || 'Error al guardar los cambios',
-          confirmButtonColor: '#3085d6'
-        });
-        this.valorEditando = this.valorOriginal;
-      } finally {
-        this.isSaving = false;
-        this.cancelarEdicion();
-      }
-    },
-
-    cancelarEdicion() {
-      this.celdaEditando = null;
-      this.valorEditando = '';
-      this.valorOriginal = '';
-    },
   }
 };
 </script>
@@ -1131,6 +946,9 @@ export default {
   width: 600px;
   max-width: 90%;
   overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
@@ -1168,6 +986,8 @@ export default {
 
 .modal-body {
   padding: 20px;
+  overflow-y: auto;
+  max-height: 60vh;
 }
 
 .option-selector {
@@ -1233,6 +1053,17 @@ export default {
 @media (max-width: 768px) {
   .informe-opciones {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-container {
+    max-width: 98vw;
+    width: 98vw;
+    max-height: 98vh;
+  }
+  .modal-body {
+    max-height: 70vh;
   }
 }
 
@@ -1458,7 +1289,7 @@ export default {
   padding: 8px 10px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
-  cursor: text;
+  cursor: default;
   transition: background-color 0.2s ease;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1477,28 +1308,11 @@ export default {
 
 /* Estilos para la edición inline */
 .cell-edit {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
+  /* Eliminado: estilos de edición en línea */
 }
 
 .edit-input {
-  width: 100%;
-  height: 100%;
-  padding: 4px 8px;
-  border: 2px solid var(--primary-color);
-  border-radius: 4px;
-  font-size: inherit;
-  font-family: inherit;
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.edit-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
+  /* Eliminado: estilos de edición en línea */
 }
 
 /* Indicador visual de celda editable */
@@ -1507,25 +1321,7 @@ export default {
 }
 
 .table-cell:hover::after {
-  content: 'Doble clic para editar';
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  z-index: 1000;
-}
-
-.table-cell:hover::after {
-  opacity: 1;
+  /* Eliminado: tooltip de edición en línea */
 }
 
 /* Ajustes para la tabla responsiva */
@@ -1581,62 +1377,29 @@ export default {
 }
 
 .btn-mark-paid {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
-  border: none;
-  padding: 0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 1.1rem;
-  font-weight: 500;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: unset !important;
+  min-height: unset !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 45px;
-  height: 45px;
-  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-mark-paid::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.5s;
-}
-
-.btn-mark-paid:hover::before {
-  left: 100%;
-}
-
-.btn-mark-paid:hover:not(:disabled) {
-  background: linear-gradient(135deg, #218838 0%, #17a2b8 100%);
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
-}
-
-.btn-mark-paid:active {
-  transform: translateY(0) scale(1);
-  transition: all 0.1s ease;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .btn-mark-paid:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  background: linear-gradient(135deg, #6c757d 0%, #adb5bd 100%);
-  color: #ffffff;
-  transform: none;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.btn-mark-paid:disabled::before {
-  display: none;
+.icono-billete-verde {
+  color: #217346 !important;
+  font-size: 1.4rem;
 }
 
 /* RE-ADJUSTADO Ajuste específico para la columna de pagos */

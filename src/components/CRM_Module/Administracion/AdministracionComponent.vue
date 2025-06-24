@@ -1267,6 +1267,8 @@ export default {
   border: 1px solid #e0e0e0 !important;
   position: relative !important;
   transform: none !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .modal-header {
@@ -1497,6 +1499,24 @@ export default {
   
   .modal-body {
     max-height: calc(100vh - 200px);
+  }
+}
+
+@media (max-width: 900px) {
+  .modal-content {
+    max-height: 95vh !important;
+  }
+  .modal-body {
+    max-height: 60vh !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-content {
+    max-height: 100vh !important;
+  }
+  .modal-body {
+    max-height: 70vh !important;
   }
 }
 

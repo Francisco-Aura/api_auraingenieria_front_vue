@@ -183,7 +183,7 @@
                   <input type="text" id="numeroContador" v-model="puntoLocal.numeroContador" :readonly="modoConsulta" />
                 </div>
                 <div class="form-compact-group half">
-                  <label for="numeroTelefono">Nº Teléfono</label>
+                  <label for="numeroTelefono">Nº Teléfono/IP</label>
                   <input type="tel" id="numeroTelefono" v-model="puntoLocal.numeroTelefono" :readonly="modoConsulta" />
                 </div>
               </div>
@@ -590,9 +590,9 @@ export default {
   max-width: 90%;
   max-height: 100%;
   display: flex;
-  flex-direction: column; /* Asegura que los hijos se apilen verticalmente */
+  flex-direction: column;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  overflow: hidden; /* Importante para que el scroll sea interno */
+  overflow: hidden;
 }
 
 .modal-header {
@@ -609,17 +609,14 @@ export default {
 
 /* Nuevo estilo para el contenido del formulario que permitirá el scroll */
 .compact-form-content {
-  flex: 1; /* Permite que este elemento ocupe el espacio disponible y empuje el footer hacia abajo */
-  overflow-y: auto; /* Habilita el scroll vertical cuando el contenido excede el espacio */
-  padding: 24px; /* Añade padding para que el contenido no esté pegado a los bordes */
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  max-height: 70vh;
 }
-
-/* Eliminar padding del modal-body si existe y se solapa con compact-form-content */
-/* .modal-body {
-  padding: 0; 
-} */
 
 .header-content {
   display: flex;
@@ -822,41 +819,21 @@ export default {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-  .form-sections-container {
-    flex-direction: column; /* Apila los paneles en pantallas pequeñas */
-  }
-  
-  .panel-left, .panel-right {
-    width: 100%;
-  }
-  
-  .form-row {
-    flex-direction: column;
-    gap: 10px; /* Ajustado gap para consistencia */
-  }
-
+@media (max-width: 900px) {
   .modal-content {
-    max-width: 95%;
-    max-height: 100%;
+    max-height: 95vh;
   }
-
-  .modal-header,
-  .modal-footer {
-    padding: 15px; /* Reducir padding en móviles */
-  }
-
   .compact-form-content {
-    padding: 15px; /* Reducir padding en móviles */
+    max-height: 60vh;
   }
+}
 
-  .form-section.full-width-observaciones {
-    margin-left: 0; /* Asegurar que no haya margen izquierdo en móvil */
-    margin-right: 0; /* Asegurar que no haya margen derecho en móvil */
+@media (max-width: 600px) {
+  .modal-content {
+    max-height: 100vh;
   }
-
-  .form-compact-group {
-    margin-bottom: 5px; /* Restaurar un poco de espacio en móvil si es necesario */
+  .compact-form-content {
+    max-height: 70vh;
   }
 }
 </style>

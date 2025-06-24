@@ -648,9 +648,11 @@ export default {
       });
     },
     cuotasPagadas() {
+      // Solo cuenta las cuotas realmente existentes
       return this.cuotas.filter(c => c.pagado).length;
     },
     totalPagado() {
+      // Suma solo las cuotas realmente existentes
       return this.cuotas.filter(c => c.pagado).reduce((acc, c) => acc + (parseFloat(c.importePago) || 0), 0);
     },
     calcularImporteFinal() {

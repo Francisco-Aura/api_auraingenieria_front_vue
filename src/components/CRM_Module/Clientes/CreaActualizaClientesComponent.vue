@@ -887,12 +887,15 @@ export default {
 .tab-container {
   flex: 1;
   min-height: 0;
+  /* Añadido para permitir scroll interno en el contenido de las pestañas */
+  overflow-y: auto;
+  max-height: 70vh;
 }
 
 .tab-content {
   height: 100%;
-  overflow-y: auto; /* Mantenemos el scroll solo en el contenido de las pestañas */
-  padding-right: 5px; /* Añadido para evitar que el scroll tape contenido */
+  overflow-y: auto;
+  padding-right: 5px;
 }
 
 /* Grid optimizado */
@@ -1173,6 +1176,10 @@ export default {
   .modal-content {
     width: 95%;
     height: 85vh;
+    max-height: 95vh;
+  }
+  .tab-container {
+    max-height: 60vh;
   }
   
   .form-grid-compact {
@@ -1206,6 +1213,13 @@ export default {
     .action-buttons {
     width: 100%;
     justify-content: space-between;
+  }
+  .modal-content {
+    height: 95vh;
+    max-height: 100vh;
+  }
+  .tab-container {
+    max-height: 70vh;
   }
 }
 
