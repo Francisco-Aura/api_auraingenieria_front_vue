@@ -134,28 +134,28 @@ export default {
   background: rgba(255, 255, 255, 0.562);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  padding: 40px;
-  border-radius: 8px;
+  padding: 2rem;
+  border-radius: 0.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.007);
   width: 100%;
-  max-width: 500px;
+  max-width: 450px;
   border: 1px solid rgba(255, 255, 255, 0.068);
 }
 
 .logo-container {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 2rem;
 }
 
 .logo {
-  width: 120px;
+  width: 100px;
   height: auto;
-  margin-bottom: 20px;
+  margin-bottom: 1rem;
 }
 
 .logo-container h1 {
   color: var(--text-primary);
-  font-size: 24px;
+  font-size: 1.3rem;
   font-weight: 500;
   margin: 0;
   font-family: 'Poppins', sans-serif;
@@ -164,7 +164,7 @@ export default {
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1rem;
 }
 
 .input-group {
@@ -175,17 +175,17 @@ export default {
 
 .input-group i {
   position: absolute;
-  left: 15px;
+  left: 0.8rem;
   color: var(--text-secondary);
-  font-size: 16px;
+  font-size: 0.9rem;
 }
 
 .input-field {
   width: 100%;
-  padding: 12px 15px 12px 40px;
+  padding: 0.6rem 0.8rem 0.6rem 2.2rem;
   border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: 0.2rem;
+  font-size: 0.9rem;
   transition: all 0.2s ease;
   background: var(--surface-color);
   color: var(--text-primary);
@@ -205,13 +205,13 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 0.5rem;
   background: var(--primary-color);
   color: black;
   border: none;
-  padding: 12px 24px;
-  border-radius: 4px;
-  font-size: 15px;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.2rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -224,16 +224,16 @@ export default {
 
 .links-container {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 1rem;
 }
 
 .forgot-password {
   color: var(--text-secondary);
   text-decoration: none;
-  font-size: 13px;
+  font-size: 0.8rem;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 0.3rem;
   transition: color 0.2s ease;
 }
 
@@ -243,22 +243,22 @@ export default {
 
 @media (max-width: 480px) {
   .login-container {
-    padding: 30px 20px;
+    padding: 1.5rem 1rem;
   }
   
   .logo {
-    width: 100px;
+    width: 80px;
   }
   
   .input-field {
-    padding: 10px 12px 10px 35px;
+    padding: 0.5rem 0.6rem 0.5rem 1.8rem;
   }
 }
 
 .alert {
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 1rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.4rem;
+  margin-bottom: 0.8rem;
   border-left: 4px solid #e74c3c;
   display: flex;
   align-items: center;
@@ -266,17 +266,17 @@ export default {
   color: #c0392b;
 }
 .alert-icon {
-  margin-right: 12px;
-  font-size: 1.2rem;
+  margin-right: 0.6rem;
+  font-size: 1.1rem;
 }
 .alert-content {
   flex: 1;
 }
 .alert-title {
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 0.2rem;
 }
 .alert-message {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 </style>

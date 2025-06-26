@@ -39,7 +39,6 @@
     <!-- Tabla de puntos de suministro con nuevo diseño -->
     <div class="card table-panel">
       <div class="table-header">
-        <h2><i class="fas fa-bolt"></i> Puntos de Suministro</h2>
         <div class="table-actions">
           <button class="btn btn-export btn-excel" @click="exportarExcel" title="Exportar a Excel">
             <i class="fas fa-file-excel"></i>
@@ -853,8 +852,8 @@ export default {
 .suministro-container {
   display: grid;
   grid-template-rows: auto auto auto 1fr;
-  gap: 20px;
-  padding: 20px;
+  gap: 1rem;
+  padding: 1rem;
   max-width: 90%;
   margin: 0 auto;
 }
@@ -864,20 +863,20 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 20px;
+  gap: 1rem;
 }
 
 .stats-container {
   display: flex;
   flex: 1;
-  gap: 20px;
+  gap: 1rem;
 }
 
 .stat-card {
   background-color: var(--surface-color);
   border-radius: var(--border-radius);
   box-shadow: var(--card-shadow);
-  padding: 16px 20px;
+  padding: 0.8rem 1rem;
   display: flex;
   align-items: center;
   transition: all 0.3s ease;
@@ -885,28 +884,28 @@ export default {
 }
 
 .stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.7rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 1.3rem;
   background: var(--primary-color);
   color: white;
 }
 
 .stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.7rem;
   background-color: var(--primary-light);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
-  margin-right: 16px;
+  font-size: 1.2rem;
+  margin-right: 0.8rem;
 }
 
 .stat-content {
@@ -914,22 +913,22 @@ export default {
 }
 
 .stat-value {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin-top: 0.2rem;
 }
 
 /* Tabla */
 .table-panel {
   background: white;
-  border-radius: 12px;
+  border-radius: 0.7rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   overflow: hidden;
 }
@@ -943,15 +942,16 @@ export default {
 
 .table-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.5rem;
 }
 
 .table-actions {
   display: flex;
-  gap: 10px;
+  gap: 0.5rem;
+  margin-left: auto;
 }
 
 .table-responsive {
@@ -968,7 +968,7 @@ export default {
 }
 
 .data-table th {
-  padding: 12px;
+  padding: 0.6rem;
   vertical-align: top;
   background-color: var(--surface-color);
   border-bottom: 2px solid var(--border-color);
@@ -978,7 +978,7 @@ export default {
   background-color: var(--surface-color);
   color: var(--text-primary);
   font-weight: 600;
-  padding: 15px;
+  padding: 0.8rem;
   text-align: left;
   border-bottom: 2px solid var(--border-color);
   white-space: nowrap;
@@ -988,10 +988,10 @@ export default {
 }
 
 .data-table td {
-  padding: 12px 15px;
+  padding: 0.6rem 0.8rem;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
-  height: 52px; /* Altura fija para las filas */
+  height: 46px; /* Altura fija para las filas */
 }
 
 .text-truncate {
@@ -1004,15 +1004,15 @@ export default {
 .column-header {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.4rem;
 }
 
 .column-title {
   display: flex;
   align-items: center;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 0.2rem;
+  border-radius: 0.2rem;
   transition: background-color 0.2s ease;
 }
 
@@ -1070,6 +1070,7 @@ export default {
 /* Estilo para el texto dentro de los indicadores, forzando color negro */
 .tipo-indicator span {
   color: #000; /* Negro */
+  font-size:12px;
 }
 
 .action-buttons {

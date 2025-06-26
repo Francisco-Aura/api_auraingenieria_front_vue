@@ -36,13 +36,12 @@ export default {
   /* Bordes */
   --border-color: #e0e0e0;
   --border-radius: 8px;
-  
-  /* Espaciado */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
+    /* Espaciado */
+  --spacing-xs: 0.25rem; /* ~3.5px con font-size 14px */
+  --spacing-sm: 0.5rem;  /* ~7px */
+  --spacing-md: 0.85rem; /* ~12px */
+  --spacing-lg: 1.2rem;  /* ~17px */
+  --spacing-xl: 1.7rem;  /* ~24px */
   
   /* Estados */
   --success-color: #2ecc71;
@@ -52,6 +51,10 @@ export default {
 }
 
 /* Reset básico */
+html {
+  font-size: 14px; /* Reduce el tamaño base de la fuente */
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -62,7 +65,8 @@ body {
   background-color: var(--background-color);
   color: var(--text-primary);
   font-family: 'Poppins', sans-serif;
-  line-height: 1.6;
+  line-height: 1.5;
+  font-size: 0.9rem; /* Tamaño relativo a la raíz */
   overflow-x: hidden;
 }
 
@@ -76,8 +80,8 @@ body {
   background-color: var(--surface-color);
   border-radius: var(--border-radius);
   box-shadow: var(--card-shadow);
-  padding: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
   transition: all 0.3s ease;
 }
 
@@ -92,13 +96,13 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: 500;
-  padding: 8px 16px;
+  padding: 0.4rem 0.8rem;
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: all 0.3s ease;
   border: none;
   outline: none;
-  font-size: 14px;
+  font-size: 0.85rem;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -192,15 +196,15 @@ body {
 .data-table th {
   background-color: var(--primary-color);
   color: white;
-  font-weight: 900;
+  font-weight: 700;
   text-align: left;
-  padding: 12px 16px;
-  letter-spacing: 0.5px;
-  font-size: 16px;
+  padding: 0.6rem 0.8rem;
+  letter-spacing: 0.3px;
+  font-size: 0.95rem;
 }
 
 .data-table td {
-  padding: 12px 16px;
+  padding: 0.5rem 0.8rem;
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -216,8 +220,9 @@ body {
 .form-control {
   display: block;
   width: 100%;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  padding: 0.4rem 0.7rem;
   color: var(--text-primary);
   background-color: var(--surface-color);
   border: 1px solid var(--border-color);
@@ -235,35 +240,35 @@ body {
 .row {
   display: flex;
   flex-wrap: wrap;
-  margin-left: -12px;
-  margin-right: -12px;
+  margin-left: -0.6rem;
+  margin-right: -0.6rem;
 }
 
 .col {
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
   flex: 1;
 }
 
 .col-6 {
   flex: 0 0 50%;
   max-width: 50%;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
 }
 
 .col-4 {
   flex: 0 0 33.333333%;
   max-width: 33.333333%;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
 }
 
 .col-3 {
   flex: 0 0 25%;
   max-width: 25%;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
 }
 
 /* Utilidades de margen y padding */
@@ -351,8 +356,8 @@ body {
 /* Asegurar que el chat esté por encima de todo */
 .chat-widget {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 1rem;
+  right: 1rem;
   z-index: 9999;
 }
 </style>

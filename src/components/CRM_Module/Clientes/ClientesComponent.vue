@@ -46,7 +46,6 @@
     <!-- Tabla de clientes con nuevo diseño -->
     <div class="card table-panel">
       <div class="table-header">
-        <h2><i class="fas fa-users"></i> Cartera de Clientes</h2>
         <div class="table-actions-horizontal">
           <button class="btn btn-export btn-excel" @click="exportarExcel" title="Exportar a Excel">
             <i class="fas fa-file-excel"></i>
@@ -804,7 +803,7 @@ export default {
   background-color: var(--surface-color);
   border-radius: var(--border-radius);
   box-shadow: var(--card-shadow);
-  padding: 16px 20px;
+  padding: 0.7rem 1rem;
   display: flex;
   align-items: center;
   transition: all 0.3s ease;
@@ -817,16 +816,16 @@ export default {
 }
 
 .stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.7rem;
   background-color: var(--primary-light);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
-  margin-right: 16px;
+  font-size: 1.2rem;
+  margin-right: 0.8rem;
 }
 
 .stat-content {
@@ -834,16 +833,16 @@ export default {
 }
 
 .stat-value {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin-top: 0.2rem;
 }
 
 .action-card {
@@ -853,8 +852,8 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  padding: 16px 20px;
-  min-width: 200px;
+  padding: 0.7rem 1rem;
+  min-width: 180px;
 }
 
 .action-card .btn {
@@ -862,9 +861,9 @@ export default {
   height: 100%;
   background: transparent;
   color: black;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 6px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
@@ -881,7 +880,6 @@ export default {
 .table-header {
   background-color: white;
   color: var(--text-primary);
-  padding: 15px 20px;
   border-top-left-radius: var(--border-radius);
   border-top-right-radius: var(--border-radius);
   display: flex;
@@ -891,16 +889,17 @@ export default {
 
 .table-actions-horizontal {
   display: flex;
-  gap: 10px;
+  gap: 0.5rem;
   align-items: center;
+  margin-left: auto;
 }
 
 .btn-export {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.3rem;
   font-weight: 500;
   transition: all 0.3s ease;
 }
@@ -936,10 +935,10 @@ export default {
 .btn-icon {
   background: transparent;
   border: none;
-  font-size: 1.1rem;
+  font-size: 1rem;
   cursor: pointer;
-  width: 35px;
-  height: 35px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;

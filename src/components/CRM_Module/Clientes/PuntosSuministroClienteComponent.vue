@@ -194,7 +194,7 @@ export default {
 
 .modal-content {
   background: white;
-  border-radius: 12px;
+  border-radius: 0.7rem;
   width: 100%;
   max-width: 90%;
   max-height: 90%;
@@ -205,7 +205,7 @@ export default {
 }
 
 .modal-header {
-  padding: 20px 24px;
+  padding: 1rem 1.2rem;
   border-bottom: 1px solid var(--border-color);
   background-color: var(--surface-color);
   display: flex;
@@ -215,12 +215,12 @@ export default {
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.5rem;
 }
 
 .modal-header h2 i {
@@ -229,32 +229,32 @@ export default {
 
 .cliente-info {
   background-color: var(--primary-light);
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.4rem;
   color: var(--text-primary);
   font-weight: 500;
 }
 
 .cliente-nombre {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: var(--text-secondary);
   font-weight: 500;
 }
 
 .modal-body {
-  padding: 24px;
+  padding: 1.2rem;
   overflow-y: auto;
   flex: 1;
 }
 
 .search-container {
   position: relative;
-  margin-bottom: 20px;
+  margin-bottom: 1rem;
 }
 
 .search-icon {
   position: absolute;
-  left: 12px;
+  left: 0.7rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-secondary);
@@ -262,10 +262,10 @@ export default {
 
 .search-input {
   width: 100%;
-  padding: 12px 12px 12px 40px;
+  padding: 0.6rem 0.6rem 0.6rem 2.2rem;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 0.4rem;
+  font-size: 0.9rem;
   transition: all 0.2s ease;
 }
 
@@ -277,7 +277,7 @@ export default {
 
 .table-responsive {
   background: white;
-  border-radius: 8px;
+  border-radius: 0.4rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
@@ -293,14 +293,14 @@ export default {
   background-color: var(--surface-color);
   color: var(--text-primary);
   font-weight: 600;
-  padding: 15px;
+  padding: 0.8rem;
   text-align: left;
   border-bottom: 2px solid var(--border-color);
   white-space: nowrap;
 }
 
 .data-table th i {
-  margin-right: 8px;
+  margin-right: 0.4rem;
   color: var(--primary-color);
 }
 
@@ -312,7 +312,7 @@ export default {
 }
 
 .data-table td {
-  padding: 12px 15px;
+  padding: 0.6rem 0.8rem;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
 }
@@ -326,7 +326,7 @@ export default {
 
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 0.4rem;
   justify-content: center;
 }
 
@@ -340,10 +340,10 @@ export default {
 .btn-icon {
   background: transparent;
   border: none;
-  font-size: 1.1rem;
+  font-size: 1rem;
   cursor: pointer;
-  width: 35px;
-  height: 35px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -371,31 +371,31 @@ export default {
 
 .empty-state {
   text-align: center;
-  padding: 40px 20px;
+  padding: 2rem 1rem;
   color: var(--text-secondary);
 }
 
 .empty-state i {
-  margin-bottom: 16px;
+  margin-bottom: 0.8rem;
   opacity: 0.5;
 }
 
 .modal-footer {
-  padding: 16px 24px;
+  padding: 0.8rem 1.2rem;
   border-top: 1px solid var(--border-color);
   background-color: var(--surface-color);
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 0.6rem;
 }
 
 .btn {
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.3rem;
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.4rem;
   transition: all 0.2s ease;
   cursor: pointer;
 }

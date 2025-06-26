@@ -138,17 +138,21 @@
                 <i class="fas fa-tachometer-alt"></i>
                 <h3>Equipos de Medida</h3>
               </div>
-              <div class="form-row">
+             <div class="form-row">
                 <div class="form-compact-group half">
                   <label for="potenciaBIE">Potencia BIE</label>
-                  <div class="input-with-icon">
+                  <div class="input-with-icon input-with-suffix">
                     <i class="fas fa-bolt icon-prefix"></i>
-                    <input type="number" id="potenciaBIE" v-model="puntoLocal.potenciaBIE" :readonly="modoConsulta" />
+                    <input type="number" id="potenciaBIE" v-model="puntoLocal.potenciaBIE" :readonly="modoConsulta" step="0.0001"/>
+                    <span class="input-suffix">kW</span>
                   </div>
                 </div>
                 <div class="form-compact-group half">
                   <label for="potenciaTecnicaRed">Potencia Técnica Red</label>
-                  <input type="number" id="potenciaTecnicaRed" v-model="puntoLocal.potenciaTecnicaRed" :readonly="modoConsulta" />
+                  <div class="input-with-suffix">
+                    <input type="number" id="potenciaTecnicaRed" v-model="puntoLocal.potenciaTecnicaRed" :readonly="modoConsulta" step="0.0001"/>
+                    <span class="input-suffix">kW</span>
+                  </div>
                 </div>
               </div>
               <div class="form-compact-group">
@@ -585,18 +589,19 @@ export default {
 
 .modal-content {
   background: white;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 90%;
-  max-height: 100%;
+  border-radius: 0.4rem; /* Ajustado para coincidir con el otro modal */
+  width: 95%; /* Cambiado de 100% a 95% */
+  max-width: 95%; /* Cambiado de 90% a 95% */
+  height: 95vh; /* Añadido para controlar la altura */
+  max-height: 95vh; /* Cambiado para usar la misma proporción que el otro modal */
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2); /* Ajustado para coincidir */
   overflow: hidden;
 }
 
 .modal-header {
-  padding: 18px 25px;
+  padding: 1rem 1.3rem;
   border-bottom: 1px solid #e0e0e0;
   background: rgba(252, 215, 0);
   color: white;
@@ -611,11 +616,17 @@ export default {
 .compact-form-content {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 1.2rem;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  max-height: 70vh;
+  /* Eliminar el max-height de 65vh para permitir que ocupe el espacio disponible */
+  max-height: none; /* Cambiado de 65vh a none */
+}
+
+.input-with-icon textarea + .icon-prefix {
+  top: 1rem; /* Posicionar el ícono en la parte superior del textarea */
+  transform: none; /* Eliminar la transformación vertical */
 }
 
 .header-content {
@@ -626,7 +637,7 @@ export default {
 
 .modal-title {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: black; /* Cambiar a negro para mejor contraste sobre el fondo amarillo */
   flex-grow: 1; /* Permite que el título ocupe el espacio disponible */
@@ -634,15 +645,15 @@ export default {
 
 .close-button {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 0.8rem;
+  right: 0.8rem;
   background-color: #e74c3c;
   border: none;
-  font-size: 1.2rem;
+  font-size: 1rem;
   cursor: pointer;
   color: white;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -658,9 +669,38 @@ export default {
   transform: rotate(90deg);
 }
 
+.input-with-suffix {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-suffix {
+  position: absolute;
+  right: 1.5rem; /* Movido más a la izquierda para evitar las flechas de control */
+  top: 60%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+/* Ajustar el padding derecho para evitar que el texto se superponga con el sufijo */
+.input-with-suffix input {
+  padding-right: 3rem;
+}
+
+/* Si el campo también tiene un ícono a la izquierda, ajustar ambos lados */
+.input-with-icon.input-with-suffix input {
+  padding-left: 1.5rem;
+  padding-right: 3rem;
+}
+
 .form-sections-container {
   display: flex;
-  gap: 20px;
+  gap: 1rem;
   /* Eliminar o ajustar margin-top/bottom si se aplica padding al .compact-form-content */
 }
 
@@ -672,8 +712,8 @@ export default {
 
 .form-section {
   background: var(--surface-color);
-  border-radius: 8px;
-  padding: 5px;
+  border-radius: 0.4rem;
+  padding: 0.3rem;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
@@ -684,19 +724,19 @@ export default {
 .section-header {
   display: flex;
   align-items: center;
-  padding-bottom: 10px;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
 }
 
 .section-header i {
   color: black;
-  margin-right: 10px;
-  font-size: 1.2rem;
+  margin-right: 0.5rem;
+  font-size: 1.1rem;
 }
 
 .section-header h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: var(--text-primary);
 }
 
@@ -704,12 +744,12 @@ export default {
   display: block;
   font-weight: 500;
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .form-row {
   display: flex;
-  gap: 15px;
+  gap: 0.8rem;
 }
 
 .form-row .half {
@@ -720,18 +760,18 @@ export default {
 .form-compact-group select,
 .form-compact-group textarea {
   width: 100%;
-  padding: 5px 8px;
-  font-size: 1rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.9rem;
   border: 1px solid #ddd;
-  border-radius: 4px;
-  height: 35px;
+  border-radius: 0.2rem;
+  height: 30px;
   background-color: white;
   color: var(--text-primary);
 }
 
 .form-compact-group textarea {
   resize: vertical; /* Cambiado a vertical para mejor usabilidad */
-  min-height: 60px;
+  min-height: 50px;
   height: auto; /* Permite que crezca con el contenido si resize es vertical */
 }
 
@@ -741,16 +781,22 @@ export default {
 
 .icon-prefix {
   position: absolute;
-  left: 7px;
+  left: 0.4rem;
   top: 50%;
   transform: translateY(-50%);
   color: #aaa;
-  font-size: 1rem;
+  font-size: 0.9rem;
+}
+
+.input-with-icon .fa-map-marker-alt.icon-prefix {
+  top: 0.8rem !important;
+  transform: none !important;
 }
 
 .input-with-icon input,
-.input-with-icon select {
-  padding-left: 30px;
+.input-with-icon select,
+.input-with-icon textarea {
+  padding-left: 1.5rem;
 }
 
 .required {

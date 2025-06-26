@@ -719,8 +719,8 @@ export default {
 .informes-container {
   display: grid;
   grid-template-rows: auto auto auto;
-  gap: 20px;
-  padding: 20px;
+  gap: 1rem;
+  padding: 1rem;
   width: 100%;
   margin: 0 auto;
 }
@@ -734,23 +734,23 @@ export default {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 20px;
+  gap: 1rem;
 }
 
 .stats-container {
   display: flex;
-  gap: 20px;
+  gap: 1rem;
 }
 
 .stat-card {
   background-color: var(--surface-color);
   border-radius: var(--border-radius);
   box-shadow: var(--card-shadow);
-  padding: 16px 20px;
+  padding: 0.8rem 1rem;
   display: flex;
   align-items: center;
   transition: all 0.3s ease;
-  min-width: 220px;
+  min-width: 200px;
 }
 
 .stat-card:hover {
@@ -759,16 +759,16 @@ export default {
 }
 
 .stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.7rem;
   background-color: var(--primary-light);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
-  margin-right: 16px;
+  font-size: 1.2rem;
+  margin-right: 0.8rem;
 }
 
 .stat-content {
@@ -776,16 +776,16 @@ export default {
 }
 
 .stat-value {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin-top: 0.2rem;
 }
 
 /* Panel de informes */
@@ -797,7 +797,7 @@ export default {
 .panel-header {
   background-color: var(--primary-color);
   color: white;
-  padding: 15px 20px;
+  padding: 0.8rem 1rem;
   border-top-left-radius: var(--border-radius);
   border-top-right-radius: var(--border-radius);
 }

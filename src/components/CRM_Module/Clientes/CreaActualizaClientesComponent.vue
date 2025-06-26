@@ -11,7 +11,8 @@
 
       <!-- Formulario principal -->
       <form @submit.prevent="modoActualizar ? actualizarCliente() : crearCliente()">
-        <!-- Pestañas para organizar el contenido -->        <div class="form-tabs">
+        <!-- Pestañas para organizar el contenido -->        
+        <div class="form-tabs">
           <button type="button" class="tab-btn" :class="{ active: activeTab === 'principal' }" @click="activeTab = 'principal'">
             <i class="fas fa-user-tie"></i> <span class="tab-text">Datos Principales</span>
           </button>
@@ -25,7 +26,7 @@
 
         <div class="tab-container">
           <!-- Contenido de la pestaña Datos Principales -->
-          <div v-show="activeTab === 'principal'" class="tab-content">
+          <div v-show="activeTab === 'principal'" class="tab-content" data-active-tab="principal">
             <div class="form-grid-compact">
               <!-- Identificación y Dirección en una fila -->
               <div class="form-section-compact">
@@ -137,7 +138,8 @@
                       <i class="fas fa-chevron-down select-icon"></i>
                     </div>
                   </div>
-                </div>                <div class="form-group-compact">
+                </div>                
+                <div class="form-group-compact">
                   <label for="usuario">Usuario Asignado <span class="required">*</span></label>
                   <div class="select-container-compact">
                     <select 
@@ -190,7 +192,8 @@
                     <div class="input-with-icon-compact">
                       <i class="fas fa-envelope icon-prefix"></i>
                       <input type="email" id="emailAutorizado" v-model="clienteLocal.emailAutorizado" class="form-control-compact" required />
-                    </div>                  </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -218,10 +221,18 @@
                 </label>
               </div>
             </div>
+            
+            <!-- Navegación de pestañas (nuevo) -->
+            <div class="tab-navigation">
+              <div></div> <!-- Espacio vacío para alinear -->
+              <button type="button" class="btn-compact btn-primary" @click="activeTab = 'contactos'">
+                <i class="fas fa-arrow-right"></i> Siguiente
+              </button>
+            </div>
           </div>
 
           <!-- Contenido de la pestaña Contactos y Datos Adicionales -->
-          <div v-show="activeTab === 'contactos'" class="tab-content">
+          <div v-show="activeTab === 'contactos'" class="tab-content" data-active-tab="contactos">
             <div class="form-grid-compact">
               <!-- Tres contactos en fila -->
               <div class="contacts-row">
@@ -370,7 +381,7 @@
                         <i class="fas fa-key icon-prefix"></i>
                         <input type="password" id="passTelemedida" v-model="clienteLocal.passTelemedida" class="form-control-compact" />
                         <button type="button" class="icon-suffix toggle-password" @click="togglePasswordVisibility">
-                          <i class="fas fa-eye"></i>
+                          <i class="fas" :class="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
                         </button>
                       </div>
                     </div>
@@ -382,17 +393,28 @@
                   <div class="section-header-compact">
                     <i class="fas fa-sticky-note"></i>
                     <h3>Notas y observaciones</h3>
-                  </div>                  <div class="form-group-compact">
+                  </div>
+                  <div class="form-group-compact">
                     <textarea id="notas" v-model="clienteLocal.notas" class="form-control-compact notes-textarea" 
                       placeholder="Notas y observaciones..."></textarea>
                   </div>
                 </div>
               </div>
             </div>
+
+            <!-- Navegación de pestañas (nuevo) -->
+            <div class="tab-navigation">
+              <button type="button" class="btn-compact btn-secondary" @click="activeTab = 'principal'">
+                <i class="fas fa-arrow-left"></i> Anterior
+              </button>
+              <button type="button" class="btn-compact btn-primary" @click="activeTab = 'instalaciones'">
+                <i class="fas fa-arrow-right"></i> Siguiente
+              </button>
+            </div>
           </div>
 
           <!-- Contenido de la pestaña Instalaciones -->
-          <div v-show="activeTab === 'instalaciones'" class="tab-content">
+          <div v-show="activeTab === 'instalaciones'" class="tab-content" data-active-tab="instalaciones">
             <div class="form-grid-compact">
               <!-- Tres secciones de instalaciones en una fila -->
               <div class="installations-row">
@@ -459,7 +481,8 @@
                       <i class="fas fa-sun icon-prefix"></i>
                       <input type="text" id="kwPanelesSolares" v-model="clienteLocal.kwPanelesSolares" class="form-control-compact" />
                     </div>
-                  </div>                  <div class="form-group-compact">
+                  </div>
+                  <div class="form-group-compact">
                     <label for="appMonitorizacion">APP Monitorización</label>
                     <div class="select-container-compact">
                       <select id="appMonitorizacion" v-model="clienteLocal.appMonitorizacionId" class="form-select-compact">
@@ -518,7 +541,8 @@
                       </select>
                       <i class="fas fa-chevron-down select-icon"></i>
                     </div>
-                  </div>                  <div class="form-group-compact">
+                  </div>
+                  <div class="form-group-compact">
                     <label for="integracionSistemasFV">Integración con Sistemas Fotovoltaicos</label>
                     <div class="select-container-compact">
                       <select id="integracionSistemasFV" v-model="clienteLocal.integracionSistemasFVId" class="form-select-compact">
@@ -528,12 +552,17 @@
                         </option>
                       </select>
                       <i class="fas fa-chevron-down select-icon"></i>
-                    </div>                  </div>
-                </div>              </div>            </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-            <!-- Botones de acción solo en la última pestaña -->
-            <div class="modal-footer-compact">
-              <div class="required-legend"><span class="required">*</span> Campos obligatorios</div>            
+            <!-- Navegación y botones de acción -->
+            <div class="tab-navigation">
+              <button type="button" class="btn-compact btn-secondary" @click="activeTab = 'contactos'">
+                <i class="fas fa-arrow-left"></i> Anterior
+              </button>
               <div class="action-buttons">
                 <button type="button" class="btn-compact btn-secondary" @click="cancelarFormulario">
                   <i class="fas fa-times"></i> Cancelar
@@ -547,6 +576,11 @@
           </div>
         </div>
       </form>
+      
+      <!-- Botón Cancelar flotante siempre visible -->
+      <button type="button" class="btn-compact btn-secondary btn-cancel" @click="cancelarFormulario">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
   </div>
 </template>
@@ -584,14 +618,17 @@ export default {
         telefonoContacto1: "",
         emailContacto1: "",
         nombreContacto2: "",
-        cargoContacto2: "",        telefonoContacto2: "",
+        cargoContacto2: "",
+        telefonoContacto2: "",
         emailContacto2: "",
         nombreContacto3: "",
         cargoContacto3: "",
-        telefonoContacto3: "",        emailContacto3: "",
+        telefonoContacto3: "",
+        emailContacto3: "",
         iban: "",
         userTelemedida: "",
-        passTelemedida: "",        usuario: null,
+        passTelemedida: "",
+        usuario: null,
         // Campos de instalaciones
         bateriaCondensadores: "",
         potenciaBateria: "",
@@ -610,7 +647,8 @@ export default {
         telemedida: false,
         monitorizacionEnergetica: false,
       })
-    },    sectores: Array,
+    },
+    sectores: Array,
     usuarios: Array,
     subtipologias: Array,
     appMonitorizacion: {
@@ -622,7 +660,8 @@ export default {
       default: () => []
     },
     isSubmitting: Boolean,
-  },  data() {
+  },
+  data() {
     return {
       activeTab: 'principal',
       showPassword: false,
@@ -656,7 +695,8 @@ export default {
         } else {
           this.clienteLocal = this.crearClienteVacio();
         }
-      },    },
+      },
+    },
     usuarios(newVal) {
       if (newVal.length && this.clienteLocal.idUsuario) {
         const usuario = newVal.find(
@@ -703,16 +743,19 @@ export default {
         emailContacto2: "",
         nombreContacto3: "",
         cargoContacto3: "",
-        telefonoContacto3: "",        emailContacto3: "",
+        telefonoContacto3: "",
+        emailContacto3: "",
         iban: "",
         userTelemedida: "",
-        passTelemedida: "",        usuario: null,
+        passTelemedida: "",
+        usuario: null,
         // Campos de instalaciones
         bateriaCondensadores: "",
         potenciaBateria: "",
         modeloBateria: "",
         instalacionFV: "",
-        kwInversor: "",        kwPanelesSolares: "",
+        kwInversor: "",
+        kwPanelesSolares: "",
         appMonitorizacionId: null,
         bateriaAlmacenamiento: "",
         potenciaBateriaAlmacenamiento: "",
@@ -753,13 +796,10 @@ export default {
     togglePasswordVisibility() {
       this.showPassword = !this.showPassword;
       const passInput = document.getElementById('passTelemedida');
-      const eyeIcon = document.querySelector('.toggle-password i');
       
       if (passInput) {
         passInput.type = this.showPassword ? 'text' : 'password';
-        if (eyeIcon) {
-          eyeIcon.className = this.showPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
-        }      }
+      }
     }
   },
   mounted() {
@@ -784,16 +824,16 @@ export default {
   justify-content: center;    
   width: 100%;
   height: 100%;
-  padding: 15px;
+  padding: 0.5rem;
 }
 
 .modal-content {
-  width: 90%;
-  max-width: 90%;
-  height: 100%;
-  max-height: 100%;
+  width: 95%;
+  max-width: 95%;
+  height: 95vh;
+  max-height: 95vh;
   background: #fff;
-  border-radius: 10px;
+  border-radius: 0.4rem;
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
   display: flex;
   flex-direction: column;
@@ -801,7 +841,7 @@ export default {
 }
 
 .modal-header {
-  padding: 18px 25px;
+  padding: 0.7rem 1rem;
   border-bottom: 1px solid #e0e0e0;
   background: rgba(252, 215, 0);
   color: white;
@@ -814,21 +854,21 @@ export default {
 
 .modal-title {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
 .close-button {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 0.5rem;
+  right: 0.5rem;
   background-color: #e74c3c;
   border: none;
-  font-size: 1.2rem;
+  font-size: 1rem;
   cursor: pointer;
   color: white;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -853,7 +893,7 @@ export default {
 }
 
 .tab-btn {
-  padding: 15px 25px;
+  padding: 0.5rem 1rem;
   background: transparent;
   border: none;
   border-bottom: 3px solid transparent;
@@ -863,8 +903,8 @@ export default {
   transition: all 0.2s;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 1rem;
+  gap: 0.3rem;
+  font-size: 0.8rem;
   flex: 1;
   justify-content: center;
 }
@@ -880,36 +920,45 @@ export default {
 }
 
 .tab-text {
-  font-size: 0.95rem;
+  font-size: 0.75rem;
 }
 
 /* Contenedor de pestañas optimizado */
 .tab-container {
   flex: 1;
   min-height: 0;
-  /* Añadido para permitir scroll interno en el contenido de las pestañas */
-  overflow-y: auto;
-  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
+/* CORRECCIÓN: Asegurar que el contenido tenga scroll */
 .tab-content {
-  height: 100%;
-  overflow-y: auto;
-  padding-right: 5px;
+  flex: 1;
+  overflow-y: auto !important;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 140px);
 }
 
 /* Grid optimizado */
 .form-grid-compact {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  max-width: 100%;
+  gap: 0.5rem;
+  flex: 1;
 }
 
+/* CORRECCIÓN: Reducir padding para optimizar espacio */
 .form-section-compact {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 0.3rem;
   border: 1px solid #e9ecef;
-  padding: 18px;
+  padding: 0.4rem !important;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.3rem;
 }
 
 .form-section-compact.full-width {
@@ -921,73 +970,75 @@ export default {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  margin-bottom: 18px;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .contact-card {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 0.3rem;
   border: 1px solid #e9ecef;
-  padding: 18px;
+  padding: 0.4rem !important;
+  display: flex;
+  flex-direction: column;
 }
 
 .additional-data-row {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: 1fr 2fr;
-  gap: 18px;
+  gap: 0.5rem;
 }
 
 .notes-section {
   grid-column: 2;
 }
 
-/* Encabezados */
+/* CORRECCIÓN: Reducir espacios en encabezados */
 .section-header-compact {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
-  gap: 8px;
-  padding-bottom: 8px;
+  margin-bottom: 0.2rem !important;
+  gap: 0.3rem;
+  padding-bottom: 0.2rem !important;
   border-bottom: 1px solid #f0f0f0;
 }
 
 .section-header-compact i {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   color:black;
-  width: 18px;
+  width: 0.9rem;
 }
 
 .section-header-compact h3 {
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #333;
   margin: 0;
 }
 
-/* Grupos de formulario */
+/* CORRECCIÓN: Reducir espacios entre elementos */
 .form-group-compact {
-  margin-bottom: 12px;
+  margin-bottom: 0.3rem !important;
 }
 
 .form-group-compact label {
   display: block;
-  margin-bottom: 4px;
-  font-size: 0.85rem;
+  margin-bottom: 0.1rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: black;
 }
 
 .form-row-compact {
   display: flex;
-  gap: 12px;
+  gap: 0.4rem;
   margin-bottom: 0;
 }
 
 .form-row-compact .form-group-compact {
   flex: 1;
-  margin-bottom: 12px;
+  margin-bottom: 0.3rem !important;
 }
 
 .required {
@@ -1002,21 +1053,21 @@ export default {
 
 .icon-prefix {
   position: absolute;
-  left: 10px;
+  left: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
   color: #aaa;
-  font-size: 0.9rem;
-  width: 14px;
+  font-size: 0.8rem;
+  width: 0.8rem;
 }
 
 .input-with-icon-compact .form-control-compact {
-  padding-left: 32px;
+  padding-left: 1.8rem;
 }
 
 .icon-suffix {
   position: absolute;
-  right: 10px;
+  right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
   background: none;
@@ -1024,24 +1075,24 @@ export default {
   cursor: pointer;
   color: #aaa;
   padding: 0;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .toggle-password:hover {
   color: rgba(252, 215, 0);
 }
 
-/* Controles de formulario */
+/* CORRECCIÓN: Optimizar tamaños de controles */
 .form-control-compact {
   width: 100%;
-  padding: 10px 12px;
+  padding: 0.3rem 0.5rem;
   border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
   transition: all 0.2s;
   color: #333;
   background-color: #fff;
-  height: 38px;
+  height: 26px !important;
 }
 
 .form-control-compact:focus {
@@ -1051,9 +1102,9 @@ export default {
 }
 
 .notes-textarea {
-  height: 100px !important;
+  height: 60px !important;
   resize: vertical;
-  min-height: 80px;
+  min-height: 50px;
 }
 
 /* Selectores */
@@ -1064,10 +1115,10 @@ export default {
 
 .form-select-compact {
   width: 100%;
-  padding: 10px 12px;
+  padding: 0.3rem 0.5rem;
   border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
   transition: all 0.2s;
   color: #333;
   background-color: #fff;
@@ -1075,7 +1126,7 @@ export default {
   -moz-appearance: none;
   appearance: none;
   cursor: pointer;
-  height: 38px;
+  height: 26px !important;
 }
 
 .form-select-compact:focus {
@@ -1086,26 +1137,27 @@ export default {
 
 .select-icon {
   position: absolute;
-  right: 12px;
+  right: 0.6rem;
   top: 50%;
   transform: translateY(-50%);
   color: #555;
   pointer-events: none;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 
 /* Botones */
 .btn-compact {
-  padding: 12px 20px;
-  border-radius: 6px;
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.3rem;
   font-weight: 500;
   transition: all 0.2s;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 0.95rem;
+  gap: 0.4rem;
+  height:fit-content;
+  font-size: 0.85rem;
   border: none;
   outline: none;
 }
@@ -1135,26 +1187,47 @@ export default {
   transform: translateY(-1px);
 }
 
-/* Pie del modal - fijo */
+/* CORRECCIÓN: Botón cancelar flotante siempre visible */
+.btn-secondary.btn-cancel {
+  display: flex !important;
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 100;
+  opacity: 0.9;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* CORRECCIÓN: Reducir espacios en footer */
 .modal-footer-compact {
-  padding: 16px 25px;
+  padding: 0.3rem 0.8rem !important;
   border-top: 1px solid #e0e0e0;
-  background: #fff;
+  background: #f8f9fa;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  margin-top: 0.2rem !important;
 }
 
 .required-legend {
-  font-size: 1rem;
+  font-size: 0.8rem;
   color: #777;
   font-weight: bold;
 }
 
+/* NUEVO: Navegación entre pestañas */
+.tab-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
 .action-buttons {
   display: flex;
-  gap: 12px;
+  gap: 0.4rem;
 }
 
 /* Responsive */
@@ -1170,16 +1243,22 @@ export default {
   .notes-section {
     grid-column: 1;
   }
+
+  .installations-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 900px) {
   .modal-content {
-    width: 95%;
-    height: 85vh;
-    max-height: 95vh;
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    padding: 0;
   }
-  .tab-container {
-    max-height: 60vh;
+  
+  .modal-overlay {
+    padding: 0;
   }
   
   .form-grid-compact {
@@ -1190,36 +1269,48 @@ export default {
     grid-template-columns: 1fr;
   }
   
+  .installations-row {
+    grid-template-columns: 1fr;
+  }
+  
   .form-row-compact {
     flex-direction: column;
-    gap: 8px;
+    gap: 0.3rem;
   }
   
   .tab-text {
     display: none;
   }
+
+  .tab-btn {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .services-checkboxes {
+    grid-template-columns: 1fr;
+  }
   
+  /* CORRECCIÓN: Asegurar scroll en vista móvil */
   .tab-content {
-    padding: 15px;
+    overflow-y: auto !important;
+    max-height: calc(100vh - 150px);
   }
 }
 
 @media (max-width: 600px) {
-  .modal-footer-compact {
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px 20px;
-  }
-    .action-buttons {
+  .action-buttons {
     width: 100%;
     justify-content: space-between;
   }
+  
   .modal-content {
-    height: 95vh;
+    height: 100vh;
     max-height: 100vh;
+    border-radius: 0;
   }
-  .tab-container {
-    max-height: 70vh;
+  
+  .modal-overlay {
+    padding: 0;
   }
 }
 
@@ -1228,16 +1319,17 @@ export default {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  margin-bottom: 18px;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .installation-card {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 0.3rem;
   border: 1px solid #e9ecef;
-  padding: 18px;
-  min-height: 400px; /* Altura mínima para mantener consistencia */
+  padding: 0.4rem !important;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Iconos específicos para instalaciones */
@@ -1253,26 +1345,26 @@ export default {
 
 /* Sección de servicios */
 .services-section {
-  margin: 20px 0;
-  padding: 20px;
+  margin: 0.4rem 0;
+  padding: 0.4rem;
   background: #f8f9fa;
-  border-radius: 8px;
+  border-radius: 0.3rem;
   border: 1px solid #e9ecef;
 }
 
 .services-header h3 {
   color: #495057;
-  font-size: 1.1rem;
-  margin: 0 0 15px 0;
+  font-size: 0.8rem;
+  margin: 0 0 0.4rem 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.3rem;
 }
 
 .services-checkboxes {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 0.4rem;
 }
 
 .service-checkbox {
@@ -1280,8 +1372,8 @@ export default {
   align-items: center;
   cursor: pointer;
   position: relative;
-  padding: 10px;
-  border-radius: 6px;
+  padding: 0.2rem;
+  border-radius: 0.25rem;
   transition: background-color 0.3s ease;
 }
 
@@ -1294,12 +1386,12 @@ export default {
 }
 
 .checkmark {
-  height: 20px;
-  width: 20px;
+  height: 14px;
+  width: 14px;
   background-color: #fff;
   border: 2px solid #ddd;
-  border-radius: 4px;
-  margin-right: 12px;
+  border-radius: 0.2rem;
+  margin-right: 0.4rem;
   position: relative;
   transition: all 0.3s ease;
 }
@@ -1312,10 +1404,10 @@ export default {
 .service-checkbox input[type="checkbox"]:checked + .checkmark:after {
   content: "";
   position: absolute;
-  left: 6px;
-  top: 2px;
-  width: 6px;
-  height: 12px;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
   border: solid white;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
@@ -1324,9 +1416,9 @@ export default {
 .service-label {
   font-weight: 600;
   color: #495057;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 /* Nota de restricción de campo */
@@ -1334,13 +1426,13 @@ export default {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 5px;
-  padding: 6px 10px;
+  margin-top: 3px;
+  padding: 4px 8px;
   background-color: #fff3cd;
   border: 1px solid #ffeaa7;
   border-radius: 4px;
   color: #856404;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 
 .field-restriction-note i {
