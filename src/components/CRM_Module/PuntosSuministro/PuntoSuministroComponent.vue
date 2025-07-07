@@ -433,19 +433,29 @@ export default {
         // Luego aplicamos los filtros por columna
         const columnFilters = Object.entries(this.columnFilters).every(([key, value]) => {
           if (!value) return true; // Si no hay filtro para esta columna, no filtra
-          
+
           // Caso especial para el filtro de CUPS
           if (key === 'cupsluz') {
             const cupsValue = this.getCupsValue(suministro);
             return cupsValue.toLowerCase().includes(value.toLowerCase());
           }
-          
+
           // Caso especial para el filtro de tipo
           if (key === 'tipo') {
             const tipo = this.getTipoCups(suministro);
             return tipo.toLowerCase().includes(value.toLowerCase());
           }
-          
+
+          // Caso especial para el filtro de tarifa (usa el valor mostrado en la tabla)
+          if (key === 'tarifa') {
+            const tarifa = this.getTarifa(suministro) || '-';
+            // Permitir filtrar por '-', que representa sin contrato activo
+            if (value.trim() === '-') {
+              return tarifa === '-';
+            }
+            return tarifa.toLowerCase().includes(value.toLowerCase());
+          }
+
           // Para el resto de columnas
           const fieldValue = String(suministro[key] || '').toLowerCase();
           return fieldValue.includes(value.toLowerCase());

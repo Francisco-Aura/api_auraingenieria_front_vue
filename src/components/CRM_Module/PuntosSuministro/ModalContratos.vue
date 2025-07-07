@@ -189,94 +189,14 @@
                   <h3>Potencias Contratadas</h3>
                 </div>
                 
-                <div class="potencias-grid">
-                  <div class="form-group-modern">
-                    <label for="potencia1">Potencia P1 (kW)</label>
-                    <div class="input-with-icon-modern">
-                      <i class="fas fa-bolt icon-prefix"></i>
-                      <input 
-                        type="number" 
-                        id="potencia1" 
-                        v-model="nuevoContrato.potencia1" 
-                        class="form-control-modern" 
-                        step="0.001"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div class="form-group-modern">
-                    <label for="potencia2">Potencia P2 (kW)</label>
-                    <div class="input-with-icon-modern">
-                      <i class="fas fa-bolt icon-prefix"></i>
-                      <input 
-                        type="number" 
-                        id="potencia2" 
-                        v-model="nuevoContrato.potencia2" 
-                        class="form-control-modern" 
-                        step="0.001"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div class="form-group-modern">
-                    <label for="potencia3">Potencia P3 (kW)</label>
-                    <div class="input-with-icon-modern">
-                      <i class="fas fa-bolt icon-prefix"></i>
-                      <input 
-                        type="number" 
-                        id="potencia3" 
-                        v-model="nuevoContrato.potencia3" 
-                        class="form-control-modern" 
-                        step="0.001"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div class="form-group-modern">
-                    <label for="potencia4">Potencia P4 (kW)</label>
-                    <div class="input-with-icon-modern">
-                      <i class="fas fa-bolt icon-prefix"></i>
-                      <input 
-                        type="number" 
-                        id="potencia4" 
-                        v-model="nuevoContrato.potencia4" 
-                        class="form-control-modern" 
-                        step="0.001"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div class="form-group-modern">
-                    <label for="potencia5">Potencia P5 (kW)</label>
-                    <div class="input-with-icon-modern">
-                      <i class="fas fa-bolt icon-prefix"></i>
-                      <input 
-                        type="number" 
-                        id="potencia5" 
-                        v-model="nuevoContrato.potencia5" 
-                        class="form-control-modern" 
-                        step="0.001"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div class="form-group-modern">
-                    <label for="potencia6">Potencia P6 (kW)</label>
-                    <div class="input-with-icon-modern">
-                      <i class="fas fa-bolt icon-prefix"></i>
-                      <input 
-                        type="number" 
-                        id="potencia6" 
-                        v-model="nuevoContrato.potencia6" 
-                        class="form-control-modern" 
-                        step="0.001"
-                        min="0"
-                      />
+                <div class="potencias-contratadas">
+                  <div class="potencias-grid">
+                    <div class="potencia-item" v-for="n in 6" :key="n">
+                      <label :for="'pot' + n">Potencia P{{ n }} (kw)</label>
+                      <div class="input-icon-group">
+                        <i class="fas fa-bolt"></i>
+                        <input :id="'pot' + n" v-model="nuevoContrato['pot' + n]" type="number" step="0.01" min="0" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -357,8 +277,11 @@
                 <button type="button" @click="cerrarModal" class="btn-modern btn-secondary">
                   <i class="fas fa-times"></i> Cancelar
                 </button>
-                <button type="submit" class="btn-modern btn-primary">
+                <button v-if="!modoRenovacion" type="submit" class="btn-modern btn-primary">
                   <i class="fas fa-save"></i> {{ modoEdicion ? 'Guardar Cambios' : 'Guardar Contrato' }}
+                </button>
+                <button v-if="modoRenovacion" type="submit" class="btn-modern btn-primary">
+                  <i class="fas fa-sync-alt"></i> Guardar y Renovar
                 </button>
               </div>
             </div>
@@ -536,6 +459,12 @@
                     </div>
                   </td>
                   <td class="action-buttons">
+                    <button @click="editarContratoHistorico(contrato)" class="btn-icon btn-edit" title="Editar contrato histórico">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button @click="renovarContratoHistorico(contrato)" class="btn-icon btn-renew" title="Renovar contrato histórico" :disabled="tieneContratoVigente">
+                      <i class="fas fa-sync-alt"></i>
+                    </button>
                     <button @click="verDetalleContrato(contrato)" class="btn-icon btn-view" title="Ver Detalle">
                       <i class="fas fa-eye"></i>
                     </button>
@@ -781,6 +710,7 @@ export default {
       mostrarModalDetalleContrato: false,
       contratoDetalle: null,
       clienteDetalle: null,
+      modoRenovacion: false,
     };
   },
 
@@ -842,11 +772,53 @@ export default {
       this.modoEdicion = true;
       this.contratoEditandoId = this.contratoVigente.id;
       this.nuevoContrato = { ...this.contratoVigente };
+      // Sincronizar potencias para los inputs
+      for (let i = 1; i <= 6; i++) {
+        this.nuevoContrato['pot' + i] = this.contratoVigente['potencia' + i] || 0;
+      }
+      this.selectedFile = null;
+    },
+
+    editarContratoHistorico(contrato) {
+      this.pestañaActiva = 'nuevo';
+      this.modoEdicion = true;
+      this.contratoEditandoId = contrato.id;
+      this.nuevoContrato = { ...contrato };
+      for (let i = 1; i <= 6; i++) {
+        this.nuevoContrato['pot' + i] = contrato['potencia' + i] || 0;
+      }
+      this.selectedFile = null;
+      this.modoRenovacion = false;
+    },
+
+    renovarContratoHistorico(contrato) {
+      if (this.tieneContratoVigente) return; // Seguridad extra
+      this.pestañaActiva = 'nuevo';
+      this.modoEdicion = false;
+      this.modoRenovacion = true;
+      this.nuevoContrato = {
+        ...contrato,
+        id: undefined,
+        fecha: '',
+        fechaEnvio: '',
+        fechaInicio: '',
+        fechaFin: '',
+        fechaDenunciaContrato: '',
+        denunciaContrato: 0,
+        rutaArchivoContrato: '',
+      };
+      for (let i = 1; i <= 6; i++) {
+        this.nuevoContrato['pot' + i] = contrato['potencia' + i] || 0;
+      }
       this.selectedFile = null;
     },
 
     async crearNuevoContrato() {
       try {
+        // Copiar los valores de los inputs pot1...pot6 a potencia1...potencia6 antes de enviar
+        for (let i = 1; i <= 6; i++) {
+          this.nuevoContrato['potencia' + i] = this.nuevoContrato['pot' + i];
+        }
         this.$swal.fire({
           title: 'Guardando contrato...',
           text: 'Por favor, espere mientras se procesa la información.',
@@ -1022,6 +994,10 @@ export default {
         fechaDenunciaContrato: "",
         observaciones: "",
       };
+      // Sincronizar potencias para los inputs
+      for (let i = 1; i <= 6; i++) {
+        this.nuevoContrato['pot' + i] = 0;
+      }
       this.selectedFile = null;
     },
 
@@ -1766,7 +1742,8 @@ export default {
 
 .action-buttons {
   display: flex;
-  gap: 12px;
+  gap: 8px;
+  justify-content: center;
 }
 
 /* Estilos originales para contrato actual */
@@ -2117,37 +2094,91 @@ export default {
 
 .action-buttons {
   display: flex;
-  gap: 0.5rem;
-  justify-content: flex-start;
+  gap: 8px;
+  justify-content: center;
 }
 
 .btn-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  border: none;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: #f8f9fa;
+  font-size: 1.1rem;
   color: #495057;
+  transition: all 0.2s;
+  position: relative;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
 }
-
-.btn-icon:hover {
-  background: rgba(252, 215, 0, 0.1);
-  color: rgba(252, 215, 0);
+.btn-icon:not(:disabled):hover {
+  background: #f8f9fa;
+  border-color: #ffd600;
+  color: #ffd600;
+  transform: scale(1.12);
 }
-
-.btn-icon.btn-view:hover {
-  background: rgba(13, 110, 253, 0.1);
-  color: #0d6efd;
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
-
-.btn-icon.btn-download:hover {
-  background: rgba(25, 135, 84, 0.1);
-  color: #198754;
+.btn-edit:hover::after {
+  content: 'Editar';
+  position: absolute;
+  top: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #222;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  z-index: 10;
+}
+.btn-renew:hover::after {
+  content: 'Renovar';
+  position: absolute;
+  top: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #222;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  z-index: 10;
+}
+.btn-view:hover::after {
+  content: 'Ver detalle';
+  position: absolute;
+  top: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #222;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  z-index: 10;
+}
+.btn-download:hover::after {
+  content: 'Descargar PDF';
+  position: absolute;
+  top: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #222;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  z-index: 10;
 }
 
 .no-history {
@@ -2462,5 +2493,58 @@ export default {
   background-color: rgba(107, 114, 128, 0.1);
   border: 1px solid rgba(107, 114, 128, 0.3);
   color: #374151;
+}
+
+.potencias-contratadas {
+  margin-bottom: 0;
+  padding: 0;
+}
+.potencias-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.potencia-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+.potencia-item label {
+  font-size: 0.97rem;
+  font-weight: 500;
+  color: #222;
+  margin-bottom: 2px;
+}
+.potencia-item input {
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  background: #fff;
+  padding: 4px 8px;
+  font-size: 0.97rem;
+  height: 32px;
+  box-sizing: border-box;
+  width: 100%;
+  transition: border 0.2s;
+}
+.potencia-item input:focus {
+  border: 1.5px solid #ffd600;
+  outline: none;
+}
+.input-icon-group {
+  display: block;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.input-icon-group i {
+  display: none;
+}
+/* Tooltips mejorados para que no se corten */
+.btn-icon:hover::after {
+  z-index: 9999 !important;
+  pointer-events: none;
 }
 </style>

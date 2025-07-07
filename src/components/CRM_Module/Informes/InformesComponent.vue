@@ -1,29 +1,5 @@
 <template>
   <div class="informes-container fade-in">
-    <!-- Panel superior con stats y opciones -->
-    <div class="stats-panel">
-      <div class="stats-container">
-        <div class="stat-card">
-          <div class="stat-icon">
-            <i class="fas fa-chart-bar"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">2</div>
-            <div class="stat-label">Informes Disponibles</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon">
-            <i class="fas fa-file-pdf"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">12</div>
-            <div class="stat-label">Informes Generados</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Panel de tipos de informes -->
     <div class="card info-panel">
       <div class="panel-header">
