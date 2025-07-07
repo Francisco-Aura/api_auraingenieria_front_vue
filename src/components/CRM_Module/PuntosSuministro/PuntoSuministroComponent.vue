@@ -40,6 +40,10 @@
     <div class="card table-panel">
       <div class="table-header">
         <div class="table-actions">
+          <button class="btn btn-refresh" @click="refreshData" title="Actualizar datos">
+            <i class="fas fa-sync-alt"></i>
+            <span>Actualizar</span>
+          </button>
           <button class="btn btn-export btn-excel" @click="exportarExcel" title="Exportar a Excel">
             <i class="fas fa-file-excel"></i>
             <span>Excel</span>
@@ -188,7 +192,10 @@
               <td class="text-truncate" :title="suministro.identificacion">
                 {{ suministro.identificacion || '-' }}
               </td>
-              <td class="text-truncate" :title="suministro.cupsluz || suministro.cupsgas">
+              <td
+                class="cups-cell"
+                :title="suministro.cupsluz || suministro.cupsgas"
+              >
                 {{ suministro.cupsluz || suministro.cupsgas }}
               </td>
               <td style="text-align: center;">
@@ -279,11 +286,12 @@
       :puntoSuministro="modalPuntoSuministro"
       :contratos="contratos"
       :comercializadoras="comercializadoras"
-      :tarifasGas="tarifasGas"
-      :tarifasLuz="tarifasLuz"
+      v-model:tarifasGas="tarifasGas"
+      v-model:tarifasLuz="tarifasLuz"
       :contratoActual="contratoActual"
       :contratosHistoricos="contratosHistoricos"
       @cerrar-modal="cerrarModalContratos"
+      @contrato-creado="handleContratoCreado"
     />
 
     <!-- Modal de Servicios -->
@@ -386,6 +394,7 @@ export default {
       comercializadoras: [],
       tarifasGas: [],
       tarifasLuz: [],
+      todosLosContratos: [], // Todos los contratos para calcular tarifas
 
       // Datos SERVICIO
       mostrarModalServicios: false, // Control de visibilidad del modal de servicios
@@ -407,6 +416,8 @@ export default {
       recordsPerPage: 10,
       sortKey: null,
       sortOrder: null,
+      contratoActualData: null, // Almacena datos del contrato actual
+      contratosHistoricosData: null, // Almacena datos de contratos históricos
     };
   },
 
@@ -446,14 +457,27 @@ export default {
 
     // Obtiene el contrato actual (aquel cuya fecha de finalización es posterior a hoy)
     contratoActual() {
+      // Si tenemos datos calculados previamente, los usamos
+      if (this.contratoActualData) {
+        return this.contratoActualData;
+      }
+      
+      // Si no, calculamos como antes
       const ahora = new Date();
       return this.contratos.find(
-        (contrato) => new Date(contrato.fechaFin) > ahora
-      );
+        (contrato) => new Date(contrato.fechaFin) > ahora && 
+                      new Date(contrato.fechaInicio) <= ahora
+      ) || {};
     },
 
     // Obtiene los contratos históricos (los que ya finalizaron)
     contratosHistoricos() {
+      // Si tenemos datos calculados previamente, los usamos
+      if (this.contratosHistoricosData) {
+        return this.contratosHistoricosData;
+      }
+      
+      // Si no, calculamos como antes
       const ahora = new Date();
       return this.contratos.filter(
         (contrato) => new Date(contrato.fechaFin) <= ahora
@@ -554,9 +578,18 @@ export default {
     async fetchPuntosSuministro() {
       try {
         this.loading = true;
+        console.log("Cargando puntos de suministro...");
+        
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/all`);
+        console.log(`Puntos de suministro recibidos: ${response.data.length}`);
+        
+        let puntosSinTarifa = 0;
+        let puntosConTarifa = 0;
+        
         this.puntosSuministro = response.data.map(punto => {
           const newPunto = { ...punto };
+          
+          // Normalizar nombres de campos CUPS
           if (newPunto.CUPSluz !== undefined) {
             newPunto.cupsluz = newPunto.CUPSluz;
             delete newPunto.CUPSluz;
@@ -565,12 +598,27 @@ export default {
             newPunto.cupsgas = newPunto.CUPSgas;
             delete newPunto.CUPSgas;
           }
+          
+          // Asegurar que tarifaActual se mantiene y no es 'Sin Tarifa'
+          if (newPunto.tarifaActual && newPunto.tarifaActual !== null) {
+            if (newPunto.tarifaActual === 'Sin Tarifa') {
+              newPunto.tarifaActual = null;
+              puntosSinTarifa++;
+            } else {
+              puntosConTarifa++;
+            }
+          } else {
+            puntosSinTarifa++;
+          }
+          
           return newPunto;
         });
+        
+        console.log(`Estadísticas de tarifas: ${puntosConTarifa} puntos con tarifa, ${puntosSinTarifa} puntos sin tarifa`);
       } catch (error) {
-          console.error("Error al cargar los puntos de suministro:", error);
+        console.error("Error al cargar los puntos de suministro:", error);
       } finally {
-          this.loading = false;
+        this.loading = false;
       }
     },
 
@@ -615,23 +663,123 @@ export default {
     },
 
     // Abre el modal de contratos con los datos del punto de suministro seleccionado
-    async abrirModalContratos(idPuntoSuministro,idCliente) {
+    async abrirModalContratos(idPuntoSuministro, idCliente) {
+      console.log(`Abriendo modal de contratos para punto de suministro ${idPuntoSuministro} del cliente ${idCliente}`);
+      this.loading = true;
+      
+      // Primero inicializamos valores mínimos para que el modal se pueda abrir
+      this.modalCliente = { id: idCliente, nombre: "Cargando..." };
+      this.modalPuntoSuministro = { id: idPuntoSuministro };
+      
+      // Reiniciar cualquier dato previo para evitar problemas
+      this.contratoActualData = null;
+      this.contratosHistoricosData = null;
+      
+      // Mostrar el modal inmediatamente para dar feedback
+      this.mostrarModalContratos = true;
+      
+      // Establecer un límite máximo para el spinner de carga
+      setTimeout(() => {
+        if (this.loading) {
+          console.log("Forzando fin del spinner después de tiempo límite");
+          this.loading = false;
+        }
+      }, 8000); // 8 segundos máximo
+      
       try {
-        // Obtener los contratos
-        const responseContratos = await axios.get(`${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${idPuntoSuministro}`);
-        this.contratos = responseContratos.data;
+        // Cargar datos básicos primero - cliente y punto de suministro
+        try {
+          const [responseCliente, responsePuntoSuministro] = await Promise.all([
+            axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`),
+            axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${idPuntoSuministro}`)
+          ]);
+          
+          this.modalCliente = responseCliente.data;
+          // Asegurar que el ID se preserve
+          this.modalCliente.id = idCliente;
+          this.modalPuntoSuministro = responsePuntoSuministro.data;
+          
+          console.log("Datos básicos cargados: cliente y punto de suministro");
+        } catch (error) {
+          console.error("Error al cargar datos del cliente o punto de suministro:", error);
+        }
         
-        // Obtener la información completa del cliente
-        const responseCliente = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`);
-        this.modalCliente = responseCliente.data;
-        
-        // Obtener la información completa del punto de suministro desde el backend
-        const responsePuntoSuministro = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${idPuntoSuministro}`);
-        this.modalPuntoSuministro = responsePuntoSuministro.data;
-        
-        this.mostrarModalContratos = true;
+        // Cargar tarifas, contratos y demás datos en paralelo
+        try {
+          // Cargar tarifas primero - estas son rápidas y necesarias
+          const [tarifasGasResponse, tarifasLuzResponse] = await Promise.all([
+            axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
+            axios.get(`${process.env.VUE_APP_API_URL}/api/tarifasLuz`)
+          ]);
+          
+          // Actualizar tarifas inmediatamente
+          this.tarifasGas = tarifasGasResponse.data;
+          this.tarifasLuz = tarifasLuzResponse.data;
+          
+          // Ahora cargar contratos específicos del punto - esto es rápido y lo necesitamos
+          const responseContratos = await axios.get(
+            `${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${idPuntoSuministro}`
+          );
+          
+          // Cargar solo los contratos necesarios
+          this.contratos = responseContratos.data;
+          
+          // No cargar todos los contratos si son demasiados - esto puede ser muy lento
+          // Podemos obtener la información mínima necesaria
+          try {
+            // Esta llamada podría ser lenta con 5000+ contratos, pero no bloqueamos la interfaz
+            const responseTodosContratos = await axios.get(
+              `${process.env.VUE_APP_API_URL}/api/contratos?limit=100`
+            );
+            
+            // Actualizar sólo si recibimos datos
+            if (responseTodosContratos.data && responseTodosContratos.data.length > 0) {
+              this.todosLosContratos = responseTodosContratos.data;
+            }
+          } catch (error) {
+            console.error("Error al cargar todos los contratos:", error);
+            // No interrumpir el flujo si falla esta llamada
+          }
+          
+          // Actualizar las tarifas y contratos - ya tenemos los datos específicos
+          // No repetimos la asignación de tarifasGas y tarifasLuz aquí
+          this.contratos = responseContratos.data;
+          
+          console.log(`Datos de contratos y tarifas cargados: Gas (${this.tarifasGas.length}), Luz (${this.tarifasLuz.length}), Contratos (${this.contratos.length})`);
+          
+          // Calcular el contrato actual y los históricos
+          const ahora = new Date();
+          // No asignamos directamente a las propiedades computadas
+          const contratoActualTemp = this.contratos.find(contrato => 
+            new Date(contrato.fechaInicio) <= ahora && new Date(contrato.fechaFin) > ahora
+          ) || {};
+          const contratosHistoricosTemp = this.contratos.filter(contrato => 
+            new Date(contrato.fechaFin) <= ahora
+          );
+          
+          // Guardamos las referencias para usarlas en la interfaz
+          this.contratoActualData = contratoActualTemp;
+          this.contratosHistoricosData = contratosHistoricosTemp;
+          
+          console.log(`Contratos procesados: ${this.contratos.length} total, contratoActual ID: ${this.contratoActualData?.id || 'ninguno'}, ${this.contratosHistoricosData?.length || 0} históricos`);
+        } catch (error) {
+          console.error("Error al cargar tarifas o contratos:", error);
+          // Asegurar que tenemos arrays vacíos en lugar de null
+          if (!this.tarifasGas) this.tarifasGas = [];
+          if (!this.tarifasLuz) this.tarifasLuz = [];
+          if (!this.contratos) this.contratos = [];
+          if (!this.todosLosContratos) this.todosLosContratos = [];
+          if (!this.contratosHistoricos) this.contratosHistoricos = [];
+        }
       } catch (error) {
-        console.error("Error al cargar datos:", error);
+        console.error("Error general al abrir el modal de contratos:", error);
+      } finally {
+        this.loading = false;
+        
+        // Forzar actualización para asegurar que el componente se renderiza correctamente
+        this.$nextTick(() => {
+          this.$forceUpdate();
+        });
       }
     },
 
@@ -640,17 +788,49 @@ export default {
       this.mostrarModalContratos = false;
     },
 
+    // Método para refrescar todos los datos manualmente
+    async refreshData() {
+      await this.fetchPuntosSuministro();
+    },
+
+    // Maneja la creación de un nuevo contrato (simplificado - sin recarga automática)
+    async handleContratoCreado(nuevoContrato) {
+      console.log('Contrato creado/actualizado exitosamente:', nuevoContrato);
+      
+      // Mostrar mensaje informativo al usuario
+      this.$swal.fire({
+        title: 'Contrato guardado',
+        text: 'El contrato se ha guardado correctamente. Usa el botón "Actualizar" para ver los cambios en la tabla.',
+        icon: 'success',
+        confirmButtonColor: 'rgba(252, 215, 0)',
+        confirmButtonText: 'Entendido',
+        timer: 3000,
+        timerProgressBar: true
+      });
+    },
+
     // Abre el modal de servicios con los datos del punto de suministro seleccionado
     async abrirModalServicios(idPuntoSuministro, idCliente) {
       try {
+        // Esperar a que productos y gestoras estén cargados
+        if (!this.productos.length) {
+          const productosResp = await axios.get(`${process.env.VUE_APP_API_URL}/api/productos`);
+          this.productos = productosResp.data;
+        }
+        if (!this.gestoras.length) {
+          const gestorasResp = await axios.get(`${process.env.VUE_APP_API_URL}/api/gestoras`);
+          this.gestoras = gestorasResp.data;
+        }
+        // Ahora cargar servicios y cliente
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios/punto-suministro/${idPuntoSuministro}`);
         this.servicios = response.data;
         const responseCliente = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`);
         this.modalCliente = responseCliente.data;
+        this.modalCliente.id = idCliente;
         this.modalPuntoSuministro = idPuntoSuministro;
         this.mostrarModalServicios = true;
       } catch (error) {
-        console.error("Error al cargar servicios:", error);
+        console.error("Error al cargar servicios/productos/gestoras:", error);
       }
     },
 
@@ -719,11 +899,60 @@ export default {
     },
 
     getTarifa(suministro) {
-      if (this.isGas(suministro)) {
-        return '3.1';
-      } else if (this.isLuz(suministro)) {
-        return '2.0TD';
+      // Primero comprobamos si la tarifa actual ya viene en el objeto desde el backend
+      if (suministro.tarifaActual && suministro.tarifaActual !== 'Sin Tarifa') {
+        return suministro.tarifaActual;
       }
+      
+      // Si no hay tarifa disponible en el DTO, la calculamos manualmente
+      const ahora = new Date();
+      
+      // Si no tenemos contratos cargados, mostrar guión
+      if (!this.todosLosContratos || this.todosLosContratos.length === 0) {
+        return '-';
+      }
+      
+      // Buscar contrato vigente para este punto de suministro
+      const contratoVigente = this.todosLosContratos.find(contrato => 
+        contrato.idPuntoSuministro == suministro.id &&
+        new Date(contrato.fechaInicio) <= ahora &&
+        new Date(contrato.fechaFin) > ahora
+      );
+      
+      if (!contratoVigente) {
+        return '-';
+      }
+      
+      // Determinar si es gas o luz basándose en los CUPS
+      const tieneGas = suministro.cupsgas && suministro.cupsgas.trim() !== '';
+      const tieneLuz = suministro.cupsluz && suministro.cupsluz.trim() !== '';
+      
+      // Si tiene ambos CUPS, priorizar según cual tiene tarifa en el contrato
+      if (tieneGas && tieneLuz) {
+        // Si tiene tarifa de luz, mostrar esa (priorizamos luz sobre gas)
+        if (contratoVigente.idTarifaLuz && contratoVigente.idTarifaLuz !== '' && contratoVigente.idTarifaLuz !== null) {
+          const tarifa = this.tarifasLuz.find(t => t.id == contratoVigente.idTarifaLuz);
+          if (tarifa && tarifa.nombre !== 'Sin Tarifa') return tarifa.nombre;
+        }
+        // Si tiene tarifa de gas, mostrar esa
+        if (contratoVigente.idTarifaGas && contratoVigente.idTarifaGas !== '' && contratoVigente.idTarifaGas !== null) {
+          const tarifa = this.tarifasGas.find(t => t.id == contratoVigente.idTarifaGas);
+          if (tarifa && tarifa.nombre !== 'Sin Tarifa') return tarifa.nombre;
+        }
+      } else if (tieneGas) {
+        // Solo tiene gas
+        if (contratoVigente.idTarifaGas && contratoVigente.idTarifaGas !== '' && contratoVigente.idTarifaGas !== null) {
+          const tarifa = this.tarifasGas.find(t => t.id == contratoVigente.idTarifaGas);
+          if (tarifa && tarifa.nombre !== 'Sin Tarifa') return tarifa.nombre;
+        }
+      } else if (tieneLuz) {
+        // Solo tiene luz
+        if (contratoVigente.idTarifaLuz && contratoVigente.idTarifaLuz !== '' && contratoVigente.idTarifaLuz !== null) {
+          const tarifa = this.tarifasLuz.find(t => t.id == contratoVigente.idTarifaLuz);
+          if (tarifa && tarifa.nombre !== 'Sin Tarifa') return tarifa.nombre;
+        }
+      }
+      
       return '-';
     },
 
@@ -798,25 +1027,39 @@ export default {
   // Se ejecuta cuando el componente es montado para cargar datos necesarios
   async mounted() {
     this.loading = true; // Forzar la visibilidad del spinner
-    setTimeout(() => { 
-      this.loading = false; 
-    }, 2000); // Simular carga por 2 segundos
-    //Precargamos los arrays de los combos
+    
+    // Precargamos los arrays de los combos y datos necesarios
     try {
-      const [comercializadoras, tarifasGas, tarifasLuz,gestoras,productos] = await Promise.all([
+      console.log("Cargando datos iniciales...");
+      
+      const [comercializadoras, tarifasGas, tarifasLuz, gestoras, productos, contratos] = await Promise.all([
         axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/tarifasLuz`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/gestoras`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/productos`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/contratos`),
       ]);
+      
       this.comercializadoras = comercializadoras.data;
       this.tarifasGas = tarifasGas.data;
       this.tarifasLuz = tarifasLuz.data;
       this.gestoras = gestoras.data;
       this.productos = productos.data;
+      this.todosLosContratos = contratos.data;
+      
+      console.log(`Datos cargados: ${this.tarifasGas.length} tarifas gas, ${this.tarifasLuz.length} tarifas luz, ${this.todosLosContratos.length} contratos`);
+      
+      // Forzar una actualización de la vista para que se apliquen bien los datos de tarifa
+      this.$nextTick(() => {
+        this.$forceUpdate();
+      });
     } catch (error) {
       console.error("Error al cargar datos iniciales:", error);
+    } finally {
+      setTimeout(() => { 
+        this.loading = false; 
+      }, 1000); // Dar tiempo para que se procesen los datos
     }
   },
 
@@ -999,6 +1242,24 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Mostrar CUPS completo, sin cortar ni puntos suspensivos */
+.data-table td.cups-cell {
+  white-space: normal !important;
+  word-break: break-all !important;
+  text-overflow: unset !important;
+  overflow: visible !important;
+  max-width: 420px;
+}
+
+.data-table td.text-truncate[title*="CUPS"] span,
+.data-table td.text-truncate[title*="cupsluz"] span,
+.data-table td.text-truncate[title*="cupsgas"] span {
+  white-space: normal !important;
+  word-break: break-all !important;
+  text-overflow: unset !important;
+  overflow: visible !important;
 }
 
 .column-header {
@@ -1213,6 +1474,30 @@ export default {
   border-radius: 6px;
   font-weight: 500;
   transition: all 0.3s ease;
+}
+
+.btn-refresh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-refresh:hover {
+  background-color: #138496;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2);
+}
+
+.btn-refresh i {
+  font-size: 14px;
 }
 
 .btn-excel {

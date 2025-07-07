@@ -31,7 +31,7 @@
       </div>
       <div class="panel-content">
         <div class="informe-opciones">
-          <div class="card informe-card" @click="preguntarModo('contratos-pendientes-renovacion')">
+          <div class="card informe-card" @click="mostrarInforme('contratos-pendientes-renovacion')">
             <div class="informe-icon">
               <i class="fas fa-file-contract"></i>
             </div>
@@ -44,7 +44,7 @@
             </div>
           </div>
           
-          <div class="card informe-card" @click="preguntarModo('puntos-suministro-sin-contrato')">
+          <div class="card informe-card" @click="mostrarInforme('puntos-suministro-sin-contrato')">
             <div class="informe-icon">
               <i class="fas fa-bolt"></i>
             </div>
@@ -57,7 +57,7 @@
             </div>
           </div>
 
-          <div class="card informe-card" @click="preguntarModo('servicios-pendientes-pago')">
+          <div class="card informe-card" @click="mostrarInforme('servicios-pendientes-pago')">
             <div class="informe-icon">
               <i class="fas fa-money-bill-wave"></i>
             </div>
@@ -176,41 +176,6 @@
           >
             <i class="fas fa-angle-double-right"></i>
           </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal para seleccionar modo de visualización -->
-    <div v-if="mostrarModal" class="modal-backdrop">
-      <div class="modal-container">
-        <div class="modal-header">
-          <h3 class="modal-title">Seleccionar formato de informe</h3>
-          <button class="modal-close" @click="cerrarModal">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="option-selector">
-            <div class="option-card" @click="generarInforme('pdf')">
-              <div class="option-icon">
-                <i class="fas fa-file-pdf"></i>
-              </div>
-              <div class="option-info">
-                <h4>Generar PDF</h4>
-                <p>Exportar informe en formato PDF para descargar</p>
-              </div>
-            </div>
-            
-            <div class="option-card" @click="generarInforme('pantalla')">
-              <div class="option-icon">
-                <i class="fas fa-desktop"></i>
-              </div>
-              <div class="option-info">
-                <h4>Ver en Pantalla</h4>
-                <p>Mostrar los datos en formato tabla directamente</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -376,46 +341,28 @@ export default {
           timer: 1500,
           showConfirmButton: false
         });
-        await this.generarInforme('pantalla');
+        await this.mostrarInforme('pantalla');
       } catch (error) {
         console.error('Error al actualizar pagos en lote:', error);
         Swal.fire('Error', 'No se pudieron actualizar todos los pagos', 'error');
-        await this.generarInforme('pantalla');
+        await this.mostrarInforme('pantalla');
       } finally {
         this.isSavingBulk = false;
       }
     },
 
-    // Abre el modal para preguntar el modo de visualización
-    preguntarModo(tipo) {
+    // Método para mostrar el informe directamente en pantalla
+    async mostrarInforme(tipo) {
       this.tipoSeleccionado = tipo;
-      this.mostrarModal = true;
-    },
-
-    // Cierra el modal sin realizar ninguna acción
-    cerrarModal() {
-      this.mostrarModal = false;
-    },
-
-    // Genera el informe en la opción seleccionada
-    async generarInforme(modo) {
-      this.mostrarModal = false; // Cierra el modal
-
       try {
-        const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/api/informes/${this.tipoSeleccionado}`);
-        
-        if (modo === "pdf") {
-          this.crearPDF(respuesta.data, this.tipoSeleccionado);
-        } else {
-          // Filtra los datos para la tabla en pantalla
-          this.procesarDatosParaTabla(respuesta.data);
-          this.tituloInforme = this.formatearTitulo(this.tipoSeleccionado);
-          this.mostrarTabla = true;
-          // Resetear estado de paginación
-          this.currentPage = 1;
-          this.recordsPerPage = 10;
-          this.recordsPerPageValue = 10;
-        }
+        const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/api/informes/${tipo}`);
+        this.procesarDatosParaTabla(respuesta.data);
+        this.tituloInforme = this.formatearTitulo(tipo);
+        this.mostrarTabla = true;
+        // Resetear estado de paginación
+        this.currentPage = 1;
+        this.recordsPerPage = 10;
+        this.recordsPerPageValue = 10;
       } catch (error) {
         console.error("Error al obtener el informe", error);
       }
@@ -1349,21 +1296,82 @@ export default {
   min-width: 250px;
 }
 
+/* CUPS Luz y CUPS Gas: dar más espacio, permitir wrap y sin puntos suspensivos */
 .data-table th[data-column="cupsLuz"],
 .data-table td[data-column="cupsLuz"],
 .data-table th[data-column="cupsGas"],
 .data-table td[data-column="cupsGas"] {
-  min-width: 150px;
+  min-width: 180px;
+  max-width: 420px;
+  white-space: normal !important;
+  word-break: break-all !important;
+  text-overflow: unset !important;
+  font-size: 1em;
 }
 
-/* Ajuste para columnas que pueden ser más estrechas */
-.data-table th[data-column="fechaInicio"],
-.data-table td[data-column="fechaInicio"],
-.data-table th[data-column="fechaFin"],
-.data-table td[data-column="fechaFin"],
-.data-table th[data-column="importe"],
-.data-table td[data-column="importe"] {
-  min-width: 100px;
+/* Quitar ellipsis y nowrap en el contenido de CUPS */
+.data-table td[data-column="cupsLuz"] .cell-content,
+.data-table td[data-column="cupsGas"] .cell-content {
+  white-space: normal !important;
+  word-break: break-all !important;
+  text-overflow: unset !important;
+  overflow: visible !important;
+  max-width: 420px;
+}
+
+.data-table td[data-column="cupsLuz"],
+.data-table td[data-column="cupsGas"] {
+  white-space: normal !important;
+  word-break: break-all !important;
+  text-overflow: unset !important;
+  overflow: visible !important;
+}
+
+/* Reducir ancho de columnas menos críticas */
+.data-table th[data-column="tarifaLuz"],
+.data-table td[data-column="tarifaLuz"],
+.data-table th[data-column="tarifaGas"],
+.data-table td[data-column="tarifaGas"],
+.data-table th[data-column="contrato"],
+.data-table td[data-column="contrato"],
+.data-table th[data-column="comercializadoraActual"],
+.data-table td[data-column="comercializadoraActual"] {
+  min-width: 80px;
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Permitir wrap en los nombres de las columnas */
+.data-table th .column-title {
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+/* Ajuste general: reducir max-width de otras celdas para optimizar espacio */
+.table-cell {
+  min-width: 80px;
+  max-width: 140px;
+  height: 40px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+  cursor: default;
+  transition: background-color 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-content {
+  width: 100%;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  padding-right: 20px;
 }
 
 /* NUEVOS ESTILOS PARA EL GESTOR DE PAGOS INNOVADOR */

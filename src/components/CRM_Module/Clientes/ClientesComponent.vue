@@ -47,6 +47,10 @@
     <div class="card table-panel">
       <div class="table-header">
         <div class="table-actions-horizontal">
+          <button class="btn btn-refresh" @click="fetchClientes" title="Actualizar datos">
+            <i class="fas fa-sync-alt"></i>
+            <span>Actualizar</span>
+          </button>
           <button class="btn btn-export btn-excel" @click="exportarExcel" title="Exportar a Excel">
             <i class="fas fa-file-excel"></i>
             <span>Excel</span>
@@ -406,8 +410,15 @@ export default {
         this.loading = true;
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
         this.clientes = response.data;
+        // Eliminada la alerta de éxito, solo loading
       } catch (error) {
         console.error("Error al cargar clientes:", error);
+        await this.$swal.fire({
+          title: 'Error',
+          text: `No se pudieron actualizar los clientes: ${error.message}`,
+          icon: 'error',
+          confirmButtonColor: 'rgba(252, 215, 0)'
+        });
       } finally {
         this.loading = false;
       }
@@ -732,11 +743,7 @@ export default {
     },
   },
   async mounted() {
-    this.loading = true; // Forzar la visibilidad del spinner
-    setTimeout(() => { 
-      this.loading = false; 
-    }, 2000); // Simular carga por 2 segundos
-    //Precargamos los arrays de los combos
+    this.loading = true;
     try {
       const [clientes, usuarios, sectores, subtipologias, appMonitorizacion, integracionSistemasFV] = await Promise.all([
         axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`),
@@ -752,12 +759,22 @@ export default {
       this.subtipologias = subtipologias.data;
       this.appMonitorizacion = appMonitorizacion.data;
       this.integracionSistemasFV = integracionSistemasFV.data;
-      
       // Debug: verificar que se cargan los datos
       console.log('APP Monitorización cargadas:', this.appMonitorizacion);
       console.log('Integración Sistemas FV cargadas:', this.integracionSistemasFV);
     } catch (error) {
       console.error("Error al cargar datos iniciales:", error);
+      await this.$swal.fire({
+        title: 'Error de carga',
+        text: 'No se pudieron cargar todos los datos iniciales. Algunas funcionalidades podrían no estar disponibles.',
+        icon: 'warning',
+        confirmButtonText: 'Entendido'
+      });
+    } finally {
+      this.loading = false;
+      this.$nextTick(() => {
+        this.$forceUpdate();
+      });
     }
   },
   watch: {
@@ -902,6 +919,22 @@ export default {
   border-radius: 0.3rem;
   font-weight: 500;
   transition: all 0.3s ease;
+}
+
+.btn-refresh {
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+}
+
+.btn-refresh:hover {
+  background-color: #138496;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2);
+}
+
+.btn-refresh i {
+  font-size: 14px;
 }
 
 .btn-excel {

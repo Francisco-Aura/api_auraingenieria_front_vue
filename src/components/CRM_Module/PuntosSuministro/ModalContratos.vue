@@ -1,5 +1,8 @@
 <template>
   <div v-if="visible" class="modal-overlay">
+    <!-- Loading spinner -->
+    <Spinner :isLoading="cargandoDatos" />
+    
     <div class="modal-content">
       <!-- Encabezado del modal -->
       <div class="modal-header">
@@ -43,7 +46,14 @@
       </div>
 
       <!-- Contenido dinámico según la pestaña activa -->
-      <div class="tab-content-container">
+      <div v-if="cargandoDatos" class="modal-loading">
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <p>Cargando datos del contrato...</p>
+        </div>
+      </div>
+      
+      <div v-else class="tab-content-container">
         <!-- Crear/Editar contrato -->
         <div v-if="pestañaActiva === 'nuevo'" class="tab-content">
           <!-- Banner del cliente -->
@@ -128,15 +138,19 @@
                 </div>
 
                 <div class="form-group-modern">
-                  <label for="tarifaGas">Tarifa Gas <span class="required">*</span></label>
+                  <label for="tarifaGas">
+                    <i class="fas fa-fire" :class="{ 'text-active': esGas, 'text-disabled': !esGas }"></i>
+                    Tarifa Gas <span v-if="esGas" class="required">*</span>
+                  </label>
                   <div class="select-container-modern">
                     <select 
                       id="tarifaGas" 
                       v-model="nuevoContrato.idTarifaGas" 
                       class="form-select-modern" 
-                      required
+                      :disabled="!esGas"
+                      :required="esGas"
                     >
-                      <option value="">Seleccione...</option>
+                      <option v-if="esGas" value="">Seleccione...</option>
                       <option v-for="tarifa in tarifasGas" :value="tarifa.id" :key="tarifa.id">
                         {{ tarifa.nombre }}
                       </option>
@@ -146,20 +160,124 @@
                 </div>
 
                 <div class="form-group-modern">
-                  <label for="tarifaLuz">Tarifa Luz <span class="required">*</span></label>
+                  <label for="tarifaLuz">
+                    <i class="fas fa-bolt" :class="{ 'text-active': esLuz, 'text-disabled': !esLuz }"></i>
+                    Tarifa Luz <span v-if="esLuz" class="required">*</span>
+                  </label>
                   <div class="select-container-modern">
                     <select 
                       id="tarifaLuz" 
                       v-model="nuevoContrato.idTarifaLuz" 
                       class="form-select-modern" 
-                      required
+                      :disabled="!esLuz"
+                      :required="esLuz"
                     >
-                      <option value="">Seleccione...</option>
+                      <option v-if="esLuz" value="">Seleccione...</option>
                       <option v-for="tarifa in tarifasLuz" :value="tarifa.id" :key="tarifa.id">
                         {{ tarifa.nombre }}
                       </option>
                     </select>
                     <i class="fas fa-chevron-down select-icon"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Nueva Sección de Potencias Contratadas -->
+              <div class="form-section-modern">
+                <div class="section-header-modern">
+                  <i class="fas fa-bolt"></i>
+                  <h3>Potencias Contratadas</h3>
+                </div>
+                
+                <div class="potencias-grid">
+                  <div class="form-group-modern">
+                    <label for="potencia1">Potencia P1 (kW)</label>
+                    <div class="input-with-icon-modern">
+                      <i class="fas fa-bolt icon-prefix"></i>
+                      <input 
+                        type="number" 
+                        id="potencia1" 
+                        v-model="nuevoContrato.potencia1" 
+                        class="form-control-modern" 
+                        step="0.001"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div class="form-group-modern">
+                    <label for="potencia2">Potencia P2 (kW)</label>
+                    <div class="input-with-icon-modern">
+                      <i class="fas fa-bolt icon-prefix"></i>
+                      <input 
+                        type="number" 
+                        id="potencia2" 
+                        v-model="nuevoContrato.potencia2" 
+                        class="form-control-modern" 
+                        step="0.001"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div class="form-group-modern">
+                    <label for="potencia3">Potencia P3 (kW)</label>
+                    <div class="input-with-icon-modern">
+                      <i class="fas fa-bolt icon-prefix"></i>
+                      <input 
+                        type="number" 
+                        id="potencia3" 
+                        v-model="nuevoContrato.potencia3" 
+                        class="form-control-modern" 
+                        step="0.001"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div class="form-group-modern">
+                    <label for="potencia4">Potencia P4 (kW)</label>
+                    <div class="input-with-icon-modern">
+                      <i class="fas fa-bolt icon-prefix"></i>
+                      <input 
+                        type="number" 
+                        id="potencia4" 
+                        v-model="nuevoContrato.potencia4" 
+                        class="form-control-modern" 
+                        step="0.001"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div class="form-group-modern">
+                    <label for="potencia5">Potencia P5 (kW)</label>
+                    <div class="input-with-icon-modern">
+                      <i class="fas fa-bolt icon-prefix"></i>
+                      <input 
+                        type="number" 
+                        id="potencia5" 
+                        v-model="nuevoContrato.potencia5" 
+                        class="form-control-modern" 
+                        step="0.001"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div class="form-group-modern">
+                    <label for="potencia6">Potencia P6 (kW)</label>
+                    <div class="input-with-icon-modern">
+                      <i class="fas fa-bolt icon-prefix"></i>
+                      <input 
+                        type="number" 
+                        id="potencia6" 
+                        v-model="nuevoContrato.potencia6" 
+                        class="form-control-modern" 
+                        step="0.001"
+                        min="0"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -509,6 +627,37 @@
               </div>
             </div>
           </div>
+          
+          <!-- Nueva sección de potencias contratadas en la vista de detalle -->
+          <div class="detalle-contrato-section">
+            <h4><i class="fas fa-bolt"></i> Potencias Contratadas</h4>
+            <div class="potencia-grid-detalle">
+              <div class="potencia-item-detalle">
+                <span class="potencia-label">P1:</span>
+                <span class="potencia-value">{{ contratoDetalle?.potencia1 || 0 }} kW</span>
+              </div>
+              <div class="potencia-item-detalle">
+                <span class="potencia-label">P2:</span>
+                <span class="potencia-value">{{ contratoDetalle?.potencia2 || 0 }} kW</span>
+              </div>
+              <div class="potencia-item-detalle">
+                <span class="potencia-label">P3:</span>
+                <span class="potencia-value">{{ contratoDetalle?.potencia3 || 0 }} kW</span>
+              </div>
+              <div class="potencia-item-detalle">
+                <span class="potencia-label">P4:</span>
+                <span class="potencia-value">{{ contratoDetalle?.potencia4 || 0 }} kW</span>
+              </div>
+              <div class="potencia-item-detalle">
+                <span class="potencia-label">P5:</span>
+                <span class="potencia-value">{{ contratoDetalle?.potencia5 || 0 }} kW</span>
+              </div>
+              <div class="potencia-item-detalle">
+                <span class="potencia-label">P6:</span>
+                <span class="potencia-value">{{ contratoDetalle?.potencia6 || 0 }} kW</span>
+              </div>
+            </div>
+          </div>
           <div class="detalle-contrato-section" v-if="contratoDetalle?.observaciones">
             <h4><i class="fas fa-sticky-note"></i> Observaciones</h4>
             <div class="observaciones-content">
@@ -525,9 +674,13 @@
 import axios from "axios";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import Spinner from "@/components/SpinnerComponent.vue";
 
 export default {
   name: "ModalContratos",
+  components: {
+    Spinner
+  },
   props: {
     visible: {
       type: Boolean,
@@ -567,6 +720,11 @@ export default {
       required: false,
       default: () => [],
     },
+    contratos: {
+      type: Array,
+      required: false,
+      default: () => [],
+    },
     cliente: {
       type: [Object, Number],
       required: true
@@ -593,6 +751,7 @@ export default {
       pestañaActiva: "actual", // Se determinará automáticamente en el watcher
       modoEdicion: false,
       contratoEditandoId: null,
+      cargandoDatos: true, // Nuevo estado de loading
       nuevoContrato: {
         idCliente:"",
         idPuntoSuministro:"",        
@@ -601,8 +760,8 @@ export default {
         fechaInicio: "",
         fechaFin: "",
         contrato: "",
-        idTarifaGas:"",
-        idTarifaLuz:"",
+        idTarifaGas: "", // Se inicializará en mounted/inicializarNuevoContrato
+        idTarifaLuz: "", // Se inicializará en mounted/inicializarNuevoContrato
         potencia1:0,        
         potencia2:0,
         potencia3:0,
@@ -636,13 +795,41 @@ export default {
     },
 
     getTarifaLuzNombre(id) {
-      const tarifa = this.tarifasLuz.find(t => t.id === id);
-      return tarifa ? tarifa.nombre : 'No especificada';
+      if (!id || id === '') return 'Sin Tarifa';
+      
+      // Si las tarifas no están cargadas aún
+      if (!this.tarifasLuz || !this.tarifasLuz.length) {
+        console.warn("No se han cargado las tarifas de luz aún");
+        return 'Cargando...';
+      }
+      
+      const tarifa = this.tarifasLuz.find(t => t.id == id); // Usar == en lugar de ===
+      
+      if (!tarifa) {
+        console.warn(`No se encontró la tarifa de luz con ID: ${id}`, this.tarifasLuz);
+        return 'Tarifa Desconocida';
+      }
+      
+      return tarifa.nombre;
     },
 
     getTarifaGasNombre(id) {
-      const tarifa = this.tarifasGas.find(t => t.id === id);
-      return tarifa ? tarifa.nombre : 'No especificada';
+      if (!id || id === '') return 'Sin Tarifa';
+      
+      // Si las tarifas no están cargadas aún
+      if (!this.tarifasGas || !this.tarifasGas.length) {
+        console.warn("No se han cargado las tarifas de gas aún");
+        return 'Cargando...';
+      }
+      
+      const tarifa = this.tarifasGas.find(t => t.id == id); // Usar == en lugar de ===
+      
+      if (!tarifa) {
+        console.warn(`No se encontró la tarifa de gas con ID: ${id}`, this.tarifasGas);
+        return 'Tarifa Desconocida';
+      }
+      
+      return tarifa.nombre;
     },
 
     getComercializadoraNombre(id) {
@@ -660,32 +847,88 @@ export default {
 
     async crearNuevoContrato() {
       try {
-        const formData = new FormData();
-        formData.append('contrato', JSON.stringify(this.nuevoContrato));
-        if (this.selectedFile) {
-          formData.append('archivo', this.selectedFile);
-        }
-        formData.append('dniCliente', this.cliente.dni);
+        this.$swal.fire({
+          title: 'Guardando contrato...',
+          text: 'Por favor, espere mientras se procesa la información.',
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          willOpen: () => {
+            this.$swal.showLoading();
+          }
+        });
 
         let response;
-        if (this.modoEdicion && this.contratoEditandoId) {
-          response = await axios.put(
-            `${process.env.VUE_APP_API_URL}/api/contratos/${this.contratoEditandoId}`,
-            formData,
-            { headers: { 'Content-Type': 'multipart/form-data' } }
-          );
-        } else {
-          response = await axios.post(
-            `${process.env.VUE_APP_API_URL}/api/contratos`,
-            formData,
-            { headers: { 'Content-Type': 'multipart/form-data' } }
-          );
+        // Si tenemos un archivo seleccionado, enviamos como multipart/form-data
+        if (this.selectedFile) {
+          const formData = new FormData();
+          formData.append('contrato', JSON.stringify(this.nuevoContrato));
+          formData.append('archivo', this.selectedFile);
+          
+          if (this.cliente.dni) {
+            formData.append('dniCliente', this.cliente.dni);
+          }
+
+          if (this.modoEdicion && this.contratoEditandoId) {
+            response = await axios.put(
+              `${process.env.VUE_APP_API_URL}/api/contratos/${this.contratoEditandoId}`,
+              formData,
+              { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
+          } else {
+            response = await axios.post(
+              `${process.env.VUE_APP_API_URL}/api/contratos`,
+              formData,
+              { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
+          }
+        } 
+        // Si no hay archivo, enviamos como JSON directamente
+        else {
+          if (this.modoEdicion && this.contratoEditandoId) {
+            response = await axios.put(
+              `${process.env.VUE_APP_API_URL}/api/contratos/${this.contratoEditandoId}`,
+              this.nuevoContrato,
+              { headers: { 'Content-Type': 'application/json' } }
+            );
+          } else {
+            response = await axios.post(
+              `${process.env.VUE_APP_API_URL}/api/contratos`,
+              this.nuevoContrato,
+              { headers: { 'Content-Type': 'application/json' } }
+            );
+          }
         }
+        
+        console.log('Contrato guardado exitosamente:', response.data);
+        
+        // Mostrar mensaje de éxito
+        await this.$swal.fire({
+          title: this.modoEdicion ? 'Contrato actualizado' : 'Contrato creado',
+          text: this.modoEdicion 
+            ? 'El contrato ha sido actualizado correctamente.' 
+            : 'El nuevo contrato ha sido creado correctamente.',
+          icon: 'success',
+          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonText: 'Aceptar',
+          timer: 2000,
+          timerProgressBar: true
+        });
+        
+        // Notificar al componente padre de forma simple
         this.$emit("contrato-creado", response.data);
+        
+        // Cerrar el modal
         this.cerrarModal();
+        
       } catch (error) {
         console.error("Error al guardar el contrato:", error);
-        alert("Error al guardar el contrato. Por favor, verifica los datos e inténtalo de nuevo.");
+        this.$swal.fire({
+          title: 'Error',
+          text: `No se pudo ${this.modoEdicion ? 'actualizar' : 'crear'} el contrato. Por favor, verifica los datos e inténtalo de nuevo.`,
+          icon: 'error',
+          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonText: 'Aceptar'
+        });
       }
     },
 
@@ -722,14 +965,6 @@ export default {
 
     // Determinar qué pestaña mostrar inicialmente basándose en si hay contrato vigente
     determinarPestañaInicial() {
-      console.log('Determinando pestaña inicial:', {
-        contratoActual: this.contratoActual,
-        contratoActualCalculado: this.contratoActualCalculado,
-        tieneContratoVigente: this.tieneContratoVigente,
-        contratos: this.contratos,
-        contratosLength: this.contratos?.length || 0
-      });
-      
       if (this.tieneContratoVigente) {
         // Si hay contrato vigente, mostrar la pestaña "actual" para visualizar/editar
         this.pestañaActiva = 'actual';
@@ -743,6 +978,24 @@ export default {
 
     // Inicializar el formulario de nuevo contrato basado en el punto de suministro
     inicializarNuevoContrato() {
+      // Obtener IDs de "Sin Tarifa" de manera segura
+      const idSinTarifaGas = this.tarifasGas?.find(t => t.nombre === 'Sin Tarifa')?.id || '';
+      const idSinTarifaLuz = this.tarifasLuz?.find(t => t.nombre === 'Sin Tarifa')?.id || '';
+      
+      // Determinar el tipo de punto de suministro
+      const tieneGas = this.puntoSuministroData?.cupsgas && this.puntoSuministroData.cupsgas.trim() !== '';
+      const tieneLuz = this.puntoSuministroData?.cupsluz && this.puntoSuministroData.cupsluz.trim() !== '';
+      
+      console.log('Inicializando nuevo contrato con:', {
+        tieneGas,
+        tieneLuz,
+        idSinTarifaGas,
+        idSinTarifaLuz,
+        tieneAutoconsumo: this.tieneAutoconsumo,
+        cupsgas: this.puntoSuministroData?.cupsgas,
+        cupsluz: this.puntoSuministroData?.cupsluz
+      });
+      
       this.nuevoContrato = {
         idCliente: this.cliente?.id || "",
         idPuntoSuministro: this.puntoSuministroData?.id || "",        
@@ -751,8 +1004,9 @@ export default {
         fechaInicio: "",
         fechaFin: "",
         contrato: "",
-        idTarifaGas: "",
-        idTarifaLuz: "",
+        // Lógica simplificada para las tarifas
+        idTarifaGas: tieneGas ? "" : idSinTarifaGas,
+        idTarifaLuz: tieneLuz ? "" : idSinTarifaLuz,
         potencia1: 0,        
         potencia2: 0,
         potencia3: 0,
@@ -763,7 +1017,7 @@ export default {
         exencionImpuestoElectricidad: 0,
         idComercializadoraActual: 0,
         idComercializadoraAnterior: 0,
-        autoconsumo: this.tieneAutoconsumo ? 1 : 0,  // Configurar automáticamente basado en el punto de suministro
+        autoconsumo: this.tieneAutoconsumo ? 1 : 0,
         denunciaContrato: 0,
         fechaDenunciaContrato: "",
         observaciones: "",
@@ -846,6 +1100,39 @@ export default {
              this.puntoSuministroData.autoconsumo !== null;
     },
     
+    // Determinar si el punto de suministro es de Gas
+    esGas() {
+      return this.puntoSuministroData?.cupsgas && 
+             this.puntoSuministroData.cupsgas.trim() !== '';
+    },
+    
+    // Determinar si el punto de suministro es de Luz
+    esLuz() {
+      return this.puntoSuministroData?.cupsluz && 
+             this.puntoSuministroData.cupsluz.trim() !== '';
+    },
+    
+    // Obtener el tipo de punto de suministro
+    tipoPuntoSuministro() {
+      if (this.esLuz) return 'Luz';
+      if (this.esGas) return 'Gas';
+      return '';
+    },
+    
+    // Obtener el ID de "Sin Tarifa" para gas
+    idSinTarifaGas() {
+      const sinTarifa = this.tarifasGas.find(t => t.nombre === 'Sin Tarifa');
+      return sinTarifa ? sinTarifa.id : '';
+    },
+    
+    // Obtener el ID de "Sin Tarifa" para luz
+    idSinTarifaLuz() {
+      const sinTarifa = this.tarifasLuz.find(t => t.nombre === 'Sin Tarifa');
+      return sinTarifa ? sinTarifa.id : '';
+    },
+    
+
+    
     // Calcular el contrato actual internamente basándose en los contratos recibidos
     contratoActualCalculado() {
       if (!this.contratos || this.contratos.length === 0) {
@@ -854,7 +1141,11 @@ export default {
       
       const ahora = new Date();
       const contratoVigente = this.contratos.find(
-        (contrato) => new Date(contrato.fechaFin) > ahora
+        (contrato) => {
+          const fechaFin = new Date(contrato.fechaFin);
+          const fechaInicio = new Date(contrato.fechaInicio);
+          return fechaInicio <= ahora && fechaFin > ahora;
+        }
       );
       
       return contratoVigente || null;
@@ -879,18 +1170,44 @@ export default {
     visible: {
       handler(newVal) {
         if (newVal) {
-          console.log('Modal abierto, determinando pestaña inicial...');
+          this.cargandoDatos = true; // Iniciar loading
+          
+          console.log('Modal abierto, datos disponibles:', {
+            contratos: this.contratos?.length || 0,
+            contratoActual: this.contratoActual,
+            contratoCalculado: this.contratoActualCalculado,
+            tieneContrato: this.tieneContratoVigente
+          });
+          
+          // Establecer un timeout máximo para asegurar que el spinner no se quede para siempre
+          setTimeout(() => {
+            if (this.cargandoDatos) {
+              console.log('Forzando fin de carga después del tiempo máximo');
+              this.cargandoDatos = false;
+            }
+          }, 5000); // 5 segundos máximo de espera
           
           // Usar nextTick para asegurar que todas las props estén cargadas
           this.$nextTick(() => {
-            this.determinarPestañaInicial();
-            
-            // Si no hay contrato vigente, inicializar el formulario de nuevo contrato
-            if (!this.tieneContratoVigente && !this.modoEdicion) {
-              console.log('Inicializando formulario de nuevo contrato...');
-              this.inicializarNuevoContrato();
+            try {
+              this.determinarPestañaInicial();
+              
+              // Si no hay contrato vigente, inicializar el formulario de nuevo contrato
+              if (!this.tieneContratoVigente && !this.modoEdicion) {
+                console.log('Inicializando formulario de nuevo contrato...');
+                this.inicializarNuevoContrato();
+              }
+            } catch (error) {
+              console.error("Error al inicializar el modal:", error);
+            } finally {
+              // Finalizar loading en cualquier caso para evitar que se quede cargando infinitamente
+              this.cargandoDatos = false;
             }
           });
+        } else {
+          // Resetear estado cuando se cierra el modal
+          this.cargandoDatos = false;
+          this.modoEdicion = false;
         }
       },
       immediate: true
@@ -932,18 +1249,89 @@ export default {
         }
       },
       deep: true
+    },
+    
+    // Cuando cambian las tarifas, actualizar el formulario si es necesario
+    tarifasGas: {
+      handler() {
+        if (this.visible && !this.tieneContratoVigente && !this.modoEdicion && this.nuevoContrato) {
+          this.$nextTick(() => {
+            // Solo actualizar si no es un punto de gas (para asignar "Sin Tarifa")
+            if (!this.esGas) {
+              const idSinTarifaGas = this.tarifasGas?.find(t => t.nombre === 'Sin Tarifa')?.id || '';
+              this.nuevoContrato.idTarifaGas = idSinTarifaGas;
+            }
+          });
+        }
+      },
+      deep: true
+    },
+    
+    tarifasLuz: {
+      handler() {
+        if (this.visible && !this.tieneContratoVigente && !this.modoEdicion && this.nuevoContrato) {
+          this.$nextTick(() => {
+            // Solo actualizar si no es un punto de luz (para asignar "Sin Tarifa")
+            if (!this.esLuz) {
+              const idSinTarifaLuz = this.tarifasLuz?.find(t => t.nombre === 'Sin Tarifa')?.id || '';
+              this.nuevoContrato.idTarifaLuz = idSinTarifaLuz;
+            }
+          });
+        }
+      },
+      deep: true
     }
   },
-  mounted() {
-    // Debug: verificar datos del punto de suministro y contrato
+  async mounted() {
+    // Debug: verificar datos principales
     console.log('ModalContratos mounted:', {
-      puntoSuministro: this.puntoSuministro,
-      contratoActual: this.contratoActual,
+      puntoSuministroId: this.puntoSuministro?.id,
       tieneContratoVigente: this.tieneContratoVigente,
-      tieneAutoconsumo: this.tieneAutoconsumo,
-      autoconsumoValue: this.puntoSuministroData?.autoconsumo,
-      pestañaActiva: this.pestañaActiva
+      esGas: this.esGas,
+      esLuz: this.esLuz,
+      tarifasGasCount: this.tarifasGas?.length || 0,
+      tarifasLuzCount: this.tarifasLuz?.length || 0
     });
+    
+    // Agregar un timeout para asegurar que el spinner se detenga
+    setTimeout(() => {
+      if (this.cargandoDatos) {
+        console.log('Forzando fin de carga en mounted después del tiempo máximo');
+        this.cargandoDatos = false;
+      }
+    }, 3000);
+    
+    // Si está visible y faltan tarifas, intentar cargarlas de forma simple
+    if (this.visible) {
+      const needsGasTarifas = !this.tarifasGas || this.tarifasGas.length === 0;
+      const needsLuzTarifas = !this.tarifasLuz || this.tarifasLuz.length === 0;
+      
+      if (needsGasTarifas) {
+        try {
+          const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`);
+          this.$emit('update:tarifasGas', response.data);
+          console.log(`Tarifas de gas cargadas: ${response.data.length}`);
+        } catch (error) {
+          console.error("Error al cargar tarifas de gas:", error);
+        }
+      }
+      
+      if (needsLuzTarifas) {
+        try {
+          const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/tarifasLuz`);
+          this.$emit('update:tarifasLuz', response.data);
+          console.log(`Tarifas de luz cargadas: ${response.data.length}`);
+        } catch (error) {
+          console.error("Error al cargar tarifas de luz:", error);
+        }
+      }
+      
+      // Forzar actualización para asegurar que los datos se muestran
+      this.$nextTick(() => {
+        this.$forceUpdate();
+        this.cargandoDatos = false;
+      });
+    }
   },
 };
 </script>
@@ -1592,6 +1980,24 @@ export default {
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+
+/* Potencias grid en el detalle */
+.potencia-grid-detalle {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.potencia-item-detalle {
+  background: #f9f9f9;
+  border-radius: 6px;
+  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #e9e9e9;
 }
 
 .potencia-label {

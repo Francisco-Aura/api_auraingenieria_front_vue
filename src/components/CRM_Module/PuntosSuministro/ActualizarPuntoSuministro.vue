@@ -561,6 +561,8 @@ export default {
         console.log('Full datosAdaptados:', datosAdaptados);
         
         this.$emit('actualizar-punto-suministro', datosAdaptados);
+        // Cerrar el modal tras guardar/editar
+        this.cerrarModal();
       }
     },
   },

@@ -6,6 +6,10 @@
         <div class="cliente-info">
           <span class="cliente-nombre">{{ cliente?.nombre || "Desconocido" }}</span>
         </div>
+        <button class="btn btn-refresh" @click="refreshPuntosSuministro" title="Actualizar puntos de suministro" style="margin-left: 1rem;">
+          <i class="fas fa-sync-alt"></i>
+          <span style="margin-left: 0.3rem;">Actualizar</span>
+        </button>
       </div>
 
       <div class="modal-body">
@@ -70,6 +74,7 @@
     :modificarPunto="modificarPunto"
     :modoConsulta="modoConsulta"
     @cerrar-modal="cerrarModalActualizarPunto"
+    @actualizar-punto-suministro="onPuntoSuministroActualizado"
   />
 </template>
 
@@ -102,6 +107,7 @@ export default {
       modificarPunto: null,
       modoConsulta: false,
       puntosSuministroLocal: [],
+      loading: false,
     };
   },
   computed: {
@@ -155,6 +161,42 @@ export default {
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
     },
+    async refreshPuntosSuministro() {
+      if (!this.cliente || !this.cliente.idCliente) return;
+      this.loading = true;
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${this.cliente.idCliente}`);
+        this.puntosSuministroLocal = response.data.map(punto => {
+          const newPunto = { ...punto };
+          if (newPunto.CUPSluz !== undefined) {
+            newPunto.cupsluz = newPunto.CUPSluz;
+            delete newPunto.CUPSluz;
+          }
+          if (newPunto.CUPSgas !== undefined) {
+            newPunto.cupsgas = newPunto.CUPSgas;
+            delete newPunto.CUPSgas;
+          }
+          if (newPunto.cupsluz === undefined && newPunto.cups === undefined) {
+            newPunto.cupsluz = '';
+          }
+          if (newPunto.cupsgas === undefined) {
+            newPunto.cupsgas = '';
+          }
+          return newPunto;
+        });
+        // Eliminada la alerta de éxito, solo loading
+      } catch (error) {
+        console.error("Error al actualizar puntos de suministro:", error);
+        await this.$swal.fire({
+          title: 'Error',
+          text: `No se pudieron actualizar los puntos de suministro: ${error.message}`,
+          icon: 'error',
+          confirmButtonColor: 'rgba(252, 215, 0)'
+        });
+      } finally {
+        this.loading = false;
+      }
+    },
     async verDetallePunto(punto) {
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${punto.id}`);
@@ -170,6 +212,9 @@ export default {
       this.formularioVisible = false;
       this.modificarPunto = null;
       this.modoConsulta = false;
+    },
+    async onPuntoSuministroActualizado() {
+      await this.refreshPuntosSuministro();
     },
   },
 };
