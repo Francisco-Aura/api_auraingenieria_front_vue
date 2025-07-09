@@ -16,7 +16,18 @@ const routes = [
     path: '/clientes',
     component: ClientesComponent
   },
-  // Puedes agregar aquí rutas directas a los módulos si lo necesitas
+  {
+    path: 'puntos-suministro',
+    component: PuntosSuministroComponent
+  },
+  {
+    path: 'informes',
+    component: InformesComponent
+  },
+  {
+    path: 'administracion',
+    component: AdministracionComponent
+  }
 ];
 
 // Crea el router
