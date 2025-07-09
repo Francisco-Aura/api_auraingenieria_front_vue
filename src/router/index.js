@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import LoginComponent from '@/components/LoginComponent.vue';
+import DashboardComponent from '@/components/DashboardComponent.vue';
 //CRM
 import ClientesComponent from '@/components/CRM_Module/Clientes/ClientesComponent.vue';
 import PuntosSuministroComponent from '@/components/CRM_Module/PuntosSuministro/PuntoSuministroComponent.vue';
@@ -13,21 +14,27 @@ const routes = [
     component: LoginComponent
   },
   {
-    path: '/clientes',
-    component: ClientesComponent
-  },
-  {
-    path: '/puntos-suministro',
-    component: PuntosSuministroComponent
-  },
-  {
-    path: '/informes',
-    component: InformesComponent
-  },
-  {
-    path: '/administracion',
-    component: AdministracionComponent
-  }
+    path: '/dashboard',
+    component: DashboardComponent,
+    children: [
+      {
+        path: 'clientes',
+        component: ClientesComponent
+      },
+      {
+        path: 'puntos-suministro',
+        component: PuntosSuministroComponent
+      },
+      {
+        path: 'informes',
+        component: InformesComponent
+      },
+      {
+        path: 'administracion',
+        component: AdministracionComponent
+      }
+    ]
+  },  
 ];
 
 // Crea el router
