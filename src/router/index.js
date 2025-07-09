@@ -17,15 +17,15 @@ const routes = [
     component: ClientesComponent
   },
   {
-    path: 'puntos-suministro',
+    path: '/puntos-suministro',
     component: PuntosSuministroComponent
   },
   {
-    path: 'informes',
+    path: '/informes',
     component: InformesComponent
   },
   {
-    path: 'administracion',
+    path: '/administracion',
     component: AdministracionComponent
   }
 ];
