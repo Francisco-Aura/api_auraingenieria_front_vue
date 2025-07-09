@@ -352,12 +352,4 @@ body {
   display: flex;
   flex-direction: column;
 }
-
-/* Asegurar que el chat esté por encima de todo */
-.chat-widget {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  z-index: 9999;
-}
 </style>
