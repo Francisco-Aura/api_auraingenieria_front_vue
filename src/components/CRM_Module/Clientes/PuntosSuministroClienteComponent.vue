@@ -6,10 +6,6 @@
         <div class="cliente-info">
           <span class="cliente-nombre">{{ cliente?.nombre || "Desconocido" }}</span>
         </div>
-        <button class="btn btn-refresh" @click="refreshPuntosSuministro" title="Actualizar puntos de suministro" style="margin-left: 1rem;">
-          <i class="fas fa-sync-alt"></i>
-          <span style="margin-left: 0.3rem;">Actualizar</span>
-        </button>
       </div>
 
       <div class="modal-body">
@@ -29,8 +25,14 @@
               <tr>
                 <th><i class="fas fa-map-marker-alt"></i> Direccion</th>
                 <th><i class="fas fa-id-card"></i> Identificacion</th>
-                <th><i class="fas fa-bolt"></i> CUPS Luz</th>
-                <th><i class="fas fa-fire"></i> CUPS Gas</th>
+                <th><i class="fas fa-bolt"></i> CUPS</th>
+                <th><i class="fas fa-tag"></i> Tipo</th>
+                <th><i class="fas fa-bolt"></i> P1</th>
+                <th><i class="fas fa-bolt"></i> P2</th>
+                <th><i class="fas fa-bolt"></i> P3</th>
+                <th><i class="fas fa-bolt"></i> P4</th>
+                <th><i class="fas fa-bolt"></i> P5</th>
+                <th><i class="fas fa-bolt"></i> P6</th>
                 <th class="actions-header"><i class="fas fa-cogs"></i> Acciones</th>
               </tr>
             </thead>
@@ -39,9 +41,25 @@
                 <td class="text-truncate" :title="`${punto.direccion}, ${punto.codigoPostal}, ${punto.poblacion}, ${punto.provincia}`">
                   {{ punto.direccion }}, {{ punto.codigoPostal }}, {{ punto.poblacion }}, {{ punto.provincia }}
                 </td>
-                <td class="text-truncate" :title="punto.identificacion">{{ punto.identificacion || '-' }}</td>
-                <td class="text-truncate" :title="punto.cupsluz">{{ punto.cupsluz }}</td>
-                <td class="text-truncate" :title="punto.cupsgas">{{ punto.cupsgas }}</td>
+                <td class="text-truncate text-center" :title="punto.identificacion">{{ punto.identificacion || '-' }}</td>
+                <td 
+                  class="cups-cell text-center" 
+                  :title="getCupsValue(punto)"
+                >
+                  <div class="cups-content">
+                    <span class="cups-value">{{ getCupsValue(punto) }}</span>
+                    <span v-if="getCupsValue(punto)" class="cups-indicator" :class="getTipoCupsClass(punto)">
+                      <i :class="getTipoCupsIcon(punto)"></i>
+                    </span>
+                  </div>
+                </td>
+                <td class="text-center">{{ getTipoCups(punto) }}</td>
+                <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia1) }}</td>
+                <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia2) }}</td>
+                <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia3) }}</td>
+                <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia4) }}</td>
+                <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia5) }}</td>
+                <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia6) }}</td>
                 <td class="actions-cell">
                   <div class="action-buttons">
                     <button class="btn-icon btn-view" @click="verDetallePunto(punto)" title="Ver Detalles">
@@ -131,24 +149,29 @@ export default {
       immediate: true,
       deep: true,
       handler(newVal) {
-        this.puntosSuministroLocal = newVal.map(punto => {
-          const newPunto = { ...punto };
-          if (newPunto.CUPSluz !== undefined) {
-            newPunto.cupsluz = newPunto.CUPSluz;
-            delete newPunto.CUPSluz;
-          }
-          if (newPunto.CUPSgas !== undefined) {
-            newPunto.cupsgas = newPunto.CUPSgas;
-            delete newPunto.CUPSgas;
-          }
-          if (newPunto.cupsluz === undefined && newPunto.cups === undefined) {
-            newPunto.cupsluz = '';
-          }
-          if (newPunto.cupsgas === undefined) {
-            newPunto.cupsgas = '';
-          }
-          return newPunto;
-        });
+        // Si recibimos puntos de suministro del padre, usar el nuevo endpoint para obtener las potencias
+        if (newVal && newVal.length > 0 && this.cliente && this.cliente.idCliente) {
+          this.refreshPuntosSuministro();
+        } else {
+          this.puntosSuministroLocal = newVal.map(punto => {
+            const newPunto = { ...punto };
+            if (newPunto.CUPSluz !== undefined) {
+              newPunto.cupsluz = newPunto.CUPSluz;
+              delete newPunto.CUPSluz;
+            }
+            if (newPunto.CUPSgas !== undefined) {
+              newPunto.cupsgas = newPunto.CUPSgas;
+              delete newPunto.CUPSgas;
+            }
+            if (newPunto.cupsluz === undefined && newPunto.cups === undefined) {
+              newPunto.cupsluz = '';
+            }
+            if (newPunto.cupsgas === undefined) {
+              newPunto.cupsgas = '';
+            }
+            return newPunto;
+          });
+        }
       },
     },
   },
@@ -165,9 +188,10 @@ export default {
       if (!this.cliente || !this.cliente.idCliente) return;
       this.loading = true;
       try {
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${this.cliente.idCliente}`);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${this.cliente.idCliente}/cartera`);
         this.puntosSuministroLocal = response.data.map(punto => {
           const newPunto = { ...punto };
+          // Normalizar nombres de propiedades si es necesario
           if (newPunto.CUPSluz !== undefined) {
             newPunto.cupsluz = newPunto.CUPSluz;
             delete newPunto.CUPSluz;
@@ -200,7 +224,17 @@ export default {
     async verDetallePunto(punto) {
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${punto.id}`);
-        this.modificarPunto = { ...response.data };
+        // Combinar datos del endpoint con las potencias del punto original
+        this.modificarPunto = { 
+          ...response.data,
+          // Agregar las potencias desde el punto original que ya las tiene
+          potencia1: punto.potencia1 || 0,
+          potencia2: punto.potencia2 || 0,
+          potencia3: punto.potencia3 || 0,
+          potencia4: punto.potencia4 || 0,
+          potencia5: punto.potencia5 || 0,
+          potencia6: punto.potencia6 || 0
+        };
         this.modoConsulta = true;
         this.formularioVisible = true;
       } catch (error) {
@@ -216,43 +250,121 @@ export default {
     async onPuntoSuministroActualizado() {
       await this.refreshPuntosSuministro();
     },
+
+    // Métodos para manejar CUPS y potencias como en la tabla principal
+    getCupsValue(punto) {
+      // Si tiene CUPS de luz y no está vacío, lo mostramos
+      if (punto.cupsluz && punto.cupsluz.trim() !== '') {
+        return punto.cupsluz;
+      }
+      // Si tiene CUPS de gas y no está vacío, lo mostramos
+      if (punto.cupsgas && punto.cupsgas.trim() !== '') {
+        return punto.cupsgas;
+      }
+      return '-';
+    },
+
+    getTipoCups(punto) {
+      // Primero verificamos si tiene CUPS de luz válido
+      if (punto.cupsluz && punto.cupsluz.trim() !== '') {
+        return 'Luz';
+      }
+      // Luego verificamos si tiene CUPS de gas válido
+      if (punto.cupsgas && punto.cupsgas.trim() !== '') {
+        return 'Gas';
+      }
+      return '-';
+    },
+
+    getTipoCupsClass(punto) {
+      if (punto.cupsluz && punto.cupsluz.trim() !== '') {
+        return 'cups-luz';
+      }
+      if (punto.cupsgas && punto.cupsgas.trim() !== '') {
+        return 'cups-gas';
+      }
+      return '';
+    },
+
+    getTipoCupsIcon(punto) {
+      if (punto.cupsluz && punto.cupsluz.trim() !== '') {
+        return 'fas fa-bolt';
+      }
+      if (punto.cupsgas && punto.cupsgas.trim() !== '') {
+        return 'fas fa-fire';
+      }
+      return '';
+    },
+
+    formatPotencia(potencia) {
+      if (potencia === null || potencia === undefined || potencia === 0) {
+        return '-';
+      }
+      return parseFloat(potencia).toFixed(2) + ' kW';
+    },
   },
 };
 </script>
 
 <style scoped>
+:root {
+  --primary-color: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-light: #e0e7ff;
+  --surface-color: #f8fafc;
+  --background-color: #ffffff;
+  --border-color: #e2e8f0;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --neutral-50: #f9fafb;
+  --neutral-100: #f3f4f6;
+  --neutral-200: #e5e7eb;
+  --neutral-300: #d1d5db;
+  --neutral-400: #9ca3af;
+  --neutral-500: #6b7280;
+  --neutral-600: #4b5563;
+  --neutral-700: #374151;
+  --neutral-800: #1f2937;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(8px);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
+  padding: 1rem;
 }
 
 .modal-content {
-  background: white;
-  border-radius: 0.7rem;
+  background: var(--background-color);
+  border-radius: 1rem;
   width: 100%;
-  max-width: 90%;
+  max-width: 95%;
   max-height: 90%;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   overflow: hidden;
+  border: 1px solid var(--neutral-200);
 }
 
 .modal-header {
-  padding: 1rem 1.2rem;
-  border-bottom: 1px solid var(--border-color);
-  background-color: var(--surface-color);
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--neutral-200);
+  background: linear-gradient(135deg, var(--neutral-50) 0%, var(--background-color) 100%);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -260,71 +372,85 @@ export default {
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--neutral-800);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  letter-spacing: -0.025em;
 }
 
 .modal-header h2 i {
-  color: var(--primary-color);
+  color: black;
+  font-size: 1.25rem;
 }
 
 .cliente-info {
-  background-color: var(--primary-light);
-  padding: 0.4rem 0.8rem;
-  border-radius: 0.4rem;
-  color: var(--text-primary);
-  font-weight: 500;
+  background: var(--primary-color);
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
 }
 
 .cliente-nombre {
-  font-size: 1rem;
-  color: var(--text-secondary);
-  font-weight: 500;
+  font-size: 0.875rem;
+  color: black;
+  font-weight: 600;
+  letter-spacing: 0.025em;
 }
 
 .modal-body {
-  padding: 1.2rem;
+  padding: 2rem;
   overflow-y: auto;
   flex: 1;
+  background: var(--neutral-50);
 }
 
 .search-container {
   position: relative;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .search-icon {
   position: absolute;
-  left: 0.7rem;
+  left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-secondary);
+  color: var(--neutral-400);
+  font-size: 0.875rem;
 }
 
 .search-input {
   width: 100%;
-  padding: 0.6rem 0.6rem 0.6rem 2.2rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0.4rem;
-  font-size: 0.9rem;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 1px solid var(--neutral-300);
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  background: var(--background-color);
   transition: all 0.2s ease;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 .search-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.search-input::placeholder {
+  color: var(--neutral-400);
 }
 
 .table-responsive {
-  background: white;
-  border-radius: 0.4rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: var(--background-color);
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  border: 1px solid var(--neutral-200);
 }
 
 .data-table {
@@ -335,18 +461,51 @@ export default {
 }
 
 .data-table th {
-  background-color: var(--surface-color);
-  color: var(--text-primary);
+  background: linear-gradient(135deg, var(--neutral-100) 0%, var(--neutral-50) 100%);
+  color: var(--neutral-700);
   font-weight: 600;
-  padding: 0.8rem;
-  text-align: left;
-  border-bottom: 2px solid var(--border-color);
+  padding: 1rem;
+  text-align: center;
+  border-bottom: 2px solid var(--neutral-200);
   white-space: nowrap;
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.data-table th:first-child {
+  text-align: left;
+  min-width: 250px; /* Asegurar un mínimo para la dirección */
+  max-width: none; /* Sin límite máximo */
+}
+
+.data-table th:nth-child(2) {
+  min-width: 100px;
+  max-width: 120px;
+}
+
+.data-table th:nth-child(4) {
+  min-width: 60px;
+  max-width: 80px;
+}
+
+/* Encabezados de potencias más compactos */
+.data-table th:nth-child(5),
+.data-table th:nth-child(6),
+.data-table th:nth-child(7),
+.data-table th:nth-child(8),
+.data-table th:nth-child(9),
+.data-table th:nth-child(10) {
+  padding: 0.8rem 0.4rem; /* Reducir padding horizontal */
+  font-size: 0.8rem; /* Tamaño de fuente más pequeño */
 }
 
 .data-table th i {
-  margin-right: 0.4rem;
-  color: var(--primary-color);
+  margin-right: 0.5rem;
+  color: black;
+  font-size: 0.875rem;
 }
 
 .actions-header {
@@ -356,10 +515,57 @@ export default {
   align-items: center;
 }
 
+.data-table tbody tr {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid var(--neutral-200);
+}
+
+.data-table tbody tr:hover {
+  background-color: var(--neutral-50);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.data-table tbody tr:last-child {
+  border-bottom: none;
+}
+
 .data-table td {
-  padding: 0.6rem 0.8rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 1rem;
   vertical-align: middle;
+  color: var(--neutral-600);
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--neutral-100);
+}
+
+.data-table td:first-child {
+  min-width: 150px; /* Asegurar un mínimo para la dirección */
+  max-width: 250px; /* Sin límite máximo */
+}
+
+.data-table td:nth-child(3) {
+  min-width: 140px;
+  max-width: 170px;
+}
+
+.data-table td:nth-child(2) {
+  min-width: 100px;
+  max-width: 120px;
+}
+
+.data-table td:nth-child(4) {
+  min-width: 60px;
+  max-width: 80px;
+}
+
+/* Celdas de potencias más compactas */
+.data-table td:nth-child(5),
+.data-table td:nth-child(6),
+.data-table td:nth-child(7),
+.data-table td:nth-child(8),
+.data-table td:nth-child(9),
+.data-table td:nth-child(10) {
+  padding: 0.8rem 0.3rem; /* Reducir padding horizontal */
 }
 
 .text-truncate {
@@ -369,9 +575,21 @@ export default {
   white-space: nowrap;
 }
 
+.text-center {
+  text-align: center;
+}
+
+.potencia-cell {
+  font-weight: 500;
+  color: var(--neutral-700);
+  min-width: 65px; /* Reducido de 80px a 65px */
+  max-width: 70px; /* Añadido para limitar el ancho máximo */
+  font-size: 0.8rem; /* Reducido ligeramente el tamaño de fuente */
+}
+
 .action-buttons {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.5rem;
   justify-content: center;
 }
 
@@ -380,16 +598,18 @@ export default {
   justify-content: center;
   align-items: center;
   text-align: center;
+  min-width: 60px; /* Reducido de 80px a 60px */
+  max-width: 65px; /* Añadido para limitar el ancho */
 }
 
 .btn-icon {
   background: transparent;
-  border: none;
-  font-size: 1rem;
+  border: 1px solid var(--neutral-300);
+  font-size: 0.8rem; /* Reducido de 0.875rem */
   cursor: pointer;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
+  width: 32px; /* Reducido de 36px a 32px */
+  height: 32px; /* Reducido de 36px a 32px */
+  border-radius: 0.4rem; /* Ligeramente más pequeño */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -407,54 +627,70 @@ export default {
 }
 
 .btn-icon.btn-view {
-  color: #43a047;
+  color: var(--success-color);
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.05);
 }
 
 .btn-icon.btn-view:hover {
-  background-color: rgba(67, 160, 71, 0.1);
+  background: var(--success-color);
+  color: black;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  border-color: var(--success-color);
 }
 
 .empty-state {
   text-align: center;
-  padding: 2rem 1rem;
-  color: var(--text-secondary);
+  padding: 4rem 2rem;
+  color: var(--neutral-400);
 }
 
 .empty-state i {
-  margin-bottom: 0.8rem;
+  margin-bottom: 1rem;
   opacity: 0.5;
+  color: var(--neutral-300);
+}
+
+.empty-state p {
+  font-size: 1rem;
+  color: var(--neutral-500);
+  margin: 0;
 }
 
 .modal-footer {
-  padding: 0.8rem 1.2rem;
-  border-top: 1px solid var(--border-color);
-  background-color: var(--surface-color);
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--neutral-200);
+  background: linear-gradient(135deg, var(--neutral-50) 0%, var(--background-color) 100%);
   display: flex;
-  justify-content: flex-end;
-  gap: 0.6rem;
+  justify-content: center;
+  gap: 1rem;
 }
 
 .btn {
-  padding: 0.4rem 0.8rem;
-  border-radius: 0.3rem;
-  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   transition: all 0.2s ease;
   cursor: pointer;
-}
-
-.btn-primary {
-  background-color: var(--primary-color);
-  color: black;
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
   border: none;
 }
 
+.btn-primary {
+  background: var(--primary-color);
+  color: black;
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+}
+
 .btn-primary:hover {
-  background-color: var(--primary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(99, 102, 241, 0.4);
 }
 
 .fade-in {
@@ -472,19 +708,151 @@ export default {
   }
 }
 
-@media (max-width: 768px) {
+/* Estilos para columnas CUPS */
+.cups-cell {
+  min-width: 140px; /* Reducido de 160px a 140px */
+  max-width: 150px; /* Añadido límite máximo */
+  text-align: center;
+}
+
+.cups-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.cups-value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem; /* Cambiado de 1rem a 0.875rem para mejor balance */
+  color: var(--neutral-700);
+  font-weight: 600; /* Cambiado de 500 a 600 para más peso */
+  letter-spacing: 0.025em; /* Añadido para mejor legibilidad */
+}
+
+.cups-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cups-indicator.cups-luz {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: white;
+}
+
+.cups-indicator.cups-gas {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  color: white;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
   .modal-content {
-    width: 95%;
-    margin: 10px;
+    max-width: 98%;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .potencia-cell {
+    min-width: 55px;
+    max-width: 60px;
+    font-size: 0.75rem;
+  }
+  
+  .actions-cell {
+    min-width: 50px;
+    max-width: 55px;
+  }
+  
+  .btn-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+  
+  .cups-cell {
+    min-width: 120px;
+    max-width: 130px;
+  }
+  
+  .cups-value {
+    font-size: 0.8rem; /* Mantener tamaño legible en tablets */
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 0.5rem;
+  }
+  
+  .modal-content {
+    width: 100%;
+    max-height: 95%;
+  }
+
+  .modal-header {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
   }
 
   .modal-header h2 {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .search-container {
+    max-width: 100%;
   }
 
   .data-table th,
   .data-table td {
-    padding: 10px;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .potencia-cell {
+    min-width: 50px;
+    max-width: 55px;
+    font-size: 0.7rem;
+  }
+  
+  .actions-cell {
+    min-width: 45px;
+    max-width: 50px;
+  }
+  
+  .btn-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .cups-value {
+    font-size: 0.75rem; /* Reducir solo ligeramente en móviles */
+    font-weight: 600; /* Mantener el peso para legibilidad */
+  }
+
+  .cups-cell {
+    min-width: 120px; /* Ajustar ancho en móviles */
   }
 }
 
@@ -508,7 +876,7 @@ export default {
 
 .detail-item strong {
   display: block;
-  color: black;
+  color: var(--neutral-700);
   font-size: 0.9rem;
   margin-bottom: 5px;
 }

@@ -92,7 +92,7 @@ button:hover {
 }
 
 form div {
-  margin-bottom: 15px; /* Espacio inferior entre los elementos del formulario */
+  margin-bottom: 5px; /* Espacio inferior entre los elementos del formulario */
 }
 
 .form-grid {

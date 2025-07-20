@@ -904,7 +904,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.8rem;
+  font-size: 1rem;
   flex: 1;
   justify-content: center;
 }
@@ -920,7 +920,7 @@ export default {
 }
 
 .tab-text {
-  font-size: 0.75rem;
+  font-size: 1rem;
 }
 
 /* Contenedor de pestañas optimizado */
@@ -1025,7 +1025,7 @@ export default {
 .form-group-compact label {
   display: block;
   margin-bottom: 0.1rem;
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 500;
   color: black;
 }
@@ -1088,7 +1088,7 @@ export default {
   padding: 0.3rem 0.5rem;
   border: 1px solid #ddd;
   border-radius: 0.25rem;
-  font-size: 0.8rem;
+  font-size: 1rem;
   transition: all 0.2s;
   color: #333;
   background-color: #fff;
@@ -1118,7 +1118,7 @@ export default {
   padding: 0.3rem 0.5rem;
   border: 1px solid #ddd;
   border-radius: 0.25rem;
-  font-size: 0.8rem;
+  font-size: 1rem;
   transition: all 0.2s;
   color: #333;
   background-color: #fff;
@@ -1149,7 +1149,7 @@ export default {
 .btn-compact {
   padding: 0.5rem 0.8rem;
   border-radius: 0.3rem;
-  font-weight: 500;
+  font-weight: 700;
   transition: all 0.2s;
   cursor: pointer;
   display: inline-flex;
@@ -1157,7 +1157,7 @@ export default {
   justify-content: center;
   gap: 0.4rem;
   height:fit-content;
-  font-size: 0.85rem;
+  font-size: 1rem;
   border: none;
   outline: none;
 }
@@ -1354,7 +1354,7 @@ export default {
 
 .services-header h3 {
   color: #495057;
-  font-size: 0.8rem;
+  font-size: 1rem;
   margin: 0 0 0.4rem 0;
   display: flex;
   align-items: center;
@@ -1397,16 +1397,16 @@ export default {
 }
 
 .service-checkbox input[type="checkbox"]:checked + .checkmark {
-  background-color: #007bff;
-  border-color: #007bff;
+  background-color: #28a745;
+  border-color: #28a745;
 }
 
 .service-checkbox input[type="checkbox"]:checked + .checkmark:after {
   content: "";
   position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 4px;
+  left: 3px;
+  top: 0px;
+  width: 3px;
   height: 8px;
   border: solid white;
   border-width: 0 2px 2px 0;
@@ -1416,7 +1416,7 @@ export default {
 .service-label {
   font-weight: 600;
   color: #495057;
-  font-size: 0.75rem;
+  font-size: 1rem;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }

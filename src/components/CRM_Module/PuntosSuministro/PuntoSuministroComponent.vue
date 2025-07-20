@@ -635,13 +635,93 @@ export default {
     // Abre el formulario de actualización de un punto de suministro
     async abrirFormularioPSActualizar(ps) {
       if (!ps.id) return alert("Punto de suministro no válido");
+      console.log("Datos del punto de suministro para actualizar:", ps);
       try {
+        // Cargar datos detallados del punto de suministro
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
-        this.modificarPunto = { ...response.data };
+        
+        // Intentar cargar las potencias desde el endpoint de cartera
+        let puntoConPotencias = { ...response.data };
+        
+        // Si tenemos idCliente, intentar cargar desde cartera
+        if (ps.idCliente) {
+          try {
+            const responseCartera = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${ps.idCliente}/cartera`);
+            const puntoCartera = responseCartera.data.find(punto => punto.id === ps.id);
+            
+            if (puntoCartera) {
+              console.log("Potencias encontradas en cartera:", {
+                potencia1: puntoCartera.potencia1,
+                potencia2: puntoCartera.potencia2,
+                potencia3: puntoCartera.potencia3,
+                potencia4: puntoCartera.potencia4,
+                potencia5: puntoCartera.potencia5,
+                potencia6: puntoCartera.potencia6
+              });
+              
+              // Combinar datos del endpoint detallado con las potencias del endpoint de cartera
+              puntoConPotencias = {
+                ...puntoConPotencias,
+                potencia1: puntoCartera.potencia1 || 0,
+                potencia2: puntoCartera.potencia2 || 0,
+                potencia3: puntoCartera.potencia3 || 0,
+                potencia4: puntoCartera.potencia4 || 0,
+                potencia5: puntoCartera.potencia5 || 0,
+                potencia6: puntoCartera.potencia6 || 0
+              };
+            } else {
+              console.warn("No se encontró el punto en el endpoint de cartera");
+              // Establecer potencias en 0
+              puntoConPotencias = {
+                ...puntoConPotencias,
+                potencia1: 0,
+                potencia2: 0,
+                potencia3: 0,
+                potencia4: 0,
+                potencia5: 0,
+                potencia6: 0
+              };
+            }
+          } catch (carteraError) {
+            console.warn("Error al cargar desde cartera:", carteraError);
+            // Si falla la carga de cartera, usar valores por defecto
+            puntoConPotencias = {
+              ...puntoConPotencias,
+              potencia1: 0,
+              potencia2: 0,
+              potencia3: 0,
+              potencia4: 0,
+              potencia5: 0,
+              potencia6: 0
+            };
+          }
+        } else {
+          console.warn("No se encontró idCliente en el objeto ps");
+          // Si no tenemos ID de cliente, establecer potencias en 0
+          puntoConPotencias = {
+            ...puntoConPotencias,
+            potencia1: 0,
+            potencia2: 0,
+            potencia3: 0,
+            potencia4: 0,
+            potencia5: 0,
+            potencia6: 0
+          };
+        }
+        
+        this.modificarPunto = puntoConPotencias;
+        console.log("Datos finales combinados para el modal:", this.modificarPunto);
         this.modoConsulta = false;
         this.formularioVisible = true;
       } catch (error) {
         console.error("Error al obtener el punto de suministro:", error);
+        if (this.$swal) {
+          await this.$swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al cargar los detalles del punto de suministro'
+          });
+        }
       }
     },
 
@@ -969,14 +1049,35 @@ export default {
     // Abre un modal para consultar los detalles de un punto de suministro
     async abrirModalPSConsulta(ps) {
       if (!ps.id) return alert("Punto de suministro no válido");
+      console.log("Datos del punto de suministro para consulta:", ps);
       try {
+        // Cargar datos detallados del punto de suministro
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
-        this.modificarPunto = { ...response.data };
+        
+        // Combinar datos del endpoint con las potencias del punto original (igual que en PuntosSuministroClienteComponent)
+        this.modificarPunto = { 
+          ...response.data,
+          // Agregar las potencias desde el punto original que ya las tiene
+          potencia1: ps.potencia1 || 0,
+          potencia2: ps.potencia2 || 0,
+          potencia3: ps.potencia3 || 0,
+          potencia4: ps.potencia4 || 0,
+          potencia5: ps.potencia5 || 0,
+          potencia6: ps.potencia6 || 0
+        };
+        
+        console.log("Datos combinados para el modal:", this.modificarPunto);
         this.modoConsulta = true;
         this.formularioVisible = true;
       } catch (error) {
         console.error("Error al obtener el punto de suministro:", error);
-        alert("Error al cargar los detalles del punto de suministro.");
+        if (this.$swal) {
+          await this.$swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al cargar los detalles del punto de suministro'
+          });
+        }
       }
     },
 
@@ -1256,11 +1357,11 @@ export default {
 
 /* Mostrar CUPS completo, sin cortar ni puntos suspensivos */
 .data-table td.cups-cell {
-  white-space: normal !important;
-  word-break: break-all !important;
-  text-overflow: unset !important;
-  overflow: visible !important;
-  max-width: 420px;
+  white-space: nowrap !important; /* Cambia a nowrap para evitar saltos de línea */
+  overflow: hidden !important; 
+  text-overflow: ellipsis !important; /* Muestra puntos suspensivos si no cabe */
+  max-width: 600px; /* Aumentar el ancho máximo */
+  min-width: 280px; /* Establecer ancho mínimo */
 }
 
 .data-table td.text-truncate[title*="CUPS"] span,
@@ -1581,7 +1682,7 @@ export default {
 
 .data-table th i {
   margin-left: 4px;
-  font-size: 0.9em;
+  font-size: 1em;
   color: var(--text-secondary);
 }
 
