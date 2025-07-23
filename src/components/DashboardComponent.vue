@@ -399,7 +399,7 @@ export default {
   font-size: 0.95rem;
   color: white;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
 }
 

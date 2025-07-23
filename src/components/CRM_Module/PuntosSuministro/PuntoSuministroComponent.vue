@@ -190,7 +190,7 @@
                 {{ suministro.poblacion }}, {{ suministro.provincia }}
               </td>
               <td class="text-truncate" :title="suministro.identificacion">
-                {{ suministro.identificacion || '-' }}
+                {{ suministro.identificacion}}
               </td>
               <td
                 class="cups-cell"
@@ -292,6 +292,9 @@
       :contratosHistoricos="contratosHistoricos"
       @cerrar-modal="cerrarModalContratos"
       @contrato-creado="handleContratoCreado"
+      @contrato-actualizado="handleContratoActualizado"
+      @contrato-renovado="handleContratoRenovado"
+      @recargar-contratos="recargarContratosDelPuntoSuministro"
     />
 
     <!-- Modal de Servicios -->
@@ -885,18 +888,106 @@ export default {
 
     // Maneja la creación de un nuevo contrato (simplificado - sin recarga automática)
     async handleContratoCreado(nuevoContrato) {
-      console.log('Contrato creado/actualizado exitosamente:', nuevoContrato);
+      console.log('Contrato creado exitosamente:', nuevoContrato);
       
       // Mostrar mensaje informativo al usuario
       this.$swal.fire({
-        title: 'Contrato guardado',
-        text: 'El contrato se ha guardado correctamente. Usa el botón "Actualizar" para ver los cambios en la tabla.',
+        title: 'Contrato creado',
+        text: 'El contrato se ha creado correctamente. Usa el botón "Actualizar" para ver los cambios en la tabla.',
         icon: 'success',
         confirmButtonColor: 'rgba(252, 215, 0)',
         confirmButtonText: 'Entendido',
         timer: 3000,
         timerProgressBar: true
       });
+    },
+
+    // Maneja la actualización de un contrato existente
+    async handleContratoActualizado(contratoActualizado) {
+      console.log('Contrato actualizado exitosamente:', contratoActualizado);
+      
+      // Recargar automáticamente los contratos para reflejar los cambios
+      await this.recargarContratosDelPuntoSuministro();
+      
+      // Mostrar mensaje de confirmación
+      this.$swal.fire({
+        title: 'Contrato actualizado',
+        text: 'El contrato se ha actualizado correctamente y la lista se ha refrescado.',
+        icon: 'success',
+        confirmButtonColor: 'rgba(252, 215, 0)',
+        confirmButtonText: 'Entendido',
+        timer: 2000,
+        timerProgressBar: true
+      });
+    },
+
+    // Maneja la renovación de un contrato
+    async handleContratoRenovado(contratoRenovado) {
+      console.log('Contrato renovado exitosamente:', contratoRenovado);
+      
+      // Recargar automáticamente los contratos para reflejar los cambios
+      await this.recargarContratosDelPuntoSuministro();
+      
+      // Mostrar mensaje de confirmación
+      this.$swal.fire({
+        title: 'Contrato renovado',
+        text: 'El contrato se ha renovado correctamente y la lista se ha refrescado.',
+        icon: 'success',
+        confirmButtonColor: 'rgba(252, 215, 0)',
+        confirmButtonText: 'Entendido',
+        timer: 2000,
+        timerProgressBar: true
+      });
+    },
+
+    // Método para recargar específicamente los contratos del punto de suministro actual
+    async recargarContratosDelPuntoSuministro() {
+      if (!this.modalPuntoSuministro?.id) {
+        console.warn('No hay punto de suministro seleccionado para recargar contratos');
+        return;
+      }
+
+      try {
+        console.log(`Recargando contratos para punto de suministro ID: ${this.modalPuntoSuministro.id}`);
+        
+        // Recargar contratos del punto de suministro actual
+        const responseContratos = await axios.get(
+          `${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${this.modalPuntoSuministro.id}`
+        );
+        this.contratos = responseContratos.data;
+        console.log(`Contratos recargados: ${this.contratos.length} encontrados`);
+
+        // Recalcular el contrato actual
+        const ahora = new Date();
+        this.contratoActual = this.contratos.find(contrato => {
+          const fechaFin = new Date(contrato.fechaFin);
+          const fechaInicio = new Date(contrato.fechaInicio);
+          return fechaInicio <= ahora && fechaFin > ahora;
+        }) || null;
+
+        // Separar contratos históricos (los que no están vigentes)
+        this.contratosHistoricos = this.contratos.filter(contrato => {
+          const fechaFin = new Date(contrato.fechaFin);
+          const fechaInicio = new Date(contrato.fechaInicio);
+          return !(fechaInicio <= ahora && fechaFin > ahora);
+        });
+
+        console.log('Contratos recargados exitosamente', {
+          total: this.contratos.length,
+          vigente: this.contratoActual ? 1 : 0,
+          historicos: this.contratosHistoricos.length
+        });
+
+      } catch (error) {
+        console.error('Error al recargar contratos:', error);
+        this.$swal.fire({
+          title: 'Error',
+          text: 'No se pudieron recargar los contratos. Por favor, inténtalo de nuevo.',
+          icon: 'error',
+          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonText: 'Aceptar'
+        });
+      }
     },
 
     // Abre el modal de servicios con los datos del punto de suministro seleccionado
@@ -1093,7 +1184,7 @@ export default {
         const data = this.filteredPuntosSuministro.map(punto => ({
           'Cliente': punto.cliente || '-',
           'Dirección': `${punto.direccion}, ${punto.codigoPostal}, ${punto.poblacion}, ${punto.provincia}`,
-          'Identificación': punto.identificacion || '-',
+          'Identificación': punto.identificacion,
           'CUPS': punto.cupsluz || punto.cupsgas || '-',
           'Tipo': this.getTipoCups(punto) || '-',
           'Tarifa': this.getTarifa(punto) || '-'
@@ -1351,7 +1442,7 @@ export default {
 .text-truncate {
   max-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -1359,9 +1450,8 @@ export default {
 .data-table td.cups-cell {
   white-space: nowrap !important; /* Cambia a nowrap para evitar saltos de línea */
   overflow: hidden !important; 
-  text-overflow: ellipsis !important; /* Muestra puntos suspensivos si no cabe */
-  max-width: 600px; /* Aumentar el ancho máximo */
-  min-width: 280px; /* Establecer ancho mínimo */
+  text-overflow: clip !important; /* Muestra puntos suspensivos si no cabe */
+  max-width: 600px; 
 }
 
 .data-table td.text-truncate[title*="CUPS"] span,

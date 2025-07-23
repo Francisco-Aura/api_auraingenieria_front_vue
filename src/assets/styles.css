@@ -91,10 +91,6 @@ button:hover {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Columnas flexibles */
 }
 
-form div {
-  margin-bottom: 5px; /* Espacio inferior entre los elementos del formulario */
-}
-
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr); /* Dos columnas iguales */

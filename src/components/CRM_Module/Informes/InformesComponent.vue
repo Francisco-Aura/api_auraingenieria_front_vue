@@ -1167,7 +1167,7 @@ export default {
 .text-truncate {
   max-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -1215,7 +1215,7 @@ export default {
   cursor: default;
   transition: background-color 0.2s ease;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -1223,7 +1223,7 @@ export default {
   width: 100%;
   max-width: 180px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
   display: block;
   padding-right: 20px;
@@ -1285,7 +1285,7 @@ export default {
   font-size: 1em;
 }
 
-/* Quitar ellipsis y nowrap en el contenido de CUPS */
+/* Quitar clip y nowrap en el contenido de CUPS */
 .data-table td[data-column="cupsLuz"] .cell-content,
 .data-table td[data-column="cupsGas"] .cell-content {
   white-space: normal !important;
@@ -1316,7 +1316,7 @@ export default {
   max-width: 120px;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
 }
 
 /* Permitir wrap en los nombres de las columnas */
@@ -1336,7 +1336,7 @@ export default {
   cursor: default;
   transition: background-color 0.2s ease;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -1344,7 +1344,7 @@ export default {
   width: 100%;
   max-width: 140px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
   display: block;
   padding-right: 20px;

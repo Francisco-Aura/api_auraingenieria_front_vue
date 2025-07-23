@@ -844,7 +844,6 @@ export default {
   font-weight: 700;
   font-size: 0.8rem;
   color: #495057;
-  margin-bottom: 0.3rem;
   letter-spacing: 0.5px;
 }
 
@@ -855,12 +854,11 @@ export default {
 .potencia-valor {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #6c757d;
+  color: black;
   line-height: 1.2;
 }
 
 .potencia-active .potencia-valor {
-  color: #28a745;
   font-weight: 700;
   font-size: 0.9rem;
 }
