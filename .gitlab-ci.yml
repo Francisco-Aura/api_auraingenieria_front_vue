@@ -3,7 +3,7 @@ image: node:20
 stages:
   - build_and_deploy_frontend
 
-deploy_frontend_job:
+deploy_frontend_job_PRE:
   stage: build_and_deploy_frontend
   only:
     - release
