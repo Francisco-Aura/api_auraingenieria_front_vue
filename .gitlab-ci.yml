@@ -8,7 +8,7 @@ stages:
   - build_and_deploy_frontend
 
 # Define el trabajo de despliegue del frontend.
-deploy_frontend_job:
+deploy_frontend_job_PRO:
   # Asigna este trabajo a la etapa 'build_and_deploy_frontend'.
   stage: build_and_deploy_frontend
   # Configura que este trabajo solo se ejecute en la rama 'main'.
