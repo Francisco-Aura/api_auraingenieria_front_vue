@@ -132,7 +132,7 @@
                         @click.stop="showSectorDropdown = !showSectorDropdown"
                         :class="{ 'active': selectedSectores.length > 0 }"
                       >
-                        <span v-if="selectedSectores.length === 0">Todos los sectores</span>
+                        <span v-if="selectedSectores.length === 0">TODOS</span>
                         <span v-else-if="selectedSectores.length === 1">{{ selectedSectores[0] }}</span>
                         <span v-else>{{ selectedSectores.length }} sectores</span>
                         <i class="fas fa-chevron-down"></i>
@@ -150,7 +150,7 @@
                               @change="clearSectorFilter"
                             >
                             <span class="checkmark"></span>
-                            Todos los sectores
+                            TODOS
                           </label>
                         </div>
                         <div 
