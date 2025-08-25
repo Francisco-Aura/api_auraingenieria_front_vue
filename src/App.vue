@@ -70,11 +70,6 @@ body {
   overflow-x: hidden;
 }
 
-.v-application {
-  background-color: var(--background-color) !important;
-  font-family: 'Poppins', sans-serif !important;
-}
-
 /* Estilos de tarjetas */
 .card {
   background-color: var(--surface-color);

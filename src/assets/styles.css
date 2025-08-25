@@ -221,28 +221,7 @@ table tr:hover {
 /* =============================== */
 /*             MODALES             */
 /* =============================== */
-.modal-overlay {
-  position: fixed;/* Fijar en la pantalla */
-  top: 0;
-  left: 0;
-  width: 130vw;
-  height: 120vh;
-  border: 2px solid rgb(39, 39, 39);
-  border-radius: 10px; /* Bordes redondeados */ 
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000; /* Asegurar que esté por encima de todo */
-}
 
-.modal-content {
-  background: rgb(219, 219, 219);
-  padding: 1%;
-  border: 2px solid rgb(70, 70, 70);
-  border-radius: 10px; /* Bordes redondeados */ 
-  overflow-y: auto; /* Permitir scroll si el contenido es muy grande */
-}
 
 /* Estilos adicionales a nivel global */
 

@@ -254,6 +254,9 @@
               <td class="text-truncate" :title="cliente.usuarioAsignado">{{ cliente.usuarioAsignado }}</td>
               <td>
                 <div class="action-buttons">
+                  <button class="btn-icon btn-activity" @click="abrirDrawerActividad(cliente)" title="Ver actividad del cliente">
+                    <i class="fas fa-history"></i>
+                  </button>
                   <button class="btn-icon btn-edit" @click="cargarDatosCliente(cliente.idCliente)" title="Consultar Cliente">
                     <i class="fas fa-edit"></i>
                   </button>
@@ -355,6 +358,17 @@
       @cerrar-modal="cerrarFormularioNuevoPuntoSuministro"
       @actualizar-punto-suministro="handleUpdateOrCreate"
     />
+
+    <!-- Drawer de actividad del cliente -->
+    <ClienteActividadDrawer
+      v-if="mostrarDrawerActividad"
+      :cliente="clienteActividadSeleccionado"
+      :visible="mostrarDrawerActividad"
+      @cerrar="cerrarDrawerActividad"
+      @nueva-tarea="abrirModalNuevaTareaCliente"
+      @ver-tarea="abrirModalVerTarea"
+      @nueva-incidencia="abrirModalNuevaIncidencia"
+    />
   </div>
 </template>
 
@@ -364,6 +378,7 @@ import Spinner from "@/components/SpinnerComponent.vue";
 import PuntosSuministroClienteComponent from "@/components/CRM_Module/Clientes/PuntosSuministroClienteComponent.vue";
 import CreaActualizaClienteComponent from "@/components/CRM_Module/Clientes/CreaActualizaClientesComponent.vue";
 import ModalActualizarPuntoSuministro from "@/components/CRM_Module/PuntosSuministro/ActualizarPuntoSuministro.vue";
+import ClienteActividadDrawer from "./ClienteActividadDrawer.vue";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -374,7 +389,8 @@ export default {
     Spinner,
     PuntosSuministroClienteComponent,
     CreaActualizaClienteComponent,
-    ModalActualizarPuntoSuministro
+    ModalActualizarPuntoSuministro,
+    ClienteActividadDrawer
   },
   data() {
     return {
@@ -411,6 +427,9 @@ export default {
       sortKey: null,
       sortOrder: null,
       modoConsulta: false,          // Flag para indicar si el ModalActualizarPuntoSuministro está en modo consulta
+      // Drawer de actividad del cliente
+      mostrarDrawerActividad: false,
+      clienteActividadSeleccionado: null,
       isCreating: false,            // Flag para indicar si el ModalActualizarPuntoSuministro está en modo creación
       mostrarModalContratos: false, // Control de visibilidad del modal de contratos
     };
@@ -843,6 +862,44 @@ export default {
       if (!dropdownContainer) {
         this.showSectorDropdown = false;
       }
+    },
+
+    // Métodos para el drawer de actividad del cliente
+    abrirDrawerActividad(cliente) {
+      this.clienteActividadSeleccionado = cliente;
+      this.mostrarDrawerActividad = true;
+    },
+
+    cerrarDrawerActividad() {
+      this.mostrarDrawerActividad = false;
+      this.clienteActividadSeleccionado = null;
+    },
+
+    abrirModalNuevaTareaCliente(cliente) {
+      // Redirigir al módulo de tareas con el cliente preseleccionado
+      this.$router.push({
+        path: '/dashboard/tareas',
+        query: { 
+          accion: 'nueva',
+          clienteId: cliente.idCliente,
+          clienteNombre: cliente.nombre
+        }
+      });
+    },
+
+    abrirModalVerTarea(tarea) {
+      // Redirigir al módulo de tareas con la tarea específica
+      this.$router.push({
+        path: '/dashboard/tareas',
+        query: { 
+          destacar: tarea.id
+        }
+      });
+    },
+
+    abrirModalNuevaIncidencia(cliente) {
+      // TODO: Implementar modal de nueva incidencia
+      console.log('Crear nueva incidencia para cliente:', cliente.nombre);
     }
   },
   async mounted() {
@@ -1130,6 +1187,13 @@ export default {
 }
 .btn-icon.btn-add:hover {
   background-color: rgba(255,152,0,0.1);
+}
+
+.btn-icon.btn-activity {
+  color: #9c27b0; /* Púrpura para actividad */
+}
+.btn-icon.btn-activity:hover {
+  background-color: rgba(156,39,176,0.1);
 }
 
 .ps-cell {

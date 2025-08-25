@@ -6,6 +6,8 @@ import ClientesComponent from '@/components/CRM_Module/Clientes/ClientesComponen
 import PuntosSuministroComponent from '@/components/CRM_Module/PuntosSuministro/PuntoSuministroComponent.vue';
 import InformesComponent from '@/components/CRM_Module/Informes/InformesComponent.vue';
 import AdministracionComponent from '@/components/CRM_Module/Administracion/AdministracionComponent.vue';
+//Tareas
+import TareasComponent from '@/components/CRM_Module/Tareas/TareasComponent.vue';
 
 // Define las rutas
 const routes = [
@@ -32,6 +34,10 @@ const routes = [
       {
         path: 'administracion',
         component: AdministracionComponent
+      },
+      {
+        path: 'tareas',
+        component: TareasComponent
       }
     ]
   },  
