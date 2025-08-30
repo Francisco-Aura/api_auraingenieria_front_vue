@@ -462,9 +462,9 @@ export default {
   background: transparent;
   border: none;
   color: var(--text-primary);
-  font-size: 1.2rem;
+  font-size: 1rem;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: 0.4rem;
   border-radius: 50%;
   transition: all 0.2s ease;
   position: relative;
@@ -476,14 +476,14 @@ export default {
 
 .notification-badge {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: -2px;
+  right: -2px;
   background-color: var(--danger-color);
   color: white;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 0.7rem;
+  width: 16px;
+  height: 16px;
+  font-size: 0.65rem;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -502,47 +502,48 @@ export default {
   position: absolute;
   top: 100%;
   right: 0;
-  width: 350px;
+  width: 320px;
   max-width: 90vw;
   background: white;
-  border-radius: var(--border-radius);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
   z-index: 1000;
-  margin-top: 0.5rem;
+  margin-top: 0.4rem;
   border: 1px solid var(--border-color);
-  max-height: 500px;
+  max-height: 450px;
   display: flex;
   flex-direction: column;
 }
 
 .notificaciones-header {
-  background-color: var(--primary-color);
-  color: black;
-  padding: 1rem;
-  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  background-color: rgb(252, 215, 0);
+  color: #2c3e50;
+  padding: 0.8rem;
+  border-radius: 8px 8px 0 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-weight: 600;
+  font-size: 0.85rem;
 }
 
 .header-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   align-items: center;
 }
 
 .filtro-tipo {
-  margin-right: 0.5rem;
+  margin-right: 0.4rem;
 }
 
 .filtro-select {
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  color: black;
-  padding: 0.3rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  color: #2c3e50;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
   cursor: pointer;
 }
 
@@ -556,12 +557,14 @@ export default {
   border: none;
   color: inherit;
   cursor: pointer;
-  padding: 0.3rem;
+  padding: 0.2rem;
   border-radius: 50%;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 24px;
 }
 
 .btn-icon:hover:not(:disabled) {
@@ -585,7 +588,7 @@ export default {
 .notificaciones-contenido {
   flex: 1;
   overflow-y: auto;
-  max-height: 400px;
+  max-height: 350px;
 }
 
 .cargando,
@@ -593,34 +596,35 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1rem;
+  padding: 1.5rem 0.8rem;
   color: var(--text-secondary);
   text-align: center;
 }
 
 .spinner-small {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border: 2px solid var(--border-color);
-  border-top: 2px solid var(--primary-color);
+  border-top: 2px solid rgb(252, 215, 0);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .sin-notificaciones i {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
   opacity: 0.5;
+  font-size: 1.5rem;
 }
 
 .lista-notificaciones {
-  padding: 0.5rem 0;
+  padding: 0.4rem 0;
 }
 
 .notificacion-item {
   display: flex;
   align-items: flex-start;
-  padding: 0.8rem 1rem;
+  padding: 0.6rem 0.8rem;
   cursor: pointer;
   transition: background-color 0.2s ease;
   border-bottom: 1px solid var(--border-color);
@@ -635,15 +639,16 @@ export default {
 }
 
 .notificacion-item.no-leida {
-  background-color: rgba(33, 150, 243, 0.05);
-  border-left: 3px solid var(--primary-color);
+  background-color: rgba(252, 215, 0, 0.05);
+  border-left: 3px solid rgb(252, 215, 0);
 }
 
 .notificacion-icono {
-  margin-right: 0.8rem;
-  margin-top: 0.2rem;
-  width: 20px;
+  margin-right: 0.6rem;
+  margin-top: 0.1rem;
+  width: 16px;
   text-align: center;
+  font-size: 0.8rem;
 }
 
 .notificacion-contenido {
@@ -652,29 +657,29 @@ export default {
 }
 
 .notificacion-mensaje {
-  margin: 0 0 0.3rem 0;
-  font-size: 0.9rem;
-  line-height: 1.4;
+  margin: 0 0 0.2rem 0;
+  font-size: 0.8rem;
+  line-height: 1.3;
   color: var(--text-primary);
 }
 
 .notificacion-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
 }
 
 .notificacion-tarea {
   font-weight: 500;
-  max-width: 120px;
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .notificacion-acciones {
-  margin-left: 0.5rem;
+  margin-left: 0.4rem;
   opacity: 0;
   transition: opacity 0.2s ease;
 }
@@ -684,23 +689,23 @@ export default {
 }
 
 .notificaciones-footer {
-  padding: 0.8rem 1rem;
+  padding: 0.6rem 0.8rem;
   background-color: #f8f9fa;
   border-top: 1px solid var(--border-color);
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  border-radius: 0 0 8px 8px;
 }
 
 .btn-link {
   background: none;
   border: none;
-  color: black;
+  color: #2c3e50;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   text-decoration: underline;
   width: 100%;
   text-align: center;
-  padding: 0.5rem;
-  border-radius: var(--border-radius);
+  padding: 0.4rem;
+  border-radius: 6px;
   transition: background-color 0.2s ease;
 }
 
@@ -725,20 +730,20 @@ export default {
 
 .modal-content {
   background: white;
-  border-radius: var(--border-radius);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
   width: 100%;
-  max-width: 600px;
-  max-height: 80vh;
+  max-width: 550px;
+  max-height: 75vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
 .modal-header {
-  background: linear-gradient(135deg, #2196F3 0%, #1976D2 50%, #0D47A1 100%);
-  color: white;
-  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, rgb(252, 215, 0) 0%, #e6c200 100%);
+  color: #2c3e50;
+  padding: 0.8rem 1.2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -746,22 +751,22 @@ export default {
 
 .modal-header h3 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
 .close-button {
   background-color: rgba(255, 255, 255, 0.15);
   border: none;
-  color: white;
-  width: 32px;
-  height: 32px;
+  color: #2c3e50;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .close-button:hover {
@@ -772,64 +777,65 @@ export default {
 .modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 1.2rem;
 }
 
 .lista-notificaciones-completa {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .notificacion-item-completa {
   display: flex;
   align-items: flex-start;
-  padding: 1rem;
+  padding: 0.8rem;
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
+  border-radius: 6px;
   background-color: #f8f9fa;
   transition: all 0.2s ease;
 }
 
 .notificacion-item-completa.no-leida {
-  background-color: rgba(33, 150, 243, 0.05);
-  border-left: 4px solid var(--primary-color);
+  background-color: rgba(252, 215, 0, 0.05);
+  border-left: 3px solid rgb(252, 215, 0);
 }
 
 .notificacion-item-completa .notificacion-acciones {
   opacity: 1;
   display: flex;
-  gap: 0.3rem;
+  gap: 0.2rem;
 }
 
 .notification-btn i {
-  font-size: 1.6rem;
+  font-size: 1.3rem;
 }
 
 .notification-badge {
-  top: -4px; 
-  right: -4px; 
-  width: 20px;
-  height: 20px;
-  font-size: 0.75rem;
+  top: -3px; 
+  right: -3px; 
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
   outline: 2px solid white;
 }
 
 /* Snackbar */
 .snackbar {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 1rem 1.5rem;
-  border-radius: var(--border-radius);
+  bottom: 16px;
+  right: 16px;
+  padding: 0.8rem 1.2rem;
+  border-radius: 6px;
   color: white;
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.8rem;
   z-index: 1000;
   animation: slideIn 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+  font-size: 0.85rem;
 }
 
 .snackbar.success {
@@ -849,7 +855,7 @@ export default {
   border: none;
   color: white;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.9rem;
   padding: 0;
   margin: 0;
 }
@@ -876,7 +882,7 @@ export default {
   
   .notificacion-meta {
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.1rem;
   }
   
   .notificacion-tarea {

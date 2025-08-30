@@ -217,19 +217,19 @@ export default {
 <style scoped>
 .tarea-card {
   background-color: var(--surface-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--card-shadow);
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-left: 4px solid var(--primary-color);
-  transition: all 0.3s ease;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
+  border-left: 3px solid rgb(252, 215, 0);
+  transition: all 0.2s ease;
   cursor: pointer;
   position: relative;
 }
 
 .tarea-card:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
 .tarea-card.tarea-vencida {
@@ -241,7 +241,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
 }
 
 .tarea-info {
@@ -249,27 +249,27 @@ export default {
 }
 
 .tarea-titulo {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.3rem 0;
   color: var(--text-primary);
   cursor: pointer;
   line-height: 1.3;
 }
 
 .tarea-titulo:hover {
-  color: var(--primary-color);
+  color: rgb(252, 215, 0);
 }
 
 .tarea-descripcion {
   color: var(--text-secondary);
   margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.4;
+  font-size: 0.8rem;
+  line-height: 1.3;
 }
 
 .tarea-acciones {
-  margin-left: 1rem;
+  margin-left: 0.8rem;
   flex-shrink: 0;
 }
 
@@ -281,10 +281,10 @@ export default {
 .btn-icon {
   background: transparent;
   border: none;
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -304,25 +304,25 @@ export default {
   right: 0;
   background-color: white;
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
   z-index: 1000;
-  min-width: 150px;
-  padding: 0.5rem 0;
+  min-width: 140px;
+  padding: 0.4rem 0;
 }
 
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
   background: none;
   border: none;
   width: 100%;
   text-align: left;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--text-primary);
 }
 
@@ -341,19 +341,19 @@ export default {
 .dropdown-divider {
   height: 1px;
   background-color: var(--border-color);
-  margin: 0.5rem 0;
+  margin: 0.4rem 0;
 }
 
 .tarea-metadata {
-  margin-bottom: 1rem;
+  margin-bottom: 0.8rem;
 }
 
 .metadata-row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
 }
 
 .metadata-row:last-child {
@@ -363,31 +363,31 @@ export default {
 .metadata-item {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.2rem;
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.75rem;
 }
 
 .metadata-item i {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 
 /* Badges */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  gap: 0.2rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 8px;
+  font-size: 0.65rem;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 .badge-primary {
-  background-color: var(--primary-color);
-  color: black;
+  background-color: rgb(252, 215, 0);
+  color: #2c3e50;
 }
 
 .badge-success {
@@ -414,15 +414,15 @@ export default {
 .etiquetas {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: 0.2rem;
 }
 
 .etiqueta {
   background-color: rgba(0, 0, 0, 0.05);
   color: var(--text-secondary);
-  padding: 0.2rem 0.4rem;
-  border-radius: 8px;
-  font-size: 0.75rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 6px;
+  font-size: 0.65rem;
   font-weight: 500;
 }
 
@@ -430,32 +430,32 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1rem;
-  padding-top: 1rem;
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
   border-top: 1px solid var(--border-color);
 }
 
 .estados-rapidos {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: 0.2rem;
 }
 
 .btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.8rem;
-  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+  border-radius: 3px;
 }
 
 .btn-outline {
   background-color: transparent;
-  border: 1px solid var(--primary-color);
-  color: var(--primary-color);
+  border: 1px solid rgb(252, 215, 0);
+  color: rgb(252, 215, 0);
 }
 
 .btn-outline:hover:not(:disabled) {
-  background-color: var(--primary-color);
-  color: black;
+  background-color: rgb(252, 215, 0);
+  color: #2c3e50;
 }
 
 .btn-disabled {
@@ -467,7 +467,7 @@ export default {
 
 .fecha-creacion {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 
 .text-muted {
@@ -479,7 +479,7 @@ export default {
   .tarea-footer {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
   
   .estados-rapidos {
@@ -489,7 +489,7 @@ export default {
   .metadata-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.3rem;
+    gap: 0.2rem;
   }
 }
 </style>

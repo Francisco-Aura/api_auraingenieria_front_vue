@@ -308,9 +308,9 @@ export default {
 <style scoped>
 .tareas-tabla-container {
   background: white;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   border: 1px solid #e9ecef;
 }
 
@@ -318,22 +318,22 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
   border-bottom: 1px solid #e9ecef;
 }
 
 .tabla-title {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #2c3e50;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .task-count {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: #6c757d;
   font-weight: normal;
 }
@@ -342,13 +342,13 @@ export default {
   background: #007bff;
   border: none;
   color: white;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 6px 12px;
+  border-radius: 4px;
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -360,23 +360,23 @@ export default {
 
 .filtros-container {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: flex-end;
-  margin-bottom: 16px;
-  padding: 12px;
+  margin-bottom: 12px;
+  padding: 8px;
   background: #f8f9fa;
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid #e9ecef;
 }
 
 .filtro-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .filtro-group label {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 500;
   color: #495057;
 }
@@ -384,19 +384,19 @@ export default {
 .date-range {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .btn-buscar {
   background: #007bff;
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 0.7rem;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -407,9 +407,9 @@ export default {
 
 .tabla-wrapper {
   overflow-x: auto;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   border: 1px solid #e9ecef;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .tabla-tareas {
@@ -422,12 +422,12 @@ export default {
 }
 
 .tabla-tareas th {
-  padding: 10px 12px;
+  padding: 8px 10px;
   text-align: left;
   font-weight: 600;
   color: #495057;
   border-bottom: 1px solid #dee2e6;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   background: #f8f9fa;
 }
 
@@ -442,27 +442,28 @@ export default {
 }
 
 .tabla-tareas td {
-  padding: 10px 12px;
+  padding: 8px 10px;
   color: #495057;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
 }
 
 .th-checkbox,
 .td-checkbox {
-  width: 40px;
+  width: 32px;
   text-align: center;
 }
 
 .tarea-titulo {
   font-weight: 600;
   color: #2c3e50;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
+  font-size: 0.8rem;
 }
 
 .tarea-descripcion {
-  font-size: 0.875rem;
+  font-size: 0.7rem;
   color: #6c757d;
-  max-width: 300px;
+  max-width: 250px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -471,10 +472,10 @@ export default {
 .tipo-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.875rem;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
   font-weight: 500;
   background: #e9ecef;
   color: #495057;
@@ -489,38 +490,38 @@ export default {
 .cliente-info {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.875rem;
+  gap: 4px;
+  font-size: 0.7rem;
 }
 
 .contacto-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 0.875rem;
+  gap: 2px;
+  font-size: 0.7rem;
 }
 
 .contacto-info span {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .estado-badge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
+  padding: 3px 8px;
+  border-radius: 12px;
   color: white;
-  font-size: 0.875rem;
+  font-size: 0.7rem;
   font-weight: 500;
 }
 
 .comentarios-preview {
-  max-width: 200px;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.875rem;
+  font-size: 0.7rem;
   color: #6c757d;
 }
 
@@ -532,17 +533,18 @@ export default {
 .usuario-asignado {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.875rem;
+  gap: 4px;
+  font-size: 0.7rem;
 }
 
 .btn-documento {
   background: none;
   border: 1px solid #dee2e6;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 3px 6px;
+  border-radius: 3px;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 0.7rem;
 }
 
 .btn-documento:hover {
@@ -560,37 +562,39 @@ export default {
 
 .empty-state {
   text-align: center;
-  padding: 48px;
+  padding: 32px;
   color: #6c757d;
 }
 
 .empty-state i {
-  font-size: 3rem;
-  margin-bottom: 16px;
+  font-size: 2rem;
+  margin-bottom: 12px;
   opacity: 0.5;
 }
 
 .empty-state h3 {
-  margin: 16px 0 8px;
+  margin: 12px 0 6px;
   color: #495057;
+  font-size: 0.9rem;
 }
 
 .paginacion {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  padding-top: 16px;
+  gap: 12px;
+  padding-top: 12px;
   border-top: 1px solid #e9ecef;
 }
 
 .btn-pagina {
   background: white;
   border: 1px solid #dee2e6;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 6px 10px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 0.7rem;
 }
 
 .btn-pagina:hover:not(:disabled) {
@@ -604,7 +608,7 @@ export default {
 }
 
 .pagina-info {
-  font-size: 0.875rem;
+  font-size: 0.7rem;
   color: #6c757d;
 }
 
@@ -615,31 +619,31 @@ export default {
 
 .action-buttons {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   justify-content: center;
 }
 
 .btn {
-  padding: 4px 8px;
+  padding: 3px 6px;
   border: 1px solid;
-  border-radius: 4px;
+  border-radius: 3px;
   background: white;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
 }
 
 .btn-sm {
-  padding: 2px 6px;
+  padding: 2px 4px;
 }
 
 .btn-icon {
   background: transparent;
   border: none;
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -686,7 +690,7 @@ export default {
 @media (max-width: 768px) {
   .tabla-header {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     align-items: flex-start;
   }
 

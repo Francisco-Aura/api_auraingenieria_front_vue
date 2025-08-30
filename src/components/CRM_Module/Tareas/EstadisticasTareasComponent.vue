@@ -116,43 +116,43 @@ export default {
 <style scoped>
 .estadisticas-tareas {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   border: 1px solid #e9ecef;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .stat-card {
   background: #f8f9fa;
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: 6px;
+  padding: 12px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  transition: all 0.3s ease;
+  gap: 10px;
+  transition: all 0.2s ease;
   border: 1px solid #e9ecef;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 0.9rem;
   color: white;
 }
 
@@ -173,36 +173,36 @@ export default {
 }
 
 .stat-number {
-  font-size: 2rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: #2c3e50;
   line-height: 1;
 }
 
 .stat-label {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: #6c757d;
   font-weight: 500;
 }
 
 .progreso-semanal {
-  margin-top: 24px;
+  margin-top: 16px;
 }
 
 .progreso-semanal h3 {
-  margin: 0 0 16px 0;
+  margin: 0 0 8px 0;
   color: #2c3e50;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 600;
 }
 
 .progreso-bar {
   width: 100%;
-  height: 12px;
+  height: 8px;
   background: #e9ecef;
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .progreso-fill {
@@ -213,7 +213,7 @@ export default {
 
 .progreso-texto {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: #6c757d;
   text-align: center;
 }
@@ -225,17 +225,17 @@ export default {
   }
   
   .stat-card {
-    padding: 16px;
+    padding: 10px;
   }
   
   .stat-number {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
   }
   
   .stat-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
   }
 }
 </style>

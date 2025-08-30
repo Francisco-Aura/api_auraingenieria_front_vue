@@ -571,8 +571,21 @@ export default {
 .text-truncate {
   max-width: 0;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.text-truncate:hover {
+  overflow: visible;
+  white-space: normal;
+  word-wrap: break-word;
+  background: white;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  padding: 4px 8px;
+  max-width: none;
 }
 
 .text-center {
@@ -725,7 +738,7 @@ export default {
 .cups-value {
   flex: 1;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 0.875rem; /* Cambiado de 1rem a 0.875rem para mejor balance */

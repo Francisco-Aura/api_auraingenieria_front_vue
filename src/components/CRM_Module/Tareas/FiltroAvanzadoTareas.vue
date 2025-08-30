@@ -168,32 +168,34 @@ export default {
   background: white;
   border-radius: 8px;
   border: 1px solid #e9ecef;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .btn-toggle-filtros {
   width: 100%;
-  background: #f8f9fa;
+  background: linear-gradient(135deg, white, white);
   border: none;
-  padding: 16px 20px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   cursor: pointer;
   font-weight: 600;
-  color: #495057;
+  color: #2c3e50;
   transition: all 0.2s ease;
+  font-size: 0.85rem;
 }
 
 .btn-toggle-filtros:hover {
-  background: #e9ecef;
+  transform: translateY(-2px);
 }
 
 .btn-toggle-filtros i.fa-chevron-down {
   margin-left: auto;
-  transition: transform 0.3s ease;
+  transition: transform 0.2s ease;
 }
 
 .btn-toggle-filtros i.fa-chevron-down.rotated {
@@ -201,42 +203,52 @@ export default {
 }
 
 .filtros-contenido {
-  padding: 20px;
+  padding: 16px;
   border-top: 1px solid #e9ecef;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
 }
 
 .filtros-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .filtro-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
 }
 
 .filtro-section > label {
   font-weight: 600;
   color: #2c3e50;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .checkbox-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: #495057;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.checkbox-label:hover {
+  background: rgba(252, 215, 0, 0.1);
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -244,8 +256,8 @@ export default {
 }
 
 .checkmark {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border: 2px solid #dee2e6;
   border-radius: 3px;
   position: relative;
@@ -253,17 +265,18 @@ export default {
 }
 
 .checkbox-label input[type="checkbox"]:checked + .checkmark {
-  border-color: #4CAF50;
+  border-color: rgb(252, 215, 0);
+  background: rgb(252, 215, 0);
 }
 
 .checkbox-label input[type="checkbox"]:checked + .checkmark:after {
   content: '';
   position: absolute;
-  left: 3px;
-  top: 0px;
-  width: 3px;
-  height: 8px;
-  border: solid white;
+  left: 2px;
+  top: -1px;
+  width: 2px;
+  height: 6px;
+  border: solid #2c3e50;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
@@ -285,46 +298,47 @@ export default {
 
 .fecha-inputs {
   display: flex;
-  gap: 12px;
+  gap: 6px;
 }
 
 .input-group {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .input-label {
-  font-size: 0.8rem;
+  font-size: 0.65rem;
   color: #6c757d;
   font-weight: 500;
 }
 
 .form-control {
-  padding: 8px 12px;
+  padding: 6px 8px;
   border: 1px solid #dee2e6;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   transition: all 0.2s ease;
+  background: white;
 }
 
 .form-control:focus {
   outline: none;
-  border-color: #4CAF50;
-  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+  border-color: rgb(252, 215, 0);
+  box-shadow: 0 0 0 2px rgba(252, 215, 0, 0.15);
 }
 
 .filtros-acciones {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  padding-top: 16px;
+  gap: 8px;
+  padding-top: 12px;
   border-top: 1px solid #e9ecef;
 }
 
 .btn {
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
@@ -332,27 +346,28 @@ export default {
   border: none;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.9rem;
+  gap: 4px;
+  font-size: 0.75rem;
 }
 
 .btn-primary {
-  background: #4CAF50;
-  color: white;
+  background: linear-gradient(135deg, rgb(252, 215, 0) 0%, #e6c200 100%);
+  color: #2c3e50;
 }
 
 .btn-primary:hover {
-  background: #45a049;
+  background: linear-gradient(135deg, #e6c200 0%, #d4b800 100%);
   transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .btn-secondary {
-  background: #6c757d;
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
   color: white;
 }
 
 .btn-secondary:hover {
-  background: #5a6268;
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
   transform: translateY(-1px);
 }
 

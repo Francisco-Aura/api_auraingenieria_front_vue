@@ -52,7 +52,7 @@ export default {
 
 /* Reset básico */
 html {
-  font-size: 14px; /* Reduce el tamaño base de la fuente */
+  font-size: 13px; /* Tamaño base más pequeño para pantallas de alta resolución */
 }
 
 * {
@@ -66,8 +66,10 @@ body {
   color: var(--text-primary);
   font-family: 'Poppins', sans-serif;
   line-height: 1.5;
-  font-size: 0.9rem; /* Tamaño relativo a la raíz */
+  font-size: 0.875rem; /* Tamaño relativo a la raíz */
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Estilos de tarjetas */
@@ -75,8 +77,8 @@ body {
   background-color: var(--surface-color);
   border-radius: var(--border-radius);
   box-shadow: var(--card-shadow);
-  padding: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
   transition: all 0.3s ease;
 }
 
@@ -91,15 +93,16 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: 500;
-  padding: 0.4rem 0.8rem;
+  padding: 0.35rem 0.7rem;
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: all 0.3s ease;
   border: none;
   outline: none;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   text-decoration: none;
   white-space: nowrap;
+  min-height: 2rem;
 }
 
 .btn i {
@@ -193,13 +196,13 @@ body {
   color: white;
   font-weight: 700;
   text-align: left;
-  padding: 0.6rem 0.8rem;
+  padding: 0.5rem 0.7rem;
   letter-spacing: 0.3px;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
 }
 
 .data-table td {
-  padding: 0.5rem 0.8rem;
+  padding: 0.4rem 0.7rem;
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -215,14 +218,15 @@ body {
 .form-control {
   display: block;
   width: 100%;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   line-height: 1.4;
-  padding: 0.4rem 0.7rem;
+  padding: 0.35rem 0.6rem;
   color: var(--text-primary);
   background-color: var(--surface-color);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   transition: all 0.3s ease;
+  min-height: 2.25rem;
 }
 
 .form-control:focus {
@@ -346,5 +350,79 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* Optimizaciones para pantallas de alta resolución */
+@media screen and (min-width: 1920px) {
+  html {
+    font-size: 14px;
+  }
+  
+  body {
+    font-size: 0.9rem;
+  }
+  
+  .card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    min-height: 2.25rem;
+  }
+  
+  .form-control {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.85rem;
+    min-height: 2.25rem;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 0.6rem 0.8rem;
+  }
+  
+  .data-table th {
+    font-size: 0.85rem;
+  }
+}
+
+/* Optimizaciones para pantallas medianas */
+@media screen and (max-width: 1366px) {
+  html {
+    font-size: 12px;
+  }
+  
+  body {
+    font-size: 0.8rem;
+  }
+  
+  .card {
+    padding: 0.6rem;
+    margin-bottom: 0.6rem;
+  }
+  
+  .btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    min-height: 1.75rem;
+  }
+  
+  .form-control {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+    min-height: 1.75rem;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 0.4rem 0.6rem;
+  }
+  
+  .data-table th {
+    font-size: 0.75rem;
+  }
 }
 </style>

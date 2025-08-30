@@ -11,13 +11,14 @@
 
       <!-- Body del modal -->
       <div class="modal-body">
-        <form @submit.prevent="guardar">
-          <!-- Primera fila: Tipo y Nombre -->
-          <div class="form-row">
-            <div class="form-group tipo-group">
+        <form @submit.prevent="guardar" class="form-compact">
+          
+          <!-- Primera fila: Tipo, Nombre, Cliente -->
+          <div class="row-1">
+            <div class="form-group">
               <label>Tipo</label>
-              <div class="tipo-selector">
-                <select v-model="formulario.tipo" class="form-control tipo-select">
+              <div class="input-with-button">
+                <select v-model="formulario.tipo" class="form-control">
                   <option value="Seguimiento">Seguimiento</option>
                   <option value="Llamada">Llamada</option>
                   <option value="Correo">Correo</option>
@@ -30,13 +31,13 @@
                   <option value="Por hacer">Por hacer</option>
                   <option value="Por facturar">Por facturar</option>
                 </select>
-                <button type="button" class="btn-add-tipo">
+                <button type="button" class="btn-icon">
                   <i class="fas fa-plus"></i>
                 </button>
               </div>
             </div>
 
-            <div class="form-group flex-grow">
+            <div class="form-group">
               <label>Nombre <span class="required">*</span></label>
               <input 
                 type="text" 
@@ -46,28 +47,25 @@
                 placeholder="Título de la tarea"
               />
             </div>
-          </div>
 
-          <!-- Segunda fila: Dirigido a -->
-          <div class="form-row">
-            <div class="form-group">
+            <div class="form-group cliente-field">
               <label>Dirigido a <span class="required">*</span></label>
-              <div class="cliente-selector">
+              <div class="input-with-button">
                 <input 
                   type="text" 
                   v-model="busquedaCliente"
                   @input="buscarClientes"
                   @focus="mostrarDropdownClientes = true"
                   class="form-control"
-                  placeholder="Introduce al menos 3 caracteres para buscar"
+                  placeholder="Buscar cliente..."
                 />
-                <button type="button" class="btn-search" @click="buscarClientes">
+                <button type="button" class="btn-icon" @click="buscarClientes">
                   <i class="fas fa-search"></i>
                 </button>
                 
                 <!-- Dropdown de clientes -->
-                <div v-if="mostrarDropdownClientes && clientesFiltrados.length > 0" class="dropdown-clientes">
-                  <div class="dropdown-section">
+                <div v-if="mostrarDropdownClientes && (clientesFiltrados.length > 0 || oportunidadesFiltradas.length > 0)" class="dropdown-clientes">
+                  <div v-if="clientesFiltrados.length > 0" class="dropdown-section">
                     <div class="dropdown-header">CLIENTES</div>
                     <div 
                       v-for="cliente in clientesFiltrados" 
@@ -92,87 +90,24 @@
             </div>
           </div>
 
-          <!-- Tercera fila: Descripción -->
-          <div class="form-row">
+          <!-- Segunda fila: Fechas, Prioridad, Repetir -->
+          <div class="row-2">
             <div class="form-group">
-              <label>Descripción</label>
-              <textarea 
-                v-model="formulario.descripcion" 
-                class="form-control"
-                rows="4"
-                placeholder="Descripción detallada de la tarea..."
-              ></textarea>
-            </div>
-          </div>
-
-          <!-- Cuarta fila: Fechas -->
-          <div class="form-row">
-            <div class="form-group">
-              <label>Fecha de inicio</label>
-              <div class="datetime-input">
-                <input 
-                  type="date" 
-                  v-model="fechaInicio" 
-                  class="form-control"
-                />
-                <input 
-                  type="time" 
-                  v-model="horaInicio" 
-                  class="form-control time-input"
-                />
+              <label>Fecha inicio</label>
+              <div class="datetime-compact">
+                <input type="date" v-model="fechaInicio" class="form-control date-input" />
+                <input type="time" v-model="horaInicio" class="form-control time-input" />
               </div>
             </div>
 
             <div class="form-group">
-              <label>Fecha de vencimiento</label>
-              <div class="datetime-input">
-                <input 
-                  type="date" 
-                  v-model="fechaVencimiento" 
-                  class="form-control"
-                />
-                <input 
-                  type="time" 
-                  v-model="horaVencimiento" 
-                  class="form-control time-input"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Quinta fila: Notificación y Asignación -->
-          <div class="form-row">
-            <div class="form-group">
-              <div class="checkbox-group">
-                <input 
-                  type="checkbox" 
-                  id="notificar" 
-                  v-model="formulario.notificar"
-                />
-                <label for="notificar">Se notificará una hora antes</label>
+              <label>Fecha vencimiento</label>
+              <div class="datetime-compact">
+                <input type="date" v-model="fechaVencimiento" class="form-control date-input" />
+                <input type="time" v-model="horaVencimiento" class="form-control time-input" />
               </div>
             </div>
 
-            <div class="form-group">
-              <label>Asignada a</label>
-              <select v-model="formulario.usuarioAsignadoId" class="form-control">
-                <option v-for="usuario in usuarios" :key="usuario.id" :value="usuario.id">
-                  {{ usuario.nombre }}
-                </option>
-              </select>
-              <div class="checkbox-group mt-2">
-                <input 
-                  type="checkbox" 
-                  id="enviarCorreo" 
-                  v-model="formulario.enviarCorreo"
-                />
-                <label for="enviarCorreo">Enviar correo al usuario asignado</label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sexta fila: Prioridad y Repetir -->
-          <div class="form-row">
             <div class="form-group">
               <label>Prioridad</label>
               <select v-model="formulario.prioridad" class="form-control">
@@ -194,41 +129,76 @@
             </div>
           </div>
 
-          <!-- Séptima fila: Comentarios -->
-          <div class="form-row">
+          <!-- Tercera fila: Asignación y Opciones -->
+          <div class="row-3">
             <div class="form-group">
+              <label>Asignada a</label>
+              <select v-model="formulario.usuarioAsignadoId" class="form-control">
+                <option v-for="usuario in usuarios" :key="usuario.id" :value="usuario.id">
+                  {{ usuario.nombre }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group options-group">
+              <label>Opciones</label>
+              <div class="options-container">
+                <div class="checkbox-compact">
+                  <input type="checkbox" id="notificar" v-model="formulario.notificar" />
+                  <label for="notificar">Notificar 1h antes</label>
+                </div>
+                <div class="checkbox-compact">
+                  <input type="checkbox" id="enviarCorreo" v-model="formulario.enviarCorreo" />
+                  <label for="enviarCorreo">Enviar correo</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cuarta fila: Descripción -->
+          <div class="row-4">
+            <div class="form-group full-width">
+              <label>Descripción</label>
+              <textarea 
+                v-model="formulario.descripcion" 
+                class="form-control"
+                rows="2"
+                placeholder="Descripción detallada de la tarea..."
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Quinta fila: Comentarios -->
+          <div class="row-5">
+            <div class="form-group full-width">
               <label>Comentarios</label>
-              <div class="comentarios-container">
-                <textarea 
-                  v-model="nuevoComentario" 
-                  class="form-control"
-                  rows="3"
-                  placeholder="Añadir un comentario..."
-                ></textarea>
-                <div class="comentarios-opciones">
-                  <button type="button" class="btn-adjuntar">
-                    <i class="fas fa-paperclip"></i>
-                    Busca o arrastra y suelta tus archivos aquí
-                  </button>
-                  <div class="checkbox-group">
-                    <input 
-                      type="checkbox" 
-                      id="fijarComentario" 
-                      v-model="fijarComentario"
-                    />
-                    <label for="fijarComentario">
-                      Que puedan ir saliendo en listado y que se pueda marcar la opción de fijar al inicio
-                    </label>
+              <div class="comentarios-compact">
+                <div class="comentario-input">
+                  <textarea 
+                    v-model="nuevoComentario" 
+                    class="form-control"
+                    rows="2"
+                    placeholder="Añadir comentario..."
+                  ></textarea>
+                  <div class="comentario-actions">
+                    <button type="button" class="btn-attach">
+                      <i class="fas fa-paperclip"></i>
+                      Adjuntar
+                    </button>
+                    <div class="checkbox-compact">
+                      <input type="checkbox" id="fijarComentario" v-model="fijarComentario" />
+                      <label for="fijarComentario">Fijar</label>
+                    </div>
                   </div>
                 </div>
                 
-                <!-- Lista de comentarios -->
+                <!-- Lista de comentarios existentes -->
                 <div v-if="formulario.comentarios && formulario.comentarios.length > 0" class="comentarios-lista">
                   <div v-for="(comentario, index) in formulario.comentarios" :key="index" class="comentario-item">
                     <div class="comentario-header">
                       <span class="comentario-autor">{{ comentario.autor }}</span>
                       <span class="comentario-fecha">{{ formatDate(comentario.fecha) }}</span>
-                      <button type="button" class="btn-fijar" @click="toggleFijarComentario(index)">
+                      <button type="button" class="btn-star" @click="toggleFijarComentario(index)">
                         <i :class="comentario.fijado ? 'fas fa-star' : 'far fa-star'"></i>
                       </button>
                     </div>
@@ -333,7 +303,6 @@ export default {
     inicializarFormulario() {
       if (this.tarea) {
         this.formulario = { ...this.tarea }
-        // Precargar fechas en edición
         if (this.tarea.fechaInicio) {
           const fechaIni = new Date(this.tarea.fechaInicio)
           this.fechaInicio = fechaIni.toISOString().split('T')[0]
@@ -345,26 +314,21 @@ export default {
           this.horaVencimiento = fecha.toTimeString().slice(0, 5)
         }
         
-        // Precargar cliente en edición
         if (this.tarea.clienteRelacionadoId && this.tarea.clienteRelacionadoNombre) {
           this.formulario.clienteRelacionadoId = this.tarea.clienteRelacionadoId
           this.busquedaCliente = this.tarea.clienteRelacionadoNombre
           this.clientesFiltrados = [{ id: this.tarea.clienteRelacionadoId, nombre: this.tarea.clienteRelacionadoNombre }]
         }
-        // Asegurar tipo válido
         if (!this.formulario.tipo) {
           this.formulario.tipo = 'Seguimiento'
         }
       } else {
-        // Establecer valores por defecto
         const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
         this.formulario.usuarioAsignadoId = usuario.id ? parseInt(usuario.id) : null
         
-        // Estado por defecto
         const estadoPendiente = this.estados.find(e => e.nombre === 'PENDIENTE')
         this.formulario.estadoId = estadoPendiente ? estadoPendiente.id : null
         
-        // Fecha por defecto (hoy)
         const hoy = new Date()
         this.fechaInicio = hoy.toISOString().split('T')[0]
         this.fechaVencimiento = hoy.toISOString().split('T')[0]
@@ -379,7 +343,6 @@ export default {
       }
 
       try {
-        // Búsqueda server-side por nombre o CIF
         const base = `${process.env.VUE_APP_API_URL || 'http://localhost:8986'}`
         const params = new URLSearchParams({ q: this.busquedaCliente, page: '0', size: '10' })
         const responseClientes = await fetch(`${base}/api/clientes/buscar?${params.toString()}`)
@@ -390,7 +353,6 @@ export default {
           this.clientesFiltrados = []
         }
 
-        // Simular búsqueda de oportunidades (placeholder)
         this.oportunidadesFiltradas = [
           { id: 1, codigo: '185', nombre: 'SOL DE LEVANTE PRODUCCIONES S.L' },
           { id: 2, codigo: '249', nombre: 'SOL DE LEVANTE PRODUCCIONES S.L' }
@@ -418,7 +380,7 @@ export default {
     },
 
     handleClickOutside(event) {
-      if (!event.target.closest('.cliente-selector')) {
+      if (!event.target.closest('.cliente-field')) {
         this.mostrarDropdownClientes = false
       }
     },
@@ -436,19 +398,16 @@ export default {
     },
 
     guardar() {
-      // Combinar fecha y hora de inicio
       if (this.fechaInicio) {
         const fechaIni = new Date(this.fechaInicio + 'T' + this.horaInicio)
         this.formulario.fechaInicio = fechaIni.toISOString()
       }
       
-      // Combinar fecha y hora de vencimiento
       if (this.fechaVencimiento) {
         const fecha = new Date(this.fechaVencimiento + 'T' + this.horaVencimiento)
         this.formulario.fechaVencimiento = fecha.toISOString()
       }
 
-      // Añadir comentario si hay uno nuevo
       if (this.nuevoComentario) {
         const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
         this.formulario.comentarios = this.formulario.comentarios || []
@@ -471,176 +430,243 @@ export default {
 </script>
 
 <style scoped>
-/* Overlay con mayor z-index para quedar por encima de otros modales */
+/* Overlay y contenedor principal */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1200;
-  padding: 20px;
+  padding: 10px;
 }
 
 .modal-content {
   background: white;
-  border-radius: 12px;
+  border-radius: 10px;
   width: 100%;
-  max-width: 1280px;
-  max-height: 92vh;
+  max-width: 1000px;
+  max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 32px;
+  padding: 12px 20px;
   border-bottom: 1px solid #e9ecef;
   background: linear-gradient(135deg, rgb(252, 215, 0) 0%, #e6c200 100%);
+  border-radius: 10px 10px 0 0;
 }
 
 .modal-title {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: #2c3e50;
   margin: 0;
 }
 
 .close-button {
-  background: rgba(255, 255, 255, 0.2);
+  top: 0.6rem;
+  right: 0.8rem;
+  background-color: #e74c3c;
   border: none;
-  font-size: 1.25rem;
-  color: #2c3e50;
+  font-size: 1rem;
   cursor: pointer;
-  padding: 8px;
-  width: 40px;
-  height: 40px;
+  color: white;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 50%;
   transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 .close-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
+  background-color: #c0392b;
+  transform: rotate(90deg);
 }
 
 .modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 28px;
+  padding: 15px 20px;
 }
 
-/* Compactar layout */
-.form-row {
+/* Formulario compacto con filas */
+.form-compact {
   display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.form-group {
-  flex: 1;
+/* Filas del formulario */
+.row-1, .row-2, .row-3 {
+  display: grid;
+  grid-template-columns: 1fr 2fr 2fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.row-2 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.row-3 {
+  grid-template-columns: 1.5fr 2fr;
+}
+
+.row-4, .row-5 {
+  display: flex;
+}
+
+.cliente-field {
+  position: relative;
+}
+
+.options-group {
   display: flex;
   flex-direction: column;
 }
 
-.form-group.flex-grow {
-  flex: 2;
+.full-width {
+  width: 100%;
 }
 
-.form-group.tipo-group {
-  flex: 0 0 300px;
+/* Grupos de formulario */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .form-group label {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #495057;
-  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin: 0;
 }
 
 .required {
   color: #dc3545;
 }
 
+/* Controles de formulario */
 .form-control {
-  padding: 10px 14px;
+  padding: 6px 8px;
   border: 1px solid #dee2e6;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
   background: white;
+  height: 32px;
+  box-sizing: border-box;
 }
 
 .form-control:focus {
   outline: none;
   border-color: rgb(252, 215, 0);
-  box-shadow: 0 0 0 3px rgba(252, 215, 0, 0.1);
+  box-shadow: 0 0 0 2px rgba(252, 215, 0, 0.1);
 }
 
-.tipo-selector {
-  display: flex;
-  gap: 8px;
+textarea.form-control {
+  resize: vertical;
+  height: auto;
+  min-height: 60px;
 }
 
-.tipo-select {
-  flex: 1;
-}
-
-.btn-add-tipo {
-  background: rgb(252, 215, 0);
-  color: #2c3e50;
-  border: none;
-  padding: 0 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.btn-add-tipo:hover {
-  background: #e6c200;
-  transform: translateY(-1px);
-}
-
-.cliente-selector {
+/* Input con botón */
+.input-with-button {
   position: relative;
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 
-.cliente-selector .form-control {
+.input-with-button .form-control {
   flex: 1;
 }
 
-.btn-search {
+.btn-icon {
   background: rgb(252, 215, 0);
-  border: none;
-  padding: 0 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
   color: #2c3e50;
+  border: none;
+  padding: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
-.btn-search:hover {
+.btn-icon:hover {
   background: #e6c200;
   transform: translateY(-1px);
 }
 
+/* Fechas compactas */
+.datetime-compact {
+  display: flex;
+  gap: 4px;
+}
+
+.date-input {
+  flex: 2;
+}
+
+.time-input {
+  flex: 1;
+  min-width: 70px;
+}
+
+/* Opciones */
+.options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.checkbox-compact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.checkbox-compact input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: rgb(252, 215, 0);
+}
+
+.checkbox-compact label {
+  margin: 0;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #495057;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Dropdown de clientes */
 .dropdown-clientes {
   position: absolute;
   top: 100%;
@@ -648,35 +674,34 @@ export default {
   right: 0;
   background: white;
   border: 1px solid #dee2e6;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  max-height: 300px;
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  max-height: 180px;
   overflow-y: auto;
   z-index: 10;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .dropdown-section {
-  padding: 8px 0;
+  padding: 4px 0;
 }
 
 .dropdown-header {
-  padding: 12px 16px;
-  font-size: 0.8rem;
+  padding: 4px 8px;
+  font-size: 0.6rem;
   font-weight: 700;
   color: #6c757d;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   background: #f8f9fa;
   border-bottom: 1px solid #e9ecef;
 }
 
-/* Dropdown de clientes más compacto */
 .dropdown-item {
-  padding: 10px 14px;
+  padding: 6px 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  font-size: 0.75rem;
   color: #495057;
   border-bottom: 1px solid #f8f9fa;
 }
@@ -690,89 +715,61 @@ export default {
   border-bottom: none;
 }
 
-.datetime-input {
-  display: flex;
-  gap: 12px;
-}
-
-.time-input {
-  max-width: 140px;
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.checkbox-group input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  accent-color: rgb(252, 215, 0);
-}
-
-.checkbox-group label {
-  margin: 0;
-  cursor: pointer;
-  font-size: 0.9rem;
-  color: #495057;
-  font-weight: 500;
-}
-
-.mt-2 {
-  margin-top: 16px;
-}
-
-.comentarios-container {
+/* Comentarios compactos */
+.comentarios-compact {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.comentarios-opciones {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.btn-adjuntar {
-  background: #f8f9fa;
-  border: 2px dashed #dee2e6;
-  padding: 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
-  color: #6c757d;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 8px;
 }
 
-.btn-adjuntar:hover {
+.comentario-input {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.comentario-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-attach {
+  background: #f8f9fa;
+  border: 1px dashed #dee2e6;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6c757d;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+}
+
+.btn-attach:hover {
   background: rgba(252, 215, 0, 0.1);
   border-color: rgb(252, 215, 0);
   color: #2c3e50;
 }
 
 .comentarios-lista {
-  max-height: 200px;
+  max-height: 120px;
   overflow-y: auto;
   border: 1px solid #dee2e6;
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 4px;
+  padding: 8px;
   background: #f8f9fa;
 }
 
 .comentario-item {
-  padding: 12px;
+  padding: 6px;
   background: white;
-  border-radius: 6px;
-  margin-bottom: 12px;
+  border-radius: 3px;
+  margin-bottom: 4px;
   border: 1px solid #e9ecef;
 }
 
@@ -783,9 +780,9 @@ export default {
 .comentario-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-  font-size: 0.85rem;
+  gap: 6px;
+  margin-bottom: 3px;
+  font-size: 0.65rem;
 }
 
 .comentario-autor {
@@ -797,47 +794,50 @@ export default {
   color: #6c757d;
 }
 
-.btn-fijar {
+.btn-star {
   margin-left: auto;
   background: none;
   border: none;
   color: rgb(252, 215, 0);
   cursor: pointer;
-  padding: 4px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+  padding: 2px;
+  font-size: 0.7rem;
+  transition: all 0.2s ease;
 }
 
-.btn-fijar:hover {
+.btn-star:hover {
   transform: scale(1.1);
 }
 
 .comentario-texto {
-  font-size: 0.9rem;
+  font-size: 0.7rem;
   color: #495057;
-  line-height: 1.5;
+  line-height: 1.3;
 }
 
+/* Footer */
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 16px;
-  padding: 24px 32px;
+  gap: 8px;
+  padding: 12px 20px;
   border-top: 1px solid #e9ecef;
   background: #f8f9fa;
+  border-radius: 0 0 10px 10px;
 }
 
 .btn {
-  padding: 12px 24px;
-  border-radius: 8px;
+  padding: 6px 16px;
+  border-radius: 4px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   border: none;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
+  height: 32px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .btn-secondary {
@@ -858,13 +858,47 @@ export default {
 .btn-primary:hover {
   background: #e6c200;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .modal-content { max-width: 96vw; max-height: 96vh; }
-  .modal-body { padding: 16px; }
-  .form-row { flex-direction: column; gap: 12px; }
+  .modal-content { 
+    max-width: 95vw; 
+  }
+  .row-1, .row-2, .row-3 {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .row-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cliente-field {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 5px;
+  }
+  .modal-content {
+    max-height: 95vh;
+  }
+  .modal-body {
+    padding: 12px 15px;
+  }
+  .row-1, .row-2, .row-3 {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .datetime-compact {
+    gap: 6px;
+  }
+  .comentario-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
 }
 </style>

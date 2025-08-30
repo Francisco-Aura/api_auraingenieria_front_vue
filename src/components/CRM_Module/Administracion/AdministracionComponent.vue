@@ -1111,7 +1111,7 @@ export default {
 .cell-content {
   display: block;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1546,4 +1546,5 @@ export default {
 .modal-body::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
+
 </style>

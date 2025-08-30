@@ -419,7 +419,7 @@ export default {
   font-size: 0.95rem;
   color: white;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

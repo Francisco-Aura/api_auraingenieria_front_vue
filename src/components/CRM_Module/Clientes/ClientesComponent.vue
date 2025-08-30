@@ -5,7 +5,7 @@
     <Spinner :isLoading="loading" />
 
     <!-- Panel superior con stats y botón de crear cliente -->
-    <div class="stats-panel">
+    <div class="stats-panel"> 
       <div class="stats-container">
         <div class="stat-card">
           <div class="stat-icon">
@@ -999,7 +999,7 @@ export default {
   background-color: var(--surface-color);
   border-radius: var(--border-radius);
   box-shadow: var(--card-shadow);
-  padding: 0.7rem 1rem;
+  padding: 0.5rem 0.8rem;
   display: flex;
   align-items: center;
   transition: all 0.3s ease;
@@ -1012,16 +1012,16 @@ export default {
 }
 
 .stat-icon {
-  width: 2.8rem;
-  height: 2.8rem;
-  border-radius: 0.7rem;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.6rem;
   background-color: var(--primary-light);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
-  margin-right: 0.8rem;
+  font-size: 1rem;
+  margin-right: 0.6rem;
 }
 
 .stat-content {
@@ -1029,16 +1029,16 @@ export default {
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
-  margin-top: 0.2rem;
+  margin-top: 0.15rem;
 }
 
 .action-card {
@@ -1048,8 +1048,8 @@ export default {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  padding: 0.7rem 1rem;
-  min-width: 180px;
+  padding: 0.5rem 0.8rem;
+  min-width: 150px;
 }
 
 .action-card .btn {
@@ -1057,7 +1057,7 @@ export default {
   height: 100%;
   background: transparent;
   color: black;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   border-radius: 6px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -1333,17 +1333,30 @@ export default {
 }
 
 .data-table td {
-  padding: 12px 15px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
-  height: 52px; /* Altura fija para las filas */
+  height: 42px; /* Altura fija para las filas */
 }
 
 .text-truncate {
   max-width: 0;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.text-truncate:hover {
+  overflow: visible;
+  white-space: normal;
+  word-wrap: break-word;
+  background: white;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  padding: 4px 8px;
+  max-width: none;
 }
 
 .table-responsive {
@@ -1354,9 +1367,9 @@ export default {
 
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
-  min-width: 120px; /* Ancho mínimo para los botones de acción */
+  min-width: 100px; /* Ancho mínimo para los botones de acción */
 }
 
 .column-header {
@@ -1384,10 +1397,10 @@ export default {
 
 .column-filter {
   width: 100%;
-  padding: 6px 12px;
+  padding: 4px 8px;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 0.9rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
   background-color: white;
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -1405,7 +1418,7 @@ export default {
 }
 
 .data-table th {
-  padding: 12px;
+  padding: 8px;
   vertical-align: top;
   background-color: var(--surface-color);
   border-bottom: 2px solid var(--border-color);
@@ -1435,9 +1448,9 @@ export default {
   background-color: var(--surface-color);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 0.9rem;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -1554,6 +1567,102 @@ export default {
   content: "";
   display: none;
 }
-</style>
 
- 
+/* Optimizaciones para pantallas de alta resolución */
+@media screen and (min-width: 1920px) {
+  .stat-card {
+    padding: 0.6rem 1rem;
+  }
+  
+  .stat-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.1rem;
+  }
+  
+  .stat-value {
+    font-size: 1.3rem;
+  }
+  
+  .stat-label {
+    font-size: 0.8rem;
+  }
+  
+  .action-card {
+    padding: 0.6rem 1rem;
+    min-width: 160px;
+  }
+  
+  .action-card .btn {
+    font-size: 1rem;
+  }
+  
+  .data-table td {
+    padding: 10px 12px;
+    height: 48px;
+  }
+  
+  .data-table th {
+    padding: 10px;
+  }
+  
+  .column-filter {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+  }
+  
+  .dropdown-button {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Optimizaciones para pantallas medianas */
+@media screen and (max-width: 1366px) {
+  .stat-card {
+    padding: 0.4rem 0.6rem;
+  }
+  
+  .stat-icon {
+    width: 1.8rem;
+    height: 1.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .stat-value {
+    font-size: 1rem;
+  }
+  
+  .stat-label {
+    font-size: 0.7rem;
+  }
+  
+  .action-card {
+    padding: 0.4rem 0.6rem;
+    min-width: 120px;
+  }
+  
+  .action-card .btn {
+    font-size: 0.8rem;
+  }
+  
+  .data-table td {
+    padding: 6px 8px;
+    height: 36px;
+  }
+  
+  .data-table th {
+    padding: 6px;
+  }
+  
+  .column-filter {
+    padding: 3px 6px;
+    font-size: 0.75rem;
+  }
+  
+  .dropdown-button {
+    padding: 3px 6px;
+    font-size: 0.75rem;
+  }
+}
+</style>

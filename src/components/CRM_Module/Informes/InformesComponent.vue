@@ -1167,8 +1167,21 @@ export default {
 .text-truncate {
   max-width: 0;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.text-truncate:hover {
+  overflow: visible;
+  white-space: normal;
+  word-wrap: break-word;
+  background: white;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  padding: 4px 8px;
+  max-width: none;
 }
 
 .sortable {
@@ -1215,7 +1228,7 @@ export default {
   cursor: default;
   transition: background-color 0.2s ease;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1223,7 +1236,7 @@ export default {
   width: 100%;
   max-width: 180px;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
   padding-right: 20px;
@@ -1316,7 +1329,7 @@ export default {
   max-width: 120px;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
 }
 
 /* Permitir wrap en los nombres de las columnas */
@@ -1336,7 +1349,7 @@ export default {
   cursor: default;
   transition: background-color 0.2s ease;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1344,7 +1357,7 @@ export default {
   width: 100%;
   max-width: 140px;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
   padding-right: 20px;

@@ -608,11 +608,11 @@ export default {
 
 .modal-content {
   background: white;
-  border-radius: var(--border-radius);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
   width: 100%;
-  max-width: 800px;
-  max-height: 90vh;
+  max-width: 700px;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -620,9 +620,9 @@ export default {
 
 /* Header del modal */
 .modal-header {
-  background: linear-gradient(135deg, #2196F3 0%, #1976D2 50%, #0D47A1 100%);
-  color: white;
-  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, rgb(252, 215, 0) 0%, #e6c200 100%);
+  color: #2c3e50;
+  padding: 0.8rem 1.2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -631,25 +631,25 @@ export default {
 
 .modal-title {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .close-button {
   background-color: rgba(255, 255, 255, 0.15);
   border: none;
-  color: white;
-  width: 32px;
-  height: 32px;
+  color: #2c3e50;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .close-button:hover {
@@ -660,20 +660,20 @@ export default {
 /* Body del modal */
 .modal-body {
   flex: 1;
-  padding: 1.5rem;
+  padding: 1.2rem;
   overflow-y: auto;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .form-group.full-width {
@@ -683,7 +683,7 @@ export default {
 .form-group label {
   font-weight: 600;
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .required {
@@ -696,31 +696,31 @@ export default {
 
 .icon-prefix {
   position: absolute;
-  left: 0.8rem;
+  left: 0.6rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .input-with-icon .form-control {
-  padding-left: 2.5rem;
+  padding-left: 2rem;
 }
 
 .form-control {
   width: 100%;
-  padding: 0.6rem 0.8rem;
+  padding: 0.5rem 0.6rem;
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
   background-color: white;
 }
 
 .form-control:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+  border-color: rgb(252, 215, 0);
+  box-shadow: 0 0 0 2px rgba(252, 215, 0, 0.1);
 }
 
 .form-control:disabled {
@@ -730,17 +730,17 @@ export default {
 
 textarea.form-control {
   resize: vertical;
-  min-height: 80px;
+  min-height: 60px;
 }
 
 .input-counter {
   text-align: right;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
 }
 
 .form-hint {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
   font-style: italic;
 }
@@ -748,35 +748,36 @@ textarea.form-control {
 /* Dropzone para archivos */
 .dropzone {
   border: 2px dashed #dee2e6;
-  border-radius: 8px;
-  padding: 40px;
+  border-radius: 6px;
+  padding: 24px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   background: #f8f9fa;
 }
 
 .dropzone:hover,
 .dropzone.dragover {
-  border-color: var(--primary-color);
-  background: rgba(33, 150, 243, 0.05);
+  border-color: rgb(252, 215, 0);
+  background: rgba(252, 215, 0, 0.05);
 }
 
 .dropzone i {
-  font-size: 2rem;
-  color: var(--primary-color);
-  margin-bottom: 12px;
+  font-size: 1.5rem;
+  color: rgb(252, 215, 0);
+  margin-bottom: 8px;
 }
 
 .dropzone p {
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
   font-weight: 600;
   color: var(--text-primary);
+  font-size: 0.85rem;
 }
 
 .dropzone small {
   color: var(--text-secondary);
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 
 .file-input-hidden {
@@ -784,21 +785,21 @@ textarea.form-control {
 }
 
 .archivos-lista {
-  margin-top: 16px;
+  margin-top: 12px;
   border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 6px;
+  padding: 8px;
   background: #f8f9fa;
 }
 
 .archivo-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
+  gap: 8px;
+  padding: 6px 8px;
   background: white;
-  border-radius: 6px;
-  margin-bottom: 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
   border: 1px solid #e9ecef;
 }
 
@@ -807,18 +808,19 @@ textarea.form-control {
 }
 
 .archivo-item i {
-  color: var(--primary-color);
-  font-size: 1.2rem;
+  color: rgb(252, 215, 0);
+  font-size: 1rem;
 }
 
 .archivo-nombre {
   flex: 1;
   font-weight: 500;
   color: var(--text-primary);
+  font-size: 0.8rem;
 }
 
 .archivo-size {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
 }
 
@@ -826,14 +828,15 @@ textarea.form-control {
   background: #dc3545;
   border: none;
   color: white;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 0.7rem;
 }
 
 .btn-remove-file:hover {
@@ -849,20 +852,20 @@ textarea.form-control {
   right: 0;
   background: white;
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
   z-index: 100;
-  max-height: 200px;
+  max-height: 180px;
   overflow-y: auto;
 }
 
 .dropdown-item {
-  padding: 0.8rem;
+  padding: 0.6rem;
   cursor: pointer;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.1rem;
 }
 
 .dropdown-item:hover {
@@ -875,31 +878,31 @@ textarea.form-control {
 
 .dropdown-item strong {
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .dropdown-item small {
   color: var(--text-secondary);
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 
 /* Cliente seleccionado */
 .cliente-seleccionado {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
 }
 
 .cliente-seleccionado .badge {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.6rem;
-  background-color: var(--primary-color);
-  color: black;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  gap: 0.2rem;
+  padding: 0.2rem 0.4rem;
+  background-color: rgb(252, 215, 0);
+  color: #2c3e50;
+  border-radius: 8px;
+  font-size: 0.7rem;
   font-weight: 500;
 }
 
@@ -908,7 +911,7 @@ textarea.form-control {
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 0.2rem;
+  padding: 0.1rem;
   border-radius: 50%;
   transition: all 0.2s ease;
 }
@@ -920,25 +923,25 @@ textarea.form-control {
 
 /* Footer del modal */
 .modal-footer {
-  padding: 1rem 1.5rem;
+  padding: 0.8rem 1.2rem;
   border-top: 1px solid var(--border-color);
   background-color: #f8f9fa;
   display: flex;
   justify-content: flex-end;
-  gap: 0.8rem;
+  gap: 0.6rem;
 }
 
 .btn {
-  padding: 0.6rem 1.2rem;
-  border-radius: var(--border-radius);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   border: none;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+  gap: 0.4rem;
+  font-size: 0.8rem;
 }
 
 .btn:disabled {
@@ -947,12 +950,12 @@ textarea.form-control {
 }
 
 .btn-primary {
-  background-color: var(--primary-color);
-  color: black;
+  background-color: rgb(252, 215, 0);
+  color: #2c3e50;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: rgb(222, 189, 0);
+  background-color: #e6c200;
   transform: translateY(-1px);
 }
 

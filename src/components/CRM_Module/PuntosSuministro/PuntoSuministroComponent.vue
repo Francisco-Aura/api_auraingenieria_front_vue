@@ -1522,15 +1522,28 @@ export default {
 .text-truncate {
   max-width: 0;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.text-truncate:hover {
+  overflow: visible;
+  white-space: normal;
+  word-wrap: break-word;
+  background: white;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  padding: 4px 8px;
+  max-width: none;
 }
 
 /* Mostrar CUPS completo, sin cortar ni puntos suspensivos */
 .data-table td.cups-cell {
   white-space: nowrap !important; /* Cambia a nowrap para evitar saltos de línea */
   overflow: hidden !important; 
-  text-overflow: clip !important; /* Muestra puntos suspensivos si no cabe */
+  text-overflow: ellipsis !important; /* Muestra puntos suspensivos si no cabe */
   max-width: 600px; 
 }
 

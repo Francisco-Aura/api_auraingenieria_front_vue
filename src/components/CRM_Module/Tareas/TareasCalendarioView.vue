@@ -283,9 +283,9 @@ export default {
 <style scoped>
 .calendario-container {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   border: 1px solid #e9ecef;
   position: relative;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -295,22 +295,22 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid #e9ecef;
 }
 
 .btn-nav {
   background: white;
   border: 1px solid #dee2e6;
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   color: #495057;
-  font-size: 1rem;
-  min-width: 40px;
-  height: 40px;
+  font-size: 0.9rem;
+  min-width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -323,24 +323,24 @@ export default {
 }
 
 .mes-actual {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #2c3e50;
 }
 
 .vista-selector {
   display: flex;
-  gap: 4px;
+  gap: 3px;
 }
 
 .btn-vista {
   background: white;
   border: 1px solid #dee2e6;
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
   color: #495057;
   font-weight: 500;
 }
@@ -362,19 +362,19 @@ export default {
   gap: 1px;
   background: #e9ecef;
   padding: 1px;
-  border-radius: 8px 8px 0 0;
+  border-radius: 6px 6px 0 0;
   margin-bottom: 1px;
 }
 
 .dia-semana {
   background: #f8f9fa;
-  padding: 12px 8px;
+  padding: 8px 6px;
   text-align: center;
   font-weight: 600;
   color: #495057;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 }
 
 .calendario-grid {
@@ -383,15 +383,15 @@ export default {
   gap: 1px;
   background: #e9ecef;
   padding: 1px;
-  border-radius: 0 0 8px 8px;
+  border-radius: 0 0 6px 6px;
 }
 
 .dia-celda {
   background: white;
-  min-height: 100px;
-  padding: 8px;
+  min-height: 80px;
+  padding: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   position: relative;
   border: none;
 }
@@ -412,13 +412,13 @@ export default {
 .dia-hoy .dia-numero {
   background: rgb(252, 215, 0);
   color: #2c3e50;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
@@ -429,40 +429,40 @@ export default {
 .dia-numero {
   font-weight: 600;
   color: #495057;
-  margin-bottom: 8px;
-  font-size: 0.95rem;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
 }
 
 .tareas-dia {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .tarea-item {
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: 3px 6px;
+  border-radius: 4px;
   color: #2c3e50;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   font-weight: 500;
 }
 
 .tarea-item:hover {
   transform: scale(1.02);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .tarea-hora {
   font-weight: 700;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
 }
 
 .tarea-titulo {
@@ -472,14 +472,14 @@ export default {
 }
 
 .tarea-tipo {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
 }
 
 .mas-tareas {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: #6c757d;
   font-style: italic;
-  padding-left: 8px;
+  padding-left: 6px;
   font-weight: 500;
 }
 
@@ -489,9 +489,9 @@ export default {
   right: 0;
   top: 0;
   bottom: 0;
-  width: 400px;
+  width: 320px;
   background: white;
-  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
+  box-shadow: -3px 0 12px rgba(0, 0, 0, 0.08);
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -502,14 +502,14 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px;
+  padding: 16px;
   border-bottom: 2px solid #e9ecef;
   background: linear-gradient(135deg, rgb(252, 215, 0) 0%, #e6c200 100%);
 }
 
 .panel-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1rem;
   color: #2c3e50;
   text-transform: capitalize;
   font-weight: 700;
@@ -518,17 +518,17 @@ export default {
 .btn-cerrar {
   background: rgba(255, 255, 255, 0.2);
   border: none;
-  font-size: 1.25rem;
+  font-size: 1rem;
   color: #2c3e50;
   cursor: pointer;
-  padding: 8px;
-  width: 36px;
-  height: 36px;
+  padding: 6px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .btn-cerrar:hover {
@@ -539,7 +539,7 @@ export default {
 .panel-content {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 16px;
 }
 
 .btn-nueva-tarea {
@@ -547,55 +547,55 @@ export default {
   background: rgb(252, 215, 0);
   border: none;
   color: #2c3e50;
-  padding: 12px;
-  border-radius: 8px;
+  padding: 10px;
+  border-radius: 6px;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 20px;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
 }
 
 .btn-nueva-tarea:hover {
   background: #e6c200;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .tareas-lista h4 {
-  margin: 0 0 20px 0;
+  margin: 0 0 16px 0;
   color: #495057;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 
 .sin-tareas {
   text-align: center;
-  padding: 40px;
+  padding: 32px;
   color: #6c757d;
   font-style: italic;
   background: #f8f9fa;
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px dashed #dee2e6;
 }
 
 .tarea-detalle {
   background: #f8f9fa;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   border: 1px solid #e9ecef;
 }
 
 .tarea-detalle:hover {
   background: rgba(252, 215, 0, 0.1);
-  transform: translateX(-4px);
+  transform: translateX(-3px);
   border-color: rgb(252, 215, 0);
 }
 
@@ -603,20 +603,20 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .tarea-tipo-badge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
+  padding: 3px 8px;
+  border-radius: 12px;
   color: #2c3e50;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 600;
 }
 
 .tarea-prioridad {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -625,8 +625,8 @@ export default {
 .prioridad-3 { color: #28a745; }
 
 .tarea-detalle .tarea-titulo {
-  margin: 0 0 12px 0;
-  font-size: 1.125rem;
+  margin: 0 0 8px 0;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #2c3e50;
 }
@@ -634,16 +634,16 @@ export default {
 .tarea-info {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 12px;
-  font-size: 0.875rem;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
   color: #6c757d;
 }
 
 .tarea-info span {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .tarea-info i {
@@ -651,25 +651,25 @@ export default {
 }
 
 .tarea-descripcion {
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
   color: #495057;
-  font-size: 0.875rem;
-  line-height: 1.5;
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 .tarea-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 12px;
+  padding-top: 8px;
   border-top: 1px solid #dee2e6;
 }
 
 .asignado-a {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.875rem;
+  gap: 6px;
+  font-size: 0.75rem;
   color: #6c757d;
 }
 
@@ -680,7 +680,7 @@ export default {
 /* Transiciones */
 .slide-enter-active,
 .slide-leave-active {
-  transition: transform 0.3s ease;
+  transition: transform 0.2s ease;
 }
 
 .slide-enter-from,
@@ -696,7 +696,7 @@ export default {
 
   .calendario-header {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
 
   .vista-selector {
@@ -705,15 +705,15 @@ export default {
   }
 
   .dia-celda {
-    min-height: 80px;
+    min-height: 60px;
   }
 
   .tarea-item {
-    font-size: 0.625rem;
+    font-size: 0.55rem;
   }
 
   .calendario-container {
-    padding: 16px;
+    padding: 12px;
   }
 }
 </style>
