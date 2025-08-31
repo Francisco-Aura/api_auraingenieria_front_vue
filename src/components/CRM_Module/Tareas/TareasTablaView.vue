@@ -326,7 +326,7 @@ export default {
 .tabla-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: black;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -455,7 +455,7 @@ export default {
 
 .tarea-titulo {
   font-weight: 600;
-  color: #2c3e50;
+  color: black;
   margin-bottom: 3px;
   font-size: 0.8rem;
 }

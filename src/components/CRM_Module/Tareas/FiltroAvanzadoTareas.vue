@@ -184,7 +184,7 @@ export default {
   gap: 8px;
   cursor: pointer;
   font-weight: 600;
-  color: #2c3e50;
+  color: black;
   transition: all 0.2s ease;
   font-size: 0.85rem;
 }
@@ -223,7 +223,7 @@ export default {
 
 .filtro-section > label {
   font-weight: 600;
-  color: #2c3e50;
+  color: black;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -276,7 +276,7 @@ export default {
   top: -1px;
   width: 2px;
   height: 6px;
-  border: solid #2c3e50;
+  border: solid black;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
@@ -351,12 +351,12 @@ export default {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, rgb(252, 215, 0) 0%, #e6c200 100%);
-  color: #2c3e50;
+  background: rgb(252, 215, 0);
+  color: black;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #e6c200 0%, #d4b800 100%);
+  background: var(--primary-color);
   transform: translateY(-1px);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }

@@ -620,8 +620,8 @@ export default {
 
 /* Header del modal */
 .modal-header {
-  background: linear-gradient(135deg, rgb(252, 215, 0) 0%, #e6c200 100%);
-  color: #2c3e50;
+  background: rgb(252, 215, 0);
+  color: black;
   padding: 0.8rem 1.2rem;
   display: flex;
   align-items: center;
@@ -639,22 +639,27 @@ export default {
 }
 
 .close-button {
-  background-color: rgba(255, 255, 255, 0.15);
+  top: 0.6rem;
+  right: 0.8rem;
+  background-color: #e74c3c;
   border: none;
-  color: #2c3e50;
+  font-size: 1rem;
+  cursor: pointer;
+  color: white;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 .close-button:hover {
-  background-color: rgba(255, 255, 255, 0.25);
-  transform: scale(1.05);
+  background-color: #c0392b;
+  transform: rotate(90deg);
 }
 
 /* Body del modal */
@@ -900,7 +905,7 @@ textarea.form-control {
   gap: 0.2rem;
   padding: 0.2rem 0.4rem;
   background-color: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
   border-radius: 8px;
   font-size: 0.7rem;
   font-weight: 500;
@@ -951,7 +956,7 @@ textarea.form-control {
 
 .btn-primary {
   background-color: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
 }
 
 .btn-primary:hover:not(:disabled) {

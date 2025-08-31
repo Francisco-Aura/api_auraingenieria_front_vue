@@ -14,17 +14,17 @@
         <i class="fas fa-chevron-right"></i>
       </button>
 
-      <div class="vista-selector">
-        <button class="btn-vista" :class="{ active: vista === 'mes' }" @click="vista = 'mes'">
-          Mes
-        </button>
-        <button class="btn-vista" :class="{ active: vista === 'semana' }" @click="vista = 'semana'">
-          Semana
-        </button>
-        <button class="btn-vista" :class="{ active: vista === 'hoy' }" @click="irAHoy">
-          Hoy
-        </button>
-      </div>
+              <div class="vista-selector">
+          <button class="btn-vista" :class="{ active: vista === 'mes' }" @click="cambiarVista('mes')">
+            Mes
+          </button>
+          <button class="btn-vista" :class="{ active: vista === 'semana' }" @click="cambiarVista('semana')">
+            Semana
+          </button>
+          <button class="btn-vista" :class="{ active: vista === 'hoy' }" @click="cambiarVista('hoy')">
+            Hoy
+          </button>
+        </div>
     </div>
 
     <!-- Días de la semana -->
@@ -35,15 +35,16 @@
     </div>
 
     <!-- Grid del calendario -->
-    <div class="calendario-grid">
+    <div class="calendario-grid" :class="`vista-${vista}`">
       <div 
-        v-for="(dia, index) in diasDelMes" 
+        v-for="(dia, index) in diasVista" 
         :key="index"
         class="dia-celda"
         :class="{
           'dia-otro-mes': !dia.esMesActual,
           'dia-hoy': esHoy(dia.fecha),
-          'dia-fin-semana': esFindeSemana(dia.fecha)
+          'dia-fin-semana': esFindeSemana(dia.fecha),
+          'dia-seleccionado': diaSeleccionado && esMismoDia(dia.fecha, diaSeleccionado.fecha)
         }"
         @click="seleccionarDia(dia)">
         
@@ -72,7 +73,7 @@
       <div v-if="diaSeleccionado" class="panel-dia">
         <div class="panel-header">
           <h3>{{ formatFechaCompleta(diaSeleccionado.fecha) }}</h3>
-          <button class="btn-cerrar" @click="diaSeleccionado = null">
+          <button class="close-button" @click="diaSeleccionado = null">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -208,9 +209,40 @@ export default {
       }
       
       return dias
+    },
+    diasVista() {
+      if (this.vista === 'mes') {
+        return this.diasDelMes
+      } else if (this.vista === 'semana') {
+        const dias = []
+        const primerDiaSemana = new Date(this.año, this.mes, this.fechaActual.getDate() - this.fechaActual.getDay() + 1)
+        for (let i = 0; i < 7; i++) {
+          const fecha = new Date(primerDiaSemana.getTime() + i * 24 * 60 * 60 * 1000)
+          dias.push({
+            numero: fecha.getDate(),
+            fecha: fecha,
+            esMesActual: true
+          })
+        }
+        return dias
+      } else if (this.vista === 'hoy') {
+        const hoy = new Date()
+        return [
+          { numero: hoy.getDate(), fecha: hoy, esMesActual: true }
+        ]
+      }
+      return []
     }
   },
   methods: {
+    cambiarVista(nuevaVista) {
+      this.vista = nuevaVista
+      this.diaSeleccionado = null
+      
+      if (nuevaVista === 'hoy') {
+        this.fechaActual = new Date()
+      }
+    },
     mesAnterior() {
       this.fechaActual = new Date(this.año, this.mes - 1, 1)
     },
@@ -231,6 +263,11 @@ export default {
       const dia = fecha.getDay()
       return dia === 0 || dia === 6
     },
+    esMismoDia(fecha1, fecha2) {
+      return fecha1.getDate() === fecha2.getDate() &&
+             fecha1.getMonth() === fecha2.getMonth() &&
+             fecha1.getFullYear() === fecha2.getFullYear()
+    },
     obtenerTareasDia(fecha) {
       return this.tareas.filter(tarea => {
         if (!tarea.fechaVencimiento) return false
@@ -238,7 +275,7 @@ export default {
         return fechaTarea.getDate() === fecha.getDate() &&
                fechaTarea.getMonth() === fecha.getMonth() &&
                fechaTarea.getFullYear() === fecha.getFullYear()
-      }).slice(0, 3) // Mostrar máximo 3 tareas por día en la vista
+      }).slice(0, this.vista === 'hoy' ? 10 : 3) // Mostrar más tareas en vista de hoy
     },
     seleccionarDia(dia) {
       this.diaSeleccionado = dia
@@ -319,13 +356,13 @@ export default {
 .btn-nav:hover {
   background: rgba(252, 215, 0, 0.1);
   border-color: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
 }
 
 .mes-actual {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: black;
 }
 
 .vista-selector {
@@ -352,7 +389,7 @@ export default {
 
 .btn-vista.active {
   background: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
   border-color: rgb(252, 215, 0);
 }
 
@@ -377,13 +414,30 @@ export default {
   letter-spacing: 0.4px;
 }
 
+/* Grid del calendario */
 .calendario-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
   gap: 1px;
   background: #e9ecef;
   padding: 1px;
   border-radius: 0 0 6px 6px;
+}
+
+/* Vista mensual */
+.calendario-grid.vista-mes {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+/* Vista semanal */
+.calendario-grid.vista-semana {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+/* Vista de hoy */
+.calendario-grid.vista-hoy {
+  grid-template-columns: 1fr;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 .dia-celda {
@@ -411,7 +465,7 @@ export default {
 
 .dia-hoy .dia-numero {
   background: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -422,8 +476,48 @@ export default {
   font-weight: 700;
 }
 
+.dia-seleccionado {
+  background: rgba(252, 215, 0, 0.15) !important;
+  border: 2px solid rgb(252, 215, 0) !important;
+}
+
 .dia-fin-semana {
   background: #f8f9fa;
+}
+
+/* Vista de hoy - estilo especial */
+.vista-hoy .dia-celda {
+  min-height: 120px;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.vista-hoy .dia-numero {
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+
+.vista-hoy .tareas-dia {
+  gap: 6px;
+}
+
+.vista-hoy .tarea-item {
+  padding: 6px 8px;
+  font-size: 0.75rem;
+}
+
+/* Vista semanal - ajustes */
+.vista-semana .dia-celda {
+  min-height: 100px;
+}
+
+.vista-semana .dia-numero {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: black;
+  margin-bottom: 8px;
+  text-align: center;
 }
 
 .dia-numero {
@@ -442,7 +536,7 @@ export default {
 .tarea-item {
   padding: 3px 6px;
   border-radius: 4px;
-  color: #2c3e50;
+  color: black;
   font-size: 0.65rem;
   display: flex;
   align-items: center;
@@ -504,36 +598,39 @@ export default {
   align-items: center;
   padding: 16px;
   border-bottom: 2px solid #e9ecef;
-  background: linear-gradient(135deg, rgb(252, 215, 0) 0%, #e6c200 100%);
+  background:  rgb(252, 215, 0);
 }
 
 .panel-header h3 {
   margin: 0;
   font-size: 1rem;
-  color: #2c3e50;
+  color: black;
   text-transform: capitalize;
   font-weight: 700;
 }
 
-.btn-cerrar {
-  background: rgba(255, 255, 255, 0.2);
+.close-button {
+  top: 0.6rem;
+  right: 0.8rem;
+  background-color: #e74c3c;
   border: none;
   font-size: 1rem;
-  color: #2c3e50;
   cursor: pointer;
-  padding: 6px;
+  color: white;
   width: 28px;
   height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-.btn-cerrar:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
+.close-button:hover {
+  background-color: #c0392b;
+  transform: rotate(90deg);
 }
 
 .panel-content {
@@ -546,7 +643,7 @@ export default {
   width: 100%;
   background: rgb(252, 215, 0);
   border: none;
-  color: #2c3e50;
+  color: black;
   padding: 10px;
   border-radius: 6px;
   font-weight: 600;
@@ -610,7 +707,7 @@ export default {
   display: inline-block;
   padding: 3px 8px;
   border-radius: 12px;
-  color: #2c3e50;
+  color: black;
   font-size: 0.65rem;
   font-weight: 600;
 }
@@ -628,7 +725,7 @@ export default {
   margin: 0 0 8px 0;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: black;
 }
 
 .tarea-info {
@@ -708,8 +805,22 @@ export default {
     min-height: 60px;
   }
 
+  .vista-hoy .dia-celda {
+    min-height: 100px;
+    padding: 8px;
+  }
+
   .tarea-item {
     font-size: 0.55rem;
+    padding: 2px 4px;
+  }
+
+  .tarea-hora {
+    font-size: 0.55rem;
+  }
+
+  .tarea-titulo {
+    font-size: 0.6rem;
   }
 
   .calendario-container {

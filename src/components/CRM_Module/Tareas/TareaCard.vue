@@ -387,7 +387,7 @@ export default {
 
 .badge-primary {
   background-color: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
 }
 
 .badge-success {
@@ -455,7 +455,7 @@ export default {
 
 .btn-outline:hover:not(:disabled) {
   background-color: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
 }
 
 .btn-disabled {

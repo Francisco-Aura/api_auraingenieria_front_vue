@@ -8,7 +8,7 @@
             <h2>{{ cliente.nombre }}</h2>
             <span class="cliente-nif">NIF: {{ cliente.cif }}</span>
           </div>
-          <button class="btn-cerrar" @click="cerrar">
+          <button class="close-button" @click="cerrar">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -479,22 +479,28 @@ export default {
   opacity: 0.9;
 }
 
-.btn-cerrar {
-  background: rgba(255, 255, 255, 0.2);
+.close-button {
+  top: 0.6rem;
+  right: 0.8rem;
+  background-color: #e74c3c;
   border: none;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
+  font-size: 1rem;
   cursor: pointer;
+  color: white;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-.btn-cerrar:hover {
-  background: rgba(255, 255, 255, 0.3);
+.close-button:hover {
+  background-color: #c0392b;
+  transform: rotate(90deg);
 }
 
 .drawer-tabs {
@@ -547,7 +553,7 @@ export default {
 .actividad-header h3 {
   margin: 0;
   font-size: 1.125rem;
-  color: #2c3e50;
+  color: black;
 }
 
 .btn-filtro {
@@ -632,7 +638,7 @@ export default {
   margin: 0 0 4px 0;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: black;
 }
 
 .actividad-descripcion {
@@ -677,7 +683,7 @@ export default {
 .notas-header h3 {
   margin: 0;
   font-size: 1.125rem;
-  color: #2c3e50;
+  color: black;
 }
 
 .btn-nueva-nota {
@@ -757,7 +763,7 @@ export default {
 .tareas-header h3 {
   margin: 0 0 12px 0;
   font-size: 1.125rem;
-  color: #2c3e50;
+  color: black;
 }
 
 .tareas-filtros {
@@ -855,7 +861,7 @@ export default {
   margin: 0 0 4px 0;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: black;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -910,7 +916,7 @@ export default {
 .incidencias-header h3 {
   margin: 0;
   font-size: 1.125rem;
-  color: #2c3e50;
+  color: black;
 }
 
 .btn-nueva-incidencia {
@@ -960,7 +966,7 @@ export default {
   margin: 0 0 4px 0;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: black;
 }
 
 .incidencia-descripcion {

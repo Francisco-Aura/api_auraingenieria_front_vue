@@ -463,14 +463,14 @@ export default {
   align-items: center;
   padding: 12px 20px;
   border-bottom: 1px solid #e9ecef;
-  background: linear-gradient(135deg, rgb(252, 215, 0) 0%, #e6c200 100%);
+  background: rgb(252, 215, 0);
   border-radius: 10px 10px 0 0;
 }
 
 .modal-title {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: black;
   margin: 0;
 }
 
@@ -601,7 +601,7 @@ textarea.form-control {
 
 .btn-icon {
   background: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
   border: none;
   padding: 0;
   border-radius: 4px;
@@ -708,7 +708,7 @@ textarea.form-control {
 
 .dropdown-item:hover {
   background: rgba(252, 215, 0, 0.1);
-  color: #2c3e50;
+  color: black;
 }
 
 .dropdown-item:last-child {
@@ -753,7 +753,7 @@ textarea.form-control {
 .btn-attach:hover {
   background: rgba(252, 215, 0, 0.1);
   border-color: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
 }
 
 .comentarios-lista {
@@ -852,7 +852,7 @@ textarea.form-control {
 
 .btn-primary {
   background: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
 }
 
 .btn-primary:hover {

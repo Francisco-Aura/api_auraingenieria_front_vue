@@ -132,9 +132,6 @@
             <button class="btn-view" :class="{ active: vista === 'calendario' }" @click="vista = 'calendario'">
               <i class="fas fa-calendar-alt"></i>
             </button>
-            <button class="btn-view" :class="{ active: vista === 'kanban' }" @click="vista = 'kanban'">
-              <i class="fas fa-columns"></i>
-            </button>
           </div>
           
           <button class="btn btn-refresh" @click="cargarTareas" title="Actualizar datos">
@@ -167,9 +164,6 @@
             <table class="tabla-tareas">
               <thead>
                 <tr>
-                  <th class="th-checkbox">
-                    <input type="checkbox" v-model="todasSeleccionadasComputed" />
-                  </th>
                   <th>Título</th>
                   <th>Tipo</th>
                   <th>Cliente</th>
@@ -185,9 +179,6 @@
                 <tr v-for="tarea in tareasPaginadas" :key="tarea.id" 
                     :class="{ 'tarea-vencida': tarea.vencida, 'tarea-completada': tarea.estadoFinal }"
                     @click="handleVerDetalle(tarea)">
-                  <td class="td-checkbox" @click.stop>
-                    <input type="checkbox" v-model="tareasSeleccionadas" :value="tarea.id" />
-                  </td>
                   <td class="td-titulo">
                     <div class="tarea-titulo">{{ tarea.titulo }}</div>
                     <div class="tarea-descripcion" v-if="tarea.descripcion">
@@ -211,9 +202,20 @@
                     </span>
                   </td>
                   <td>
-                    <span class="estado-badge" :style="{ backgroundColor: tarea.estadoColor }">
-                      {{ formatearEstadoNombre(tarea.estadoNombre) }}
-                    </span>
+                    <div class="estado-container">
+                      <span class="estado-badge" :style="{ backgroundColor: tarea.estadoColor }">
+                        {{ formatearEstadoNombre(tarea.estadoNombre) }}
+                      </span>
+                      <!-- Botón intuitivo para completar -->
+                      <button 
+                        v-if="!tarea.estadoFinal" 
+                        class="btn-completar" 
+                        @click.stop="confirmarCompletar(tarea)"
+                        title="Marcar como completada"
+                      >
+                        <i class="fas fa-check-circle"></i>
+                      </button>
+                    </div>
                   </td>
                   <td>
                     <span class="prioridad-badge" :class="`prioridad-${tarea.prioridad}`">
@@ -289,6 +291,32 @@
       @cerrar="mostrarModalDetalle = false"
     />
 
+    <!-- Modal de confirmación para completar tarea -->
+    <div v-if="mostrarModalCompletar" class="modal-overlay" @click="cancelarCompletar">
+      <div class="modal-confirmar" @click.stop>
+        <div class="modal-header-confirmar">
+          <i class="fas fa-check-circle icon-completar"></i>
+          <h3>Completar Tarea</h3>
+        </div>
+        <div class="modal-body-confirmar">
+          <p>¿Estás seguro de que deseas marcar como completada la tarea:</p>
+          <div class="tarea-preview">
+            <strong>{{ tareaACompletar?.titulo }}</strong>
+          </div>
+          <p class="nota-estado">Se cambiará el estado a "Completada" automáticamente.</p>
+        </div>
+        <div class="modal-footer-confirmar">
+          <button class="btn btn-secondary" @click="cancelarCompletar">
+            Cancelar
+          </button>
+          <button class="btn btn-success" @click="confirmarCompletarTarea">
+            <i class="fas fa-check"></i>
+            Sí, completar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Notificaciones -->
     <div v-if="snackbar.show" class="snackbar" :class="snackbar.color">
       <div class="snackbar-content">
@@ -332,8 +360,10 @@ export default {
       // Modales
       mostrarModalCrearTarea: false,
       mostrarModalDetalle: false,
+      mostrarModalCompletar: false,
       tareaEnEdicion: null,
       tareaDetalle: null,
+      tareaACompletar: null,
       
       // Filtros
       filtroTipo: '',
@@ -562,6 +592,43 @@ export default {
       this.aplicarFiltros()
     },
     
+    // Nuevo método para confirmar completar tarea
+    confirmarCompletar(tarea) {
+      this.tareaACompletar = tarea
+      this.mostrarModalCompletar = true
+    },
+    
+    // Nuevo método para completar la tarea
+    async confirmarCompletarTarea() {
+      try {
+        const estadoCompletado = this.estados.find(e => e.estadoFinal === true)
+        if (!estadoCompletado) {
+          this.mostrarMensaje('No se encontró un estado de finalización', 'error')
+          return
+        }
+        
+        await tareasApi.cambiarEstadoTarea(this.tareaACompletar.id, estadoCompletado.id)
+        this.mostrarMensaje('Tarea marcada como completada', 'success')
+        
+        await this.cargarTareas()
+        
+        // Actualizar estadísticas
+        if (this.$refs.estadisticas) {
+          await this.$refs.estadisticas.cargarEstadisticas()
+        }
+        
+        this.cancelarCompletar()
+      } catch (error) {
+        console.error('Error completando tarea:', error)
+        this.mostrarMensaje('Error al completar la tarea', 'error')
+      }
+    },
+    
+    cancelarCompletar() {
+      this.mostrarModalCompletar = false
+      this.tareaACompletar = null
+    },
+    
     async handleGuardarTarea(tarea) {
       try {
         // Si viene con ID hacemos update; si no, creamos
@@ -618,7 +685,7 @@ export default {
         this.mostrarMensaje('Estado actualizado correctamente', 'success')
         await this.cargarTareas()
         
-        // Actualizar estadísticas
+        // Actualizar estadísticas cuando se cambia cualquier estado
         if (this.$refs.estadisticas) {
           await this.$refs.estadisticas.cargarEstadisticas()
         }
@@ -636,6 +703,11 @@ export default {
           await tareasApi.eliminarTarea(tareaId)
           this.mostrarMensaje('Tarea eliminada correctamente', 'success')
           await this.cargarTareas()
+          
+          // Actualizar estadísticas
+          if (this.$refs.estadisticas) {
+            await this.$refs.estadisticas.cargarEstadisticas()
+          }
         } catch (error) {
           console.error('Error eliminando tarea:', error)
           this.mostrarMensaje('Error al eliminar la tarea', 'error')
@@ -646,19 +718,6 @@ export default {
     async handleVerDetalle(tarea) {
       this.tareaDetalle = tarea
       this.mostrarModalDetalle = true
-    },
-    
-    async toggleCompletada(tarea) {
-      try {
-        const estadoCompletado = this.estados.find(e => e.estadoFinal)
-        if (estadoCompletado) {
-          await tareasApi.cambiarEstadoTarea(tarea.id, estadoCompletado.id)
-          await this.cargarTareas()
-        }
-      } catch (error) {
-        console.error('Error cambiando estado:', error)
-        this.mostrarMensaje('Error al cambiar el estado', 'error')
-      }
     },
     
     cerrarModal() {
@@ -684,9 +743,9 @@ export default {
 
     getPrioridadTexto(prioridad) {
       switch (prioridad) {
-        case 1: return 'Baja'
+        case 1: return 'Alta'
         case 2: return 'Media'
-        case 3: return 'Alta'
+        case 3: return 'Baja'
         default: return 'Normal'
       }
     },
@@ -778,7 +837,7 @@ export default {
 .tareas-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: black;
   margin: 0;
   display: flex;
   align-items: center;
@@ -792,7 +851,7 @@ export default {
 
 .btn-crear {
   background: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
@@ -881,7 +940,7 @@ export default {
 
 .btn-search {
   background: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
   border: none;
   padding: 6px 8px;
   border-radius: 4px;
@@ -898,26 +957,6 @@ export default {
 .btn-search:hover {
   background: #e6c200;
   transform: translateY(-1px);
-}
-
-.btn-link {
-  background: none;
-  border: none;
-  color: #007bff;
-  cursor: pointer;
-  font-size: 0.8rem;
-  text-decoration: underline;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.btn-link:hover {
-  color: #0056b3;
-}
-
-.rotated {
-  transform: rotate(180deg);
 }
 
 /* Panel de tareas */
@@ -1026,7 +1065,7 @@ export default {
 
 .btn-view.active {
   background: rgb(252, 215, 0);
-  color: #2c3e50;
+  color: black;
   border-color: rgb(252, 215, 0);
 }
 
@@ -1100,75 +1139,70 @@ export default {
   line-height: 1.4;
 }
 
-/* Lista de tareas */
-.tareas-lista {
+/* Vista de tabla */
+.tareas-tabla {
   width: 100%;
 }
 
-.tareas-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.tarea-item {
-  background: white;
+.tabla-wrapper {
+  overflow-x: auto;
+  margin-bottom: 12px;
   border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  border-radius: 6px;
 }
 
-.tarea-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+.tabla-tareas {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
 }
 
-.tarea-item.tarea-vencida {
-  border-left: 3px solid #dc3545;
-  background: #fff5f5;
-}
-
-.tarea-item.tarea-completada {
-  opacity: 0.7;
+.tabla-tareas thead {
   background: #f8f9fa;
 }
 
-.tarea-checkbox {
-  margin-top: 2px;
+.tabla-tareas th {
+  padding: 8px 6px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 1px solid #dee2e6;
+  font-size: 0.7rem;
+  white-space: nowrap;
 }
 
-.tarea-checkbox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+.tabla-tareas tbody tr {
+  border-bottom: 1px solid #e9ecef;
   cursor: pointer;
-  accent-color: rgb(252, 215, 0);
+  transition: all 0.2s ease;
 }
 
-.tarea-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.tabla-tareas tbody tr:hover {
+  background: rgba(252, 215, 0, 0.05);
 }
 
-.tarea-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
+.tabla-tareas td {
+  padding: 6px 6px;
+  color: #495057;
+  font-size: 0.7rem;
+  vertical-align: middle;
+}
+
+.td-titulo {
+  max-width: 200px;
 }
 
 .tarea-titulo {
-  font-size: 1rem;
   font-weight: 600;
-  color: #2c3e50;
-  margin: 0;
-  line-height: 1.3;
+  color: black;
+  margin-bottom: 2px;
+  font-size: 0.75rem;
+}
+
+.tarea-descripcion {
+  font-size: 0.65rem;
+  color: #6c757d;
+  line-height: 1.2;
 }
 
 .tipo-badge {
@@ -1182,60 +1216,25 @@ export default {
   white-space: nowrap;
 }
 
-.tarea-info {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.tarea-asociacion,
-.tarea-asignacion {
+.cliente-info {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  color: #6c757d;
-}
-
-.tarea-asociacion i,
-.tarea-asignacion i {
-  color: rgb(252, 215, 0);
-  width: 14px;
-}
-
-.tarea-descripcion {
-  color: #495057;
-  font-size: 0.8rem;
-  line-height: 1.4;
-  margin-top: 6px;
-}
-
-.tarea-fechas {
-  display: flex;
-  flex-direction: column;
   gap: 4px;
+  font-size: 0.7rem;
 }
 
-.fecha-item {
+.usuario-asignado {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+}
+
+/* Contenedor de estado mejorado */
+.estado-container {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.75rem;
-  color: #6c757d;
-}
-
-.fecha-item i {
-  color: rgb(252, 215, 0);
-  width: 12px;
-}
-
-.tarea-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #e9ecef;
 }
 
 .estado-badge {
@@ -1248,16 +1247,255 @@ export default {
   white-space: nowrap;
 }
 
-.tarea-creador {
+/* Botón para completar tarea - más intuitivo */
+.btn-completar {
+  background: none;
+  border: none;
+  color: #28a745;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  opacity: 0.6;
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.75rem;
-  color: #6c757d;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
 }
 
-.tarea-creador i {
-  color: rgb(252, 215, 0);
+.btn-completar:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  background: rgba(40, 167, 69, 0.1);
+  color: #1e7e34;
+}
+
+.prioridad-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.prioridad-1 { background: #dc3545; color: white; }
+.prioridad-2 { background: #ffc107; color: #212529; }
+.prioridad-3 { background: #28a745; color: white; }
+
+.fecha-vencida {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.td-acciones {
+  width: 80px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-icon.btn-view {
+  color: #2196f3;
+}
+.btn-icon.btn-view:hover {
+  background-color: rgba(33,150,243,0.1);
+}
+
+.btn-icon.btn-edit {
+  color: #ff9800;
+}
+.btn-icon.btn-edit:hover {
+  background-color: rgba(255,152,0,0.1);
+}
+
+.btn-icon.btn-delete {
+  color: #f44336;
+}
+.btn-icon.btn-delete:hover {
+  background-color: rgba(244,67,54,0.1);
+}
+
+.tarea-vencida {
+  background: #fff5f5 !important;
+}
+
+.tarea-completada {
+  opacity: 0.7;
+}
+
+/* Modal de confirmación para completar */
+.modal-confirmar {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: modalAppear 0.3s ease;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header-confirmar {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+}
+
+.icon-completar {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.modal-header-confirmar h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.modal-body-confirmar {
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.modal-body-confirmar p {
+  margin: 0 0 16px 0;
+  color: #495057;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.tarea-preview {
+  background: #f8f9fa;
+  border-left: 4px solid #28a745;
+  padding: 12px 16px;
+  margin: 16px 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.tarea-preview strong {
+  color: #212529;
+  font-size: 0.95rem;
+}
+
+.nota-estado {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.modal-footer-confirmar {
+  padding: 16px 20px;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #e9ecef;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background: #28a745;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+/* Paginación */
+.paginacion {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+}
+
+.btn-pagina {
+  background: white;
+  border: 1px solid #dee2e6;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.7rem;
+  color: #495057;
+}
+
+.btn-pagina:hover:not(:disabled) {
+  background: rgb(252, 215, 0);
+  border-color: rgb(252, 215, 0);
+  color: black;
+}
+
+.btn-pagina:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagina-info {
+  font-size: 0.7rem;
+  color: #6c757d;
+  font-weight: 500;
 }
 
 /* Snackbar */
@@ -1326,6 +1564,11 @@ export default {
   }
 }
 
+.text-muted {
+  color: #adb5bd;
+  font-style: italic;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .filtros-row {
@@ -1363,251 +1606,16 @@ export default {
     justify-content: space-between;
   }
   
-  .tarea-item {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .tarea-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-  
-  .tarea-footer {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-  
   .snackbar {
     left: 12px;
     right: 12px;
     bottom: 12px;
     min-width: auto;
   }
+  
+  .modal-confirmar {
+    margin: 12px;
+    max-width: calc(100vw - 24px);
+  }
 }
-
-/* Vista de tabla */
-.tareas-tabla {
-  width: 100%;
-}
-
-.tabla-wrapper {
-  overflow-x: auto;
-  margin-bottom: 12px;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-}
-
-.tabla-tareas {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.75rem;
-}
-
-.tabla-tareas thead {
-  background: #f8f9fa;
-}
-
-.tabla-tareas th {
-  padding: 8px 6px;
-  text-align: left;
-  font-weight: 600;
-  color: #495057;
-  border-bottom: 1px solid #dee2e6;
-  font-size: 0.7rem;
-  white-space: nowrap;
-}
-
-.tabla-tareas tbody tr {
-  border-bottom: 1px solid #e9ecef;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tabla-tareas tbody tr:hover {
-  background: rgba(252, 215, 0, 0.05);
-}
-
-.tabla-tareas td {
-  padding: 6px 6px;
-  color: #495057;
-  font-size: 0.7rem;
-  vertical-align: middle;
-}
-
-.th-checkbox,
-.td-checkbox {
-  width: 24px;
-  text-align: center;
-}
-
-.td-titulo {
-  max-width: 200px;
-}
-
-.tarea-titulo {
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 2px;
-  font-size: 0.75rem;
-}
-
-.tarea-descripcion {
-  font-size: 0.65rem;
-  color: #6c757d;
-  line-height: 1.2;
-}
-
-.tipo-badge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 8px;
-  font-size: 0.65rem;
-  font-weight: 500;
-  background: #e9ecef;
-  color: #495057;
-  white-space: nowrap;
-}
-
-.cliente-info {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.7rem;
-}
-
-.usuario-asignado {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.7rem;
-}
-
-.estado-badge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 8px;
-  color: white;
-  font-size: 0.65rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.prioridad-badge {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 8px;
-  font-size: 0.65rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.prioridad-1 { background: #28a745; color: white; }
-.prioridad-2 { background: #ffc107; color: #212529; }
-.prioridad-3 { background: #dc3545; color: white; }
-
-.fecha-vencida {
-  color: #dc3545;
-  font-weight: 600;
-}
-
-.td-acciones {
-  width: 80px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 2px;
-  justify-content: center;
-}
-
-.btn-icon {
-  background: transparent;
-  border: none;
-  font-size: 0.8rem;
-  cursor: pointer;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.btn-icon.btn-view {
-  color: #2196f3;
-}
-.btn-icon.btn-view:hover {
-  background-color: rgba(33,150,243,0.1);
-}
-
-.btn-icon.btn-edit {
-  color: #ff9800;
-}
-.btn-icon.btn-edit:hover {
-  background-color: rgba(255,152,0,0.1);
-}
-
-.btn-icon.btn-delete {
-  color: #f44336;
-}
-.btn-icon.btn-delete:hover {
-  background-color: rgba(244,67,54,0.1);
-}
-
-.tarea-vencida {
-  background: #fff5f5 !important;
-}
-
-.tarea-completada {
-  opacity: 0.7;
-}
-
-/* Paginación */
-.paginacion {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-top: 1px solid #e9ecef;
-  background: #f8f9fa;
-}
-
-.btn-pagina {
-  background: white;
-  border: 1px solid #dee2e6;
-  padding: 6px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.7rem;
-  color: #495057;
-}
-
-.btn-pagina:hover:not(:disabled) {
-  background: rgb(252, 215, 0);
-  border-color: rgb(252, 215, 0);
-  color: #2c3e50;
-}
-
-.btn-pagina:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagina-info {
-  font-size: 0.7rem;
-  color: #6c757d;
-  font-weight: 500;
-}
-
-.text-muted {
-  color: #adb5bd;
-  font-style: italic;
-}
-
 </style>

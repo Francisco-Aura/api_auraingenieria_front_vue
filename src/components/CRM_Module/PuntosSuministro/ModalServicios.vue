@@ -2456,7 +2456,7 @@ export default {
 
 .detalle-contrato-content .modal-header h2 {
   margin: 0;
-  color: #2c3e50;
+  color: black;
   font-size: 1.5rem;
   display: flex;
   align-items: center;
@@ -2490,7 +2490,7 @@ export default {
 }
 
 .cliente-info h4, .contrato-info h4 {
-  color: #2c3e50;
+  color: black;
   margin: 0;
   font-size: 1.1rem;
   display: flex;
@@ -2515,7 +2515,7 @@ export default {
 }
 
 .detalle-contrato-section h4 {
-  color: #2c3e50;
+  color: black;
   margin: 0 0 1rem 0;
   font-size: 1.1rem;
   display: flex;
@@ -2560,7 +2560,7 @@ export default {
   border-radius: 8px;
   padding: 1rem;
   border: 1px solid #e0e0e0;
-  color: #2c3e50;
+  color: black;
   line-height: 1.5;
 }
 

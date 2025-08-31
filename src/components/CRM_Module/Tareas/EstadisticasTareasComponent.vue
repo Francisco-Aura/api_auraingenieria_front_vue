@@ -66,20 +66,16 @@ export default {
   data() {
     return {
       estadisticas: {
+        total: 0,
         pendientes: 0,
         enProgreso: 0,
-        vencidas: 0,
         completadas: 0,
-        total: 0
+        vencidas: 0
       },
       cargando: false
     }
   },
   computed: {
-    porcentajeCompletadas() {
-      if (this.estadisticas.totalSemana === 0) return 0
-      return Math.round((this.estadisticas.completadasSemana / this.estadisticas.totalSemana) * 100)
-    }
   },
   async mounted() {
     await this.cargarEstadisticas()
@@ -88,23 +84,59 @@ export default {
     async cargarEstadisticas() {
       try {
         this.cargando = true
+        
+        // Obtener tareas según el usuario
         const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+        let tareas = []
         
-        if (!usuario.id) return
-        
-        // Obtener estadísticas del backend
-        const stats = await tareasApi.obtenerEstadisticasPorUsuario(parseInt(usuario.id))
-        this.estadisticas = {
-          pendientes: stats.pendientes || 0,
-          enProgreso: stats.enProgreso || 0,
-          vencidas: stats.vencidas || 0,
-          completadas: stats.completadasHoy || 0,
-          completadasSemana: stats.completadasSemana || 0,
-          totalSemana: stats.totalSemana || 0,
-          total: (stats.pendientes || 0) + (stats.enProgreso || 0) + (stats.vencidas || 0) + (stats.completadasHoy || 0)
+        if (usuario && usuario.nivelAcceso === 1) {
+          // Admin: ver todas las tareas
+          tareas = await tareasApi.obtenerTodasLasTareas()
+        } else {
+          if (!usuario.id) {
+            console.error('No se encontró usuario logueado')
+            return
+          }
+          tareas = await tareasApi.obtenerTareasPorUsuario(parseInt(usuario.id))
         }
+        
+        // Obtener estados para identificar cuáles son finales
+        const estados = await tareasApi.obtenerEstados()
+        const estadosFinales = estados.filter(e => e.estadoFinal === true).map(e => e.id)
+        const estadosEnProgreso = estados.filter(e => 
+          !e.estadoFinal && 
+          e.nombre.toLowerCase().includes('progreso') || 
+          e.nombre.toLowerCase().includes('proceso') ||
+          e.nombre.toLowerCase().includes('trabajando')
+        ).map(e => e.id)
+        
+        // Calcular estadísticas en tiempo real
+        const ahora = new Date()
+        
+        this.estadisticas = {
+          total: tareas.length,
+          pendientes: tareas.filter(t => 
+            !estadosFinales.includes(t.estadoId) && 
+            !estadosEnProgreso.includes(t.estadoId)
+          ).length,
+          enProgreso: tareas.filter(t => estadosEnProgreso.includes(t.estadoId)).length,
+          completadas: tareas.filter(t => estadosFinales.includes(t.estadoId)).length,
+          vencidas: tareas.filter(t => {
+            if (!t.fechaVencimiento || estadosFinales.includes(t.estadoId)) return false
+            return new Date(t.fechaVencimiento) < ahora
+          }).length
+        }
+        
       } catch (error) {
         console.error('Error cargando estadísticas:', error)
+        // Mantener estadísticas en 0 en caso de error
+        this.estadisticas = {
+          total: 0,
+          pendientes: 0,
+          enProgreso: 0,
+          completadas: 0,
+          vencidas: 0
+        }
       } finally {
         this.cargando = false
       }
@@ -175,7 +207,7 @@ export default {
 .stat-number {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: black;
   line-height: 1;
 }
 
@@ -191,7 +223,7 @@ export default {
 
 .progreso-semanal h3 {
   margin: 0 0 8px 0;
-  color: #2c3e50;
+  color: black;
   font-size: 0.9rem;
   font-weight: 600;
 }
