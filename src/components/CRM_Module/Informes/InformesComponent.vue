@@ -33,7 +33,7 @@
             </div>
           </div>
 
-          <div class="card informe-card" @click="mostrarInforme('servicios-pendientes-pago')">
+          <div class="card informe-card" v-if="nivelAcceso !== 4" @click="mostrarInforme('servicios-pendientes-pago')">
             <div class="informe-icon">
               <i class="fas fa-money-bill-wave"></i>
             </div>
@@ -170,6 +170,7 @@ export default {
     return {
       mostrarModal: false,
       mostrarTabla: false,
+      nivelAcceso: null,            // Nivel de acceso del usuario
       datosInforme: [],
       encabezados: [],
       tipoSeleccionado: "",
@@ -633,6 +634,14 @@ export default {
         alert("Ocurrió un error al exportar a Excel.");
       }
     },
+  },
+  
+  // Cargar nivel de acceso al crear el componente
+  created() {
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    if (usuario) {
+      this.nivelAcceso = usuario.nivelAcceso;
+    }
   }
 };
 </script>

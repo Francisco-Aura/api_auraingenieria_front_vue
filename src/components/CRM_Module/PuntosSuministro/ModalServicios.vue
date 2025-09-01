@@ -626,6 +626,7 @@ export default {
       comercializadorasList: [],
       modalidadesPago: [],
       cuotas: [],
+      pagosExistentes: null, // Para preservar los datos de pagos existentes
     };
   },
 
@@ -816,6 +817,7 @@ export default {
       this.modoRenovacion = false;
       this.servicioEditandoId = null;
       this.cuotas = [];
+      this.pagosExistentes = null; // Limpiar datos de pagos existentes
     },
 
     async guardarServicio() {
@@ -885,88 +887,102 @@ export default {
           );
         }
         
-        // Si hay datos de pagos, guardarlos también
+        // Si hay datos de pagos, manejarlos según el modo
         if (this.nuevoServicio.idPagoPlazos && 
             (this.nuevoServicio.importe > 0 || this.nuevoServicio.importeFinal > 0)) {
-          let pagosGenerados;
-          try {
-            const generarPlanResp = await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/generar-plan`, {
-              idPagoPlazos: this.nuevoServicio.idPagoPlazos,
-              importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
-              fechaInicio: this.nuevoServicio.fechaInicioServicio
-            });
-            pagosGenerados = generarPlanResp.data;
-          } catch (errorGenerarPlan) {
-            console.error("Error al generar el plan de pagos:", errorGenerarPlan);
+          
+          // Validar que tenemos un ID de servicio válido
+          const servicioId = this.modoEdicion ? this.servicioEditandoId : response.data.id;
+          if (!servicioId) {
+            throw new Error('No se pudo obtener el ID del servicio para asociar los pagos');
           }
 
-          if (pagosGenerados && this.nuevoServicio.idPagoPlazos) {
-            // Validar que tenemos un ID de servicio válido
-            const servicioId = this.modoEdicion ? this.servicioEditandoId : response.data.id;
-            if (!servicioId) {
-              throw new Error('No se pudo obtener el ID del servicio para asociar los pagos');
-            }
-            
-            const pagosPayload = {
-              id: (this.modoEdicion && this.servicioActual?.pagos?.id) ? this.servicioActual.pagos.id : null,
-              pagoPlazos: {
-                id: Number(this.nuevoServicio.idPagoPlazos)
-              },
-              servicio: {
-                id: Number(servicioId)
-              },
-              importe: this.nuevoServicio.importe || pagosGenerados.importe || 0,
-              descuento: this.nuevoServicio.descuento || pagosGenerados.descuento || 0,
-              importeFinal: this.nuevoServicio.importeFinal || pagosGenerados.importeFinal || 0,
-              // Incluir todas las fechas e importes de las cuotas
-              primerPagoFecha: pagosGenerados.primerPagoFecha,
-              primerPagoImporte: pagosGenerados.primerPagoImporte,
-              primerPagoPagado: pagosGenerados.primerPagoPagado || false,
-              segundoPagoFecha: pagosGenerados.segundoPagoFecha,
-              segundoPagoImporte: pagosGenerados.segundoPagoImporte,
-              segundoPagoPagado: pagosGenerados.segundoPagoPagado || false,
-              tercerPagoFecha: pagosGenerados.tercerPagoFecha,
-              tercerPagoImporte: pagosGenerados.tercerPagoImporte,
-              tercerPagoPagado: pagosGenerados.tercerPagoPagado || false,
-              cuartoPagoFecha: pagosGenerados.cuartoPagoFecha,
-              cuartoPagoImporte: pagosGenerados.cuartoPagoImporte,
-              cuartoPagoPagado: pagosGenerados.cuartoPagoPagado || false,
-              quintoPagoFecha: pagosGenerados.quintoPagoFecha,
-              quintoPagoImporte: pagosGenerados.quintoPagoImporte,
-              quintoPagoPagado: pagosGenerados.quintoPagoPagado || false,
-              sextoPagoFecha: pagosGenerados.sextoPagoFecha,
-              sextoPagoImporte: pagosGenerados.sextoPagoImporte,
-              sextoPagoPagado: pagosGenerados.sextoPagoPagado || false,
-              septimoPagoFecha: pagosGenerados.septimoPagoFecha,
-              septimoPagoImporte: pagosGenerados.septimoPagoImporte,
-              septimoPagoPagado: pagosGenerados.septimoPagoPagado || false,
-              octavoPagoFecha: pagosGenerados.octavoPagoFecha,
-              octavoPagoImporte: pagosGenerados.octavoPagoImporte,
-              octavoPagoPagado: pagosGenerados.octavoPagoPagado || false,
-              novenoPagoFecha: pagosGenerados.novenoPagoFecha,
-              novenoPagoImporte: pagosGenerados.novenoPagoImporte,
-              novenoPagoPagado: pagosGenerados.novenoPagoPagado || false,
-              decimoPagoFecha: pagosGenerados.decimoPagoFecha,
-              decimoPagoImporte: pagosGenerados.decimoPagoImporte,
-              decimoPagoPagado: pagosGenerados.decimoPagoPagado || false,
-              decimoprimerPagoFecha: pagosGenerados.decimoprimerPagoFecha,
-              decimoprimerPagoImporte: pagosGenerados.decimoprimerPagoImporte,
-              decimoprimerPagoPagado: pagosGenerados.decimoprimerPagoPagado || false,
-              decimosegundoPagoFecha: pagosGenerados.decimosegundoPagoFecha,
-              decimosegundoPagoImporte: pagosGenerados.decimosegundoPagoImporte,
-              decimosegundoPagoPagado: pagosGenerados.decimosegundoPagoPagado || false
-            };
+          if (this.modoEdicion && this.pagosExistentes && this.servicioActual?.pagos?.id) {
+            // MODO EDICIÓN: Verificar si realmente hay cambios en los datos de pago
+            const pagosCambiaron = this.verificarCambiosEnPagos();
 
-            console.log('Payload de pagos a enviar:', pagosPayload);
-            
-            if (this.modoEdicion && this.servicioActual?.pagos?.id) {
-              console.log(`Actualizando pagos existentes con PUT a /api/servicios-pagos/servicio/${this.servicioEditandoId}`);
+            if (pagosCambiaron) {
+              console.log('Se detectaron cambios en los datos de pago, actualizando preservando cuotas ya pagadas');
+              
+              const pagosPayload = this.crearPayloadPagosPreservando(servicioId);
+              console.log('Payload de pagos preservando datos existentes:', pagosPayload);
+              
               await axios.put(
                 `${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${this.servicioEditandoId}`, 
                 pagosPayload
               );
             } else {
-              console.log('Creando nuevos pagos con POST a /api/servicios-pagos');
+              console.log('No hay cambios en los datos de pago, omitiendo actualización de pagos para preservar datos existentes');
+            }
+          } else {
+            // MODO CREACIÓN: Generar nuevo plan de pagos
+            console.log('Creando nuevo plan de pagos para servicio nuevo');
+            
+            let pagosGenerados;
+            try {
+              const generarPlanResp = await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/generar-plan`, {
+                idPagoPlazos: this.nuevoServicio.idPagoPlazos,
+                importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
+                fechaInicio: this.nuevoServicio.fechaInicioServicio
+              });
+              pagosGenerados = generarPlanResp.data;
+            } catch (errorGenerarPlan) {
+              console.error("Error al generar el plan de pagos:", errorGenerarPlan);
+            }
+
+            if (pagosGenerados && this.nuevoServicio.idPagoPlazos) {
+              const pagosPayload = {
+                id: null, // Nuevo registro
+                pagoPlazos: {
+                  id: Number(this.nuevoServicio.idPagoPlazos)
+                },
+                servicio: {
+                  id: Number(servicioId)
+                },
+                importe: this.nuevoServicio.importe || pagosGenerados.importe || 0,
+                descuento: this.nuevoServicio.descuento || pagosGenerados.descuento || 0,
+                importeFinal: this.nuevoServicio.importeFinal || pagosGenerados.importeFinal || 0,
+                // Incluir todas las fechas e importes de las cuotas generadas
+                primerPagoFecha: pagosGenerados.primerPagoFecha,
+                primerPagoImporte: pagosGenerados.primerPagoImporte,
+                primerPagoPagado: pagosGenerados.primerPagoPagado || false,
+                segundoPagoFecha: pagosGenerados.segundoPagoFecha,
+                segundoPagoImporte: pagosGenerados.segundoPagoImporte,
+                segundoPagoPagado: pagosGenerados.segundoPagoPagado || false,
+                tercerPagoFecha: pagosGenerados.tercerPagoFecha,
+                tercerPagoImporte: pagosGenerados.tercerPagoImporte,
+                tercerPagoPagado: pagosGenerados.tercerPagoPagado || false,
+                cuartoPagoFecha: pagosGenerados.cuartoPagoFecha,
+                cuartoPagoImporte: pagosGenerados.cuartoPagoImporte,
+                cuartoPagoPagado: pagosGenerados.cuartoPagoPagado || false,
+                quintoPagoFecha: pagosGenerados.quintoPagoFecha,
+                quintoPagoImporte: pagosGenerados.quintoPagoImporte,
+                quintoPagoPagado: pagosGenerados.quintoPagoPagado || false,
+                sextoPagoFecha: pagosGenerados.sextoPagoFecha,
+                sextoPagoImporte: pagosGenerados.sextoPagoImporte,
+                sextoPagoPagado: pagosGenerados.sextoPagoPagado || false,
+                septimoPagoFecha: pagosGenerados.septimoPagoFecha,
+                septimoPagoImporte: pagosGenerados.septimoPagoImporte,
+                septimoPagoPagado: pagosGenerados.septimoPagoPagado || false,
+                octavoPagoFecha: pagosGenerados.octavoPagoFecha,
+                octavoPagoImporte: pagosGenerados.octavoPagoImporte,
+                octavoPagoPagado: pagosGenerados.octavoPagoPagado || false,
+                novenoPagoFecha: pagosGenerados.novenoPagoFecha,
+                novenoPagoImporte: pagosGenerados.novenoPagoImporte,
+                novenoPagoPagado: pagosGenerados.novenoPagoPagado || false,
+                decimoPagoFecha: pagosGenerados.decimoPagoFecha,
+                decimoPagoImporte: pagosGenerados.decimoPagoImporte,
+                decimoPagoPagado: pagosGenerados.decimoPagoPagado || false,
+                decimoprimerPagoFecha: pagosGenerados.decimoprimerPagoFecha,
+                decimoprimerPagoImporte: pagosGenerados.decimoprimerPagoImporte,
+                decimoprimerPagoPagado: pagosGenerados.decimoprimerPagoPagado || false,
+                decimosegundoPagoFecha: pagosGenerados.decimosegundoPagoFecha,
+                decimosegundoPagoImporte: pagosGenerados.decimosegundoPagoImporte,
+                decimosegundoPagoPagado: pagosGenerados.decimosegundoPagoPagado || false
+              };
+
+              console.log('Payload de pagos nuevo:', pagosPayload);
+              
               await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios-pagos`, pagosPayload);
             }
           }
@@ -1080,6 +1096,7 @@ export default {
       this.modoEdicion = false;
       this.modoRenovacion = false;
       this.servicioEditandoId = null;
+      this.pagosExistentes = null; // Limpiar datos de pagos existentes
     },
 
     cerrarModalDetalleServicio() {
@@ -1261,6 +1278,9 @@ export default {
           this.nuevoServicio.descuento = parseFloat(pagos.descuento) || 0;
           this.nuevoServicio.importeFinal = parseFloat(pagos.importeFinal) || 0;
           
+          // Guardar los datos de pagos existentes para preservarlos durante la edición
+          this.pagosExistentes = { ...pagos };
+          
           this.$nextTick(() => {
             this.$forceUpdate();
           });
@@ -1303,6 +1323,36 @@ export default {
     obtenerNumeroCuotas(pagos) {
       if (!pagos || !pagos.pagoPlazos) return 12; // Fallback por defecto
       return pagos.pagoPlazos.numeroCuotas || 12;
+    },
+
+    // Método para verificar si han cambiado los datos de pago que requieren actualización
+    verificarCambiosEnPagos() {
+      if (!this.pagosExistentes) return true; // Si no hay datos existentes, asumimos que hay cambios
+      
+      return (
+        this.pagosExistentes.importe !== this.nuevoServicio.importe ||
+        this.pagosExistentes.descuento !== this.nuevoServicio.descuento ||
+        this.pagosExistentes.importeFinal !== this.nuevoServicio.importeFinal ||
+        this.pagosExistentes.pagoPlazos?.id !== this.nuevoServicio.idPagoPlazos
+      );
+    },
+
+    // Método para preservar estados de pagos al crear payload
+    crearPayloadPagosPreservando(servicioId) {
+      return {
+        ...this.pagosExistentes, // Partir de los datos existentes para preservar fechas y estados pagado
+        // Solo actualizar los campos que pueden cambiar en la edición
+        importe: this.nuevoServicio.importe,
+        descuento: this.nuevoServicio.descuento,
+        importeFinal: this.nuevoServicio.importeFinal,
+        pagoPlazos: {
+          id: Number(this.nuevoServicio.idPagoPlazos)
+        },
+        servicio: {
+          id: Number(servicioId)
+        }
+        // IMPORTANTE: NO se incluyen fechas ni estados pagado porque se preservan del objeto existente
+      };
     },
   },
 
@@ -1432,6 +1482,7 @@ export default {
           this.modoRenovacion = false;
           this.mostrarModalDetalleServicio = false;
           this.mostrarModalGestionPagos = false;
+          this.pagosExistentes = null; // Limpiar datos de pagos existentes
         }
       }
     },

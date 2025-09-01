@@ -220,7 +220,7 @@
                   <button class="btn-icon btn-view" @click="abrirModalContratos(suministro.id,suministro.idCliente)" title="Ver contratos">
                     <i class="fas fa-file-contract"></i>
                   </button>
-                  <button class="btn-icon btn-add" @click="abrirModalServicios(suministro.id,suministro.idCliente)" title="Ver servicios">
+                  <button class="btn-icon btn-add" v-if="nivelAcceso !== 4" @click="abrirModalServicios(suministro.id,suministro.idCliente)" title="Ver servicios">
                     <i class="fas fa-tools"></i>
                   </button>
                 </div>
@@ -354,6 +354,7 @@ export default {
     return {
       loading: false,               // Estado para mostrar un spinner de carga
       cargandoServicios: false,     // Estado para mostrar loading en modal de servicios
+      nivelAcceso: null,               // Estado para mostrar el nivel de acceso del usuario
       puntosSuministro: [],         // Lista de puntos de suministro
       filter: "",                   // Filtro de búsqueda
       columnFilters: {
@@ -605,6 +606,10 @@ export default {
   // Se ejecuta cuando el componente es creado para cargar datos iniciales
   created() {
     this.fetchPuntosSuministro();
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    if (usuario) {
+      this.nivelAcceso = usuario.nivelAcceso;
+    }
   },
 
   methods: {
