@@ -60,6 +60,7 @@
                     <th>Fecha Fin</th>
                     <th>Tarifa Luz</th>
                     <th>Tarifa Gas</th>
+                    <th>Consumo Anual</th>
                     <th>Características</th>
                     <th>Acciones</th>
                   </tr>
@@ -80,6 +81,7 @@
                     <td>{{ formatDate(contrato.fechaFin) }}</td>
                     <td>{{ getTarifaLuzNombre(contrato.idTarifaLuz) }}</td>
                     <td>{{ getTarifaGasNombre(contrato.idTarifaGas) }}</td>
+                    <td>{{ contrato.consumoAnual || 0 }} kW</td>
                     <td>
                       <div class="status-indicators">
                         <span v-if="contrato.autoconsumo" class="status-badge autoconsumo">
@@ -114,9 +116,6 @@
             <div v-else class="no-history">
               <i class="fas fa-history"></i>
               <p>No hay contratos disponibles</p>
-              <button @click="crearNuevoContrato" class="btn-modern btn-primary">
-                <i class="fas fa-plus"></i> Crear Primer Contrato
-              </button>
             </div>
           </div>
         </div>
@@ -245,24 +244,68 @@
                     </select>
                   </div>
                 </div>
-              </div>
-              
-              <!-- Nueva Sección de Potencias Contratadas -->
-              <div class="form-section-modern">
-                <div class="section-header-modern">
-                  <i class="fas fa-bolt"></i>
-                  <h3>Potencias Contratadas</h3>
+
+                <!-- Consumo Anual -->
+                <div class="form-group-modern">
+                  <label for="consumoAnual">
+                    <i class="fas fa-chart-line"></i>
+                    Consumo Anual (kW) <span class="required">*</span>
+                  </label>
+                  <div class="input-with-icon-modern">
+                    <i class="fas fa-bolt icon-prefix"></i>
+                    <input 
+                      type="number" 
+                      id="consumoAnual" 
+                      v-model="nuevoContrato.consumoAnual" 
+                      class="form-control-modern" 
+                      step="0.0001" 
+                      min="0" 
+                      required 
+                      placeholder="0.0000"
+                    />
+                  </div>
                 </div>
-                
-                <div class="potencias-contratadas">
-                  <div class="potencias-grid">
-                    <div class="potencia-item" v-for="n in 6" :key="n">
-                      <label :for="'pot' + n">Potencia P{{ n }} (kw)</label>
-                      <div class="input-icon-group">
-                        <input :id="'pot' + n" v-model="nuevoContrato['pot' + n]" type="number" step="0.0001" min="0" />
+
+                <!-- Potencias Contratadas (compactas) -->
+                <div class="form-group-modern">
+                  <label class="potencias-label">
+                    <i class="fas fa-bolt"></i>
+                    Potencias Contratadas (kW)
+                  </label>
+                  <div class="potencias-contratadas-compactas">
+                    <div class="potencias-grid-compacta">
+                      <div class="potencia-item-compacta" v-for="n in 6" :key="n">
+                        <label :for="'pot' + n" class="potencia-label-compacta">P{{ n }}</label>
+                        <input 
+                          :id="'pot' + n" 
+                          v-model="nuevoContrato['pot' + n]" 
+                          type="number" 
+                          step="0.0001" 
+                          min="0" 
+                          class="potencia-input-compacta"
+                          placeholder="0"
+                        />
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+              
+              <!-- Sección de Observaciones -->
+              <div class="form-section-modern">
+                <div class="section-header-modern">
+                  <i class="fas fa-comment-alt"></i>
+                  <h3>Observaciones</h3>
+                </div>
+                
+                <div class="form-group-modern">
+                  <textarea 
+                    id="observaciones" 
+                    v-model="nuevoContrato.observaciones" 
+                    class="form-control-modern textarea-modern" 
+                    rows="100"
+                    placeholder="Añada aquí cualquier observación relevante sobre el contrato..."
+                  ></textarea>
                 </div>
               </div>
 
@@ -296,42 +339,49 @@
                 </div>
               </div>
 
-              <!-- Sección de Autoconsumo -->
+              <!-- Sección de Autoconsumo y Exenciones -->
               <div class="form-section-modern">
                 <div class="section-header-modern">
                   <i class="fas fa-solar-panel"></i>
-                  <h3>Autoconsumo</h3>
+                  <h3>Autoconsumo y Exenciones</h3>
                 </div>
                 
                 <div class="form-group-modern">
+                  <!-- Indicador de Autoconsumo -->
                   <div v-if="tieneAutoconsumo" class="info-badge-modern success">
-                    <i class="fas fa-info-circle"></i>
-                    Este punto de suministro tiene autoconsumo configurado: <strong>{{ puntoSuministroData?.autoconsumo }}</strong>
+                    <i class="fas fa-solar-panel"></i>
+                    <div class="badge-content">
+                      <span class="badge-title">Autoconsumo:</span>
+                      <strong>{{ puntoSuministroData?.autoconsumo }}</strong>
+                    </div>
                   </div>
                   <div v-else class="info-badge-modern neutral">
-                    <i class="fas fa-info-circle"></i>
-                    Este punto de suministro no tiene autoconsumo configurado
+                    <i class="fas fa-solar-panel"></i>
+                    <div class="badge-content">
+                      <span class="badge-title">Autoconsumo:</span>
+                      <span>No configurado</span>
+                    </div>
+                  </div>
+                  
+                  <!-- Indicador de Exención Impuesto Eléctrico -->
+                  <div v-if="tieneExencionImpuestoElectrico" class="info-badge-modern success" style="margin-top: 0.4rem;">
+                    <i class="fas fa-bolt"></i>
+                    <div class="badge-content">
+                      <span class="badge-title">Exención Impuesto Eléctrico:</span>
+                      <strong>Sí</strong>
+                    </div>
+                  </div>
+                  <div v-else class="info-badge-modern neutral" style="margin-top: 0.4rem;">
+                    <i class="fas fa-bolt"></i>
+                    <div class="badge-content">
+                      <span class="badge-title">Exención Impuesto Eléctrico:</span>
+                      <span>No</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Sección de Observaciones -->
-              <div class="form-section-modern full-width">
-                <div class="section-header-modern">
-                  <i class="fas fa-comment-alt"></i>
-                  <h3>Observaciones</h3>
-                </div>
-                
-                <div class="form-group-modern">
-                  <textarea 
-                    id="observaciones" 
-                    v-model="nuevoContrato.observaciones" 
-                    class="form-control-modern textarea-modern" 
-                    rows="4"
-                    placeholder="Añada aquí cualquier observación relevante sobre el contrato..."
-                  ></textarea>
-                </div>
-              </div>
+
             </div>
 
             <!-- Botones de acción dentro del formulario -->
@@ -419,6 +469,19 @@
                     <i class="fas fa-exclamation-triangle"></i> 
                     {{ contratoDetalle?.denunciaContrato ? `Sí (${formatDate(contratoDetalle?.fechaDenunciaContrato)})` : 'No' }}
                   </span>
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Sección de Consumo Anual en la vista de detalle -->
+          <div class="detalle-contrato-section">
+            <h4><i class="fas fa-chart-line"></i> Consumo Anual</h4>
+            <div class="info-grid">
+              <div class="info-row">
+                <span class="info-label">Consumo Anual:</span>
+                <span class="info-value">
+                  <i class="fas fa-bolt"></i> {{ contratoDetalle?.consumoAnual || 0 }} kW
                 </span>
               </div>
             </div>
@@ -970,7 +1033,7 @@ export default {
         potencia5: 0,
         potencia6: 0,
         consumoAnual: 0,
-        exencionImpuestoElectricidad: 0,
+        exencionImpuestoElectricidad: this.tieneExencionImpuestoElectrico ? 1 : 0,
         idComercializadoraActual: 0,
         idComercializadoraAnterior: 0,
         autoconsumo: this.tieneAutoconsumo ? 1 : 0,
@@ -1079,6 +1142,12 @@ export default {
              this.puntoSuministroData.autoconsumo && 
              this.puntoSuministroData.autoconsumo.trim() !== '' &&
              this.puntoSuministroData.autoconsumo !== null;
+    },
+    
+    // Verificar si el punto de suministro tiene exención del impuesto eléctrico
+    tieneExencionImpuestoElectrico() {
+      return this.puntoSuministroData && 
+             this.puntoSuministroData.exencionImpuestoElectricidad === 1;
     },
     
     // Determinar si el punto de suministro es de Gas
@@ -1832,8 +1901,11 @@ export default {
 .textarea-modern {
   height: auto !important;
   resize: vertical;
-  min-height: 42px;
+  min-height: 80px;
+  max-height: 400px;
   padding-top: 0.4rem;
+  line-height: 1.4;
+  overflow-y: auto;
 }
 
 /* Selectores compactos */
@@ -1896,6 +1968,68 @@ export default {
   border-color: var(--primary-color);
   outline: none;
   box-shadow: 0 0 0 2px rgba(252, 215, 0, 0.1);
+}
+
+/* Potencias contratadas compactas integradas */
+.potencias-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.potencias-contratadas-compactas {
+  background: #f8f9fa;
+  border-radius: 0.3rem;
+  padding: 0.6rem;
+  border: 1px solid #e9ecef;
+}
+
+.potencias-grid-compacta {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.4rem;
+}
+
+.potencia-item-compacta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.potencia-label-compacta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.1rem;
+  text-align: center;
+}
+
+.potencia-input-compacta {
+  width: 100%;
+  height: 26px;
+  border: 1px solid #ddd;
+  border-radius: 0.2rem;
+  background: white;
+  padding: 0.2rem 0.3rem;
+  font-size: 0.75rem;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.potencia-input-compacta:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(252, 215, 0, 0.1);
+}
+
+.potencia-input-compacta::placeholder {
+  color: #aaa;
+  font-size: 0.7rem;
 }
 
 /* Área de subida de PDF compacta */
@@ -2023,6 +2157,29 @@ export default {
   background-color: rgba(107, 114, 128, 0.1);
   border: 1px solid rgba(107, 114, 128, 0.3);
   color: #374151;
+}
+
+/* Contenido estructurado de los badges */
+.badge-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+}
+
+.badge-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.badge-content strong {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.badge-content span:not(.badge-title) {
+  font-size: 0.8rem;
 }
 
 /* Botones compactos */
@@ -2518,6 +2675,10 @@ export default {
   .potencias-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .potencias-grid-compacta {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 992px) {
@@ -2565,6 +2726,10 @@ export default {
     grid-template-columns: 1fr;
   }
   
+  .potencias-grid-compacta {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
   .modal-content {
     width: 98%;
     max-width: 98%;
@@ -2581,6 +2746,21 @@ export default {
   .btn-modern {
     padding: 0.4rem 0.8rem;
     font-size: 0.8rem;
+  }
+  
+  .potencias-grid-compacta {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.2rem;
+  }
+  
+  .potencia-input-compacta {
+    max-width: 50px;
+    font-size: 0.7rem;
+    height: 24px;
+  }
+  
+  .potencia-label-compacta {
+    font-size: 0.7rem;
   }
 }
 </style>

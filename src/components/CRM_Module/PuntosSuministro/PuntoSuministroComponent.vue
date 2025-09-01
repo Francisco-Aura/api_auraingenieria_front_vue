@@ -227,7 +227,7 @@
               </td>
             </tr>
             <tr v-if="paginatedPuntosSuministro.length === 0">
-              <td colspan="6" class="text-center py-4">
+              <td colspan="7" class="text-center py-4">
                 <div class="empty-state">
                   <i class="fas fa-search fa-3x text-muted"></i>
                   <p class="mt-3">No se encontraron puntos de suministro que coincidan con la búsqueda</p>
@@ -253,7 +253,16 @@
             <button 
               class="btn btn-outline" 
               :disabled="currentPage === 1"
+              @click="currentPage = 1"
+              title="Primera página"
+            >
+              <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button 
+              class="btn btn-outline" 
+              :disabled="currentPage === 1"
               @click="currentPage--"
+              title="Página anterior"
             >
               <i class="fas fa-chevron-left"></i>
             </button>
@@ -262,8 +271,17 @@
               class="btn btn-outline" 
               :disabled="currentPage === totalPages"
               @click="currentPage++"
+              title="Página siguiente"
             >
               <i class="fas fa-chevron-right"></i>
+            </button>
+            <button 
+              class="btn btn-outline" 
+              :disabled="currentPage === totalPages"
+              @click="currentPage = totalPages"
+              title="Última página"
+            >
+              <i class="fas fa-angle-double-right"></i>
             </button>
           </div>
         </div>
@@ -300,6 +318,7 @@
     <!-- Modal de Servicios -->
     <ModalServicios v-if="modalCliente" 
       :visible="mostrarModalServicios" 
+      :cargando="cargandoServicios"
       :cliente="modalCliente"
       :puntoSuministroSeleccionado="getPuntoSuministroById(modalPuntoSuministro)"
       :servicios="servicios"
@@ -308,6 +327,7 @@
       :servicioActual="servicioActual"
       :serviciosHistoricos="serviciosHistoricos"
       @cerrar-modal="cerrarModalServicios"
+      @recargar-servicios="recargarServiciosDelPuntoSuministro"
     />
   </div>
 </template>
@@ -333,6 +353,7 @@ export default {
   data() {
     return {
       loading: false,               // Estado para mostrar un spinner de carga
+      cargandoServicios: false,     // Estado para mostrar loading en modal de servicios
       puntosSuministro: [],         // Lista de puntos de suministro
       filter: "",                   // Filtro de búsqueda
       columnFilters: {
@@ -993,6 +1014,10 @@ export default {
     // Abre el modal de servicios con los datos del punto de suministro seleccionado
     async abrirModalServicios(idPuntoSuministro, idCliente) {
       try {
+        // Activar loading
+        this.cargandoServicios = true;
+        this.mostrarModalServicios = true; // Mostrar modal inmediatamente con loading
+        
         // Esperar a que productos y gestoras estén cargados
         if (!this.productos.length) {
           const productosResp = await axios.get(`${process.env.VUE_APP_API_URL}/api/productos`);
@@ -1002,22 +1027,87 @@ export default {
           const gestorasResp = await axios.get(`${process.env.VUE_APP_API_URL}/api/gestoras`);
           this.gestoras = gestorasResp.data;
         }
-        // Ahora cargar servicios y cliente
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios/punto-suministro/${idPuntoSuministro}`);
-        this.servicios = response.data;
+        
+        // Cargar datos básicos del cliente primero
         const responseCliente = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`);
         this.modalCliente = responseCliente.data;
         this.modalCliente.id = idCliente;
         this.modalPuntoSuministro = idPuntoSuministro;
-        this.mostrarModalServicios = true;
+        
+        // Ahora cargar servicios (la parte más lenta)
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios/punto-suministro/${idPuntoSuministro}`);
+        
+        // Cargar datos de pagos para cada servicio
+        const serviciosConPagos = await this.cargarDatosDePagosParaServicios(response.data);
+        this.servicios = serviciosConPagos;
+        
+        // Desactivar loading
+        this.cargandoServicios = false;
       } catch (error) {
         console.error("Error al cargar servicios/productos/gestoras:", error);
+        this.cargandoServicios = false; // Asegurar que se desactive en caso de error
       }
     },
 
     // Cierra el modal de contratos
     cerrarModalServicios() {
       this.mostrarModalServicios = false;
+    },
+
+    // Carga los datos de pagos para una lista de servicios
+    async cargarDatosDePagosParaServicios(servicios) {
+      // Crear promesas para cargar datos de pagos en paralelo
+      const promesasPagos = servicios.map(async (servicio) => {
+        try {
+          // Intentar cargar los datos de pagos para este servicio
+          const responsePagos = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicio.id}`);
+          
+          // Crear una copia del servicio con los datos de pagos
+          return {
+            ...servicio,
+            pagos: responsePagos.data
+          };
+        } catch (error) {
+          // Si no hay datos de pagos para este servicio, mantenerlo sin pagos
+          console.warn(`No se encontraron datos de pagos para el servicio ${servicio.id}:`, error.message);
+          return {
+            ...servicio,
+            pagos: null
+          };
+        }
+      });
+      
+      // Esperar a que todas las llamadas se completen
+      const serviciosConPagos = await Promise.all(promesasPagos);
+      return serviciosConPagos;
+    },
+
+    // Recarga los servicios del punto de suministro actual
+    async recargarServiciosDelPuntoSuministro() {
+      if (!this.modalPuntoSuministro) {
+        console.warn('No hay punto de suministro seleccionado para recargar servicios');
+        return;
+      }
+      
+      try {
+        // Activar loading durante la recarga
+        this.cargandoServicios = true;
+        
+        console.log('Recargando servicios para punto de suministro:', this.modalPuntoSuministro);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios/punto-suministro/${this.modalPuntoSuministro}`);
+        
+        // Cargar datos de pagos para cada servicio
+        const serviciosConPagos = await this.cargarDatosDePagosParaServicios(response.data);
+        this.servicios = serviciosConPagos;
+        
+        console.log('Servicios recargados exitosamente:', this.servicios.length);
+        
+        // Desactivar loading
+        this.cargandoServicios = false;
+      } catch (error) {
+        console.error('Error al recargar servicios:', error);
+        this.cargandoServicios = false; // Asegurar que se desactive en caso de error
+      }
     },
 
     sortBy(key) {
@@ -1269,21 +1359,11 @@ export default {
     recordsPerPage() {
       this.currentPage = 1;
     },
-    // Añadir watchers para los filtros
-    'columnFilters.cliente'() {
-      this.currentPage = 1;
-    },
-    'columnFilters.direccion'() {
-      this.currentPage = 1;
-    },
-    'columnFilters.cupsluz'() {
-      this.currentPage = 1;
-    },
-    'columnFilters.tipo'() {
-      this.currentPage = 1;
-    },
-    'columnFilters.tarifa'() {
-      this.currentPage = 1;
+    columnFilters: {
+      handler() {
+        this.currentPage = 1;
+      },
+      deep: true
     },
     filter() {
       this.currentPage = 1;
@@ -1606,7 +1686,7 @@ export default {
 .pagination-buttons {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .page-info {

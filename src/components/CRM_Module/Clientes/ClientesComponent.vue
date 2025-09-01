@@ -119,6 +119,60 @@
                   </div>
                 </div>
               </th>
+              <th class="sortable" style="width: 15%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('nombreSector')">
+                    <i class="fas fa-industry mr-2"></i>Sector
+                    <i :class="getSortIcon('nombreSector')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <div class="sector-filter-dropdown">
+                      <button 
+                        class="dropdown-button" 
+                        @click.stop="showSectorDropdown = !showSectorDropdown"
+                        :class="{ 'active': selectedSectores.length > 0 }"
+                      >
+                        <span v-if="selectedSectores.length === 0">TODOS</span>
+                        <span v-else-if="selectedSectores.length === 1">{{ selectedSectores[0] }}</span>
+                        <span v-else>{{ selectedSectores.length }} sectores</span>
+                        <i class="fas fa-chevron-down"></i>
+                      </button>
+                      <div 
+                        v-if="showSectorDropdown" 
+                        class="dropdown-menu"
+                        @click.stop
+                      >
+                        <div class="dropdown-item">
+                          <label class="checkbox-label">
+                            <input 
+                              type="checkbox" 
+                              :checked="selectedSectores.length === 0"
+                              @change="clearSectorFilter"
+                            >
+                            <span class="checkmark"></span>
+                            TODOS
+                          </label>
+                        </div>
+                        <div 
+                          v-for="sector in sectoresUnicos" 
+                          :key="sector"
+                          class="dropdown-item"
+                        >
+                          <label class="checkbox-label">
+                            <input 
+                              type="checkbox" 
+                              :value="sector"
+                              v-model="selectedSectores"
+                            >
+                            <span class="checkmark"></span>
+                            {{ sector || 'Sin sector' }}
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </th>
               <th class="sortable" style="width: 25%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('direccionFiscal')">
@@ -187,6 +241,7 @@
               <td class="text-truncate" :title="cliente.nombre">{{ cliente.nombre }}</td>
               <td class="text-truncate" :title="cliente.cif">{{ cliente.cif }}</td>
               <td class="text-truncate" :title="cliente.nombreComercial">{{ cliente.nombreComercial }}</td>
+              <td class="text-truncate" :title="cliente.nombreSector || 'Sin sector'">{{ cliente.nombreSector || 'Sin sector' }}</td>
               <td class="text-truncate" :title="cliente.direccionFiscal">{{ cliente.direccionFiscal }}</td>
               <td>
                 <div class="ps-cell">
@@ -209,7 +264,7 @@
               </td>
             </tr>
             <tr v-if="paginatedClientes.length === 0">
-              <td colspan="6" class="text-center py-4">
+              <td colspan="7" class="text-center py-4">
                 <div class="empty-state">
                   <i class="fas fa-search fa-3x text-muted"></i>
                   <p class="mt-3">No se encontraron clientes que coincidan con la búsqueda</p>
@@ -235,7 +290,16 @@
             <button 
               class="btn btn-outline" 
               :disabled="currentPage === 1"
+              @click="currentPage = 1"
+              title="Primera página"
+            >
+              <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button 
+              class="btn btn-outline" 
+              :disabled="currentPage === 1"
               @click="currentPage--"
+              title="Página anterior"
             >
               <i class="fas fa-chevron-left"></i>
             </button>
@@ -244,8 +308,17 @@
               class="btn btn-outline" 
               :disabled="currentPage === totalPages"
               @click="currentPage++"
+              title="Página siguiente"
             >
               <i class="fas fa-chevron-right"></i>
+            </button>
+            <button 
+              class="btn btn-outline" 
+              :disabled="currentPage === totalPages"
+              @click="currentPage = totalPages"
+              title="Última página"
+            >
+              <i class="fas fa-angle-double-right"></i>
             </button>
           </div>
         </div>
@@ -311,10 +384,13 @@ export default {
         nombre: '',
         cif: '',
         nombreComercial: '',
+        nombreSector: '',
         direccionFiscal: '',
         numeroPuntosSuministro: '',
         usuarioAsignado: ''
       },
+      selectedSectores: [], // Array para sectores seleccionados
+      showSectorDropdown: false, // Control del dropdown de sectores
       puntosSuministro: [],        // Lista de puntos de suministro
       clienteSeleccionado: this.resetFormularioCliente(),  // Inicializar con un objeto válido
       isModalPuntosOpen: false,    // Estado para controlar la visibilidad del modal
@@ -348,14 +424,19 @@ export default {
           String(value).toLowerCase().includes(this.filter.toLowerCase())
         );
 
-        // Luego aplicamos los filtros por columna
+        // Luego aplicamos los filtros por columna (excepto sector que se maneja por separado)
         const columnFilters = Object.entries(this.columnFilters).every(([key, value]) => {
-          if (!value) return true; // Si no hay filtro para esta columna, no filtra
+          if (!value || key === 'nombreSector') return true; // Excluir sector del filtro de texto
           const fieldValue = String(cliente[key] || '').toLowerCase();
           return fieldValue.includes(value.toLowerCase());
         });
 
-        return generalFilter && columnFilters;
+        // Filtro específico para sectores múltiples
+        const sectorFilter = this.selectedSectores.length === 0 || 
+          this.selectedSectores.includes(cliente.nombreSector) ||
+          (this.selectedSectores.includes('Sin sector') && !cliente.nombreSector);
+
+        return generalFilter && columnFilters && sectorFilter;
       });
     },
     // Total de puntos de suministro de todos los clientes
@@ -401,6 +482,10 @@ export default {
     paginationEnd() {
       const end = this.currentPage * this.recordsPerPage;
       return end > this.filteredClientes.length ? this.filteredClientes.length : end;
+    },
+    sectoresUnicos() {
+      const sectores = this.clientes.map(cliente => cliente.nombreSector || 'Sin sector');
+      return [...new Set(sectores)].sort();
     }
   },
   methods: {
@@ -642,6 +727,7 @@ export default {
           'Nombre Cliente': cliente.nombre,
           'CIF': cliente.cif,
           'Grupo Empresarial': cliente.nombreComercial,
+          'Sector': cliente.nombreSector || 'Sin sector',
           'Dirección Fiscal': cliente.direccionFiscal,
           'Puntos Suministro': cliente.numeroPuntosSuministro,
           'Usuario Asignado': cliente.usuarioAsignado
@@ -656,6 +742,7 @@ export default {
           {wch: 30}, // Nombre Cliente
           {wch: 15}, // CIF
           {wch: 25}, // Grupo Empresarial
+          {wch: 20}, // Sector
           {wch: 40}, // Dirección Fiscal
           {wch: 15}, // Puntos Suministro
           {wch: 20}  // Usuario Asignado
@@ -741,9 +828,28 @@ export default {
     filterByColumn(column, value) {
       this.columnFilters[column] = value;
     },
+    clearSectorFilter() {
+      this.selectedSectores = [];
+      this.columnFilters.nombreSector = ''; // Limpiar el filtro de texto
+    },
+    handleClickOutside(event) {
+      // Si el dropdown no está abierto, no hacer nada
+      if (!this.showSectorDropdown) return;
+      
+      // Verificar si el click fue dentro del dropdown
+      const dropdownContainer = event.target.closest('.sector-filter-dropdown');
+      
+      // Si el click no fue dentro del dropdown, cerrarlo
+      if (!dropdownContainer) {
+        this.showSectorDropdown = false;
+      }
+    }
   },
   async mounted() {
     this.loading = true;
+    // Agregar event listener para cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', this.handleClickOutside);
+    
     try {
       const [clientes, usuarios, sectores, subtipologias, appMonitorizacion, integracionSistemasFV] = await Promise.all([
         axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`),
@@ -777,8 +883,24 @@ export default {
       });
     }
   },
+  beforeUnmount() {
+    // Limpiar event listener
+    document.removeEventListener('click', this.handleClickOutside);
+  },
   watch: {
     recordsPerPage() {
+      this.currentPage = 1;
+    },
+    columnFilters: {
+      handler() {
+        this.currentPage = 1;
+      },
+      deep: true
+    },
+    selectedSectores() {
+      this.currentPage = 1;
+    },
+    filter() {
       this.currentPage = 1;
     },
     formularioVisible(newVal) {
@@ -1087,7 +1209,7 @@ export default {
 .pagination-buttons {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   background-color: white;
   padding: 8px 15px;
   border-radius: 8px;
@@ -1238,6 +1360,135 @@ export default {
 
 .sortable .column-title:hover {
   color: var(--primary-color);
+}
+
+/* Estilos para el dropdown de sectores */
+.sector-filter-dropdown {
+  position: relative;
+}
+
+.dropdown-button {
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.dropdown-button:hover {
+  background-color: var(--hover-color);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.dropdown-button.active {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.dropdown-button i {
+  transition: transform 0.3s ease;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 5px;
+}
+
+.dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: var(--hover-color);
+  color: var(--primary-color);
+}
+
+.dropdown-item.checked {
+  background-color: var(--primary-light);
+  color: black;
+}
+
+.dropdown-item.checked:hover {
+  background-color: var(--primary-light);
+  color: black;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.checkbox-label input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  height: 18px;
+  width: 18px;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.checkbox-label input:checked ~ .checkmark {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.checkbox-label input:checked ~ .checkmark:after {
+  content: "";
+  display: block;
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+  margin-top: -1px;
+}
+
+.checkmark:after {
+  content: "";
+  display: none;
 }
 </style>
 
