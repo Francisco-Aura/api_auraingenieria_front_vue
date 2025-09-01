@@ -254,6 +254,75 @@
                 </div>
               </div>
 
+               <!-- Sección de Gestión de Pagos y Cuotas -->
+               <div class="form-section-modern">
+                <div class="section-header-modern">
+                  <i class="fas fa-euro-sign"></i>
+                  <h3>Gestión de Pagos</h3>
+                </div>
+
+                <div class="form-group-modern">
+                  <label for="modalidadPago">Modalidad de Pago <span class="required">*</span></label>
+                  <div class="select-container-modern">
+                    <select
+                      id="modalidadPago"
+                      v-model="nuevoServicio.idPagoPlazos"
+                      class="form-select-modern"
+                      required
+                    >
+                      <option value="">Seleccione modalidad...</option>
+                      <option v-for="plazo in modalidadesPago" :key="plazo.id" :value="plazo.id">
+                        {{ plazo.nombre }}<span v-if="plazo.descripcion"> - {{ plazo.descripcion }}</span>
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group-modern importe-euro-group">
+                  <label>Importe Total</label>
+                  <div class="input-euro-inline">
+                    <input
+                      type="number"
+                      v-model="nuevoServicio.importe"
+                      placeholder="0.00"
+                      class="form-control-modern"
+                      step="0.01"
+                      min="0"
+                    />
+                    <span class="euro-inline">€</span>
+                  </div>
+                </div>
+
+                <div class="form-group-modern importe-euro-group">
+                  <label>Descuento</label>
+                  <div class="input-euro-inline">
+                    <input
+                      type="number"
+                      v-model="nuevoServicio.descuento"
+                      placeholder="0.00"
+                      class="form-control-modern"
+                      step="0.01"
+                      min="0"
+                    />
+                    <span class="euro-inline">€</span>
+                  </div>
+                </div>
+
+                <div class="form-group-modern importe-euro-group">
+                  <label>Importe Final</label>
+                  <div class="input-euro-inline">
+                    <input
+                      type="number"
+                      v-model="nuevoServicio.importeFinal"
+                      class="form-control-modern"
+                      step="0.01"
+                      min="0"
+                      readonly
+                    />
+                    <span class="euro-inline">€</span>
+                  </div>
+                </div>
+              </div>
 
 
               <!-- Sección de Observaciones -->
@@ -1208,19 +1277,25 @@ export default {
 
     obtenerMesesPagados(pagos) {
       if (!pagos) return 0;
+      
+      // Obtener el número real de cuotas de la modalidad de pago
+      const numeroCuotasReales = this.obtenerNumeroCuotas(pagos);
+      
+      // Array de los campos de pago en orden
+      const camposPagado = [
+        'primerPagoPagado', 'segundoPagoPagado', 'tercerPagoPagado', 'cuartoPagoPagado',
+        'quintoPagoPagado', 'sextoPagoPagado', 'septimoPagoPagado', 'octavoPagoPagado',
+        'novenoPagoPagado', 'decimoPagoPagado', 'decimoprimerPagoPagado', 'decimosegundoPagoPagado'
+      ];
+      
       let contador = 0;
-      if (pagos.primerPagoPagado) contador++;
-      if (pagos.segundoPagoPagado) contador++;
-      if (pagos.tercerPagoPagado) contador++;
-      if (pagos.cuartoPagoPagado) contador++;
-      if (pagos.quintoPagoPagado) contador++;
-      if (pagos.sextoPagoPagado) contador++;
-      if (pagos.septimoPagoPagado) contador++;
-      if (pagos.octavoPagoPagado) contador++;
-      if (pagos.novenoPagoPagado) contador++;
-      if (pagos.decimoPagoPagado) contador++;
-      if (pagos.decimoprimerPagoPagado) contador++;
-      if (pagos.decimosegundoPagoPagado) contador++;
+      // Solo contar hasta el número real de cuotas de la modalidad
+      for (let i = 0; i < numeroCuotasReales && i < camposPagado.length; i++) {
+        if (pagos[camposPagado[i]]) {
+          contador++;
+        }
+      }
+      
       return contador;
     },
 
@@ -2085,7 +2160,7 @@ export default {
 /* Campo de importe más ancho que el de fecha */
 .cuota-campo-importe {
   flex: 1.3 !important; /* 30% más ancho que el campo de fecha (más conservador) */
-  min-width: 100px !important; /* Ancho mínimo reducido para que quepa mejor */
+  min-width: 80px !important; /* Ancho mínimo reducido para que quepa mejor */
 }
 
 .cuota-campo-compact label {
