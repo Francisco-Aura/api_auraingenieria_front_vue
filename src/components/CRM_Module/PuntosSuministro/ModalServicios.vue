@@ -86,7 +86,7 @@
                     <td>{{ getComercializadoraNombre(servicio.idComercializadora) }}</td>
                     <td class="pagos-column">
                       <div v-if="servicio.pagos" class="pagos-mini">
-                        <span class="pago-indicador">{{ obtenerMesesPagados(servicio.pagos) }}/12 P</span>
+                        <span class="pago-indicador">{{ obtenerMesesPagados(servicio.pagos) }}/{{ obtenerNumeroCuotas(servicio.pagos) }} P</span>
                         <span class="total-indicador">{{ servicio.pagos.importeFinal || servicio.pagos.importe || 0 }}€</span>
                       </div>
                       <div v-else class="sin-pagos-mini">
@@ -511,7 +511,7 @@
               </div>
               <div class="info-row">
                 <span class="info-label">Cuotas Pagadas:</span>
-                <span class="info-value">{{ obtenerMesesPagados(servicioDetalle.pagos) }}/12</span>
+                <span class="info-value">{{ obtenerMesesPagados(servicioDetalle.pagos) }}/{{ obtenerNumeroCuotas(servicioDetalle.pagos) }}</span>
               </div>
             </div>
           </div>
@@ -1329,6 +1329,12 @@ export default {
       if (pagos.decimoprimerPagoPagado) contador++;
       if (pagos.decimosegundoPagoPagado) contador++;
       return contador;
+    },
+
+    // Obtener número total de cuotas desde pagoPlazos
+    obtenerNumeroCuotas(pagos) {
+      if (!pagos || !pagos.pagoPlazos) return 12; // Fallback por defecto
+      return pagos.pagoPlazos.numeroCuotas || 12;
     },
   },
 
@@ -2456,7 +2462,7 @@ export default {
 
 .detalle-contrato-content .modal-header h2 {
   margin: 0;
-  color: #2c3e50;
+  color: black;
   font-size: 1.5rem;
   display: flex;
   align-items: center;
@@ -2490,7 +2496,7 @@ export default {
 }
 
 .cliente-info h4, .contrato-info h4 {
-  color: #2c3e50;
+  color: black;
   margin: 0;
   font-size: 1.1rem;
   display: flex;
@@ -2515,7 +2521,7 @@ export default {
 }
 
 .detalle-contrato-section h4 {
-  color: #2c3e50;
+  color: black;
   margin: 0 0 1rem 0;
   font-size: 1.1rem;
   display: flex;
@@ -2560,7 +2566,7 @@ export default {
   border-radius: 8px;
   padding: 1rem;
   border: 1px solid #e0e0e0;
-  color: #2c3e50;
+  color: black;
   line-height: 1.5;
 }
 
