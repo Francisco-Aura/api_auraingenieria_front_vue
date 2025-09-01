@@ -22,12 +22,6 @@
     <!-- Estadísticas -->
     <EstadisticasTareasComponent ref="estadisticas" />
 
-    <!-- Filtros avanzados -->
-    <FiltroAvanzadoTareas 
-      :estados="estados" 
-      @filtros-aplicados="aplicarFiltrosAvanzados"
-    />
-
     <!-- Panel de filtros y controles -->
     <div class="filtros-panel">
       <div class="filtros-row">
@@ -336,7 +330,6 @@ import TareaModalCorporativo from './TareaModalCorporativo.vue'
 import TareaDetalleModal from './TareaDetalleModal.vue'
 import TareasCalendarioView from './TareasCalendarioView.vue'
 import EstadisticasTareasComponent from './EstadisticasTareasComponent.vue'
-import FiltroAvanzadoTareas from './FiltroAvanzadoTareas.vue'
 import Spinner from '@/components/SpinnerComponent.vue'
 
 export default {
@@ -346,7 +339,6 @@ export default {
     TareaDetalleModal,
     TareasCalendarioView,
     EstadisticasTareasComponent,
-    FiltroAvanzadoTareas,
     Spinner
   },
   data() {

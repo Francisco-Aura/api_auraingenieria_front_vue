@@ -86,7 +86,7 @@
                     <td>{{ getComercializadoraNombre(servicio.idComercializadora) }}</td>
                     <td class="pagos-column">
                       <div v-if="servicio.pagos" class="pagos-mini">
-                        <span class="pago-indicador">{{ obtenerMesesPagados(servicio.pagos) }}/12 P</span>
+                        <span class="pago-indicador">{{ obtenerMesesPagados(servicio.pagos) }}/{{ obtenerNumeroCuotas(servicio.pagos) }} P</span>
                         <span class="total-indicador">{{ servicio.pagos.importeFinal || servicio.pagos.importe || 0 }}€</span>
                       </div>
                       <div v-else class="sin-pagos-mini">
@@ -511,7 +511,7 @@
               </div>
               <div class="info-row">
                 <span class="info-label">Cuotas Pagadas:</span>
-                <span class="info-value">{{ obtenerMesesPagados(servicioDetalle.pagos) }}/12</span>
+                <span class="info-value">{{ obtenerMesesPagados(servicioDetalle.pagos) }}/{{ obtenerNumeroCuotas(servicioDetalle.pagos) }}</span>
               </div>
             </div>
           </div>
@@ -1329,6 +1329,12 @@ export default {
       if (pagos.decimoprimerPagoPagado) contador++;
       if (pagos.decimosegundoPagoPagado) contador++;
       return contador;
+    },
+
+    // Obtener número total de cuotas desde pagoPlazos
+    obtenerNumeroCuotas(pagos) {
+      if (!pagos || !pagos.pagoPlazos) return 12; // Fallback por defecto
+      return pagos.pagoPlazos.numeroCuotas || 12;
     },
   },
 
