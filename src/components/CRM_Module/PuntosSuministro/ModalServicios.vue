@@ -137,33 +137,19 @@
                   <h3>Información del Servicio</h3>
                 </div>
 
-                <div class="form-group-modern" v-if="!puntoSuministroActivo">
-                  <label for="cups">CUPS <span class="required">*</span></label>
-                  <div class="select-container-modern">
-                    <select
-                      id="cups"
-                      v-model="nuevoServicio.idPuntoSuministro"
-                      class="form-select-modern"
-                      required
-                    >
-                      <option value="">Seleccione un CUPS...</option>
-                      <option v-for="punto in puntosSuministro" :key="punto.id" :value="punto.id">
-                        {{ punto.cups }} - {{ punto.direccion }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-                <div class="form-group-modern" v-else>
+                <div class="form-group-modern">
                   <label for="cups">CUPS <span class="required">*</span></label>
                   <div class="input-with-icon-modern">
                     <i class="fas fa-barcode icon-prefix"></i>
                     <input
                       id="cups"
-                      class="form-control-modern"
-                      :value="puntoSuministroActivo.cupsluz || puntoSuministroActivo.cupsgas"
-                      disabled
+                      class="form-control-modern cups-readonly"
+                      v-model="nuevoServicio.cups"
+                      readonly
+                      title="Campo automático basado en el punto de suministro seleccionado"
                     />
                   </div>
+                  <small class="field-help">Campo automático del punto de suministro seleccionado</small>
                 </div>
 
                 <div class="form-group-modern">
@@ -268,75 +254,7 @@
                 </div>
               </div>
 
-              <!-- Sección de Gestión de Pagos y Cuotas -->
-              <div class="form-section-modern">
-                <div class="section-header-modern">
-                  <i class="fas fa-euro-sign"></i>
-                  <h3>Gestión de Pagos</h3>
-                </div>
 
-                <div class="form-group-modern">
-                  <label for="modalidadPago">Modalidad de Pago <span class="required">*</span></label>
-                  <div class="select-container-modern">
-                    <select
-                      id="modalidadPago"
-                      v-model="nuevoServicio.idPagoPlazos"
-                      class="form-select-modern"
-                      required
-                    >
-                      <option value="">Seleccione modalidad...</option>
-                      <option v-for="plazo in modalidadesPago" :key="plazo.id" :value="plazo.id">
-                        {{ plazo.nombre }}<span v-if="plazo.descripcion"> - {{ plazo.descripcion }}</span>
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="form-group-modern importe-euro-group">
-                  <label>Importe Total</label>
-                  <div class="input-euro-inline">
-                    <input
-                      type="number"
-                      v-model="nuevoServicio.importe"
-                      placeholder="0.00"
-                      class="form-control-modern"
-                      step="0.01"
-                      min="0"
-                    />
-                    <span class="euro-inline">€</span>
-                  </div>
-                </div>
-
-                <div class="form-group-modern importe-euro-group">
-                  <label>Descuento</label>
-                  <div class="input-euro-inline">
-                    <input
-                      type="number"
-                      v-model="nuevoServicio.descuento"
-                      placeholder="0.00"
-                      class="form-control-modern"
-                      step="0.01"
-                      min="0"
-                    />
-                    <span class="euro-inline">€</span>
-                  </div>
-                </div>
-
-                <div class="form-group-modern importe-euro-group">
-                  <label>Importe Final</label>
-                  <div class="input-euro-inline">
-                    <input
-                      type="number"
-                      v-model="nuevoServicio.importeFinal"
-                      class="form-control-modern"
-                      step="0.01"
-                      min="0"
-                      readonly
-                    />
-                    <span class="euro-inline">€</span>
-                  </div>
-                </div>
-              </div>
 
               <!-- Sección de Observaciones -->
               <div class="form-section-modern full-width">
@@ -356,64 +274,7 @@
                 </div>
               </div>
 
-              <!-- Sección de Gestión de Cuotas (solo en modo edición) -->
-              <div v-if="modoEdicion && cuotas.length" class="form-section-modern full-width">
-                <div class="section-header-modern">
-                  <i class="fas fa-calendar-check"></i>
-                  <h3>Gestión de Cuotas/Pagos</h3>
-                </div>
-                
-                <!-- Resumen de pagos -->
-                <div class="pagos-progreso">
-                  <div class="pagos-resumen-compacto">
-                    <div class="resumen-item">
-                      <span class="resumen-label">Pagadas:</span>
-                      <span class="resumen-valor">{{ cuotasPagadas }} de {{ cuotas.length }}</span>
-                    </div>
-                    <div class="resumen-item">
-                      <span class="resumen-label">Total pagado:</span>
-                      <span class="resumen-valor">{{ totalPagado.toFixed(2) }}€</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Grid de cuotas compacto -->
-                <div class="cuotas-grid-compact">
-                  <div v-for="cuota in cuotas" :key="cuota.id" class="cuota-card-compact" :class="{ 'pagada': cuota.pagado }">
-                    <div class="cuota-header-compact">
-                      <span class="cuota-numero-compact">Cuota {{ cuota.numeroPago }}</span>
-                      <div class="cuota-estado-compact" :class="{ 'pagado': cuota.pagado }">
-                        <i :class="cuota.pagado ? 'fas fa-check-circle' : 'fas fa-clock'"></i>
-                        {{ cuota.pagado ? 'Pagado' : 'Pendiente' }}
-                      </div>
-                    </div>
-                    <div class="cuota-contenido-compact">
-                      <div class="cuota-fila">
-                        <div class="cuota-campo-compact">
-                          <label>Fecha:</label>
-                          <input type="date" v-model="cuota.fechaPago" @change="marcarEditado(cuota)" class="form-control-compact" />
-                        </div>
-                        <div class="cuota-campo-compact">
-                          <label>Importe:</label>
-                          <div class="input-euro-compact">
-                            <input type="number" v-model="cuota.importePago" min="0" step="0.01" @change="marcarEditado(cuota)" class="form-control-compact" />
-                            <span class="euro-symbol">€</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="cuota-acciones">
-                        <label class="checkbox-label-compact">
-                          <input type="checkbox" v-model="cuota.pagado" @change="marcarEditado(cuota)" />
-                          <span>Pagado</span>
-                        </label>
-                        <button type="button" class="btn-guardar-compact" :disabled="!cuota.editado" @click="guardarCuota(cuota)" title="Guardar cambios">
-                          <i class="fas fa-save"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+
             </div>
 
             <!-- Botones de acción dentro del formulario -->
@@ -497,17 +358,17 @@
           <div v-if="servicioDetalle?.pagos" class="detalle-contrato-section">
             <h4><i class="fas fa-euro-sign"></i> Información de Pagos</h4>
             <div class="info-grid">
-              <div class="info-row">
+              <div class="info-row info-row-importe">
                 <span class="info-label">Importe Total:</span>
-                <span class="info-value">{{ servicioDetalle.pagos.importe || 0 }}€</span>
+                <span class="info-value info-value-importe">{{ servicioDetalle.pagos.importe || 0 }}€</span>
               </div>
-              <div class="info-row">
+              <div class="info-row info-row-importe">
                 <span class="info-label">Descuento:</span>
-                <span class="info-value">{{ servicioDetalle.pagos.descuento || 0 }}€</span>
+                <span class="info-value info-value-importe">{{ servicioDetalle.pagos.descuento || 0 }}€</span>
               </div>
-              <div class="info-row">
+              <div class="info-row info-row-importe">
                 <span class="info-label">Importe Final:</span>
-                <span class="info-value">{{ servicioDetalle.pagos.importeFinal || 0 }}€</span>
+                <span class="info-value info-value-importe">{{ servicioDetalle.pagos.importeFinal || 0 }}€</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Cuotas Pagadas:</span>
@@ -570,7 +431,7 @@
                     <label>Fecha:</label>
                     <input type="date" v-model="cuota.fechaPago" @change="marcarEditado(cuota)" class="form-control-compact" />
                   </div>
-                  <div class="cuota-campo-compact">
+                  <div class="cuota-campo-compact cuota-campo-importe">
                     <label>Importe:</label>
                     <div class="input-euro-compact">
                       <input type="number" v-model="cuota.importePago" min="0" step="0.01" @change="marcarEditado(cuota)" class="form-control-compact" />
@@ -648,7 +509,7 @@ export default {
       type: [Object, Number],
       required: true
     },
-    puntoSuministro: {
+    puntoSuministroSeleccionado: {
       type: [Object, Number],
       required: true
     },
@@ -802,6 +663,12 @@ export default {
       this.modoRenovacion = false;
       this.servicioEditandoId = this.servicioVigente.id;
       this.nuevoServicio = { ...this.servicioVigente };
+      
+      // Asegurar que el campo CUPS esté siempre cargado
+      if (!this.nuevoServicio.cups) {
+        this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
+      }
+      
       this.cargarDatosPagosServicio(this.servicioVigente.id);
     },
 
@@ -819,6 +686,11 @@ export default {
         fechaInicioServicio: this.formatDateForInput(this.servicioVigente.fechaInicioServicio) || '',
         fechaFinServicio: this.formatDateForInput(this.servicioVigente.fechaFinServicio) || '',
       };
+      
+      // Asegurar que el campo CUPS esté siempre cargado para renovación
+      if (!this.nuevoServicio.cups) {
+        this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
+      }
     },
 
     editarServicioGenerico(servicio) {
@@ -832,6 +704,11 @@ export default {
       this.nuevoServicio.id = servicio.id;
       this.nuevoServicio.idCliente = servicio.idCliente || servicio.cliente?.id || this.cliente?.id;
       this.nuevoServicio.idPuntoSuministro = servicio.idPuntoSuministro || servicio.puntoSuministro?.id || this.puntoSuministroData?.id;
+      
+      // Asegurar que el campo CUPS esté siempre cargado
+      if (!this.nuevoServicio.cups) {
+        this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
+      }
       
       this.nuevoServicio.fechaInicioServicio = this.formatDateForInput(servicio.fechaInicioServicio);
       this.nuevoServicio.fechaFinServicio = this.formatDateForInput(servicio.fechaFinServicio);
@@ -856,6 +733,11 @@ export default {
         fechaFinServicio: this.formatDateForInput(servicio.fechaFinServicio) || '',
       };
       
+      // Asegurar que el campo CUPS esté siempre cargado para renovación
+      if (!this.nuevoServicio.cups) {
+        this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
+      }
+      
       console.log('Datos cargados para renovación:', this.nuevoServicio);
     },
 
@@ -874,8 +756,8 @@ export default {
         if (!this.nuevoServicio.idPuntoSuministro) {
           await this.$swal.fire({
             icon: 'warning',
-            title: 'Campos requeridos',
-            text: 'Por favor, seleccione un CUPS',
+            title: 'Error de configuración',
+            text: 'No se pudo determinar el punto de suministro. Verifique la configuración.',
             confirmButtonColor: '#3085d6'
           });
           return;
@@ -901,11 +783,9 @@ export default {
           }
         });
 
-        const puntoSeleccionado = this.puntosSuministro.find(p => p.id === this.nuevoServicio.idPuntoSuministro);
-        
         const servicioPayload = {
           id: this.modoEdicion ? this.servicioEditandoId : null,
-          cups: puntoSeleccionado ? puntoSeleccionado.cups : this.nuevoServicio.cups,
+          cups: this.nuevoServicio.cups,
           fechaInicioServicio: this.nuevoServicio.fechaInicioServicio,
           fechaFinServicio: this.nuevoServicio.fechaFinServicio,
           descripcion: this.nuevoServicio.descripcion,
@@ -1094,10 +974,23 @@ export default {
     },
 
     inicializarNuevoServicio() {
+      // Obtener el CUPS del punto de suministro
+      const cupsValue = this.puntoSuministroData?.cupsluz || 
+                       this.puntoSuministroData?.cupsgas || 
+                       this.puntoSuministroActivo?.cupsluz || 
+                       this.puntoSuministroActivo?.cupsgas || "";
+      
+      console.log('Inicializando nuevo servicio - CUPS:', cupsValue);
+      console.log('puntoSuministroData:', this.puntoSuministroData);
+      console.log('puntoSuministroActivo:', this.puntoSuministroActivo);
+      console.log('puntoSuministroSeleccionado (prop):', this.puntoSuministroSeleccionado);
+      console.log('cliente (prop):', this.cliente);
+      console.log('Props completas:', this.$props);
+      
       this.nuevoServicio = {
         idCliente: this.cliente?.id || "",
         idPuntoSuministro: this.puntoSuministroData?.id || "",
-        cups: "",
+        cups: cupsValue,
         fechaInicioServicio: "",
         fechaFinServicio: "",
         descripcion: "",
@@ -1356,7 +1249,7 @@ export default {
     },
 
     puntoSuministroData() {
-      return this.puntoSuministro;
+      return this.puntoSuministroSeleccionado;
     },
 
     puntoSuministroActivo() {
@@ -2175,16 +2068,24 @@ export default {
 
 .cuota-contenido-compact {
   padding: 6px 8px;
+  overflow: hidden; /* Evita que el contenido se desborde */
 }
 
 .cuota-fila {
   display: flex;
-  gap: 6px;
+  gap: 4px; /* Gap reducido para ahorrar espacio */
   margin-bottom: 6px;
+  align-items: flex-end; /* Alinea los campos por la parte inferior */
 }
 
 .cuota-campo-compact {
   flex: 1;
+}
+
+/* Campo de importe más ancho que el de fecha */
+.cuota-campo-importe {
+  flex: 1.3 !important; /* 30% más ancho que el campo de fecha (más conservador) */
+  min-width: 100px !important; /* Ancho mínimo reducido para que quepa mejor */
 }
 
 .cuota-campo-compact label {
@@ -2211,6 +2112,8 @@ export default {
 
 .input-euro-compact input {
   flex: 1;
+  min-width: 70px; /* Ancho mínimo reducido para que quepa mejor */
+  padding: 3px 6px; /* Padding reducido para ahorrar espacio */
 }
 
 .euro-symbol {
@@ -2542,6 +2445,7 @@ export default {
   margin-bottom: 0.4rem;
   background: #fff;
   border: 1px solid #f0f0f0;
+  min-width: 300px; /* Ancho mínimo para evitar entrecortado */
 }
 
 .info-label {
@@ -2559,6 +2463,10 @@ export default {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: 1; /* Permite que se expanda */
+  min-width: 120px; /* Ancho mínimo para importes largos */
+  text-align: right; /* Alinea los números a la derecha */
+  word-break: break-word; /* Evita que se entrecorte el texto */
 }
 
 .observaciones-content {
@@ -2579,6 +2487,35 @@ export default {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Estilos para campo CUPS readonly */
+.cups-readonly {
+  background-color: #f8f9fa !important;
+  border-color: #e9ecef !important;
+  color: #495057 !important;
+  cursor: not-allowed !important;
+  font-weight: 600 !important;
+}
+
+.field-help {
+  display: block;
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+/* Estilos específicos para campos de importe */
+.info-row-importe {
+  min-width: 350px; /* Más ancho para campos de importe */
+}
+
+.info-value-importe {
+  min-width: 150px; /* Ancho mínimo mayor para importes */
+  font-family: 'Consolas', 'Monaco', monospace; /* Fuente monoespaciada para números */
+  font-size: 1.1rem; /* Ligeramente más grande */
+  color: #2c3e50; /* Color más definido */
 }
 
 /* Media queries para responsividad */
