@@ -620,8 +620,6 @@ export default {
         
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/all`);
         
-        let puntosSinTarifa = 0;
-        let puntosConTarifa = 0;
         
         this.puntosSuministro = response.data.map(punto => {
           const newPunto = { ...punto };
@@ -640,17 +638,12 @@ export default {
           if (newPunto.tarifaActual && newPunto.tarifaActual !== null) {
             if (newPunto.tarifaActual === 'Sin Tarifa') {
               newPunto.tarifaActual = null;
-              puntosSinTarifa++;
-            } else {
-              puntosConTarifa++;
-            }
-          } else {
-            puntosSinTarifa++;
-          }
+            } 
+          } 
           
           return newPunto;
         });
-        
+      
       } catch (error) {
         console.error("Error al cargar los puntos de suministro:", error);
       } finally {
@@ -802,6 +795,7 @@ export default {
           // Asegurar que el ID se preserve
           this.modalCliente.id = idCliente;
           this.modalPuntoSuministro = responsePuntoSuministro.data;
+          
         } catch (error) {
           console.error("Error al cargar datos del cliente o punto de suministro:", error);
         }
@@ -846,7 +840,7 @@ export default {
           // Actualizar las tarifas y contratos - ya tenemos los datos específicos
           // No repetimos la asignación de tarifasGas y tarifasLuz aquí
           this.contratos = responseContratos.data;
-
+          
           // Calcular el contrato actual y los históricos
           const ahora = new Date();
           // No asignamos directamente a las propiedades computadas
@@ -860,7 +854,6 @@ export default {
           // Guardamos las referencias para usarlas en la interfaz
           this.contratoActualData = contratoActualTemp;
           this.contratosHistoricosData = contratosHistoricosTemp;
-
         } catch (error) {
           console.error("Error al cargar tarifas o contratos:", error);
           // Asegurar que tenemos arrays vacíos en lugar de null
@@ -893,8 +886,7 @@ export default {
     },
 
     // Maneja la creación de un nuevo contrato (simplificado - sin recarga automática)
-    async handleContratoCreado(nuevoContrato) {
-      
+    async handleContratoCreado() {
       // Mostrar mensaje informativo al usuario
       this.$swal.fire({
         title: 'Contrato creado',
@@ -908,7 +900,8 @@ export default {
     },
 
     // Maneja la actualización de un contrato existente
-    async handleContratoActualizado(contratoActualizado) {
+    async handleContratoActualizado() {
+      
       // Recargar automáticamente los contratos para reflejar los cambios
       await this.recargarContratosDelPuntoSuministro();
       
@@ -925,7 +918,7 @@ export default {
     },
 
     // Maneja la renovación de un contrato
-    async handleContratoRenovado(contratoRenovado) {
+    async handleContratoRenovado() {
       // Recargar automáticamente los contratos para reflejar los cambios
       await this.recargarContratosDelPuntoSuministro();
       
@@ -949,6 +942,7 @@ export default {
       }
 
       try {
+        
         // Recargar contratos del punto de suministro actual
         const responseContratos = await axios.get(
           `${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${this.modalPuntoSuministro.id}`
@@ -1324,7 +1318,7 @@ export default {
       this.gestoras = gestoras.data;
       this.productos = productos.data;
       this.todosLosContratos = contratos.data;
-
+      
       // Forzar una actualización de la vista para que se apliquen bien los datos de tarifa
       this.$nextTick(() => {
         this.$forceUpdate();

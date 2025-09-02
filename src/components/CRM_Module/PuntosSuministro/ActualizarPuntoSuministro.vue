@@ -38,7 +38,7 @@
                   <input type="text" id="codigoPostal" v-model="puntoLocal.codigoPostal" :readonly="modoConsulta" required />
                 </div>
                 <div class="form-compact-group">
-                  <label for="poblacion">PoblaciÃ³n <span class="required">*</span></label>
+                  <label for="poblacion">Población <span class="required">*</span></label>
                   <input type="text" id="poblacion" v-model="puntoLocal.poblacion" :readonly="modoConsulta" required />
                 </div>
                 <div class="form-compact-group">
@@ -48,14 +48,14 @@
               </div>
               <div class="form-row">
                 <div class="form-compact-group half">
-                  <label for="identificacion">IdentificaciÃ³n</label>
+                  <label for="identificacion">Identificación</label>
                   <div class="input-with-icon">
                     <i class="fas fa-id-card icon-prefix"></i>
                     <input type="text" id="identificacion" v-model="puntoLocal.identificacion" :readonly="modoConsulta" />
                   </div>
                 </div>
                 <div class="form-compact-group half">
-                  <label for="ubicacion">UbicaciÃ³n Maps</label>
+                  <label for="ubicacion">Ubicación Maps</label>
                   <div class="input-with-icon">
                     <i class="fas fa-map-marker-alt icon-prefix"></i>
                     <input type="text" id="ubicacion" v-model="puntoLocal.ubicacion" :readonly="modoConsulta" />
@@ -349,11 +349,11 @@ export default {
       }));
     },
     tienePotenciasContratadas() {
-      // Siempre mostrar la secciÃ³n de potencias en modo consulta, aunque sean 0
+      // Siempre mostrar la sección de potencias en modo consulta, aunque sean 0
       if (this.modoConsulta) {
         return true;
       }
-      // En modo ediciÃ³n, solo mostrar si hay potencias > 0
+      // En modo edición, solo mostrar si hay potencias > 0
       return this.potenciasArray.some(potencia => potencia.valor && potencia.valor > 0);
     }
   },
