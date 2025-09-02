@@ -775,7 +775,6 @@ export default {
     },
 
     editarContratoGenerico(contrato) {
-      console.log('Editando contrato:', contrato); // Debug
       this.mostrandoFormulario = true;
       this.modoEdicion = true;
       this.modoRenovacion = false;
@@ -803,11 +802,9 @@ export default {
       }
       
       this.selectedFile = null;
-      console.log('Datos cargados para edición:', this.nuevoContrato); // Debug
     },
 
     renovarContratoGenerico(contrato) {
-      console.log('Renovando contrato:', contrato); // Debug
       this.mostrandoFormulario = true;
       this.modoEdicion = false;
       this.modoRenovacion = true;
@@ -833,7 +830,6 @@ export default {
       }
       
       this.selectedFile = null;
-      console.log('Datos cargados para renovación:', this.nuevoContrato); // Debug
     },
 
     cancelarFormulario() {
@@ -855,9 +851,6 @@ export default {
         if (this.modoEdicion && this.contratoEditandoId) {
           this.nuevoContrato.id = this.contratoEditandoId;
         }
-        
-        console.log('Datos a enviar:', this.nuevoContrato); // Debug
-        console.log('Modo edición:', this.modoEdicion, 'ID:', this.contratoEditandoId); // Debug
         
         this.$swal.fire({
           title: 'Guardando contrato...',
@@ -881,7 +874,6 @@ export default {
           }
 
           if (this.modoEdicion && this.contratoEditandoId) {
-            console.log(`Enviando PUT a /api/contratos/${this.contratoEditandoId}`); // Debug
             response = await axios.put(
               `${process.env.VUE_APP_API_URL}/api/contratos/${this.contratoEditandoId}`,
               formData,
@@ -898,8 +890,6 @@ export default {
         // Si no hay archivo, enviamos como JSON directamente
         else {
           if (this.modoEdicion && this.contratoEditandoId) {
-            console.log(`Enviando PUT a /api/contratos/${this.contratoEditandoId}`); // Debug
-            console.log('Datos JSON:', this.nuevoContrato); // Debug
             response = await axios.put(
               `${process.env.VUE_APP_API_URL}/api/contratos/${this.contratoEditandoId}`,
               this.nuevoContrato,
@@ -913,9 +903,7 @@ export default {
             );
           }
         }
-        
-        console.log('Respuesta del servidor:', response.data); // Debug
-        
+
         // Mostrar mensaje de éxito
         await this.$swal.fire({
           title: this.modoEdicion ? 'Contrato actualizado' : (this.modoRenovacion ? 'Contrato renovado' : 'Contrato creado'),
@@ -1004,16 +992,6 @@ export default {
       // Determinar el tipo de punto de suministro
       const tieneGas = this.puntoSuministroData?.cupsgas && this.puntoSuministroData.cupsgas.trim() !== '';
       const tieneLuz = this.puntoSuministroData?.cupsluz && this.puntoSuministroData.cupsluz.trim() !== '';
-      
-      console.log('Inicializando nuevo contrato con:', {
-        tieneGas,
-        tieneLuz,
-        idSinTarifaGas,
-        idSinTarifaLuz,
-        tieneAutoconsumo: this.tieneAutoconsumo,
-        cupsgas: this.puntoSuministroData?.cupsgas,
-        cupsluz: this.puntoSuministroData?.cupsluz
-      });
       
       this.nuevoContrato = {
         idCliente: this.cliente?.id || "",
@@ -1229,7 +1207,6 @@ export default {
         shouldShowMain: !this.cargandoDatos && !this.mostrandoFormulario,
         shouldShowForm: !this.cargandoDatos && this.mostrandoFormulario
       };
-      console.log('Estado del modal:', info);
       return info;
     }
   },
@@ -1239,7 +1216,6 @@ export default {
       immediate: true, // Ejecutar inmediatamente cuando se crea el componente
       handler(newVal) {
         if (newVal) {
-          console.log('Modal abriéndose, reseteando estado...');
           
           // PRIMER PASO: Resetear TODOS los estados
           this.cargandoDatos = false;
@@ -1250,37 +1226,24 @@ export default {
           // SEGUNDO PASO: Verificar si necesitamos cargar tarifas
           const needsGasTarifas = !this.tarifasGas || this.tarifasGas.length === 0;
           const needsLuzTarifas = !this.tarifasLuz || this.tarifasLuz.length === 0;
-          
-          console.log('Modal abierto, verificando datos:', {
-            contratos: this.contratos?.length || 0,
-            needsGasTarifas,
-            needsLuzTarifas,
-            tarifasGas: this.tarifasGas?.length || 0,
-            tarifasLuz: this.tarifasLuz?.length || 0
-          });
-          
+
           // TERCER PASO: Solo activar carga si realmente necesitamos tarifas
           if (needsGasTarifas || needsLuzTarifas) {
-            console.log('Activando spinner para cargar tarifas faltantes');
             this.cargandoDatos = true;
             
             // Timeout de seguridad
             setTimeout(() => {
               if (this.cargandoDatos) {
-                console.log('Forzando fin de carga por timeout en watcher');
                 this.cargandoDatos = false;
               }
             }, 2000);
-          } else {
-            console.log('Todas las tarifas están disponibles, no se necesita spinner');
-          }
+          } 
           
           // CUARTO PASO: Configurar vista inicial
           this.$nextTick(() => {
             try {
               // SIEMPRE mostrar la vista principal (histórico) primero
               // El usuario puede hacer clic en "Crear Contrato" si quiere añadir uno
-              console.log('Configurando vista inicial - mostrando histórico');
               // No hacer nada aquí, dejar que la vista principal se muestre por defecto
             } catch (error) {
               console.error("Error al inicializar vista del modal:", error);
@@ -1288,7 +1251,6 @@ export default {
             }
           });
         } else {
-          console.log('Modal cerrándose, limpiando estado...');
           // Resetear estado cuando se cierra el modal
           this.cargandoDatos = false;
           this.mostrandoFormulario = false;
@@ -1343,17 +1305,6 @@ export default {
     }
   },
   async mounted() {
-    // Debug: verificar datos principales
-    console.log('ModalContratos mounted:', {
-      puntoSuministroId: this.puntoSuministro?.id,
-      tieneContratoVigente: this.tieneContratoVigente,
-      esGas: this.esGas,
-      esLuz: this.esLuz,
-      tarifasGasCount: this.tarifasGas?.length || 0,
-      tarifasLuzCount: this.tarifasLuz?.length || 0,
-      visible: this.visible
-    });
-    
     // Inicializar como NO cargando
     this.cargandoDatos = false;
     
@@ -1372,7 +1323,6 @@ export default {
             axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`)
               .then(response => {
                 this.$emit('update:tarifasGas', response.data);
-                console.log(`Tarifas de gas cargadas: ${response.data.length}`);
                 return response.data;
               })
               .catch(error => {
@@ -1387,7 +1337,6 @@ export default {
             axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-luz`)
               .then(response => {
                 this.$emit('update:tarifasLuz', response.data);
-                console.log(`Tarifas de luz cargadas: ${response.data.length}`);
                 return response.data;
               })
               .catch(error => {
@@ -1400,7 +1349,6 @@ export default {
         // Esperar a que se carguen todas las tarifas necesarias
         try {
           await Promise.all(promises);
-          console.log('Todas las tarifas cargadas exitosamente en mounted');
         } catch (error) {
           console.error('Error al cargar algunas tarifas en mounted:', error);
         } finally {

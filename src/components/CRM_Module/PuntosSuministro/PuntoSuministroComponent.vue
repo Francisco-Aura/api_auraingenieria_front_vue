@@ -617,10 +617,8 @@ export default {
     async fetchPuntosSuministro() {
       try {
         this.loading = true;
-        console.log("Cargando puntos de suministro...");
         
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/all`);
-        console.log(`Puntos de suministro recibidos: ${response.data.length}`);
         
         let puntosSinTarifa = 0;
         let puntosConTarifa = 0;
@@ -653,7 +651,6 @@ export default {
           return newPunto;
         });
         
-        console.log(`Estadísticas de tarifas: ${puntosConTarifa} puntos con tarifa, ${puntosSinTarifa} puntos sin tarifa`);
       } catch (error) {
         console.error("Error al cargar los puntos de suministro:", error);
       } finally {
@@ -664,7 +661,6 @@ export default {
     // Abre el formulario de actualización de un punto de suministro
     async abrirFormularioPSActualizar(ps) {
       if (!ps.id) return alert("Punto de suministro no válido");
-      console.log("Datos del punto de suministro para actualizar:", ps);
       try {
         // Cargar datos detallados del punto de suministro
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
@@ -679,14 +675,6 @@ export default {
             const puntoCartera = responseCartera.data.find(punto => punto.id === ps.id);
             
             if (puntoCartera) {
-              console.log("Potencias encontradas en cartera:", {
-                potencia1: puntoCartera.potencia1,
-                potencia2: puntoCartera.potencia2,
-                potencia3: puntoCartera.potencia3,
-                potencia4: puntoCartera.potencia4,
-                potencia5: puntoCartera.potencia5,
-                potencia6: puntoCartera.potencia6
-              });
               
               // Combinar datos del endpoint detallado con las potencias del endpoint de cartera
               puntoConPotencias = {
@@ -739,7 +727,6 @@ export default {
         }
         
         this.modificarPunto = puntoConPotencias;
-        console.log("Datos finales combinados para el modal:", this.modificarPunto);
         this.modoConsulta = false;
         this.formularioVisible = true;
       } catch (error) {
@@ -783,7 +770,6 @@ export default {
 
     // Abre el modal de contratos con los datos del punto de suministro seleccionado
     async abrirModalContratos(idPuntoSuministro, idCliente) {
-      console.log(`Abriendo modal de contratos para punto de suministro ${idPuntoSuministro} del cliente ${idCliente}`);
       this.loading = true;
       
       // Primero inicializamos valores mínimos para que el modal se pueda abrir
@@ -800,7 +786,6 @@ export default {
       // Establecer un límite máximo para el spinner de carga
       setTimeout(() => {
         if (this.loading) {
-          console.log("Forzando fin del spinner después de tiempo límite");
           this.loading = false;
         }
       }, 8000); // 8 segundos máximo
@@ -817,8 +802,6 @@ export default {
           // Asegurar que el ID se preserve
           this.modalCliente.id = idCliente;
           this.modalPuntoSuministro = responsePuntoSuministro.data;
-          
-          console.log("Datos básicos cargados: cliente y punto de suministro");
         } catch (error) {
           console.error("Error al cargar datos del cliente o punto de suministro:", error);
         }
@@ -863,9 +846,7 @@ export default {
           // Actualizar las tarifas y contratos - ya tenemos los datos específicos
           // No repetimos la asignación de tarifasGas y tarifasLuz aquí
           this.contratos = responseContratos.data;
-          
-          console.log(`Datos de contratos y tarifas cargados: Gas (${this.tarifasGas.length}), Luz (${this.tarifasLuz.length}), Contratos (${this.contratos.length})`);
-          
+
           // Calcular el contrato actual y los históricos
           const ahora = new Date();
           // No asignamos directamente a las propiedades computadas
@@ -879,8 +860,7 @@ export default {
           // Guardamos las referencias para usarlas en la interfaz
           this.contratoActualData = contratoActualTemp;
           this.contratosHistoricosData = contratosHistoricosTemp;
-          
-          console.log(`Contratos procesados: ${this.contratos.length} total, contratoActual ID: ${this.contratoActualData?.id || 'ninguno'}, ${this.contratosHistoricosData?.length || 0} históricos`);
+
         } catch (error) {
           console.error("Error al cargar tarifas o contratos:", error);
           // Asegurar que tenemos arrays vacíos en lugar de null
@@ -914,7 +894,6 @@ export default {
 
     // Maneja la creación de un nuevo contrato (simplificado - sin recarga automática)
     async handleContratoCreado(nuevoContrato) {
-      console.log('Contrato creado exitosamente:', nuevoContrato);
       
       // Mostrar mensaje informativo al usuario
       this.$swal.fire({
@@ -930,8 +909,6 @@ export default {
 
     // Maneja la actualización de un contrato existente
     async handleContratoActualizado(contratoActualizado) {
-      console.log('Contrato actualizado exitosamente:', contratoActualizado);
-      
       // Recargar automáticamente los contratos para reflejar los cambios
       await this.recargarContratosDelPuntoSuministro();
       
@@ -949,8 +926,6 @@ export default {
 
     // Maneja la renovación de un contrato
     async handleContratoRenovado(contratoRenovado) {
-      console.log('Contrato renovado exitosamente:', contratoRenovado);
-      
       // Recargar automáticamente los contratos para reflejar los cambios
       await this.recargarContratosDelPuntoSuministro();
       
@@ -974,14 +949,11 @@ export default {
       }
 
       try {
-        console.log(`Recargando contratos para punto de suministro ID: ${this.modalPuntoSuministro.id}`);
-        
         // Recargar contratos del punto de suministro actual
         const responseContratos = await axios.get(
           `${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${this.modalPuntoSuministro.id}`
         );
         this.contratos = responseContratos.data;
-        console.log(`Contratos recargados: ${this.contratos.length} encontrados`);
 
         // Recalcular el contrato actual
         const ahora = new Date();
@@ -996,12 +968,6 @@ export default {
           const fechaFin = new Date(contrato.fechaFin);
           const fechaInicio = new Date(contrato.fechaInicio);
           return !(fechaInicio <= ahora && fechaFin > ahora);
-        });
-
-        console.log('Contratos recargados exitosamente', {
-          total: this.contratos.length,
-          vigente: this.contratoActual ? 1 : 0,
-          historicos: this.contratosHistoricos.length
         });
 
       } catch (error) {
@@ -1098,14 +1064,11 @@ export default {
         // Activar loading durante la recarga
         this.cargandoServicios = true;
         
-        console.log('Recargando servicios para punto de suministro:', this.modalPuntoSuministro);
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios/punto-suministro/${this.modalPuntoSuministro}`);
         
         // Cargar datos de pagos para cada servicio
         const serviciosConPagos = await this.cargarDatosDePagosParaServicios(response.data);
         this.servicios = serviciosConPagos;
-        
-        console.log('Servicios recargados exitosamente:', this.servicios.length);
         
         // Desactivar loading
         this.cargandoServicios = false;
@@ -1255,7 +1218,6 @@ export default {
     // Abre un modal para consultar los detalles de un punto de suministro
     async abrirModalPSConsulta(ps) {
       if (!ps.id) return alert("Punto de suministro no válido");
-      console.log("Datos del punto de suministro para consulta:", ps);
       try {
         // Cargar datos detallados del punto de suministro
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
@@ -1272,7 +1234,6 @@ export default {
           potencia6: ps.potencia6 || 0
         };
         
-        console.log("Datos combinados para el modal:", this.modificarPunto);
         this.modoConsulta = true;
         this.formularioVisible = true;
       } catch (error) {
@@ -1347,7 +1308,6 @@ export default {
     
     // Precargamos los arrays de los combos y datos necesarios
     try {
-      console.log("Cargando datos iniciales...");
       
       const [comercializadoras, tarifasGas, tarifasLuz, gestoras, productos, contratos] = await Promise.all([
         axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`),
@@ -1364,9 +1324,7 @@ export default {
       this.gestoras = gestoras.data;
       this.productos = productos.data;
       this.todosLosContratos = contratos.data;
-      
-      console.log(`Datos cargados: ${this.tarifasGas.length} tarifas gas, ${this.tarifasLuz.length} tarifas luz, ${this.todosLosContratos.length} contratos`);
-      
+
       // Forzar una actualización de la vista para que se apliquen bien los datos de tarifa
       this.$nextTick(() => {
         this.$forceUpdate();
