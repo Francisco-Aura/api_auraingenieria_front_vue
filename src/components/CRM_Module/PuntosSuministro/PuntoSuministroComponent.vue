@@ -194,9 +194,9 @@
               </td>
               <td
                 class="cups-cell"
-                :title="suministro.cupsluz || suministro.cupsgas"
+                :title="getCupsParaMostrar(suministro)"
               >
-                {{ suministro.cupsluz || suministro.cupsgas }}
+                {{ getCupsParaMostrar(suministro) }}
               </td>
               <td style="text-align: center;">
                 <div class="tipo-indicator" :class="{ 'is-gas': isGas(suministro), 'is-luz': isLuz(suministro) }">
@@ -461,7 +461,7 @@ export default {
 
           // Caso especial para el filtro de CUPS
           if (key === 'cupsluz') {
-            const cupsValue = this.getCupsValue(suministro);
+            const cupsValue = this.getCupsParaMostrar(suministro);
             return cupsValue.toLowerCase().includes(value.toLowerCase());
           }
 
@@ -1159,6 +1159,26 @@ export default {
       if (suministro.cupsgas && suministro.cupsgas.trim() !== '') {
         return suministro.cupsgas;
       }
+      return '';
+    },
+
+    // Método mejorado para obtener el CUPS que se debe mostrar en la tabla
+    getCupsParaMostrar(suministro) {
+      // Si tiene ambos CUPS, mostrar el que corresponda al tipo principal
+      if (this.isLuz(suministro)) {
+        return suministro.cupsluz || '';
+      } else if (this.isGas(suministro)) {
+        return suministro.cupsgas || '';
+      }
+      
+      // Fallback: mostrar el que tenga valor
+      if (suministro.cupsluz && suministro.cupsluz.trim() !== '') {
+        return suministro.cupsluz;
+      }
+      if (suministro.cupsgas && suministro.cupsgas.trim() !== '') {
+        return suministro.cupsgas;
+      }
+      
       return '';
     },
 
