@@ -1192,7 +1192,7 @@ export default {
         if (this.modoEdicion && this.pagosExistentes && this.verificarCambiosEnPagos()) {
           const cuotasPagadas = this.contarCuotasPagadas();
           if (cuotasPagadas > 0) {
-            mensajeExito += ` Se han preservado ${cuotasPagadas} cuotas ya pagadas.`;
+            mensajeExito += ` Se han preservado las cuotas ya pagadas.`;
           }
         }
 
