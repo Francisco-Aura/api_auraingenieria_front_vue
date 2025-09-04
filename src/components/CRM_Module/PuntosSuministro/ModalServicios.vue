@@ -68,10 +68,16 @@
                 </thead>
                 <tbody>
                   <tr v-for="servicio in todosLosServiciosOrdenados" :key="servicio.id" class="history-row"
-                      :class="{ 'servicio-vigente': esServicioVigente(servicio) }">
+                      :class="{ 
+                        'servicio-vigente': obtenerEstadoServicio(servicio) === 'VIGENTE',
+                        'servicio-pendiente': obtenerEstadoServicio(servicio) === 'PENDIENTE'
+                      }">
                     <td>
-                      <span v-if="esServicioVigente(servicio)" class="status-vigente">
+                      <span v-if="obtenerEstadoServicio(servicio) === 'VIGENTE'" class="status-vigente">
                         <i class="fas fa-circle"></i> VIGENTE
+                      </span>
+                      <span v-else-if="obtenerEstadoServicio(servicio) === 'PENDIENTE'" class="status-pendiente">
+                        <i class="fas fa-exclamation-circle"></i> PENDIENTE
                       </span>
                       <span v-else class="status-historico">
                         <i class="fas fa-circle"></i> HISTÓRICO
@@ -627,6 +633,7 @@ export default {
       modalidadesPago: [],
       cuotas: [],
       pagosExistentes: null, // Para preservar los datos de pagos existentes
+      modalidadDebounceTimer: null, // Timer para debounce de validaciones
     };
   },
 
@@ -726,17 +733,44 @@ export default {
       this.inicializarNuevoServicio();
     },
 
-    modificarServicioActual() {
+    async modificarServicioActual() {
       if (!this.servicioVigente) return;
       this.mostrandoFormulario = true;
       this.modoEdicion = true;
       this.modoRenovacion = false;
       this.servicioEditandoId = this.servicioVigente.id;
-      this.nuevoServicio = { ...this.servicioVigente };
       
-      // Asegurar que el campo CUPS esté siempre cargado
-      if (!this.nuevoServicio.cups) {
-        this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
+      // Cargar datos completos del servicio desde el backend
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios/${this.servicioVigente.id}`);
+        const servicioCompleto = response.data;
+        
+        this.nuevoServicio = { 
+          idCliente: servicioCompleto.idCliente,
+          idPuntoSuministro: servicioCompleto.idPuntoSuministro,
+          cups: servicioCompleto.cups || this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "",
+          fechaInicioServicio: this.formatDate(servicioCompleto.fechaInicioServicio),
+          fechaFinServicio: this.formatDate(servicioCompleto.fechaFinServicio),
+          descripcion: servicioCompleto.descripcion || "",
+          idGestora: servicioCompleto.idGestora || 0,
+          idProducto: servicioCompleto.idProducto || 0,
+          idComercializadora: servicioCompleto.idComercializadora || 0,
+          observaciones: servicioCompleto.observaciones || "",
+          importe: servicioCompleto.importe || 0,
+          descuento: servicioCompleto.descuento || 0,
+          importeFinal: servicioCompleto.importeFinal || servicioCompleto.importe || 0,
+          idPagoPlazos: servicioCompleto.idPagoPlazos || null // ¡CAMPO CRÍTICO INCLUIDO!
+        };
+
+      } catch (error) {
+        console.error('Error al cargar datos completos del servicio:', error);
+        // Fallback al método anterior si falla la carga
+        this.nuevoServicio = { ...this.servicioVigente };
+        
+        // Asegurar que el campo CUPS esté siempre cargado
+        if (!this.nuevoServicio.cups) {
+          this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
+        }
       }
       
       this.cargarDatosPagosServicio(this.servicioVigente.id);
@@ -763,32 +797,56 @@ export default {
       }
     },
 
-    editarServicioGenerico(servicio) {
-      console.log('Editando servicio:', servicio);
+    async editarServicioGenerico(servicio) {
       this.mostrandoFormulario = true;
       this.modoEdicion = true;
       this.modoRenovacion = false;
       this.servicioEditandoId = servicio.id;
       
-      this.nuevoServicio = JSON.parse(JSON.stringify(servicio));
-      this.nuevoServicio.id = servicio.id;
-      this.nuevoServicio.idCliente = servicio.idCliente || servicio.cliente?.id || this.cliente?.id;
-      this.nuevoServicio.idPuntoSuministro = servicio.idPuntoSuministro || servicio.puntoSuministro?.id || this.puntoSuministroData?.id;
-      
-      // Asegurar que el campo CUPS esté siempre cargado
-      if (!this.nuevoServicio.cups) {
-        this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
+      // Cargar datos completos del servicio desde el backend
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios/${servicio.id}`);
+        const servicioCompleto = response.data;
+        
+        this.nuevoServicio = {
+          id: servicioCompleto.id,
+          idCliente: servicioCompleto.idCliente || servicio.cliente?.id || this.cliente?.id,
+          idPuntoSuministro: servicioCompleto.idPuntoSuministro || servicio.puntoSuministro?.id || this.puntoSuministroData?.id,
+          cups: servicioCompleto.cups || this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "",
+          fechaInicioServicio: this.formatDateForInput(servicioCompleto.fechaInicioServicio),
+          fechaFinServicio: this.formatDateForInput(servicioCompleto.fechaFinServicio),
+          descripcion: servicioCompleto.descripcion || "",
+          idGestora: servicioCompleto.idGestora || 0,
+          idProducto: servicioCompleto.idProducto || 0,
+          idComercializadora: servicioCompleto.idComercializadora || 0,
+          observaciones: servicioCompleto.observaciones || "",
+          importe: servicioCompleto.importe || 0,
+          descuento: servicioCompleto.descuento || 0,
+          importeFinal: servicioCompleto.importeFinal || servicioCompleto.importe || 0,
+          idPagoPlazos: servicioCompleto.idPagoPlazos || null // ¡CAMPO CRÍTICO INCLUIDO!
+        };
+        
+      } catch (error) {
+        console.error('Error al cargar datos completos del servicio:', error);
+        // Fallback al método anterior si falla la carga
+        this.nuevoServicio = JSON.parse(JSON.stringify(servicio));
+        this.nuevoServicio.id = servicio.id;
+        this.nuevoServicio.idCliente = servicio.idCliente || servicio.cliente?.id || this.cliente?.id;
+        this.nuevoServicio.idPuntoSuministro = servicio.idPuntoSuministro || servicio.puntoSuministro?.id || this.puntoSuministroData?.id;
+        
+        // Asegurar que el campo CUPS esté siempre cargado
+        if (!this.nuevoServicio.cups) {
+          this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
+        }
+        
+        this.nuevoServicio.fechaInicioServicio = this.formatDateForInput(servicio.fechaInicioServicio);
+        this.nuevoServicio.fechaFinServicio = this.formatDateForInput(servicio.fechaFinServicio);
       }
       
-      this.nuevoServicio.fechaInicioServicio = this.formatDateForInput(servicio.fechaInicioServicio);
-      this.nuevoServicio.fechaFinServicio = this.formatDateForInput(servicio.fechaFinServicio);
-      
       this.cargarDatosPagosServicio(servicio.id);
-      console.log('Datos cargados para edición:', this.nuevoServicio);
     },
 
     renovarServicioGenerico(servicio) {
-      console.log('Renovando servicio:', servicio);
       this.mostrandoFormulario = true;
       this.modoEdicion = false;
       this.modoRenovacion = true;
@@ -808,7 +866,6 @@ export default {
         this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
       }
       
-      console.log('Datos cargados para renovación:', this.nuevoServicio);
     },
 
     cancelarFormulario() {
@@ -822,7 +879,6 @@ export default {
 
     async guardarServicio() {
       try {
-        console.log('Datos del servicio a guardar:', this.nuevoServicio);
         
         if (!this.nuevoServicio.idPuntoSuministro) {
           await this.$swal.fire({
@@ -844,6 +900,28 @@ export default {
           return;
         }
         
+        // Validar importes no negativos
+        if (this.nuevoServicio.importe < 0 || this.nuevoServicio.descuento < 0 || this.nuevoServicio.importeFinal < 0) {
+          await this.$swal.fire({
+            icon: 'warning',
+            title: 'Importes inválidos',
+            text: 'Los importes no pueden ser negativos',
+            confirmButtonColor: '#3085d6'
+          });
+          return;
+        }
+        
+        // Validar que el descuento no sea mayor que el importe
+        if (this.nuevoServicio.descuento > this.nuevoServicio.importe) {
+          await this.$swal.fire({
+            icon: 'warning',
+            title: 'Descuento inválido',
+            text: 'El descuento no puede ser mayor que el importe total',
+            confirmButtonColor: '#3085d6'
+          });
+          return;
+        }
+        
         this.$swal.fire({
           title: 'Guardando servicio...',
           text: 'Por favor, espere mientras se procesa la información.',
@@ -860,9 +938,13 @@ export default {
           fechaInicioServicio: this.nuevoServicio.fechaInicioServicio,
           fechaFinServicio: this.nuevoServicio.fechaFinServicio,
           descripcion: this.nuevoServicio.descripcion,
+          importe: this.nuevoServicio.importe || 0,
+          descuento: this.nuevoServicio.descuento || 0,
+          importeFinal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe || 0,
           idGestora: this.nuevoServicio.idGestora || null,
           idProducto: this.nuevoServicio.idProducto || null,
           idComercializadora: this.nuevoServicio.idComercializadora || null,
+          idPagoPlazos: this.nuevoServicio.idPagoPlazos || null, // ¡CAMPO FALTANTE CRÍTICO!
           observaciones: this.nuevoServicio.observaciones || "",
           puntoSuministro: {
             id: this.nuevoServicio.idPuntoSuministro
@@ -871,11 +953,9 @@ export default {
             id: typeof this.cliente === 'object' ? this.cliente.id : this.cliente
           }
         };
-
         let response;
         
         if (this.modoEdicion && this.servicioEditandoId) {
-          console.log(`Enviando PUT a /api/servicios/${this.servicioEditandoId}`);
           response = await axios.put(
             `${process.env.VUE_APP_API_URL}/api/servicios/${this.servicioEditandoId}`,
             servicioPayload
@@ -897,27 +977,145 @@ export default {
             throw new Error('No se pudo obtener el ID del servicio para asociar los pagos');
           }
 
-          if (this.modoEdicion && this.pagosExistentes && this.servicioActual?.pagos?.id) {
-            // MODO EDICIÓN: Verificar si realmente hay cambios en los datos de pago
+          if (this.modoEdicion) {
+            // MODO EDICIÓN: Lógica inteligente para manejar cambios en pagos
             const pagosCambiaron = this.verificarCambiosEnPagos();
+            const cambioModalidad = this.cambioModalidadPago();
 
             if (pagosCambiaron) {
-              console.log('Se detectaron cambios en los datos de pago, actualizando preservando cuotas ya pagadas');
-              
-              const pagosPayload = this.crearPayloadPagosPreservando(servicioId);
-              console.log('Payload de pagos preservando datos existentes:', pagosPayload);
-              
-              await axios.put(
-                `${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${this.servicioEditandoId}`, 
-                pagosPayload
-              );
-            } else {
-              console.log('No hay cambios en los datos de pago, omitiendo actualización de pagos para preservar datos existentes');
-            }
+
+              if (cambioModalidad && this.pagosExistentes) {
+                // CAMBIO DE MODALIDAD: Verificar si se perderían datos
+                const resultadoVerificacion = await this.verificarPerdidaDatos();
+                
+                if (resultadoVerificacion.sePierdenDatos) {
+                  // Crear HTML detallado para el modal de confirmación
+                  const cuotasHtml = resultadoVerificacion.detalleCuotasPerdidas.map(cuota => 
+                    `<li>Cuota ${cuota.numero}: ${cuota.importe.toFixed(2)}€ ${cuota.fecha ? `(Pagada: ${cuota.fecha})` : ''}</li>`
+                  ).join('');
+                  
+                  // Mostrar modal de confirmación con información detallada
+                  const resultado = await this.$swal.fire({
+                    title: '⚠️ Advertencia: Pérdida de Datos de Pagos',
+                    html: `
+                      <div style="text-align: left; padding: 20px; max-height: 400px; overflow-y: auto;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                          <h4 style="margin: 0 0 10px 0; color: #495057;">📊 Resumen del cambio:</h4>
+                          <p style="margin: 5px 0;"><strong>Cuotas actuales:</strong> ${resultadoVerificacion.cuotasActuales}</p>
+                          <p style="margin: 5px 0;"><strong>Nuevas cuotas:</strong> ${resultadoVerificacion.nuevasCuotas}</p>
+                          <p style="margin: 5px 0;"><strong>Cuotas ya pagadas:</strong> ${resultadoVerificacion.cuotasPagadas}</p>
+                        </div>
+                        
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 15px;">
+                          <h4 style="margin: 0 0 10px 0; color: #856404;">⚠️ Datos que se perderán:</h4>
+                          <p style="margin: 5px 0; color: #856404;"><strong>${resultadoVerificacion.cuotasQueSePerderan} cuotas pagadas</strong></p>
+                          <p style="margin: 5px 0; color: #856404;"><strong>Importe total: ${resultadoVerificacion.importePerdido.toFixed(2)}€</strong></p>
+                          
+                          <details style="margin-top: 10px;">
+                            <summary style="cursor: pointer; font-weight: bold; color: #856404;">Ver detalle de cuotas que se perderán</summary>
+                            <ul style="margin: 10px 0; padding-left: 20px; color: #856404;">
+                              ${cuotasHtml}
+                            </ul>
+                          </details>
+                        </div>
+                        
+                        <div style="background: #f8d7da; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545;">
+                          <p style="margin: 0; color: #721c24; font-weight: bold;">
+                            ⚠️ Esta acción no se puede deshacer. Los datos de las cuotas pagadas que excedan el nuevo número de cuotas se eliminarán permanentemente.
+                          </p>
+                        </div>
+                        
+                        <p style="margin-top: 15px; font-weight: bold;">¿Estás seguro de que quieres continuar con este cambio?</p>
+                      </div>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e74c3c',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, continuar y perder datos',
+                    cancelButtonText: 'Cancelar operación',
+                    width: '600px'
+                  });
+                  
+                  if (!resultado.isConfirmed) {
+                    // Usuario canceló, restaurar modalidad anterior
+                    this.nuevoServicio.idPagoPlazos = this.pagosExistentes.pagoPlazos?.id;
+                    this.$swal.fire({
+                      title: 'Operación cancelada', 
+                      text: 'No se han realizado cambios en los pagos. Se mantiene la modalidad original.', 
+                      icon: 'info',
+                      confirmButtonColor: '#fcd700'
+                    });
+                    return; // Salir sin hacer cambios
+                  }
+                }
+                
+                let pagosGenerados;
+                try {
+                  const generarPlanResp = await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/generar-plan`, {
+                    idPagoPlazos: this.nuevoServicio.idPagoPlazos,
+                    importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
+                    fechaInicio: this.nuevoServicio.fechaInicioServicio
+                  });
+                  pagosGenerados = generarPlanResp.data;
+                } catch (errorGenerarPlan) {
+                  console.error("Error al generar el plan de pagos:", errorGenerarPlan);
+                  throw new Error('No se pudo generar el nuevo plan de pagos');
+                }
+
+                // Fusionar cuotas existentes con el nuevo plan
+                const pagosPayload = await this.fusionarCuotasConNuevoPlan(servicioId, pagosGenerados);
+                
+                await axios.put(
+                  `${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${this.servicioEditandoId}`, 
+                  pagosPayload
+                );
+              } else if (cambioModalidad && !this.pagosExistentes) {
+                // CASO ESPECIAL: Servicio sin pagos previos pero ahora con modalidad de pago
+                
+                let pagosGenerados;
+                try {
+                  const generarPlanResp = await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/generar-plan`, {
+                    idPagoPlazos: this.nuevoServicio.idPagoPlazos,
+                    importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
+                    fechaInicio: this.nuevoServicio.fechaInicioServicio
+                  });
+                  pagosGenerados = generarPlanResp.data;
+                } catch (errorGenerarPlan) {
+                  console.error("Error al generar el plan de pagos:", errorGenerarPlan);
+                  throw new Error('No se pudo generar el nuevo plan de pagos');
+                }
+
+                if (pagosGenerados) {
+                  const pagosPayload = {
+                    id: null, // Nuevo registro
+                    pagoPlazos: {
+                      id: Number(this.nuevoServicio.idPagoPlazos)
+                    },
+                    servicio: {
+                      id: Number(servicioId)
+                    },
+                    importe: this.nuevoServicio.importe || pagosGenerados.importe || 0,
+                    descuento: this.nuevoServicio.descuento || pagosGenerados.descuento || 0,
+                    importeFinal: this.nuevoServicio.importeFinal || pagosGenerados.importeFinal || 0,
+                    // Incluir todas las fechas e importes de las cuotas generadas
+                    ...pagosGenerados
+                  };
+
+                  await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios-pagos`, pagosPayload);
+                }
+              } else {
+                // SIN CAMBIO DE MODALIDAD: Solo actualizar importes preservando todo lo demás
+                const pagosPayload = this.crearPayloadPagosPreservando(servicioId);
+                
+                await axios.put(
+                  `${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${this.servicioEditandoId}`, 
+                  pagosPayload
+                );
+              }
+            } 
           } else {
             // MODO CREACIÓN: Generar nuevo plan de pagos
-            console.log('Creando nuevo plan de pagos para servicio nuevo');
-            
             let pagosGenerados;
             try {
               const generarPlanResp = await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/generar-plan`, {
@@ -981,24 +1179,30 @@ export default {
                 decimosegundoPagoPagado: pagosGenerados.decimosegundoPagoPagado || false
               };
 
-              console.log('Payload de pagos nuevo:', pagosPayload);
-              
               await axios.post(`${process.env.VUE_APP_API_URL}/api/servicios-pagos`, pagosPayload);
             }
           }
         }
         
-        console.log('Respuesta del servidor:', response.data);
+        // Mostrar mensaje de éxito con información adicional si se preservaron pagos
+        let mensajeExito = this.modoEdicion 
+          ? 'El servicio ha sido actualizado correctamente.' 
+          : (this.modoRenovacion ? 'El servicio ha sido renovado correctamente.' : 'El nuevo servicio ha sido creado correctamente.');
         
+        if (this.modoEdicion && this.pagosExistentes && this.verificarCambiosEnPagos()) {
+          const cuotasPagadas = this.contarCuotasPagadas();
+          if (cuotasPagadas > 0) {
+            mensajeExito += ` Se han preservado las cuotas ya pagadas.`;
+          }
+        }
+
         await this.$swal.fire({
           title: this.modoEdicion ? 'Servicio actualizado' : (this.modoRenovacion ? 'Servicio renovado' : 'Servicio creado'),
-          text: this.modoEdicion 
-            ? 'El servicio ha sido actualizado correctamente.' 
-            : (this.modoRenovacion ? 'El servicio ha sido renovado correctamente.' : 'El nuevo servicio ha sido creado correctamente.'),
+          text: mensajeExito,
           icon: 'success',
           confirmButtonColor: 'rgba(252, 215, 0)',
           confirmButtonText: 'Aceptar',
-          timer: 2000,
+          timer: 3000,
           timerProgressBar: true
         });
         
@@ -1033,6 +1237,50 @@ export default {
       return fechaInicio <= ahora && fechaFin > ahora;
     },
 
+    // Verificar si un servicio tiene cuotas pendientes de pago
+    tieneCuotasPendientes(servicio) {
+      if (!servicio.pagos) return false;
+      
+      const pagos = servicio.pagos;
+      const numeroCuotas = this.obtenerNumeroCuotas(pagos);
+      
+      // Array de los campos de pago en orden
+      const camposPagado = [
+        'primerPagoPagado', 'segundoPagoPagado', 'tercerPagoPagado', 'cuartoPagoPagado',
+        'quintoPagoPagado', 'sextoPagoPagado', 'septimoPagoPagado', 'octavoPagoPagado',
+        'novenoPagoPagado', 'decimoPagoPagado', 'decimoprimerPagoPagado', 'decimosegundoPagoPagado'
+      ];
+      
+      // Verificar si hay al menos una cuota pendiente dentro del número de cuotas de la modalidad
+      for (let i = 0; i < numeroCuotas && i < camposPagado.length; i++) {
+        if (!pagos[camposPagado[i]]) {
+          return true; // Hay al menos una cuota pendiente
+        }
+      }
+      
+      return false; // Todas las cuotas están pagadas
+    },
+
+    // Determinar el estado de un servicio: VIGENTE, PENDIENTE o HISTÓRICO
+    obtenerEstadoServicio(servicio) {
+      const ahora = new Date();
+      const fechaFin = new Date(servicio.fechaFinServicio);
+      const fechaInicio = new Date(servicio.fechaInicioServicio);
+      
+      // Si está dentro del período de vigencia
+      if (fechaInicio <= ahora && fechaFin > ahora) {
+        return 'VIGENTE';
+      }
+      
+      // Si ya pasó la fecha de fin pero tiene cuotas pendientes
+      if (fechaFin <= ahora && this.tieneCuotasPendientes(servicio)) {
+        return 'PENDIENTE';
+      }
+      
+      // En cualquier otro caso es histórico
+      return 'HISTÓRICO';
+    },
+
     verDetalleServicio(servicio) {
       this.servicioDetalle = servicio;
       this.mostrarModalDetalleServicio = true;
@@ -1044,9 +1292,7 @@ export default {
       
       // Cargar las cuotas antes de mostrar el modal
       try {
-        console.log('Cargando cuotas para servicio:', servicio.id);
         await this.cargarCuotasParaGestion(servicio.id);
-        console.log('Cuotas cargadas:', this.cuotas.length);
       } catch (error) {
         console.error('Error al cargar cuotas:', error);
         this.$swal.fire({
@@ -1064,13 +1310,6 @@ export default {
                        this.puntoSuministroData?.cupsgas || 
                        this.puntoSuministroActivo?.cupsluz || 
                        this.puntoSuministroActivo?.cupsgas || "";
-      
-      console.log('Inicializando nuevo servicio - CUPS:', cupsValue);
-      console.log('puntoSuministroData:', this.puntoSuministroData);
-      console.log('puntoSuministroActivo:', this.puntoSuministroActivo);
-      console.log('puntoSuministroSeleccionado (prop):', this.puntoSuministroSeleccionado);
-      console.log('cliente (prop):', this.cliente);
-      console.log('Props completas:', this.$props);
       
       this.nuevoServicio = {
         idCliente: this.cliente?.id || "",
@@ -1112,10 +1351,8 @@ export default {
 
     async cargarComercializadoras() {
       try {
-        console.log('Iniciando carga de comercializadoras...');
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`);
         this.comercializadorasList = response.data;
-        console.log(`Comercializadoras cargadas: ${this.comercializadorasList.length} elementos`, this.comercializadorasList);
       } catch (error) {
         console.error('Error al cargar comercializadoras:', error);
         this.comercializadorasList = [];
@@ -1155,7 +1392,6 @@ export default {
         try {
           const resp = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicioId}/cuotas`);
           this.cuotas = resp.data.map(c => ({ ...c, editado: false }));
-          console.log('Cuotas cargadas desde endpoint cuotas:', this.cuotas);
           return;
         } catch (cuotasError) {
           console.log('Endpoint de cuotas no disponible, intentando con datos de pagos');
@@ -1168,6 +1404,9 @@ export default {
         if (pagos) {
           // Convertir los datos de pagos a formato de cuotas
           this.cuotas = [];
+          
+          // Obtener el número real de cuotas de la modalidad actual
+          const numeroCuotasReales = this.obtenerNumeroCuotasDesdePagos(pagos);
           
           const cuotasData = [
             { num: 1, fecha: 'primerPagoFecha', importe: 'primerPagoImporte', pagado: 'primerPagoPagado' },
@@ -1184,7 +1423,9 @@ export default {
             { num: 12, fecha: 'decimosegundoPagoFecha', importe: 'decimosegundoPagoImporte', pagado: 'decimosegundoPagoPagado' }
           ];
           
-          cuotasData.forEach(cuotaInfo => {
+          // Solo procesar las cuotas que corresponden a la modalidad actual
+          for (let i = 0; i < numeroCuotasReales && i < cuotasData.length; i++) {
+            const cuotaInfo = cuotasData[i];
             const fechaPago = pagos[cuotaInfo.fecha];
             const importePago = pagos[cuotaInfo.importe];
             const estaPagado = pagos[cuotaInfo.pagado];
@@ -1204,9 +1445,7 @@ export default {
                 pagadoField: cuotaInfo.pagado
               });
             }
-          });
-          
-          console.log('Cuotas convertidas desde datos de pagos:', this.cuotas);
+          }
         } else {
           this.cuotas = [];
         }
@@ -1327,8 +1566,13 @@ export default {
 
     // Método para verificar si han cambiado los datos de pago que requieren actualización
     verificarCambiosEnPagos() {
-      if (!this.pagosExistentes) return true; // Si no hay datos existentes, asumimos que hay cambios
+      // Si no hay datos existentes pero ahora hay modalidad de pago, hay cambios
+      if (!this.pagosExistentes) {
+        return !!(this.nuevoServicio.idPagoPlazos && 
+                 (this.nuevoServicio.importe > 0 || this.nuevoServicio.importeFinal > 0));
+      }
       
+      // Verificar si alguno de los campos relevantes cambió
       return (
         this.pagosExistentes.importe !== this.nuevoServicio.importe ||
         this.pagosExistentes.descuento !== this.nuevoServicio.descuento ||
@@ -1337,9 +1581,84 @@ export default {
       );
     },
 
-    // Método para preservar estados de pagos al crear payload
+    // Método para verificar si cambió la modalidad de pago (requiere regeneración de plan)
+    cambioModalidadPago() {
+      // Si no hay pagos existentes pero ahora hay modalidad, es un cambio
+      if (!this.pagosExistentes) {
+        return !!this.nuevoServicio.idPagoPlazos;
+      }
+      
+      // Si había modalidad anterior y ahora es diferente, es un cambio
+      if (this.pagosExistentes.pagoPlazos?.id !== this.nuevoServicio.idPagoPlazos) {
+        return true;
+      }
+      
+      return false;
+    },
+
+    // Método para contar cuotas pagadas en los datos existentes
+    contarCuotasPagadas() {
+      if (!this.pagosExistentes) return 0;
+      
+      const camposPagado = [
+        'primerPagoPagado', 'segundoPagoPagado', 'tercerPagoPagado', 'cuartoPagoPagado',
+        'quintoPagoPagado', 'sextoPagoPagado', 'septimoPagoPagado', 'octavoPagoPagado',
+        'novenoPagoPagado', 'decimoPagoPagado', 'decimoprimerPagoPagado', 'decimosegundoPagoPagado'
+      ];
+      
+      return camposPagado.filter(campo => this.pagosExistentes[campo]).length;
+    },
+
+    // Método para obtener detalle de cuotas pagadas
+    obtenerCuotasPagadasDetalle() {
+      if (!this.pagosExistentes) return [];
+      
+      const camposPagado = [
+        'primerPagoPagado', 'segundoPagoPagado', 'tercerPagoPagado', 'cuartoPagoPagado',
+        'quintoPagoPagado', 'sextoPagoPagado', 'septimoPagoPagado', 'octavoPagoPagado',
+        'novenoPagoPagado', 'decimoPagoPagado', 'decimoprimerPagoPagado', 'decimosegundoPagoPagado'
+      ];
+      
+      const camposImporte = [
+        'primerPagoImporte', 'segundoPagoImporte', 'tercerPagoImporte', 'cuartoPagoImporte',
+        'quintoPagoImporte', 'sextoPagoImporte', 'septimoPagoImporte', 'octavoPagoImporte',
+        'novenoPagoImporte', 'decimoPagoImporte', 'decimoprimerPagoImporte', 'decimosegundoPagoImporte'
+      ];
+
+      const camposFecha = [
+        'primerPagoFecha', 'segundoPagoFecha', 'tercerPagoFecha', 'cuartoPagoFecha',
+        'quintoPagoFecha', 'sextoPagoFecha', 'septimoPagoFecha', 'octavoPagoFecha',
+        'novenoPagoFecha', 'decimoPagoFecha', 'decimoprimerPagoFecha', 'decimosegundoPagoFecha'
+      ];
+      
+      const cuotasPagadas = [];
+      const numeroCuotasActual = this.obtenerNumeroCuotasActual();
+      
+      for (let i = 0; i < numeroCuotasActual && i < camposPagado.length; i++) {
+        if (this.pagosExistentes[camposPagado[i]]) {
+          cuotasPagadas.push({
+            numero: i + 1,
+            importe: this.pagosExistentes[camposImporte[i]] || 0,
+            fecha: this.pagosExistentes[camposFecha[i]] || null,
+            campoPagado: camposPagado[i],
+            campoImporte: camposImporte[i],
+            campoFecha: camposFecha[i]
+          });
+        }
+      }
+      
+      return cuotasPagadas;
+    },
+
+    // Método para obtener número de cuotas de la nueva modalidad
+    obtenerNumeroCuotasNuevaModalidad() {
+      const modalidad = this.modalidadesPago.find(m => m.id === this.nuevoServicio.idPagoPlazos);
+      return modalidad ? modalidad.numeroCuotas : 12;
+    },
+
+    // Método para preservar estados de pagos al crear payload (sin cambio de modalidad)
     crearPayloadPagosPreservando(servicioId) {
-      return {
+      const payloadBase = {
         ...this.pagosExistentes, // Partir de los datos existentes para preservar fechas y estados pagado
         // Solo actualizar los campos que pueden cambiar en la edición
         importe: this.nuevoServicio.importe,
@@ -1353,6 +1672,315 @@ export default {
         }
         // IMPORTANTE: NO se incluyen fechas ni estados pagado porque se preservan del objeto existente
       };
+
+      // Si cambió el importe final, recalcular cuotas no pagadas
+      const importeCambio = this.pagosExistentes.importeFinal !== this.nuevoServicio.importeFinal;
+      if (importeCambio) {
+        return this.recalcularImportesCuotasNoPagadas(payloadBase);
+      }
+
+      return payloadBase;
+    },
+
+    // Método para recalcular importes solo en cuotas no pagadas
+    recalcularImportesCuotasNoPagadas(payload) {
+      const camposPagado = [
+        'primerPagoPagado', 'segundoPagoPagado', 'tercerPagoPagado', 'cuartoPagoPagado',
+        'quintoPagoPagado', 'sextoPagoPagado', 'septimoPagoPagado', 'octavoPagoPagado',
+        'novenoPagoPagado', 'decimoPagoPagado', 'decimoprimerPagoPagado', 'decimosegundoPagoPagado'
+      ];
+      
+      const camposImporte = [
+        'primerPagoImporte', 'segundoPagoImporte', 'tercerPagoImporte', 'cuartoPagoImporte',
+        'quintoPagoImporte', 'sextoPagoImporte', 'septimoPagoImporte', 'octavoPagoImporte',
+        'novenoPagoImporte', 'decimoPagoImporte', 'decimoprimerPagoImporte', 'decimosegundoPagoImporte'
+      ];
+
+      const numeroCuotas = this.obtenerNumeroCuotasActual();
+      const importeTotal = this.nuevoServicio.importeFinal || this.nuevoServicio.importe;
+      
+      // Calcular importe ya pagado y cuotas pendientes
+      let importePagado = 0;
+      let cuotasPendientes = 0;
+      
+      for (let i = 0; i < numeroCuotas && i < camposPagado.length; i++) {
+        if (payload[camposPagado[i]]) {
+          importePagado += payload[camposImporte[i]] || 0;
+        } else {
+          cuotasPendientes++;
+        }
+      }
+      
+      // Recalcular importe para cuotas pendientes
+      const importePendiente = importeTotal - importePagado;
+      const importePorCuotaPendiente = cuotasPendientes > 0 ? importePendiente / cuotasPendientes : 0;
+      
+      // Actualizar importes de cuotas no pagadas
+      for (let i = 0; i < numeroCuotas && i < camposPagado.length; i++) {
+        if (!payload[camposPagado[i]]) {
+          payload[camposImporte[i]] = Number(importePorCuotaPendiente.toFixed(2));
+        }
+      }
+      
+      return payload;
+    },
+
+    // Método para fusionar cuotas existentes con nuevo plan (cuando cambia modalidad)
+    async fusionarCuotasConNuevoPlan(servicioId, pagosGenerados) {
+      const camposFecha = [
+        'primerPagoFecha', 'segundoPagoFecha', 'tercerPagoFecha', 'cuartoPagoFecha',
+        'quintoPagoFecha', 'sextoPagoFecha', 'septimoPagoFecha', 'octavoPagoFecha',
+        'novenoPagoFecha', 'decimoPagoFecha', 'decimoprimerPagoFecha', 'decimosegundoPagoFecha'
+      ];
+      
+      const camposImporte = [
+        'primerPagoImporte', 'segundoPagoImporte', 'tercerPagoImporte', 'cuartoPagoImporte',
+        'quintoPagoImporte', 'sextoPagoImporte', 'septimoPagoImporte', 'octavoPagoImporte',
+        'novenoPagoImporte', 'decimoPagoImporte', 'decimoprimerPagoImporte', 'decimosegundoPagoImporte'
+      ];
+      
+      const camposPagado = [
+        'primerPagoPagado', 'segundoPagoPagado', 'tercerPagoPagado', 'cuartoPagoPagado',
+        'quintoPagoPagado', 'sextoPagoPagado', 'septimoPagoPagado', 'octavoPagoPagado',
+        'novenoPagoPagado', 'decimoPagoPagado', 'decimoprimerPagoPagado', 'decimosegundoPagoPagado'
+      ];
+
+      const numeroCuotasNueva = this.obtenerNumeroCuotasNuevaModalidad();
+      const numeroCuotasActual = this.obtenerNumeroCuotasActual();
+
+      // Crear payload base con los datos del nuevo plan
+      const payloadFusionado = {
+        // PRIMERO: Incluir las fechas e importes del nuevo plan
+        ...pagosGenerados,
+        // DESPUÉS: Sobrescribir con los valores correctos (para que NO se pierdan)
+        id: this.pagosExistentes?.id || null,
+        pagoPlazos: {
+          id: Number(this.nuevoServicio.idPagoPlazos)
+        },
+        servicio: {
+          id: Number(servicioId)
+        },
+        importe: this.nuevoServicio.importe,
+        descuento: this.nuevoServicio.descuento,
+        importeFinal: this.nuevoServicio.importeFinal
+      };
+
+      // Recalcular importes solo para cuotas no pagadas
+      const importePorCuotaNueva = numeroCuotasNueva > 0 ? 
+        (this.nuevoServicio.importeFinal || this.nuevoServicio.importe) / numeroCuotasNueva : 0;
+
+      // Preservar estados pagado de las cuotas existentes que siguen vigentes
+      for (let i = 0; i < numeroCuotasNueva && i < camposPagado.length; i++) {
+        const campoPagado = camposPagado[i];
+        const campoFecha = camposFecha[i];
+        const campoImporte = camposImporte[i];
+        
+        // Si la cuota existía antes y estaba pagada, preservar ese estado completo
+        if (i < numeroCuotasActual && this.pagosExistentes[campoPagado]) {
+          payloadFusionado[campoPagado] = true;
+          
+          // Preservar fecha e importe original para cuotas pagadas
+          if (this.pagosExistentes[campoFecha]) {
+            payloadFusionado[campoFecha] = this.pagosExistentes[campoFecha];
+          }
+          if (this.pagosExistentes[campoImporte] !== null && this.pagosExistentes[campoImporte] !== undefined) {
+            payloadFusionado[campoImporte] = this.pagosExistentes[campoImporte];
+          }
+        } else {
+          // Para cuotas no pagadas o nuevas, usar los valores recalculados
+          payloadFusionado[campoPagado] = false;
+          // Mantener fecha del nuevo plan pero asegurar importe recalculado
+          if (payloadFusionado[campoImporte] !== null && payloadFusionado[campoImporte] !== undefined) {
+            payloadFusionado[campoImporte] = Number(importePorCuotaNueva.toFixed(2));
+          }
+        }
+      }
+
+      // IMPORTANTE: Limpiar campos de cuotas que ya no existen en la nueva modalidad
+      for (let i = numeroCuotasNueva; i < camposPagado.length; i++) {
+        const campoPagado = camposPagado[i];
+        const campoFecha = camposFecha[i];
+        const campoImporte = camposImporte[i];
+        
+        // Limpiar campos de cuotas que ya no existen
+        payloadFusionado[campoPagado] = null;
+        payloadFusionado[campoFecha] = null;
+        payloadFusionado[campoImporte] = null;
+        
+      }
+      
+      return payloadFusionado;
+    },
+
+    // Método para verificar si se perderían datos al cambiar modalidad
+    async verificarPerdidaDatos() {
+      if (!this.cambioModalidadPago()) return { sePierdenDatos: false };
+      
+      const cuotasPagadas = this.contarCuotasPagadas();
+      const nuevasCuotas = this.obtenerNumeroCuotasNuevaModalidad();
+      const cuotasActuales = this.obtenerNumeroCuotasActual();
+      
+      // Obtener información detallada de cuotas pagadas que se perderían
+      const cuotasPagadasDetalle = this.obtenerCuotasPagadasDetalle();
+      const cuotasQueSePerderan = cuotasPagadasDetalle.filter(cuota => cuota.numero > nuevasCuotas);
+      
+      // Si se reducen las cuotas y hay cuotas pagadas que se perderían
+      if (nuevasCuotas < cuotasActuales && cuotasQueSePerderan.length > 0) {
+        const importeTotal = cuotasQueSePerderan.reduce((total, cuota) => total + cuota.importe, 0);
+        
+        return {
+          sePierdenDatos: true,
+          cuotasActuales,
+          nuevasCuotas,
+          cuotasPagadas,
+          cuotasQueSePerderan: cuotasQueSePerderan.length,
+          importePerdido: importeTotal,
+          detalleCuotasPerdidas: cuotasQueSePerderan
+        };
+      }
+      
+      return { 
+        sePierdenDatos: false,
+        cuotasActuales,
+        nuevasCuotas,
+        cuotasPagadas 
+      };
+    },
+
+    // Método para obtener número de cuotas de la modalidad actual
+    obtenerNumeroCuotasActual() {
+      if (!this.pagosExistentes || !this.pagosExistentes.pagoPlazos) return 12;
+      return this.pagosExistentes.pagoPlazos.numeroCuotas || 12;
+    },
+
+    // Método para verificar cambios de modalidad en tiempo real
+    verificarCambioModalidadEnTiempoReal() {
+      if (!this.pagosExistentes || !this.nuevoServicio.idPagoPlazos) return;
+      
+      const infoActual = this.obtenerInfoModalidadActual();
+      const infoNueva = this.obtenerInfoNuevaModalidad();
+      
+      if (infoActual.cuotas !== infoNueva.cuotas) {
+        
+        // Si hay cuotas pagadas, verificar si se perderían datos
+        if (this.cambioModalidadPago()) {
+          const cuotasPagadas = this.contarCuotasPagadas();
+          if (cuotasPagadas > 0) {
+            if (infoNueva.cuotas < infoActual.cuotas && cuotasPagadas > infoNueva.cuotas) {
+              console.log(`ADVERTENCIA: Se perderán datos de ${cuotasPagadas - infoNueva.cuotas} cuotas pagadas`);
+            }
+          }
+        }
+      }
+    },
+
+    // Método para obtener información resumida de la modalidad actual
+    obtenerInfoModalidadActual() {
+      if (!this.pagosExistentes || !this.pagosExistentes.pagoPlazos) {
+        return { cuotas: 0, nombre: 'No definida' };
+      }
+      
+      const modalidad = this.modalidadesPago.find(m => m.id === this.pagosExistentes.pagoPlazos.id);
+      return {
+        cuotas: modalidad ? modalidad.numeroCuotas : 12,
+        nombre: modalidad ? modalidad.nombre : 'Desconocida'
+      };
+    },
+
+    // Método para obtener información de la nueva modalidad
+    obtenerInfoNuevaModalidad() {
+      if (!this.nuevoServicio.idPagoPlazos) {
+        return { cuotas: 0, nombre: 'No seleccionada' };
+      }
+      
+      const modalidad = this.modalidadesPago.find(m => m.id === this.nuevoServicio.idPagoPlazos);
+      return {
+        cuotas: modalidad ? modalidad.numeroCuotas : 12,
+        nombre: modalidad ? modalidad.nombre : 'Desconocida'
+      };
+    },
+
+    // Método auxiliar para obtener el número de cuotas desde los datos de pagos
+    obtenerNumeroCuotasDesdePagos(pagos) {
+      if (!pagos || !pagos.pagoPlazos) return 12; // Fallback por defecto
+      return pagos.pagoPlazos.numeroCuotas || 12;
+    },
+
+    // Método para validar cambios de modalidad en tiempo real (mejorado)
+    async validarCambioModalidadTiempoReal() {
+      if (!this.modoEdicion || !this.pagosExistentes || !this.nuevoServicio.idPagoPlazos) return;
+      
+      const modalidadActual = this.pagosExistentes.pagoPlazos?.id;
+      const modalidadNueva = this.nuevoServicio.idPagoPlazos;
+      
+      // Solo validar si realmente cambió la modalidad
+      if (modalidadActual === modalidadNueva) return;
+      
+      const infoActual = this.obtenerInfoModalidadActual();
+      const infoNueva = this.obtenerInfoNuevaModalidad();
+      const cuotasPagadas = this.contarCuotasPagadas();
+      
+      if (cuotasPagadas > 0) {
+        
+        if (infoNueva.cuotas < infoActual.cuotas && cuotasPagadas > infoNueva.cuotas) {
+          const cuotasQueSePerderan = cuotasPagadas - infoNueva.cuotas;
+
+          // Mostrar información en la interfaz (puedes usar esto para mostrar un warning en tiempo real)
+          this.$emit('cambio-modalidad-warning', {
+            modalidadActual: infoActual,
+            modalidadNueva: infoNueva,
+            cuotasPagadas,
+            cuotasQueSePerderan
+          });
+        } else if (infoNueva.cuotas > infoActual.cuotas) {
+          console.log(`Aumento de cuotas: se preservarán todas las ${cuotasPagadas} cuotas pagadas`);
+        } else {
+          console.log(`Reducción de cuotas sin pérdidas: se preservarán todas las ${cuotasPagadas} cuotas pagadas`);
+        }
+      }
+    },
+
+    // Método para mostrar información de ayuda sobre el cambio de modalidad
+    mostrarAyudaCambioModalidad() {
+      this.$swal.fire({
+        title: '💡 Información sobre cambio de cuotas',
+        html: `
+          <div style="text-align: left; padding: 20px;">
+            <h4>¿Qué sucede cuando cambias el número de cuotas?</h4>
+            
+            <div style="margin: 15px 0; padding: 15px; background: #e7f5e7; border-radius: 8px;">
+              <h5 style="color: #28a745; margin-top: 0;">✅ Si aumentas las cuotas:</h5>
+              <ul style="margin: 5px 0; padding-left: 20px;">
+                <li>Se preservan todas las cuotas ya pagadas</li>
+                <li>Se crean nuevas cuotas con importes recalculados</li>
+                <li>No se pierde ningún dato</li>
+              </ul>
+            </div>
+            
+            <div style="margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 8px;">
+              <h5 style="color: #856404; margin-top: 0;">⚠️ Si reduces las cuotas:</h5>
+              <ul style="margin: 5px 0; padding-left: 20px;">
+                <li>Se preservan las cuotas pagadas que quepan en el nuevo número</li>
+                <li>Las cuotas pagadas que excedan el nuevo límite se eliminarán</li>
+                <li>Te pediremos confirmación antes de eliminar datos</li>
+              </ul>
+            </div>
+            
+            <div style="margin: 15px 0; padding: 15px; background: #d1ecf1; border-radius: 8px;">
+              <h5 style="color: #0c5460; margin-top: 0;">🔢 Recálculo de importes:</h5>
+              <ul style="margin: 5px 0; padding-left: 20px;">
+                <li>Las cuotas ya pagadas mantienen su importe original</li>
+                <li>Las cuotas pendientes se recalculan con el nuevo importe total</li>
+                <li>Se distribuye equitativamente entre las cuotas restantes</li>
+              </ul>
+            </div>
+          </div>
+        `,
+        icon: 'info',
+        confirmButtonColor: '#fcd700',
+        confirmButtonText: 'Entendido',
+        width: '600px'
+      });
     },
   },
 
@@ -1433,7 +2061,6 @@ export default {
         gestoras: this.gestoras?.length || 0,
         productos: this.productos?.length || 0
       };
-      console.log('Estado del modal servicios:', info);
       return info;
     }
   },
@@ -1443,7 +2070,6 @@ export default {
       immediate: true,
       async handler(newVal) {
         if (newVal) {
-          console.log('Modal servicios abriéndose, reseteando estado...');
           this.cargandoDatos = false;
           this.mostrandoFormulario = false;
           this.modoEdicion = false;
@@ -1452,11 +2078,9 @@ export default {
           // Cargar datos necesarios si no están disponibles
           this.$nextTick(async () => {
             try {
-              console.log('Configurando vista inicial - mostrando histórico');
               
               // Cargar comercializadoras si no vienen como prop o están vacías
               if (!this.comercializadoras || !this.comercializadoras.length) {
-                console.log('Cargando comercializadoras...');
                 await this.cargarComercializadoras();
               }
               
@@ -1475,7 +2099,6 @@ export default {
             }
           });
         } else {
-          console.log('Modal servicios cerrándose, limpiando estado...');
           this.cargandoDatos = false;
           this.mostrandoFormulario = false;
           this.modoEdicion = false;
@@ -1495,6 +2118,19 @@ export default {
       this.nuevoServicio.importeFinal = this.calcularImporteFinal;
     },
 
+    'nuevoServicio.idPagoPlazos': {
+      handler: function(newVal, oldVal) {
+        if (this.modoEdicion && newVal !== oldVal) {
+          // Debounce para evitar múltiples validaciones
+          clearTimeout(this.modalidadDebounceTimer);
+          this.modalidadDebounceTimer = setTimeout(() => {
+            this.validarCambioModalidadTiempoReal();
+          }, 300);
+        }
+      },
+      immediate: false
+    },
+
     servicioActual: {
       immediate: true,
       handler(newVal) {
@@ -1508,7 +2144,6 @@ export default {
   },
 
   async mounted() {
-    console.log('ModalServicios mounted');
     this.cargandoDatos = false;
     
     // Cargar datos básicos independientemente de si el modal está visible
@@ -1518,9 +2153,15 @@ export default {
         this.cargarModalidadesPago(),
         this.cargarPuntosSuministro()
       ]);
-      console.log('Datos iniciales cargados en ModalServicios');
     } catch (error) {
       console.error('Error al cargar datos iniciales en ModalServicios:', error);
+    }
+  },
+  
+  beforeUnmount() {
+    // Limpiar timers para evitar memory leaks
+    if (this.modalidadDebounceTimer) {
+      clearTimeout(this.modalidadDebounceTimer);
     }
   }
 };
@@ -1655,6 +2296,19 @@ export default {
   animation: pulse 2s infinite;
 }
 
+.status-pendiente {
+  color: #28a745;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-pendiente i {
+  color: #28a745;
+  animation: pulseWarning 2s infinite;
+}
+
 .status-historico {
   color: #6c757d;
   font-weight: 500;
@@ -1669,10 +2323,21 @@ export default {
   100% { opacity: 1; }
 }
 
+@keyframes pulseWarning {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
 /* Estados de servicio en la tabla */
 .servicio-vigente {
   background-color: rgba(252, 215, 0, 0.1) !important;
   border-left: 4px solid rgba(252, 215, 0) !important;
+}
+
+.servicio-pendiente {
+  background-color: rgba(40, 167, 69, 0.1) !important;
+  border-left: 4px solid #28a745 !important;
 }
 
 /* Botones de acción en la tabla */

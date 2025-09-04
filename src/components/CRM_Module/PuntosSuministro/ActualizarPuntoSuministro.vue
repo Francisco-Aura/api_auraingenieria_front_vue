@@ -1,10 +1,10 @@
 <template>
-  <div class="modal-overlay">
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-content">
       <!-- Encabezado del modal -->
       <div class="modal-header">
         <div class="header-content">
-          <h1 class="modal-title">
+          <h1 id="modal-title" class="modal-title">
             {{ isCreating ? 'Crear nuevo' : (modoConsulta ? 'Consultar' : 'Actualizar') }} Punto de Suministro
             {{ puntoLocal.cliente && puntoLocal.cliente.nombre ? ' - ' + puntoLocal.cliente.nombre : '' }}
           </h1>
@@ -376,13 +376,7 @@ export default {
       }
     } catch (error) {
       console.error('Error al cargar datos maestros:', error);
-      if (this.$swal) {
-        this.$swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Error al cargar los datos maestros necesarios'
-        });
-      }
+      this.mostrarError('Error al cargar los datos maestros necesarios');
     }
   },
   watch: {
@@ -397,6 +391,45 @@ export default {
     },
   },
   methods: {
+    // Método mejorado para mostrar errores con z-index correcto
+    mostrarError(mensaje, titulo = 'Error') {
+      // Temporalmente reducir el z-index del modal
+      const modalOverlay = document.querySelector('.modal-overlay');
+      if (modalOverlay) {
+        modalOverlay.style.zIndex = '1000';
+      }
+
+      if (this.$swal) {
+        this.$swal.fire({
+          icon: 'error',
+          title: titulo,
+          text: mensaje,
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'Entendido',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          zIndex: 10000,
+          backdrop: `
+            rgba(0,0,0,0.8)
+          `,
+          customClass: {
+            container: 'swal2-top-container'
+          }
+        }).then(() => {
+          // Restaurar el z-index del modal después de cerrar el alert
+          if (modalOverlay) {
+            modalOverlay.style.zIndex = '9999';
+          }
+        });
+      } else {
+        // Fallback si no hay SweetAlert2
+        alert(mensaje);
+        if (modalOverlay) {
+          modalOverlay.style.zIndex = '9999';
+        }
+      }
+    },
+
     async loadMasterData() {
       try {
         const [distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes] = await Promise.all([
@@ -468,24 +501,12 @@ export default {
 
       if (!this.puntoLocal.direccion?.trim() || !this.puntoLocal.codigoPostal?.trim() || 
           !this.puntoLocal.poblacion?.trim() || !this.puntoLocal.provincia?.trim()) {
-        if (this.$swal) {
-          await this.$swal.fire({
-            icon: 'error',
-            title: 'Campos obligatorios',
-            text: 'Por favor, complete todos los campos obligatorios marcados con *'
-          });
-        }
+        this.mostrarError('Por favor, complete todos los campos obligatorios marcados con *', 'Campos obligatorios');
         return;
       }
 
       if (!this.puntoLocal.cupsluz?.trim() && !this.puntoLocal.cupsgas?.trim()) {
-        if (this.$swal) {
-          await this.$swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Debe proporcionar al menos un CUPS (luz o gas)'
-          });
-        }
+        this.mostrarError('Debe proporcionar al menos un CUPS (luz o gas)', 'CUPS requerido');
         return;
       }
 
@@ -559,21 +580,47 @@ export default {
   bottom: 0 !important;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  z-index: 999999 !important; /* Z-index muy alto para asegurar que esté por encima de todo */
+  z-index: 9999 !important; /* Reducido para permitir que SweetAlert2 aparezca encima */
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   padding: 0;
   overflow: hidden;
-  width: 100vw !important; /* Forzar ancho completo */
-  height: 100vh !important; /* Forzar alto completo */
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+/* Estilos específicos para SweetAlert2 con z-index superior */
+:global(.swal2-container) {
+  z-index: 20000 !important;
+}
+
+:global(.swal2-popup) {
+  z-index: 20001 !important;
+}
+
+:global(.swal2-backdrop-show) {
+  z-index: 19999 !important;
+}
+
+:global(.swal2-shown) {
+  z-index: 20000 !important;
+}
+
+/* Clase personalizada para SweetAlert2 con z-index muy alto */
+:global(.swal2-top-container) {
+  z-index: 30000 !important;
+}
+
+:global(.swal2-top-container .swal2-popup) {
+  z-index: 30001 !important;
 }
 
 .modal-content {
   background: white;
   border-radius: 0.4rem;
-  width: 99% !important; /* Aumentar ancho para asegurar que use más espacio */
-  max-width: 90% !important; /* Aumentar el máximo ancho */
+  width: 99% !important;
+  max-width: 90% !important;
   height: auto !important;
   min-height: 60vh;
   max-height: 95vh;
@@ -581,7 +628,7 @@ export default {
   flex-direction: column;
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
   overflow: hidden;
-  margin: 0 auto !important; /* Forzar centrado horizontal */
+  margin: 0 auto !important;
 }
 
 .modal-header {
@@ -636,7 +683,7 @@ export default {
 
 .compact-form-content {
   flex: 1;
-  overflow-y: auto !important; /* Forzar overflow-y auto con !important */
+  overflow-y: auto !important;
   padding: 0.8rem;
   display: flex;
   flex-direction: column;
