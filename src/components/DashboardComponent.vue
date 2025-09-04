@@ -146,6 +146,9 @@ export default {
       this.nivelAcceso = usuario.nivelAcceso;
       this.userName = usuario.nombre || 'Usuario';
       this.userRole = usuario.nivelAcceso === 1 ? 'Administrador' : 'Usuario';
+    } else {
+      // Si no hay usuario autenticado, redirigir al login
+      this.$router.push('/');
     }
   },
   watch: {
