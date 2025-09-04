@@ -292,7 +292,7 @@ export default {
         { nombre: "Sectores", url: `${process.env.VUE_APP_API_URL}/api/sectores`, icono: "fas fa-industry" },
         { nombre: "Subtipologías", url: `${process.env.VUE_APP_API_URL}/api/subtipologias`, icono: "fas fa-tags" },
         { nombre: "Tarifas Gas", url: `${process.env.VUE_APP_API_URL}/api/tarifas-gas`, icono: "fas fa-fire" },
-        { nombre: "Tarifas Luz", url: `${process.env.VUE_APP_API_URL}/api/tarifasLuz`, icono: "fas fa-bolt" },        { nombre: "Usuarios", url: `${process.env.VUE_APP_API_URL}/api/usuarios`, icono: "fas fa-users" },
+        { nombre: "Tarifas Luz", url: `${process.env.VUE_APP_API_URL}/api/tarifas-luz`, icono: "fas fa-bolt" },        { nombre: "Usuarios", url: `${process.env.VUE_APP_API_URL}/api/usuarios`, icono: "fas fa-users" },
         { nombre: "Distribuidoras", url: `${process.env.VUE_APP_API_URL}/api/distribuidoras`, icono: "fas fa-truck-moving" },
         { nombre: "Tipos de Contador", url: `${process.env.VUE_APP_API_URL}/api/tipos-contador`, icono: "fas fa-tachometer-alt" },
         { nombre: "Tipos de Comunicación", url: `${process.env.VUE_APP_API_URL}/api/tipos-comunicacion`, icono: "fas fa-wifi" },

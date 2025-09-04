@@ -805,7 +805,7 @@ export default {
           // Cargar tarifas primero - estas son rápidas y necesarias
           const [tarifasGasResponse, tarifasLuzResponse] = await Promise.all([
             axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
-            axios.get(`${process.env.VUE_APP_API_URL}/api/tarifasLuz`)
+            axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-luz`)
           ]);
           
           // Actualizar tarifas inmediatamente
@@ -1306,7 +1306,7 @@ export default {
       const [comercializadoras, tarifasGas, tarifasLuz, gestoras, productos, contratos] = await Promise.all([
         axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/tarifasLuz`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-luz`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/gestoras`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/productos`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/contratos`),
