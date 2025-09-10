@@ -1287,20 +1287,37 @@ export default {
     },
 
     async gestionarPagosServicio(servicio) {
-      this.servicioGestionPagos = servicio;
+      // Asegurar que tenemos un servicio válido
+      if (!servicio || !servicio.id) {
+        console.error('❌ Se intentó gestionar pagos de un servicio inválido:', servicio);
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo identificar el servicio seleccionado.',
+          confirmButtonColor: '#d33'
+        });
+        return;
+      }
+      
+      console.log(`🎯 Iniciando gestión de pagos para servicio:`, servicio.id);
+      
+      // Asignar el servicio actual ANTES de cargar las cuotas
+      this.servicioGestionPagos = { ...servicio }; // Crear una copia para evitar referencias
       this.mostrarModalGestionPagos = true;
       
-      // Cargar las cuotas antes de mostrar el modal
+      // Cargar las cuotas después de mostrar el modal
       try {
         await this.cargarCuotasParaGestion(servicio.id);
       } catch (error) {
-        console.error('Error al cargar cuotas:', error);
+        console.error('❌ Error al cargar cuotas:', error);
         this.$swal.fire({
           icon: 'error',
           title: 'Error al cargar cuotas',
           text: 'No se pudieron cargar las cuotas del servicio.',
           confirmButtonColor: '#d33'
         });
+        // Si falla, cerrar el modal
+        this.cerrarModalGestionPagos();
       }
     },
 
@@ -1344,9 +1361,20 @@ export default {
     },
 
     cerrarModalGestionPagos() {
+      console.log('🔒 Cerrando modal de gestión de pagos');
+      
       this.mostrarModalGestionPagos = false;
       this.servicioGestionPagos = null;
       this.cuotas = [];
+      
+      // Limpiar cualquier cuota que pueda estar en estado editado
+      this.cuotas.forEach(cuota => {
+        cuota.editado = false;
+      });
+      
+      // Emitir evento para recargar servicios ahora que se cierra el modal
+      // Esto asegura que los datos se mantengan sincronizados sin afectar la vista actual
+      this.$emit("recargar-servicios");
     },
 
     async cargarComercializadoras() {
@@ -1388,10 +1416,20 @@ export default {
 
     async cargarCuotasParaGestion(servicioId) {
       try {
+        // Verificar que el servicioId es válido
+        if (!servicioId) {
+          console.warn('Se intentó cargar cuotas sin servicioId válido');
+          this.cuotas = [];
+          return;
+        }
+        
+        console.log(`🔄 Cargando cuotas para servicio: ${servicioId}`);
+        
         // Intentar cargar desde el endpoint de cuotas primero
         try {
           const resp = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicioId}/cuotas`);
           this.cuotas = resp.data.map(c => ({ ...c, editado: false }));
+          console.log(`✅ Cuotas cargadas correctamente desde endpoint de cuotas para servicio ${servicioId}:`, this.cuotas.length);
           return;
         } catch (cuotasError) {
           console.log('Endpoint de cuotas no disponible, intentando con datos de pagos');
@@ -1401,12 +1439,22 @@ export default {
         const respPagos = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicioId}`);
         const pagos = respPagos.data;
         
+        // Verificar que los datos de pagos corresponden al servicio correcto
+        if (pagos && pagos.servicio?.id !== servicioId) {
+          console.error(`⚠️ Error de sincronización: Se solicitó servicio ${servicioId} pero se recibió servicio ${pagos.servicio?.id}`);
+          this.cuotas = [];
+          return;
+        }
+        
         if (pagos) {
+          console.log(`📊 Procesando datos de pagos para servicio ${servicioId}`);
+          
           // Convertir los datos de pagos a formato de cuotas
           this.cuotas = [];
           
           // Obtener el número real de cuotas de la modalidad actual
           const numeroCuotasReales = this.obtenerNumeroCuotasDesdePagos(pagos);
+          console.log(`🔢 Número de cuotas de la modalidad: ${numeroCuotasReales}`);
           
           const cuotasData = [
             { num: 1, fecha: 'primerPagoFecha', importe: 'primerPagoImporte', pagado: 'primerPagoPagado' },
@@ -1438,7 +1486,7 @@ export default {
                 importePago: importePago,
                 pagado: estaPagado || false,
                 editado: false,
-                servicioId: servicioId,
+                servicioId: servicioId, // IMPORTANTE: Asegurar que cada cuota sepa a qué servicio pertenece
                 // Añadir los nombres de los campos para poder actualizarlos
                 fechaField: cuotaInfo.fecha,
                 importeField: cuotaInfo.importe,
@@ -1446,11 +1494,14 @@ export default {
               });
             }
           }
+          
+          console.log(`✅ Se procesaron ${this.cuotas.length} cuotas para servicio ${servicioId}`);
         } else {
+          console.log(`❌ No se encontraron datos de pagos para servicio ${servicioId}`);
           this.cuotas = [];
         }
       } catch (e) {
-        console.error('Error al cargar cuotas para gestión:', e);
+        console.error(`❌ Error al cargar cuotas para gestión del servicio ${servicioId}:`, e);
         this.cuotas = [];
       }
     },
@@ -1461,14 +1512,24 @@ export default {
 
     async guardarCuota(cuota) {
       try {
+        // Guardar el ID del servicio actual para evitar confusiones
+        const servicioIdActual = this.servicioGestionPagos?.id;
+        
+        if (!servicioIdActual) {
+          throw new Error('No se pudo identificar el servicio actual');
+        }
+        
         // Intentar actualizar la cuota individual primero
         try {
           await axios.put(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/cuota/${cuota.id}`, cuota);
           cuota.editado = false;
           this.$swal.fire({ icon: 'success', title: 'Cuota actualizada', timer: 1200, showConfirmButton: false });
-          await this.cargarCuotasParaGestion(this.servicioGestionPagos.id);
-          // Emitir evento para recargar servicios en el componente padre
-          this.$emit("recargar-servicios");
+          
+          // Recargar cuotas del servicio específico (usando el ID guardado)
+          await this.cargarCuotasParaGestion(servicioIdActual);
+          
+          // NO emitir recargar-servicios aquí para evitar desincronización del modal
+          // El refresco se hará cuando se cierre el modal de gestión de pagos
           return;
         } catch (cuotaError) {
           console.log('Endpoint de cuota individual no disponible, actualizando datos de pagos completos');
@@ -1476,9 +1537,17 @@ export default {
         
         // Si no funciona el endpoint individual, actualizar todo el objeto de pagos
         if (cuota.fechaField && cuota.importeField && cuota.pagadoField) {
-          // Cargar los datos de pagos actuales
-          const respPagos = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${cuota.servicioId}`);
+          // Usar el servicioId de la cuota para mayor seguridad
+          const servicioIdParaActualizar = cuota.servicioId || servicioIdActual;
+          
+          // Cargar los datos de pagos actuales del servicio específico
+          const respPagos = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicioIdParaActualizar}`);
           const pagosActuales = respPagos.data;
+          
+          // Verificar que estamos actualizando el servicio correcto
+          if (pagosActuales.servicio?.id !== servicioIdActual) {
+            throw new Error(`Error de sincronización: Se esperaba servicio ${servicioIdActual} pero se cargó servicio ${pagosActuales.servicio?.id}`);
+          }
           
           // Actualizar los campos específicos de esta cuota
           pagosActuales[cuota.fechaField] = cuota.fechaPago + 'T00:00:00.000Z'; // Convertir a formato ISO
@@ -1486,13 +1555,16 @@ export default {
           pagosActuales[cuota.pagadoField] = cuota.pagado;
           
           // Enviar la actualización completa
-          await axios.put(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${cuota.servicioId}`, pagosActuales);
+          await axios.put(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicioIdParaActualizar}`, pagosActuales);
           
           cuota.editado = false;
           this.$swal.fire({ icon: 'success', title: 'Cuota actualizada', timer: 1200, showConfirmButton: false });
-          await this.cargarCuotasParaGestion(this.servicioGestionPagos.id);
-          // Emitir evento para recargar servicios en el componente padre
-          this.$emit("recargar-servicios");
+          
+          // Recargar cuotas del servicio específico (usando el ID guardado)
+          await this.cargarCuotasParaGestion(servicioIdActual);
+          
+          // NO emitir recargar-servicios aquí para evitar desincronización del modal
+          // El refresco se hará cuando se cierre el modal de gestión de pagos
         } else {
           throw new Error('No se pudo determinar cómo actualizar la cuota');
         }
