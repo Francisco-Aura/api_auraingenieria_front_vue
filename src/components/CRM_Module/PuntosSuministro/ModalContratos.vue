@@ -989,9 +989,11 @@ export default {
       const idSinTarifaGas = this.tarifasGas?.find(t => t.nombre === 'Sin Tarifa')?.id || '';
       const idSinTarifaLuz = this.tarifasLuz?.find(t => t.nombre === 'Sin Tarifa')?.id || '';
       
-      // Determinar el tipo de punto de suministro
-      const tieneGas = this.puntoSuministroData?.cupsgas && this.puntoSuministroData.cupsgas.trim() !== '';
-      const tieneLuz = this.puntoSuministroData?.cupsluz && this.puntoSuministroData.cupsluz.trim() !== '';
+      // Determinar el tipo de punto de suministro (verificar ambas formas por compatibilidad)
+      const cupsGas = this.puntoSuministroData?.CUPSgas || this.puntoSuministroData?.cupsgas;
+      const cupsLuz = this.puntoSuministroData?.CUPSluz || this.puntoSuministroData?.cupsluz;
+      const tieneGas = cupsGas && cupsGas.trim() !== '';
+      const tieneLuz = cupsLuz && cupsLuz.trim() !== '';
       
       this.nuevoContrato = {
         idCliente: this.cliente?.id || "",
@@ -1130,14 +1132,16 @@ export default {
     
     // Determinar si el punto de suministro es de Gas
     esGas() {
-      return this.puntoSuministroData?.cupsgas && 
-             this.puntoSuministroData.cupsgas.trim() !== '';
+      // Verificar ambas formas por compatibilidad
+      const cupsGas = this.puntoSuministroData?.CUPSgas || this.puntoSuministroData?.cupsgas;
+      return cupsGas && cupsGas.trim() !== '';
     },
     
     // Determinar si el punto de suministro es de Luz
     esLuz() {
-      return this.puntoSuministroData?.cupsluz && 
-             this.puntoSuministroData.cupsluz.trim() !== '';
+      // Verificar ambas formas por compatibilidad
+      const cupsLuz = this.puntoSuministroData?.CUPSluz || this.puntoSuministroData?.cupsluz;
+      return cupsLuz && cupsLuz.trim() !== '';
     },
     
     // Obtener el tipo de punto de suministro
