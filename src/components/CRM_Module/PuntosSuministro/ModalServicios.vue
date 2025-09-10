@@ -1464,25 +1464,11 @@ export default {
         // Intentar actualizar la cuota individual primero
         try {
           await axios.put(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/cuota/${cuota.id}`, cuota);
-          
-          // Actualizar localmente la cuota sin recargar todo
           cuota.editado = false;
-          
-          // Actualizar el estado local inmediatamente
-          const cuotaIndex = this.cuotas.findIndex(c => c.id === cuota.id);
-          if (cuotaIndex !== -1) {
-            this.$set(this.cuotas, cuotaIndex, { ...cuota });
-          }
-          
           this.$swal.fire({ icon: 'success', title: 'Cuota actualizada', timer: 1200, showConfirmButton: false });
-          
-          // Recargar las cuotas después de un pequeño delay para asegurar que el servidor procesó el cambio
-          setTimeout(async () => {
-            await this.cargarCuotasParaGestion(this.servicioGestionPagos.id);
-            // Emitir evento para recargar servicios en el componente padre
-            this.$emit("recargar-servicios");
-          }, 500);
-          
+          await this.cargarCuotasParaGestion(this.servicioGestionPagos.id);
+          // Emitir evento para recargar servicios en el componente padre
+          this.$emit("recargar-servicios");
           return;
         } catch (cuotaError) {
           console.log('Endpoint de cuota individual no disponible, actualizando datos de pagos completos');
@@ -1502,23 +1488,11 @@ export default {
           // Enviar la actualización completa
           await axios.put(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${cuota.servicioId}`, pagosActuales);
           
-          // Actualizar localmente la cuota sin recargar todo
           cuota.editado = false;
-          
-          // Actualizar el estado local inmediatamente
-          const cuotaIndex = this.cuotas.findIndex(c => c.id === cuota.id);
-          if (cuotaIndex !== -1) {
-            this.$set(this.cuotas, cuotaIndex, { ...cuota });
-          }
-          
           this.$swal.fire({ icon: 'success', title: 'Cuota actualizada', timer: 1200, showConfirmButton: false });
-          
-          // Recargar las cuotas después de un pequeño delay
-          setTimeout(async () => {
-            await this.cargarCuotasParaGestion(this.servicioGestionPagos.id);
-            // Emitir evento para recargar servicios en el componente padre
-            this.$emit("recargar-servicios");
-          }, 500);
+          await this.cargarCuotasParaGestion(this.servicioGestionPagos.id);
+          // Emitir evento para recargar servicios en el componente padre
+          this.$emit("recargar-servicios");
         } else {
           throw new Error('No se pudo determinar cómo actualizar la cuota');
         }
