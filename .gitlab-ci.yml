@@ -3,49 +3,113 @@ image: node:20
 stages:
   - build_and_deploy_frontend
 
-deploy_frontend_job_PRE:
+# ============================
+# Despliegue FRONTEND en PRE
+# (Rama release → Raspberry PRE)
+# ============================
+deploy_frontend_PRE:
   stage: build_and_deploy_frontend
   only:
     - release
-
   script:
     - set -eo pipefail
     - set -x
 
+    # 1. Instalar dependencias
     - echo "Instalando dependencias de Node.js..."
     - npm install --production=false --ci
 
+    # 2. Construir la app Vue
     - echo "Construyendo la aplicación Vue..."
     - npm run build
 
-    - echo "--- Contenido del directorio de trabajo actual después del build ---"
+    # Debug build
+    - echo "--- Contenido del directorio actual ---"
     - ls -la .
-    - echo "--- Contenido de la carpeta 'dist/' (si existe) ---"
-    - ls -la dist/ || echo "Directorio dist/ no encontrado o vacío."
-    - echo "Ajustando permisos de la carpeta dist/ para rsync..."
-    - chmod -R 777 dist/ || echo "No se pudo cambiar permisos de dist/ (podría no existir o ser vacío)"
+    - echo "--- Contenido de dist/ ---"
+    - ls -la dist/ || echo "Directorio dist/ no encontrado"
+    - chmod -R 777 dist/ || echo "No se pudo cambiar permisos de dist"
 
+    # 3. Configurar SSH
     - echo "Configurando SSH con ssh-agent..."
     - apt-get update -y && apt-get install -y openssh-client
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY_PRE" | ssh-add -
-
     - mkdir -p ~/.ssh
     - ssh-keyscan 5.34.148.92 >> ~/.ssh/known_hosts
     - chmod 600 ~/.ssh/known_hosts
 
+    # 4. Instalar rsync
     - echo "Instalando rsync en el runner..."
     - apt-get install -y rsync
 
+    # 5. Directorio destino en Raspberry PRE
     - export FRONTEND_FINAL_DIR="/home/babenza/deploy/frontend"
-    - echo "Asegurando la existencia del directorio final ${FRONTEND_FINAL_DIR} en la Raspberry Pi PRE..."
     - ssh -o StrictHostKeyChecking=no babenza@5.34.148.92 "mkdir -p ${FRONTEND_FINAL_DIR}"
 
-    - echo "Copiando archivos del frontend directamente a ${FRONTEND_FINAL_DIR} en la Raspberry Pi PRE usando rsync..."
+    # 6. Copiar archivos con rsync
+    - echo "Copiando archivos frontend a PRE..."
     - rsync -avzh --delete -e "ssh -o StrictHostKeyChecking=no" dist/ babenza@5.34.148.92:"${FRONTEND_FINAL_DIR}/"
 
-    - echo "Ejecutando script de post-despliegue en la Raspberry Pi PRE (ajustando permisos y recargando Nginx)..."
+    # 7. Ejecutar script de post-despliegue
+    - echo "Ejecutando script post-despliegue en PRE..."
     - ssh -o StrictHostKeyChecking=no babenza@5.34.148.92 "bash /home/babenza/deploy_frontend.sh"
+
+  cache:
+    paths:
+      - node_modules/
+
+# ============================
+# Despliegue FRONTEND en PRO
+# (Rama main → Raspberry PRO)
+# ============================
+deploy_frontend_PRO:
+  stage: build_and_deploy_frontend
+  only:
+    - main
+  script:
+    - set -eo pipefail
+    - set -x
+
+    # 1. Instalar dependencias
+    - echo "Instalando dependencias de Node.js..."
+    - npm install --production=false --ci
+
+    # 2. Construir la app Vue
+    - echo "Construyendo la aplicación Vue..."
+    - npm run build
+
+    # Debug build
+    - echo "--- Contenido del directorio actual ---"
+    - ls -la .
+    - echo "--- Contenido de dist/ ---"
+    - ls -la dist/ || echo "Directorio dist/ no encontrado"
+    - chmod -R 777 dist/ || echo "No se pudo cambiar permisos de dist"
+
+    # 3. Configurar SSH
+    - echo "Configurando SSH con ssh-agent..."
+    - apt-get update -y && apt-get install -y openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | ssh-add -
+    - mkdir -p ~/.ssh
+    - ssh-keyscan 5.34.149.250 >> ~/.ssh/known_hosts
+    - chmod 600 ~/.ssh/known_hosts
+
+    # 4. Instalar rsync
+    - echo "Instalando rsync en el runner..."
+    - apt-get install -y rsync
+
+    # 5. Directorio destino en Raspberry PRO
+    - export FRONTEND_FINAL_DIR="/home/babenza/deploy/frontend"
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "mkdir -p ${FRONTEND_FINAL_DIR}"
+
+    # 6. Copiar archivos con rsync
+    - echo "Copiando archivos frontend a PRO..."
+    - rsync -avzh --delete -e "ssh -o StrictHostKeyChecking=no" dist/ babenza@5.34.149.250:"${FRONTEND_FINAL_DIR}/"
+
+    # 7. Ejecutar script de post-despliegue
+    - echo "Ejecutando script post-despliegue en PRO..."
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "bash /home/babenza/deploy_frontend.sh"
 
   cache:
     paths:
