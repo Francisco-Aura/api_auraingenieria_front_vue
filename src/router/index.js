@@ -1,11 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router';
+
+// Importación síncrona solo para LoginComponent (primera pantalla)
 import LoginComponent from '@/components/LoginComponent.vue';
-import DashboardComponent from '@/components/DashboardComponent.vue';
-//CRM
-import ClientesComponent from '@/components/CRM_Module/Clientes/ClientesComponent.vue';
-import PuntosSuministroComponent from '@/components/CRM_Module/PuntosSuministro/PuntoSuministroComponent.vue';
-import InformesComponent from '@/components/CRM_Module/Informes/InformesComponent.vue';
-import AdministracionComponent from '@/components/CRM_Module/Administracion/AdministracionComponent.vue';
+
+// Lazy loading para todos los demás componentes
+const DashboardComponent = () => import('@/components/DashboardComponent.vue');
+const ClientesComponent = () => import('@/components/CRM_Module/Clientes/ClientesComponent.vue');
+const PuntosSuministroComponent = () => import('@/components/CRM_Module/PuntosSuministro/PuntoSuministroComponent.vue');
+const InformesComponent = () => import('@/components/CRM_Module/Informes/InformesComponent.vue');
+const AdministracionComponent = () => import('@/components/CRM_Module/Administracion/AdministracionComponent.vue');
 
 // Define las rutas
 const routes = [
