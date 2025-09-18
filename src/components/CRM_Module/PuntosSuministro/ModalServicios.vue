@@ -328,6 +328,22 @@
                     <span class="euro-inline">€</span>
                   </div>
                 </div>
+
+                <div class="form-group-modern importe-euro-group">
+                  <label>Importe Pagado</label>
+                  <div class="input-euro-inline">
+                    <input
+                      type="number"
+                      :value="totalPagadoFormulario"
+                      class="form-control-modern importe-pagado-readonly"
+                      step="0.01"
+                      min="0"
+                      readonly
+                    />
+                    <span class="euro-inline">€</span>
+                  </div>
+                  <small class="field-help">Se actualiza automáticamente según las cuotas pagadas</small>
+                </div>
               </div>
 
 
@@ -1978,6 +1994,36 @@ export default {
       return pagos.pagoPlazos.numeroCuotas || 12;
     },
 
+    // Método para calcular el importe pagado desde los datos de pagos existentes
+    calcularImportePagadoDesdePagos(pagos) {
+      if (!pagos) return 0;
+      
+      const camposPagado = [
+        'primerPagoPagado', 'segundoPagoPagado', 'tercerPagoPagado', 'cuartoPagoPagado',
+        'quintoPagoPagado', 'sextoPagoPagado', 'septimoPagoPagado', 'octavoPagoPagado',
+        'novenoPagoPagado', 'decimoPagoPagado', 'decimoprimerPagoPagado', 'decimosegundoPagoPagado'
+      ];
+      
+      const camposImporte = [
+        'primerPagoImporte', 'segundoPagoImporte', 'tercerPagoImporte', 'cuartoPagoImporte',
+        'quintoPagoImporte', 'sextoPagoImporte', 'septimoPagoImporte', 'octavoPagoImporte',
+        'novenoPagoImporte', 'decimoPagoImporte', 'decimoprimerPagoImporte', 'decimosegundoPagoImporte'
+      ];
+      
+      let totalPagado = 0;
+      const numeroCuotas = this.obtenerNumeroCuotasDesdePagos(pagos);
+      
+      // Solo contar hasta el número real de cuotas de la modalidad
+      for (let i = 0; i < numeroCuotas && i < camposPagado.length; i++) {
+        if (pagos[camposPagado[i]]) {
+          totalPagado += parseFloat(pagos[camposImporte[i]]) || 0;
+        }
+      }
+      
+      // Redondear a 2 decimales
+      return Math.round(totalPagado * 100) / 100;
+    },
+
     // Método para validar cambios de modalidad en tiempo real (mejorado)
     async validarCambioModalidadTiempoReal() {
       if (!this.modoEdicion || !this.pagosExistentes || !this.nuevoServicio.idPagoPlazos) return;
@@ -2112,7 +2158,24 @@ export default {
     },
 
     totalPagado() {
-      return this.cuotas.filter(c => c.pagado).reduce((acc, c) => acc + (parseFloat(c.importePago) || 0), 0);
+      const total = this.cuotas.filter(c => c.pagado).reduce((acc, c) => acc + (parseFloat(c.importePago) || 0), 0);
+      return Math.round(total * 100) / 100;
+    },
+
+    totalPagadoFormulario() {
+      let importePagado = 0;
+      
+      // Si estamos en modo edición y hay datos de pagos existentes, calcular desde ahí
+      if (this.modoEdicion && this.pagosExistentes) {
+        importePagado = this.calcularImportePagadoDesdePagos(this.pagosExistentes);
+      }
+      // Si hay cuotas cargadas, usar el método existente
+      else if (this.cuotas && this.cuotas.length > 0) {
+        importePagado = this.totalPagado;
+      }
+      
+      // Redondear a 2 decimales
+      return Math.round(importePagado * 100) / 100;
     },
 
     calcularImporteFinal() {
@@ -3357,6 +3420,15 @@ export default {
   background-color: #f8f9fa !important;
   border-color: #e9ecef !important;
   color: #495057 !important;
+  cursor: not-allowed !important;
+  font-weight: 600 !important;
+}
+
+/* Estilos para campo de importe pagado readonly */
+.importe-pagado-readonly {
+  background-color: #e8f5e8 !important;
+  border-color: #c3e6c3 !important;
+  color: #2d5a2d !important;
   cursor: not-allowed !important;
   font-weight: 600 !important;
 }
