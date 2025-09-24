@@ -1330,9 +1330,7 @@ export default {
         });
         return;
       }
-      
-      console.log(`🎯 Iniciando gestión de pagos para servicio:`, servicio.id);
-      
+    
       // Asignar el servicio actual ANTES de cargar las cuotas
       this.servicioGestionPagos = { ...servicio }; // Crear una copia para evitar referencias
       this.mostrarModalGestionPagos = true;
@@ -1390,7 +1388,6 @@ export default {
     },
 
     cerrarModalGestionPagos() {
-      console.log('🔒 Cerrando modal de gestión de pagos');
       
       this.mostrarModalGestionPagos = false;
       this.servicioGestionPagos = null;
@@ -1426,7 +1423,6 @@ export default {
           tienePagos = responsePagos.data && responsePagos.data.id;
         } catch (error) {
           // Si no hay pagos, continuar con la eliminación normal
-          console.log('No se encontraron pagos asociados al servicio');
         }
 
         // Crear mensaje de confirmación apropiado
@@ -1462,7 +1458,6 @@ export default {
             // Si tiene pagos, eliminarlos primero
             if (tienePagos) {
               await axios.delete(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicio.id}`);
-              console.log('Pagos eliminados correctamente');
             }
 
             // Luego eliminar el servicio
@@ -1568,17 +1563,15 @@ export default {
           this.cuotas = [];
           return;
         }
-        
-        console.log(`🔄 Cargando cuotas para servicio: ${servicioId}`);
+      
         
         // Intentar cargar desde el endpoint de cuotas primero
         try {
           const resp = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicioId}/cuotas`);
           this.cuotas = resp.data.map(c => ({ ...c, editado: false }));
-          console.log(`✅ Cuotas cargadas correctamente desde endpoint de cuotas para servicio ${servicioId}:`, this.cuotas.length);
           return;
         } catch (cuotasError) {
-          console.log('Endpoint de cuotas no disponible, intentando con datos de pagos');
+          console.error('Error al cargar cuotas:', cuotasError);
         }
         
         // Si no hay endpoint de cuotas, cargar desde servicios-pagos y convertir
@@ -1593,14 +1586,12 @@ export default {
         }
         
         if (pagos) {
-          console.log(`📊 Procesando datos de pagos para servicio ${servicioId}`);
           
           // Convertir los datos de pagos a formato de cuotas
           this.cuotas = [];
           
           // Obtener el número real de cuotas de la modalidad actual
           const numeroCuotasReales = this.obtenerNumeroCuotasDesdePagos(pagos);
-          console.log(`🔢 Número de cuotas de la modalidad: ${numeroCuotasReales}`);
           
           const cuotasData = [
             { num: 1, fecha: 'primerPagoFecha', importe: 'primerPagoImporte', pagado: 'primerPagoPagado' },
@@ -1641,13 +1632,10 @@ export default {
             }
           }
           
-          console.log(`✅ Se procesaron ${this.cuotas.length} cuotas para servicio ${servicioId}`);
         } else {
-          console.log(`❌ No se encontraron datos de pagos para servicio ${servicioId}`);
           this.cuotas = [];
         }
       } catch (e) {
-        console.error(`❌ Error al cargar cuotas para gestión del servicio ${servicioId}:`, e);
         this.cuotas = [];
       }
     },
@@ -1678,7 +1666,7 @@ export default {
           // El refresco se hará cuando se cierre el modal de gestión de pagos
           return;
         } catch (cuotaError) {
-          console.log('Endpoint de cuota individual no disponible, actualizando datos de pagos completos');
+          // No hacer nada
         }
         
         // Si no funciona el endpoint individual, actualizar todo el objeto de pagos
@@ -2085,7 +2073,7 @@ export default {
           const cuotasPagadas = this.contarCuotasPagadas();
           if (cuotasPagadas > 0) {
             if (infoNueva.cuotas < infoActual.cuotas && cuotasPagadas > infoNueva.cuotas) {
-              console.log(`ADVERTENCIA: Se perderán datos de ${cuotasPagadas - infoNueva.cuotas} cuotas pagadas`);
+              // No hacer nada
             }
           }
         }
@@ -2181,9 +2169,9 @@ export default {
             cuotasQueSePerderan
           });
         } else if (infoNueva.cuotas > infoActual.cuotas) {
-          console.log(`Aumento de cuotas: se preservarán todas las ${cuotasPagadas} cuotas pagadas`);
+          // No hacer nada
         } else {
-          console.log(`Reducción de cuotas sin pérdidas: se preservarán todas las ${cuotasPagadas} cuotas pagadas`);
+          // No hacer nada
         }
       }
     },

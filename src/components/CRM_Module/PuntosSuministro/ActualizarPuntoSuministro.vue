@@ -647,15 +647,6 @@ export default {
       }
     },
     async initializePuntoLocal(newVal) {
-      console.log('=== FRONTEND DEBUG: INITIALIZING PUNTO LOCAL ===');
-      console.log('newVal recibido:', newVal);
-      console.log('Instalaciones en newVal:');
-      console.log('  bateriaCondensadores:', newVal.bateriaCondensadores);
-      console.log('  instalacionFV:', newVal.instalacionFV);
-      console.log('  bateriaAlmacenamiento:', newVal.bateriaAlmacenamiento);
-      console.log('  appMonitorizacion:', newVal.appMonitorizacion);
-      console.log('  integracionSistemasFV:', newVal.integracionSistemasFV);
-      console.log('=============================================');
 
       this.puntoLocal = {
         ...newVal,
@@ -693,14 +684,6 @@ export default {
         integracionSistemasFVId: newVal.integracionSistemasFV ? newVal.integracionSistemasFV.id : null
       };
 
-      console.log('=== PUNTO LOCAL DESPUÉS DE INICIALIZAR ===');
-      console.log('puntoLocal.bateriaCondensadores:', this.puntoLocal.bateriaCondensadores);
-      console.log('puntoLocal.instalacionFV:', this.puntoLocal.instalacionFV);
-      console.log('puntoLocal.bateriaAlmacenamiento:', this.puntoLocal.bateriaAlmacenamiento);
-      console.log('puntoLocal.appMonitorizacionId:', this.puntoLocal.appMonitorizacionId);
-      console.log('puntoLocal.integracionSistemasFVId:', this.puntoLocal.integracionSistemasFVId);
-      console.log('==========================================');
-
       if (this.distribuidoras.length === 0) {
         await this.loadMasterData(); 
       }
@@ -729,25 +712,6 @@ export default {
     },
     async actualizarPS() {
       if (this.modoConsulta) return;
-
-      console.log('=== FRONTEND DEBUG: INICIO ACTUALIZAR PS ===');
-      console.log('puntoLocal completo:', this.puntoLocal);
-      
-      // DEBUG: Campos de instalaciones en frontend
-      console.log('=== INSTALACIONES FRONTEND DEBUG ===');
-      console.log('Batería Condensadores:', this.puntoLocal.bateriaCondensadores);
-      console.log('Potencia Batería:', this.puntoLocal.potenciaBateria);
-      console.log('Modelo Batería:', this.puntoLocal.modeloBateria);
-      console.log('Instalación FV:', this.puntoLocal.instalacionFV);
-      console.log('KW Inversor:', this.puntoLocal.kwInversor);
-      console.log('KW Paneles Solares:', this.puntoLocal.kwPanelesSolares);
-      console.log('Batería Almacenamiento:', this.puntoLocal.bateriaAlmacenamiento);
-      console.log('Potencia Batería Almacenamiento:', this.puntoLocal.potenciaBateriaAlmacenamiento);
-      console.log('Backup:', this.puntoLocal.backup);
-      console.log('Peaksaving:', this.puntoLocal.peaksaving);
-      console.log('AppMonitorizacion ID:', this.puntoLocal.appMonitorizacionId);
-      console.log('IntegracionSistemasFV ID:', this.puntoLocal.integracionSistemasFVId);
-      console.log('=======================================');
 
       if (!this.puntoLocal.direccion?.trim() || !this.puntoLocal.codigoPostal?.trim() || 
           !this.puntoLocal.poblacion?.trim() || !this.puntoLocal.provincia?.trim()) {
@@ -806,16 +770,6 @@ export default {
         appMonitorizacion: this.puntoLocal.appMonitorizacionId ? { id: this.puntoLocal.appMonitorizacionId } : null,
         integracionSistemasFV: this.puntoLocal.integracionSistemasFVId ? { id: this.puntoLocal.integracionSistemasFVId } : null,
       };
-
-      console.log('=== DATOS ADAPTADOS A ENVIAR ===');
-      console.log('datosAdaptados:', datosAdaptados);
-      console.log('Instalaciones en datosAdaptados:');
-      console.log('  bateriaCondensadores:', datosAdaptados.bateriaCondensadores);
-      console.log('  instalacionFV:', datosAdaptados.instalacionFV);
-      console.log('  bateriaAlmacenamiento:', datosAdaptados.bateriaAlmacenamiento);
-      console.log('  appMonitorizacion:', datosAdaptados.appMonitorizacion);
-      console.log('  integracionSistemasFV:', datosAdaptados.integracionSistemasFV);
-      console.log('===============================');
       
       this.$emit('actualizar-punto-suministro', datosAdaptados);
       this.cerrarModal();

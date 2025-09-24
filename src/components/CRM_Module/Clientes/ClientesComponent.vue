@@ -898,9 +898,6 @@ export default {
       this.subtipologias = subtipologias.data;
       this.appMonitorizacion = appMonitorizacion.data;
       this.integracionSistemasFV = integracionSistemasFV.data;
-      // Debug: verificar que se cargan los datos
-      console.log('APP Monitorización cargadas:', this.appMonitorizacion);
-      console.log('Integración Sistemas FV cargadas:', this.integracionSistemasFV);
     } catch (error) {
       console.error("Error al cargar datos iniciales:", error);
       await this.$swal.fire({

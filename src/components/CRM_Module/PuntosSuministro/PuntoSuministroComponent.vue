@@ -478,14 +478,7 @@ export default {
         
         // Debug: mostrar información cuando se activa el filtro de dados de baja
         if (this.mostrarDadosDeBaja && Math.random() < 0.01) {
-          console.log('Filtrando punto:', {
-            id: suministro.id,
-            cliente: suministro.cliente,
-            fechaBaja: suministro.fechaBaja,
-            fecha_baja: suministro.fecha_baja,
-            estaDadoDeBaja: this.estaDadoDeBaja(suministro),
-            estadoBajaFilter
-          });
+          // No hacer nada
         }
 
         // Luego aplicamos el filtro general
@@ -526,11 +519,6 @@ export default {
 
         return estadoBajaFilter && generalFilter && columnFilters;
       });
-      
-      // Debug: mostrar estadísticas del filtro
-      if (this.mostrarDadosDeBaja) {
-        console.log(`Filtro dados de baja activado: ${filtered.length} puntos encontrados de ${this.puntosSuministro.length} total`);
-      }
       
       return filtered;
     },
@@ -590,22 +578,6 @@ export default {
         ps.tarifaActual !== 'Sin Tarifa' && 
         ps.tarifaActual.trim() !== ''
       ).length;
-      
-      // Debug logs
-      console.log('=== DEBUG CONTRATOS ACTIVOS ===');
-      console.log('Total puntos de suministro:', this.puntosSuministro.length);
-      console.log('Puntos con CUPS:', this.puntosSuministro.filter(ps => ps.cupsluz || ps.cupsgas).length);
-      console.log('Puntos con tarifa actual (contratos activos):', puntosConContratosActivos);
-      console.log('Puntos con tarifaActual null/vacía:', this.puntosSuministro.filter(ps => 
-        !ps.tarifaActual || ps.tarifaActual === 'Sin Tarifa' || ps.tarifaActual.trim() === ''
-      ).length);
-      
-      // Mostrar algunos ejemplos de tarifas
-      const ejemplosTarifas = this.puntosSuministro
-        .filter(ps => ps.tarifaActual && ps.tarifaActual !== 'Sin Tarifa')
-        .slice(0, 5)
-        .map(ps => `${ps.id}: ${ps.tarifaActual}`);
-      console.log('Ejemplos de tarifas actuales:', ejemplosTarifas);
       
       return puntosConContratosActivos;
     },
@@ -1301,7 +1273,6 @@ export default {
 
     // Método inteligente para corregir solo las tarifas que realmente están incorrectas
     async corregirTarifasIncorrectasInteligente() {
-      console.log('🔧 Iniciando corrección inteligente de tarifas...');
       
       // Identificar puntos que necesitan corrección de tarifa
       const puntosSinTarifa = this.puntosSuministro.filter(punto => 
@@ -1311,21 +1282,9 @@ export default {
         punto.tarifaActual === 'Sin Tarifa' || 
         punto.tarifaActual.trim() === ''
       );
-      
-      console.log(`📊 Total puntos cargados: ${this.puntosSuministro.length}`);
-      console.log(`📊 Puntos sin tarifa encontrados: ${puntosSinTarifa.length}`);
-      
-      // Mostrar detalles de los puntos sin tarifa
-      puntosSinTarifa.forEach(punto => {
-        console.log(`🔍 Punto sin tarifa: ID=${punto.id}, Cliente="${punto.cliente}", tarifaActual="${punto.tarifaActual}"`);
-      });
-      
       if (puntosSinTarifa.length === 0) {
-        console.log('✅ Todos los puntos tienen tarifa asignada');
         return; // No hay puntos que corregir
       }
-      
-      console.log(`🔧 Corrigiendo ${puntosSinTarifa.length} puntos sin tarifa...`);
       
       // Priorizar el punto específico problemático (ID 44413)
       const puntoProblematico = puntosSinTarifa.find(p => p.id === 44413);
@@ -1334,7 +1293,6 @@ export default {
       if (puntoProblematico) {
         // Si encontramos el punto problemático, procesarlo primero
         puntosACorregir = [puntoProblematico, ...puntosSinTarifa.filter(p => p.id !== 44413).slice(0, 4)];
-        console.log('🎯 Punto problemático ID 44413 detectado, procesando con prioridad');
       } else {
         // Procesar hasta 5 puntos sin tarifa para no sobrecargar
         puntosACorregir = puntosSinTarifa.slice(0, 5);
@@ -1343,16 +1301,14 @@ export default {
       // Ejecutar correcciones en paralelo para mayor velocidad
       const promesasCorreccion = puntosACorregir.map(async (punto) => {
         try {
-          console.log(`🔄 Procesando punto ${punto.id} (${punto.cliente})...`);
           const tarifaCorregida = await this.calcularTarifaActual(punto);
           if (tarifaCorregida) {
-            console.log(`✅ Tarifa corregida: ${punto.cliente} → ${tarifaCorregida}`);
             return true;
           } else {
-            console.log(`❌ No se encontró tarifa para ${punto.cliente}`);
+            // No hacer nada
           }
         } catch (error) {
-          console.warn(`⚠️ Error al corregir punto ${punto.id}:`, error.message);
+          console.warn(`Error al corregir punto ${punto.id}:`, error.message);
         }
         return false;
       });
@@ -1362,10 +1318,9 @@ export default {
       const puntosCorregidos = resultados.filter(r => r).length;
       
       if (puntosCorregidos > 0) {
-        console.log(`✅ ${puntosCorregidos} tarifas corregidas automáticamente`);
         this.$forceUpdate(); // Actualizar vista solo si hubo cambios
       } else {
-        console.log(`❌ No se pudieron corregir tarifas automáticamente`);
+        // No hacer nada
       }
     },
 
@@ -1516,13 +1471,7 @@ export default {
     estaDadoDeBaja(suministro) {
       // Debug: mostrar información del punto para verificar los campos
       if (this.mostrarDadosDeBaja && Math.random() < 0.01) { // Solo 1% de las veces para no saturar
-        console.log('Punto de suministro:', {
-          id: suministro.id,
-          cliente: suministro.cliente,
-          fechaBaja: suministro.fechaBaja,
-          fecha_baja: suministro.fecha_baja,
-          todasLasPropiedades: Object.keys(suministro)
-        });
+          // No hacer nada
       }
       
       // Un punto está dado de baja si tiene fechaBaja y no es null
