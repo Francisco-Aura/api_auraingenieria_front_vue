@@ -167,28 +167,28 @@
                 </div>
                 <div class="form-row-compact">
                   <div class="form-group-compact">
-                    <label for="nombreAutorizado">Nombre <span class="required">*</span></label>
-                    <input type="text" id="nombreAutorizado" v-model="clienteLocal.nombreAutorizado" class="form-control-compact" required />
+                    <label for="nombreAutorizado">Nombre</label>
+                    <input type="text" id="nombreAutorizado" v-model="clienteLocal.nombreAutorizado" class="form-control-compact"/>
                   </div>
                   <div class="form-group-compact">
-                    <label for="dniAutorizado">DNI <span class="required">*</span></label>
+                    <label for="dniAutorizado">DNI</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-id-badge icon-prefix"></i>
-                      <input type="text" id="dniAutorizado" v-model="clienteLocal.dniAutorizado" class="form-control-compact" required />
+                      <input type="text" id="dniAutorizado" v-model="clienteLocal.dniAutorizado" class="form-control-compact"/>
                     </div>
                   </div>
                   <div class="form-group-compact">
-                    <label for="telefonoAutorizado">Teléfono <span class="required">*</span></label>
+                    <label for="telefonoAutorizado">Teléfono</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-phone icon-prefix"></i>
-                      <input type="text" id="telefonoAutorizado" v-model="clienteLocal.telefonoAutorizado" class="form-control-compact" required />
+                      <input type="text" id="telefonoAutorizado" v-model="clienteLocal.telefonoAutorizado" class="form-control-compact"/>
                     </div>
                   </div>
                   <div class="form-group-compact">
-                    <label for="emailAutorizado">Email <span class="required">*</span></label>
+                    <label for="emailAutorizado">Email</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-envelope icon-prefix"></i>
-                      <input type="email" id="emailAutorizado" v-model="clienteLocal.emailAutorizado" class="form-control-compact" required />
+                      <input type="email" id="emailAutorizado" v-model="clienteLocal.emailAutorizado" class="form-control-compact" />
                     </div>
                   </div>
                 </div>

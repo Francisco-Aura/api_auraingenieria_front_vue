@@ -45,6 +45,32 @@
               <i class="fas fa-chevron-right"></i>
             </div>
           </div>
+
+          <div class="card informe-card" @click="mostrarInforme('contratos-vigentes')">
+            <div class="informe-icon">
+              <i class="fas fa-file-contract"></i>
+            </div>
+            <div class="informe-info">
+              <h3>Contratos Vigentes</h3>
+              <p>Listado de todos los contratos que están actualmente vigentes</p>
+            </div>
+            <div class="informe-action">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </div>
+
+          <div class="card informe-card" v-if="nivelAcceso !== 4" @click="mostrarInforme('servicios-vigentes')">
+            <div class="informe-icon">
+              <i class="fas fa-cogs"></i>
+            </div>
+            <div class="informe-info">
+              <h3>Servicios Vigentes</h3>
+              <p>Listado de servicios vigentes y pendientes de pago</p>
+            </div>
+            <div class="informe-action">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -160,8 +186,6 @@
 
 <script>
 import axios from 'axios';
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
 
@@ -362,6 +386,17 @@ export default {
           "cliente", "servicio", "fechaVencimiento", "importeTotal",
           "estadoVencimiento", "estadoPago", "numeroCuotas", // Añadir numeroCuotas
           "pagos" // Esta columna se renderizará de forma personalizada al final
+        ],
+        "contratos-vigentes": [
+          "codigoContrato", // identificador
+          "fechaInicio", "fechaFin", "cliente", "cupsLuz", "cupsGas", 
+          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual"
+        ],
+        "servicios-vigentes": [
+          "idServicio", // identificador
+          "cliente", "servicio", "fechaInicioServicio", "fechaFinServicio", 
+          "gestora", "producto", "comercializadora", "importeFinal",
+          "estadoVencimiento", "estadoPago"
         ]
       };
 
@@ -391,137 +426,6 @@ export default {
       }
     },
 
-    // Genera el PDF del informe con las columnas específicas
-    crearPDF(datos, tipo) {
-      const columnasPermitidas = {
-        "contratos-pendientes-renovacion": [
-          "fechaInicio", "fechaFin", "cliente", "cupsLuz", "cupsGas", 
-          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual"
-        ],
-        "puntos-suministro-sin-contrato": [
-          "cliente", "direccion", "codigoPostal", "poblacion", "provincia", "cupsLuz", "cupsGas"
-        ],
-        "servicios-pendientes-pago": [
-          "cliente", "servicio", "fechaVencimiento", "importeTotal", "estadoVencimiento", "estadoPago"
-        ]
-      };
-
-      // Crear documento en orientación horizontal y tamaño A3
-      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a3" });
-      
-      // Añadir logo
-      const logo = new Image();
-      logo.src = require('@/assets/logo.png');
-      doc.addImage(logo, 'PNG', 14, 10, 30, 30);
-
-      // Título del informe
-      doc.setFontSize(16);
-      doc.setTextColor(51, 51, 51);
-      doc.text(`Informe: ${this.formatearTitulo(tipo)}`, 50, 25);
-
-      // Fecha de generación
-      doc.setFontSize(10);
-      const fecha = new Date().toLocaleDateString();
-      doc.text(`Generado el: ${fecha}`, 14, 45);
-
-      let encabezados, filas;
-      if (columnasPermitidas[tipo]) {
-        encabezados = columnasPermitidas[tipo].map(col => this.formatearColumna(col));
-        filas = datos.map(item =>
-          columnasPermitidas[tipo].map(col => {
-            if (col === 'importeTotal' && tipo === 'servicios-pendientes-pago') {
-              return this.formatearImporte(item[col]);
-            }
-            return item[col] ?? "";
-          })
-        );
-      } else {
-        encabezados = Object.keys(datos[0] || {}).map(key => this.formatearColumna(key));
-        filas = datos.map(item => Object.values(item));
-      }
-
-      // Ahora permitimos hasta 14 columnas por página en A3
-      const maxColsPorPagina = 14;
-      if (encabezados.length > maxColsPorPagina) {
-        for (let i = 0; i < encabezados.length; i += maxColsPorPagina) {
-          const subEncabezados = encabezados.slice(i, i + maxColsPorPagina);
-          const subFilas = filas.map(fila => fila.slice(i, i + maxColsPorPagina));
-
-          autoTable(doc, {
-            head: [subEncabezados],
-            body: subFilas,
-            startY: 50,
-            theme: "grid",
-            styles: { 
-              fontSize: 8,
-              cellPadding: 2,
-              overflow: 'linebreak',
-              cellWidth: 'wrap'
-            },
-            headStyles: { 
-              fillColor: [255, 193, 7],
-              textColor: [51, 51, 51],
-              fontStyle: 'bold',
-              halign: 'center',
-              valign: 'middle',
-              fontSize: 9,
-              cellPadding: 2,
-              textRotation: 45
-            },
-            alternateRowStyles: { 
-              fillColor: [250, 250, 250]
-            },
-            margin: { top: 15, left: 10, right: 10 },
-            didDrawPage: function(data) {
-              doc.setFontSize(8);
-              doc.text(
-                `Página ${doc.internal.getNumberOfPages()}`,
-                data.settings.margin.left,
-                doc.internal.pageSize.height - 10
-              );
-            }
-          });
-          if (i + maxColsPorPagina < encabezados.length) doc.addPage();
-        }
-      } else {
-        autoTable(doc, {
-          head: [encabezados],
-          body: filas,
-          startY: 50,
-          theme: "grid",
-          styles: { 
-            fontSize: 8,
-            cellPadding: 2,
-            overflow: 'linebreak',
-            cellWidth: 'wrap'
-          },
-          headStyles: { 
-            fillColor: [255, 193, 7],
-            textColor: [51, 51, 51],
-            fontStyle: 'bold',
-            halign: 'center',
-            valign: 'middle',
-            fontSize: 9,
-            cellPadding: 2,
-            textRotation: 45
-          },
-          alternateRowStyles: { 
-            fillColor: [250, 250, 250]
-          },
-          margin: { top: 15, left: 10, right: 10 },
-          didDrawPage: function(data) {
-            doc.setFontSize(8);
-            doc.text(
-              `Página ${doc.internal.getNumberOfPages()}`,
-              data.settings.margin.left,
-              doc.internal.pageSize.height - 10
-            );
-          }
-        });
-      }
-
-      doc.save(`${tipo}.pdf`);
-    },
 
     // Formatea el título para mostrar
     formatearTitulo(texto) {
@@ -558,7 +462,8 @@ export default {
 
     // Método auxiliar para mostrar valores en la tabla
     mostrarValorCelda(fila, columna) {
-      if (columna === 'importeTotal' && this.tipoSeleccionado === 'servicios-pendientes-pago') {
+      if ((columna === 'importeTotal' && this.tipoSeleccionado === 'servicios-pendientes-pago') ||
+          (columna === 'importeFinal' && this.tipoSeleccionado === 'servicios-vigentes')) {
         return this.formatearImporte(fila[columna]);
       }
       return fila[columna] ?? '';
@@ -602,7 +507,8 @@ export default {
             }
             
             const formattedColumnaName = this.formatearColumna(columnaKey);
-            if (columnaKey === 'importeTotal' && this.tipoSeleccionado === 'servicios-pendientes-pago') {
+            if ((columnaKey === 'importeTotal' && this.tipoSeleccionado === 'servicios-pendientes-pago') ||
+                (columnaKey === 'importeFinal' && this.tipoSeleccionado === 'servicios-vigentes')) {
               rowData[formattedColumnaName] = this.formatearImporte(item[columnaKey]);
             } else {
               rowData[formattedColumnaName] = item[columnaKey] ?? '';

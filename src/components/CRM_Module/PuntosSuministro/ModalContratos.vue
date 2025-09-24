@@ -29,8 +29,8 @@
           <!-- Banner del cliente -->
           <div class="client-banner">
             <div class="client-info">
-              <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Desconocido' }}</h4>
-              <span>DNI/CIF: {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'No disponible' }}</span>
+              <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Cargando...' }}</h4>
+              <span>DNI/CIF: {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'Cargando...' }}</span>
             </div>
           </div>
 
@@ -60,6 +60,8 @@
                     <th>Fecha Fin</th>
                     <th>Tarifa Luz</th>
                     <th>Tarifa Gas</th>
+                    <th>Comercializadora Actual</th>
+                    <th>Comercializadora Anterior</th>
                     <th>Consumo Anual</th>
                     <th>Características</th>
                     <th>Acciones</th>
@@ -81,6 +83,8 @@
                     <td>{{ formatDate(contrato.fechaFin) }}</td>
                     <td>{{ getTarifaLuzNombre(contrato.idTarifaLuz) }}</td>
                     <td>{{ getTarifaGasNombre(contrato.idTarifaGas) }}</td>
+                    <td>{{ getComercializadoraNombre(contrato.idComercializadoraActual) }}</td>
+                    <td>{{ getComercializadoraNombre(contrato.idComercializadoraAnterior) }}</td>
                     <td>{{ contrato.consumoAnual || 0 }} kW</td>
                     <td>
                       <div class="status-indicators">
@@ -108,6 +112,9 @@
                       <button @click="descargarPDF(contrato)" class="btn-icon btn-download" title="Descargar PDF" v-if="contrato.rutaArchivoContrato">
                         <i class="fas fa-download"></i>
                       </button>
+                      <button @click="eliminarContrato(contrato)" class="btn-icon btn-delete" title="Eliminar contrato">
+                        <i class="fas fa-trash"></i>
+                      </button>
                     </td>
                   </tr>
                 </tbody>
@@ -115,7 +122,8 @@
             </div>
             <div v-else class="no-history">
               <i class="fas fa-history"></i>
-              <p>No hay contratos disponibles</p>
+              <p v-if="cargandoDatos">Cargando contratos...</p>
+              <p v-else>No hay contratos disponibles</p>
             </div>
           </div>
         </div>
@@ -125,8 +133,8 @@
           <!-- Banner del cliente -->
           <div class="client-banner">
             <div class="client-info">
-              <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Desconocido' }}</h4>
-              <span>DNI/CIF: {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'No disponible' }}</span>
+              <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Cargando...' }}</h4>
+              <span>DNI/CIF: {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'Cargando...' }}</span>
             </div>
           </div>
 
@@ -136,7 +144,7 @@
               <div class="form-section-modern">
                 <div class="section-header-modern">
                   <i class="fas fa-calendar-alt"></i>
-                  <h3>Fechas del Contrato</h3>
+                  <h3>Fechas del Contrato / Informacion de la Comercializadora</h3>
                 </div>
                 
                 <div class="form-group-modern">
@@ -180,6 +188,46 @@
                     />
                   </div>
                 </div>
+
+                <div class="form-group-modern">
+                  <label for="comercializadoraActual">
+                    <i class="fas fa-building"></i>
+                    Comercializadora Actual <span class="required">*</span>
+                  </label>
+                  <div class="select-container-modern">
+                    <select 
+                      id="comercializadoraActual" 
+                      v-model="nuevoContrato.idComercializadoraActual" 
+                      class="form-select-modern" 
+                      required
+                    >
+                      <option value="">Seleccione una comercializadora...</option>
+                      <option v-for="comercializadora in comercializadorasList" :value="comercializadora.id" :key="comercializadora.id">
+                        {{ comercializadora.nombre }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group-modern">
+                  <label for="comercializadoraAnterior">
+                    <i class="fas fa-history"></i>
+                    Comercializadora Anterior
+                  </label>
+                  <div class="select-container-modern">
+                    <select 
+                      id="comercializadoraAnterior" 
+                      v-model="nuevoContrato.idComercializadoraAnterior" 
+                      class="form-select-modern"
+                    >
+                      <option value="">Seleccione una comercializadora...</option>
+                      <option v-for="comercializadora in comercializadorasList" :value="comercializadora.id" :key="comercializadora.id">
+                        {{ comercializadora.nombre }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
               </div>
 
               <!-- Sección de Información del Contrato -->
@@ -262,6 +310,42 @@
                       min="0" 
                       required 
                       placeholder="0.0000"
+                    />
+                  </div>
+                </div>
+
+                <!-- Usuario para Facturación Online -->
+                <div class="form-group-modern">
+                  <label for="userFO">
+                    <i class="fas fa-user"></i>
+                    Usuario Facturación Online
+                  </label>
+                  <div class="input-with-icon-modern">
+                    <i class="fas fa-user icon-prefix"></i>
+                    <input 
+                      type="text" 
+                      id="userFO" 
+                      v-model="nuevoContrato.userFO" 
+                      class="form-control-modern" 
+                      placeholder="Usuario para facturación online"
+                    />
+                  </div>
+                </div>
+
+                <!-- Contraseña para Facturación Online -->
+                <div class="form-group-modern">
+                  <label for="passwordFO">
+                    <i class="fas fa-lock"></i>
+                    Contraseña Facturación Online
+                  </label>
+                  <div class="input-with-icon-modern">
+                    <i class="fas fa-lock icon-prefix"></i>
+                    <input 
+                      type="password" 
+                      id="passwordFO" 
+                      v-model="nuevoContrato.passwordFO" 
+                      class="form-control-modern" 
+                      placeholder="Contraseña para facturación online"
                     />
                   </div>
                 </div>
@@ -471,6 +555,18 @@
                   </span>
                 </span>
               </div>
+              <div class="info-row" v-if="contratoDetalle?.userFO">
+                <span class="info-label">Usuario Facturación Online:</span>
+                <span class="info-value">
+                  <i class="fas fa-user"></i> {{ contratoDetalle?.userFO }}
+                </span>
+              </div>
+              <div class="info-row" v-if="contratoDetalle?.passwordFO">
+                <span class="info-label">Contraseña Facturación Online:</span>
+                <span class="info-value">
+                  <i class="fas fa-lock"></i> ••••••••
+                </span>
+              </div>
             </div>
           </div>
           
@@ -565,8 +661,8 @@ export default {
         potencia6:0,
         consumoAnual:0,
         exencionImpuestoElectricidad:0,
-        idComercializadoraActual:0,
-        idComercializadoraAnterior:0,
+        idComercializadoraActual:"",
+        idComercializadoraAnterior:"",
         autoconsumo:0,
         denunciaContrato:0,
         fechaDenunciaContrato:"",
@@ -630,17 +726,20 @@ export default {
         potencia6:0,
         consumoAnual:0,
         exencionImpuestoElectricidad:0,
-        idComercializadoraActual:0,
-        idComercializadoraAnterior:0,
+        idComercializadoraActual:"",
+        idComercializadoraAnterior:"",
         autoconsumo:0,
         denunciaContrato:0,
         fechaDenunciaContrato:"",
         observaciones: "",
+        userFO: "",
+        passwordFO: "",
       },
       selectedFile: null,
       mostrarModalDetalleContrato: false,
       contratoDetalle: null,
       clienteDetalle: null,
+      comercializadorasList: [],
     };
   },
 
@@ -720,8 +819,27 @@ export default {
     },
 
     getComercializadoraNombre(id) {
-      const comercializadora = this.comercializadoras.find(c => c.id === id);
-      return comercializadora ? comercializadora.nombre : 'No especificada';
+      if (!id || id === '') return 'Sin Comercializadora';
+      
+      // Priorizar las comercializadoras del prop, luego las cargadas internamente
+      let lista = this.comercializadoras;
+      if (!lista || !lista.length) {
+        lista = this.comercializadorasList;
+      }
+      
+      if (!lista || !lista.length) {
+        console.warn("No se han cargado las comercializadoras aún");
+        return 'Comercializadora Desconocida';
+      }
+      
+      const comercializadora = lista.find(c => c.id == id);
+      
+      if (!comercializadora) {
+        console.warn(`No se encontró la comercializadora con ID: ${id}`, {id, lista});
+        return 'Comercializadora Desconocida';
+      }
+      
+      return comercializadora.nombre;
     },
 
     // Nuevos métodos para manejar la nueva interfaz
@@ -741,6 +859,9 @@ export default {
       this.modoRenovacion = false;
       this.contratoEditandoId = this.contratoVigente.id;
       this.nuevoContrato = { ...this.contratoVigente };
+      // Asegurar que los campos de facturación online estén presentes
+      this.nuevoContrato.userFO = this.contratoVigente.userFO || "";
+      this.nuevoContrato.passwordFO = this.contratoVigente.passwordFO || "";
       // Sincronizar potencias para los inputs
       for (let i = 1; i <= 6; i++) {
         this.nuevoContrato['pot' + i] = this.contratoVigente['potencia' + i] || 0;
@@ -766,6 +887,8 @@ export default {
         fechaDenunciaContrato: '', // Limpiar denuncia
         denunciaContrato: 0, // Limpiar denuncia
         rutaArchivoContrato: '', // Limpiar archivo
+        userFO: this.contratoVigente.userFO || '', // Mantener usuario FO
+        passwordFO: this.contratoVigente.passwordFO || '', // Mantener contraseña FO
       };
       // Sincronizar potencias para los inputs
       for (let i = 1; i <= 6; i++) {
@@ -787,6 +910,10 @@ export default {
       this.nuevoContrato.id = contrato.id; // IMPORTANTE: Incluir el ID
       this.nuevoContrato.idCliente = contrato.idCliente || contrato.cliente?.id || this.cliente?.id;
       this.nuevoContrato.idPuntoSuministro = contrato.idPuntoSuministro || contrato.puntoSuministro?.id || this.puntoSuministroData?.id;
+      
+      // Asegurar que los campos de facturación online estén presentes
+      this.nuevoContrato.userFO = contrato.userFO || "";
+      this.nuevoContrato.passwordFO = contrato.passwordFO || "";
       
       // Sincronizar potencias para los inputs
       for (let i = 1; i <= 6; i++) {
@@ -822,6 +949,8 @@ export default {
         fechaDenunciaContrato: '', // Limpiar denuncia
         denunciaContrato: 0, // Limpiar denuncia
         rutaArchivoContrato: '', // Limpiar archivo
+        userFO: contrato.userFO || '', // Mantener usuario FO
+        passwordFO: contrato.passwordFO || '', // Mantener contraseña FO
       };
       
       // Sincronizar potencias para los inputs
@@ -1014,12 +1143,14 @@ export default {
         potencia6: 0,
         consumoAnual: 0,
         exencionImpuestoElectricidad: this.tieneExencionImpuestoElectrico ? 1 : 0,
-        idComercializadoraActual: 0,
-        idComercializadoraAnterior: 0,
+        idComercializadoraActual: "",
+        idComercializadoraAnterior: "",
         autoconsumo: this.tieneAutoconsumo ? 1 : 0,
         denunciaContrato: 0,
         fechaDenunciaContrato: "",
         observaciones: "",
+        userFO: "",
+        passwordFO: "",
       };
       // Sincronizar potencias para los inputs
       for (let i = 1; i <= 6; i++) {
@@ -1030,11 +1161,16 @@ export default {
 
     cerrarModal() {
       this.$emit('cerrar-modal');
-      // Resetear estados
+      // Resetear TODOS los estados y limpiar datos
       this.mostrandoFormulario = false;
       this.modoEdicion = false;
       this.modoRenovacion = false;
       this.contratoEditandoId = null;
+      this.selectedFile = null;
+      this.mostrarModalDetalleContrato = false;
+      this.contratoDetalle = null;
+      this.clienteDetalle = null;
+      this.cargandoDatos = false;
     },
 
     cerrarModalDetalleContrato() {
@@ -1080,6 +1216,71 @@ export default {
         confirmButtonText: 'Entendido',
         confirmButtonColor: 'rgba(252, 215, 0)'
       });
+    },
+
+    async cargarComercializadoras() {
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`);
+        this.comercializadorasList = response.data;
+      } catch (error) {
+        console.error('Error al cargar comercializadoras:', error);
+        this.comercializadorasList = [];
+      }
+    },
+
+    // Eliminar contrato con confirmación
+    async eliminarContrato(contrato) {
+      try {
+        const result = await this.$swal.fire({
+          title: '¿Estás seguro?',
+          text: `¿Deseas eliminar el contrato #${contrato.contrato}?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Sí, eliminar',
+          cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+          // Mostrar loading
+          this.$swal.fire({
+            title: 'Eliminando...',
+            text: 'Por favor, espere mientras se elimina el contrato.',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+              this.$swal.showLoading();
+            }
+          });
+
+          // Realizar la eliminación
+          await axios.delete(`${process.env.VUE_APP_API_URL}/api/contratos/${contrato.id}`);
+          
+          // Mostrar mensaje de éxito
+          await this.$swal.fire({
+            title: 'Eliminado',
+            text: 'El contrato ha sido eliminado correctamente.',
+            icon: 'success',
+            confirmButtonColor: 'rgba(252, 215, 0)',
+            confirmButtonText: 'Aceptar',
+            timer: 2000,
+            timerProgressBar: true
+          });
+
+          // Emitir evento para recargar contratos
+          this.$emit("recargar-contratos");
+        }
+      } catch (error) {
+        console.error('Error al eliminar contrato:', error);
+        this.$swal.fire({
+          title: 'Error',
+          text: 'No se pudo eliminar el contrato. Por favor, inténtalo de nuevo.',
+          icon: 'error',
+          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonText: 'Aceptar'
+        });
+      }
     },
   },
 
@@ -1221,18 +1422,24 @@ export default {
       handler(newVal) {
         if (newVal) {
           
-          // PRIMER PASO: Resetear TODOS los estados
+          // PRIMER PASO: Resetear TODOS los estados y limpiar datos
           this.cargandoDatos = false;
           this.mostrandoFormulario = false;
           this.modoEdicion = false;
           this.modoRenovacion = false;
+          this.contratoEditandoId = null;
+          this.selectedFile = null;
+          this.mostrarModalDetalleContrato = false;
+          this.contratoDetalle = null;
+          this.clienteDetalle = null;
           
-          // SEGUNDO PASO: Verificar si necesitamos cargar tarifas
+          // SEGUNDO PASO: Verificar si necesitamos cargar tarifas y comercializadoras
           const needsGasTarifas = !this.tarifasGas || this.tarifasGas.length === 0;
           const needsLuzTarifas = !this.tarifasLuz || this.tarifasLuz.length === 0;
+          const needsComercializadoras = !this.comercializadorasList || this.comercializadorasList.length === 0;
 
-          // TERCER PASO: Solo activar carga si realmente necesitamos tarifas
-          if (needsGasTarifas || needsLuzTarifas) {
+          // TERCER PASO: Solo activar carga si realmente necesitamos datos
+          if (needsGasTarifas || needsLuzTarifas || needsComercializadoras) {
             this.cargandoDatos = true;
             
             // Timeout de seguridad
@@ -1265,13 +1472,27 @@ export default {
       }
     },
     
-    // Cuando cambia el punto de suministro, reinicializar si estamos en modo crear
+    // Cuando cambia el punto de suministro, limpiar datos y reinicializar
     puntoSuministro: {
-      handler() {
-        if (this.visible && this.mostrandoFormulario && !this.modoEdicion) {
-          this.$nextTick(() => {
-            this.inicializarNuevoContrato();
-          });
+      handler(newPunto, oldPunto) {
+        // Si el modal está visible y cambió el punto de suministro
+        if (this.visible && newPunto && oldPunto && newPunto.id !== oldPunto.id) {
+          // Limpiar datos del formulario si está abierto
+          if (this.mostrandoFormulario) {
+            this.cancelarFormulario();
+          }
+          
+          // Limpiar datos de detalle si está abierto
+          if (this.mostrarModalDetalleContrato) {
+            this.cerrarModalDetalleContrato();
+          }
+          
+          // Reinicializar si estamos en modo crear
+          if (this.mostrandoFormulario && !this.modoEdicion) {
+            this.$nextTick(() => {
+              this.inicializarNuevoContrato();
+            });
+          }
         }
       },
       deep: true
@@ -1312,12 +1533,13 @@ export default {
     // Inicializar como NO cargando
     this.cargandoDatos = false;
     
-    // Solo cargar tarifas si el modal está visible Y faltan tarifas
+    // Solo cargar datos si el modal está visible Y faltan datos
     if (this.visible) {
       const needsGasTarifas = !this.tarifasGas || this.tarifasGas.length === 0;
       const needsLuzTarifas = !this.tarifasLuz || this.tarifasLuz.length === 0;
+      const needsComercializadoras = !this.comercializadorasList || this.comercializadorasList.length === 0;
       
-      if (needsGasTarifas || needsLuzTarifas) {
+      if (needsGasTarifas || needsLuzTarifas || needsComercializadoras) {
         this.cargandoDatos = true;
         
         const promises = [];
@@ -1349,6 +1571,9 @@ export default {
               })
           );
         }
+        
+        // Cargar comercializadoras
+        promises.push(this.cargarComercializadoras());
         
         // Esperar a que se carguen todas las tarifas necesarias
         try {
@@ -1550,6 +1775,15 @@ export default {
 .btn-icon:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn-icon.btn-delete {
+  color: #dc3545; /* Rojo para eliminar */
+}
+.btn-icon.btn-delete:hover {
+  background-color: rgba(220,53,69,0.1);
+  border-color: #dc3545;
+  color: #dc3545;
 }
 
 /* Tooltips mejorados */

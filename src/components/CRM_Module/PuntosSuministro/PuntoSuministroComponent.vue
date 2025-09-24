@@ -48,18 +48,29 @@
             <i class="fas fa-file-excel"></i>
             <span>Excel</span>
           </button>
+          <button 
+            class="btn btn-toggle-baja" 
+            :class="{ 'active': mostrarDadosDeBaja }"
+            @click="toggleMostrarDadosDeBaja" 
+            :title="mostrarDadosDeBaja ? 'Ocultar puntos dados de baja' : 'Mostrar puntos dados de baja'"
+          >
+            <i class="fas fa-ban"></i>
+            <span>{{ mostrarDadosDeBaja ? 'Ocultar dados de baja' : 'Mostrar dados de baja' }}</span>
+          </button>
         </div>
       </div>
       <div class="table-responsive">
-        <div class="table-controls" hidden>
-          <div class="records-per-page">
-            <label for="recordsPerPage">Registros por página:</label>
-            <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
+        <div class="table-controls">
+          <div class="filters-container">
+            <div class="records-per-page">
+              <label for="recordsPerPage">Registros por página:</label>
+              <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
           </div>
         </div>
         <table class="data-table">
@@ -183,8 +194,16 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="suministro in paginatedPuntosSuministro" :key="suministro.id">
-              <td class="text-truncate" :title="suministro.cliente">{{ suministro.cliente }}</td>
+            <tr v-for="suministro in paginatedPuntosSuministro" :key="suministro.id" 
+                :class="{ 'punto-dado-baja': estaDadoDeBaja(suministro) }">
+              <td class="text-truncate" :title="suministro.cliente">
+                <div class="cliente-cell">
+                  <span v-if="estaDadoDeBaja(suministro)" class="baja-indicator" title="Dado de baja">
+                    <i class="fas fa-ban"></i>
+                  </span>
+                  {{ suministro.cliente }}
+                </div>
+              </td>
               <td class="text-truncate" :title="`${suministro.direccion}, ${suministro.codigoPostal}, ${suministro.poblacion}, ${suministro.provincia}`">
                 {{ suministro.direccion }}, {{ suministro.codigoPostal }}, 
                 {{ suministro.poblacion }}, {{ suministro.provincia }}
@@ -222,6 +241,9 @@
                   </button>
                   <button class="btn-icon btn-add" v-if="nivelAcceso !== 4" @click="abrirModalServicios(suministro.id,suministro.idCliente)" title="Ver servicios">
                     <i class="fas fa-tools"></i>
+                  </button>
+                  <button class="btn-icon btn-delete" v-if="nivelAcceso !== 4" @click="eliminarPuntoSuministro(suministro)" title="Eliminar punto de suministro">
+                    <i class="fas fa-trash"></i>
                   </button>
                 </div>
               </td>
@@ -443,14 +465,30 @@ export default {
       sortOrder: null,
       contratoActualData: null, // Almacena datos del contrato actual
       contratosHistoricosData: null, // Almacena datos de contratos históricos
+      mostrarDadosDeBaja: false, // Control para mostrar/ocultar puntos dados de baja
     };
   },
 
   computed: {
     // Filtra los puntos de suministro según el término ingresado en "filter"
     filteredPuntosSuministro() {
-      return this.puntosSuministro.filter((suministro) => {
-        // Primero aplicamos el filtro general
+      const filtered = this.puntosSuministro.filter((suministro) => {
+        // Primero aplicamos el filtro de estado de baja
+        const estadoBajaFilter = this.mostrarDadosDeBaja ? this.estaDadoDeBaja(suministro) : !this.estaDadoDeBaja(suministro);
+        
+        // Debug: mostrar información cuando se activa el filtro de dados de baja
+        if (this.mostrarDadosDeBaja && Math.random() < 0.01) {
+          console.log('Filtrando punto:', {
+            id: suministro.id,
+            cliente: suministro.cliente,
+            fechaBaja: suministro.fechaBaja,
+            fecha_baja: suministro.fecha_baja,
+            estaDadoDeBaja: this.estaDadoDeBaja(suministro),
+            estadoBajaFilter
+          });
+        }
+
+        // Luego aplicamos el filtro general
         const generalFilter = Object.values(suministro).some((value) =>
           String(value).toLowerCase().includes(this.filter.toLowerCase())
         );
@@ -486,8 +524,15 @@ export default {
           return fieldValue.includes(value.toLowerCase());
         });
 
-        return generalFilter && columnFilters;
+        return estadoBajaFilter && generalFilter && columnFilters;
       });
+      
+      // Debug: mostrar estadísticas del filtro
+      if (this.mostrarDadosDeBaja) {
+        console.log(`Filtro dados de baja activado: ${filtered.length} puntos encontrados de ${this.puntosSuministro.length} total`);
+      }
+      
+      return filtered;
     },
 
     // Obtiene el contrato actual (aquel cuya fecha de finalización es posterior a hoy)
@@ -537,11 +582,38 @@ export default {
 
     // Total de contratos activos
     totalContratos() {
-      return this.puntosSuministro.filter(ps => ps.cupsluz || ps.cupsgas).length;
+      // Usar la información de tarifaActual que ya viene en los puntos de suministro
+      // Esta información se calcula en el backend con contratos activos (fechaFin > CURRENT_DATE)
+      const puntosConContratosActivos = this.puntosSuministro.filter(ps => 
+        ps.tarifaActual && 
+        ps.tarifaActual !== null && 
+        ps.tarifaActual !== 'Sin Tarifa' && 
+        ps.tarifaActual.trim() !== ''
+      ).length;
+      
+      // Debug logs
+      console.log('=== DEBUG CONTRATOS ACTIVOS ===');
+      console.log('Total puntos de suministro:', this.puntosSuministro.length);
+      console.log('Puntos con CUPS:', this.puntosSuministro.filter(ps => ps.cupsluz || ps.cupsgas).length);
+      console.log('Puntos con tarifa actual (contratos activos):', puntosConContratosActivos);
+      console.log('Puntos con tarifaActual null/vacía:', this.puntosSuministro.filter(ps => 
+        !ps.tarifaActual || ps.tarifaActual === 'Sin Tarifa' || ps.tarifaActual.trim() === ''
+      ).length);
+      
+      // Mostrar algunos ejemplos de tarifas
+      const ejemplosTarifas = this.puntosSuministro
+        .filter(ps => ps.tarifaActual && ps.tarifaActual !== 'Sin Tarifa')
+        .slice(0, 5)
+        .map(ps => `${ps.id}: ${ps.tarifaActual}`);
+      console.log('Ejemplos de tarifas actuales:', ejemplosTarifas);
+      
+      return puntosConContratosActivos;
     },
 
     // Total de servicios activos
     totalServicios() {
+      // Por ahora mantenemos el cálculo estimado hasta implementar la carga de servicios
+      // TODO: Implementar conteo real de servicios activos cuando esté disponible la API
       return Math.floor(this.puntosSuministro.length * 0.7);
     },
 
@@ -643,7 +715,7 @@ export default {
           
           return newPunto;
         });
-      
+
       } catch (error) {
         console.error("Error al cargar los puntos de suministro:", error);
       } finally {
@@ -765,13 +837,15 @@ export default {
     async abrirModalContratos(idPuntoSuministro, idCliente) {
       this.loading = true;
       
-      // Primero inicializamos valores mínimos para que el modal se pueda abrir
-      this.modalCliente = { id: idCliente, nombre: "Cargando..." };
-      this.modalPuntoSuministro = { id: idPuntoSuministro };
-      
-      // Reiniciar cualquier dato previo para evitar problemas
+      // LIMPIAR COMPLETAMENTE todos los datos previos del modal
+      this.contratos = [];
       this.contratoActualData = null;
       this.contratosHistoricosData = null;
+      this.todosLosContratos = [];
+      
+      // Inicializar valores mínimos para que el modal se pueda abrir
+      this.modalCliente = { id: idCliente, nombre: "Cargando..." };
+      this.modalPuntoSuministro = { id: idPuntoSuministro };
       
       // Mostrar el modal inmediatamente para dar feedback
       this.mostrarModalContratos = true;
@@ -878,6 +952,67 @@ export default {
     // Cierra el modal de contratos
     cerrarModalContratos() {
       this.mostrarModalContratos = false;
+      // Limpiar datos del modal para evitar mostrar información del punto anterior
+      this.contratos = [];
+      this.contratoActualData = null;
+      this.contratosHistoricosData = null;
+      this.modalCliente = null;
+      this.modalPuntoSuministro = null;
+    },
+
+    // Eliminar punto de suministro con confirmación
+    async eliminarPuntoSuministro(puntoSuministro) {
+      try {
+        const result = await this.$swal.fire({
+          title: '¿Estás seguro?',
+          text: `¿Deseas eliminar el punto de suministro ${puntoSuministro.CUPSluz || puntoSuministro.CUPSgas || 'sin CUPS'}?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Sí, eliminar',
+          cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+          // Mostrar loading
+          this.$swal.fire({
+            title: 'Eliminando...',
+            text: 'Por favor, espere mientras se elimina el punto de suministro.',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+              this.$swal.showLoading();
+            }
+          });
+
+          // Realizar la eliminación
+          await axios.delete(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${puntoSuministro.id}`);
+          
+          // Mostrar mensaje de éxito
+          await this.$swal.fire({
+            title: 'Eliminado',
+            text: 'El punto de suministro ha sido eliminado correctamente.',
+            icon: 'success',
+            confirmButtonColor: 'rgba(252, 215, 0)',
+            confirmButtonText: 'Aceptar',
+            timer: 2000,
+            timerProgressBar: true
+          });
+
+          // Recargar la lista
+          await this.fetchPuntosSuministro();
+        }
+      } catch (error) {
+        console.error('Error al eliminar punto de suministro:', error);
+        this.$swal.fire({
+          title: 'Error',
+          text: 'No se pudo eliminar el punto de suministro. Por favor, inténtalo de nuevo.',
+          icon: 'error',
+          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonText: 'Aceptar'
+        });
+      }
     },
 
     // Método para refrescar todos los datos manualmente
@@ -1152,61 +1287,141 @@ export default {
     },
 
     getTarifa(suministro) {
-      // Primero comprobamos si la tarifa actual ya viene en el objeto desde el backend
-      if (suministro.tarifaActual && suministro.tarifaActual !== 'Sin Tarifa') {
+      // Usar la tarifa actual que ya viene calculada desde el backend
+      if (suministro.tarifaActual && suministro.tarifaActual !== 'Sin Tarifa' && suministro.tarifaActual.trim() !== '') {
         return suministro.tarifaActual;
       }
       
-      // Si no hay tarifa disponible en el DTO, la calculamos manualmente
-      const ahora = new Date();
+      // Si no hay tarifa disponible, mostrar guión
+      return '-';
+    },
+
+
+
+
+    // Método inteligente para corregir solo las tarifas que realmente están incorrectas
+    async corregirTarifasIncorrectasInteligente() {
+      console.log('🔧 Iniciando corrección inteligente de tarifas...');
       
-      // Si no tenemos contratos cargados, mostrar guión
-      if (!this.todosLosContratos || this.todosLosContratos.length === 0) {
-        return '-';
-      }
-      
-      // Buscar contrato vigente para este punto de suministro
-      const contratoVigente = this.todosLosContratos.find(contrato => 
-        contrato.idPuntoSuministro == suministro.id &&
-        new Date(contrato.fechaInicio) <= ahora &&
-        new Date(contrato.fechaFin) > ahora
+      // Identificar puntos que necesitan corrección de tarifa
+      const puntosSinTarifa = this.puntosSuministro.filter(punto => 
+        punto.tarifaActual === null ||
+        punto.tarifaActual === undefined ||
+        !punto.tarifaActual || 
+        punto.tarifaActual === 'Sin Tarifa' || 
+        punto.tarifaActual.trim() === ''
       );
       
-      if (!contratoVigente) {
-        return '-';
+      console.log(`📊 Total puntos cargados: ${this.puntosSuministro.length}`);
+      console.log(`📊 Puntos sin tarifa encontrados: ${puntosSinTarifa.length}`);
+      
+      // Mostrar detalles de los puntos sin tarifa
+      puntosSinTarifa.forEach(punto => {
+        console.log(`🔍 Punto sin tarifa: ID=${punto.id}, Cliente="${punto.cliente}", tarifaActual="${punto.tarifaActual}"`);
+      });
+      
+      if (puntosSinTarifa.length === 0) {
+        console.log('✅ Todos los puntos tienen tarifa asignada');
+        return; // No hay puntos que corregir
       }
       
-      // Determinar si es gas o luz basándose en los CUPS
-      const tieneGas = suministro.cupsgas && suministro.cupsgas.trim() !== '';
-      const tieneLuz = suministro.cupsluz && suministro.cupsluz.trim() !== '';
+      console.log(`🔧 Corrigiendo ${puntosSinTarifa.length} puntos sin tarifa...`);
       
-      // Si tiene ambos CUPS, priorizar según cual tiene tarifa en el contrato
-      if (tieneGas && tieneLuz) {
-        // Si tiene tarifa de luz, mostrar esa (priorizamos luz sobre gas)
-        if (contratoVigente.idTarifaLuz && contratoVigente.idTarifaLuz !== '' && contratoVigente.idTarifaLuz !== null) {
-          const tarifa = this.tarifasLuz.find(t => t.id == contratoVigente.idTarifaLuz);
-          if (tarifa && tarifa.nombre !== 'Sin Tarifa') return tarifa.nombre;
-        }
-        // Si tiene tarifa de gas, mostrar esa
-        if (contratoVigente.idTarifaGas && contratoVigente.idTarifaGas !== '' && contratoVigente.idTarifaGas !== null) {
-          const tarifa = this.tarifasGas.find(t => t.id == contratoVigente.idTarifaGas);
-          if (tarifa && tarifa.nombre !== 'Sin Tarifa') return tarifa.nombre;
-        }
-      } else if (tieneGas) {
-        // Solo tiene gas
-        if (contratoVigente.idTarifaGas && contratoVigente.idTarifaGas !== '' && contratoVigente.idTarifaGas !== null) {
-          const tarifa = this.tarifasGas.find(t => t.id == contratoVigente.idTarifaGas);
-          if (tarifa && tarifa.nombre !== 'Sin Tarifa') return tarifa.nombre;
-        }
-      } else if (tieneLuz) {
-        // Solo tiene luz
-        if (contratoVigente.idTarifaLuz && contratoVigente.idTarifaLuz !== '' && contratoVigente.idTarifaLuz !== null) {
-          const tarifa = this.tarifasLuz.find(t => t.id == contratoVigente.idTarifaLuz);
-          if (tarifa && tarifa.nombre !== 'Sin Tarifa') return tarifa.nombre;
-        }
+      // Priorizar el punto específico problemático (ID 44413)
+      const puntoProblematico = puntosSinTarifa.find(p => p.id === 44413);
+      let puntosACorregir;
+      
+      if (puntoProblematico) {
+        // Si encontramos el punto problemático, procesarlo primero
+        puntosACorregir = [puntoProblematico, ...puntosSinTarifa.filter(p => p.id !== 44413).slice(0, 4)];
+        console.log('🎯 Punto problemático ID 44413 detectado, procesando con prioridad');
+      } else {
+        // Procesar hasta 5 puntos sin tarifa para no sobrecargar
+        puntosACorregir = puntosSinTarifa.slice(0, 5);
       }
       
-      return '-';
+      // Ejecutar correcciones en paralelo para mayor velocidad
+      const promesasCorreccion = puntosACorregir.map(async (punto) => {
+        try {
+          console.log(`🔄 Procesando punto ${punto.id} (${punto.cliente})...`);
+          const tarifaCorregida = await this.calcularTarifaActual(punto);
+          if (tarifaCorregida) {
+            console.log(`✅ Tarifa corregida: ${punto.cliente} → ${tarifaCorregida}`);
+            return true;
+          } else {
+            console.log(`❌ No se encontró tarifa para ${punto.cliente}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ Error al corregir punto ${punto.id}:`, error.message);
+        }
+        return false;
+      });
+      
+      // Esperar a que se completen todas las correcciones
+      const resultados = await Promise.all(promesasCorreccion);
+      const puntosCorregidos = resultados.filter(r => r).length;
+      
+      if (puntosCorregidos > 0) {
+        console.log(`✅ ${puntosCorregidos} tarifas corregidas automáticamente`);
+        this.$forceUpdate(); // Actualizar vista solo si hubo cambios
+      } else {
+        console.log(`❌ No se pudieron corregir tarifas automáticamente`);
+      }
+    },
+
+    // Función de fallback para calcular la tarifa actual cuando el backend no la proporciona correctamente
+    async calcularTarifaActual(suministro) {
+      try {
+        // Hacer una consulta específica para obtener la tarifa del contrato vigente
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${suministro.id}`);
+        const contratos = response.data;
+        
+        if (!contratos || contratos.length === 0) {
+          return null;
+        }
+        
+        // Encontrar el contrato vigente (fechaFin > hoy)
+        const ahora = new Date();
+        const contratosVigentes = contratos.filter(contrato => {
+          const fechaFin = new Date(contrato.fechaFin);
+          const fechaInicio = new Date(contrato.fechaInicio);
+          return fechaInicio <= ahora && fechaFin > ahora;
+        });
+        
+        if (contratosVigentes.length === 0) {
+          return null;
+        }
+        
+        // Si hay múltiples contratos vigentes, tomar el más reciente (mayor ID)
+        const contratoVigente = contratosVigentes.reduce((masReciente, actual) => {
+          return actual.id > masReciente.id ? actual : masReciente;
+        });
+        
+        // Obtener la tarifa del contrato vigente
+        let tarifa = null;
+        
+        // Buscar tarifa de luz primero, luego gas
+        if (contratoVigente.idTarifaLuz && contratoVigente.tarifaLuz) {
+          tarifa = contratoVigente.tarifaLuz.nombre;
+        } else if (contratoVigente.idTarifaGas && contratoVigente.tarifaGas) {
+          tarifa = contratoVigente.tarifaGas.nombre;
+        }
+        
+        // Si encontramos una tarifa válida, actualizar el punto en memoria
+        if (tarifa && tarifa !== 'Sin Tarifa' && tarifa.trim() !== '') {
+          // Actualizar el punto en el array para futuras consultas
+          const puntoIndex = this.puntosSuministro.findIndex(p => p.id === suministro.id);
+          if (puntoIndex !== -1) {
+            this.puntosSuministro[puntoIndex].tarifaActual = tarifa;
+          }
+          return tarifa;
+        }
+        
+        return null;
+      } catch (error) {
+        console.warn('Error al calcular tarifa actual para punto', suministro.id, ':', error.message);
+        return null;
+      }
     },
 
     // Abre un modal para consultar los detalles de un punto de suministro
@@ -1257,7 +1472,8 @@ export default {
           'Identificación': punto.identificacion,
           'CUPS': punto.cupsluz || punto.cupsgas || '-',
           'Tipo': this.getTipoCups(punto) || '-',
-          'Tarifa': this.getTarifa(punto) || '-'
+          'Tarifa': this.getTarifa(punto) || '-',
+          'Estado': this.estaDadoDeBaja(punto) ? 'Dado de baja' : 'Activo'
         }));
 
         // Crear la hoja de cálculo
@@ -1270,7 +1486,8 @@ export default {
           {wch: 20}, // Identificación
           {wch: 25}, // CUPS
           {wch: 10}, // Tipo
-          {wch: 10}  // Tarifa
+          {wch: 10}, // Tarifa
+          {wch: 15}  // Estado
         ];
         ws['!cols'] = wscols;
 
@@ -1294,6 +1511,37 @@ export default {
     getPuntoSuministroById(id) {
       return this.puntosSuministro.find(p => p.id === id) || null;
     },
+
+    // Verifica si un punto de suministro está dado de baja
+    estaDadoDeBaja(suministro) {
+      // Debug: mostrar información del punto para verificar los campos
+      if (this.mostrarDadosDeBaja && Math.random() < 0.01) { // Solo 1% de las veces para no saturar
+        console.log('Punto de suministro:', {
+          id: suministro.id,
+          cliente: suministro.cliente,
+          fechaBaja: suministro.fechaBaja,
+          fecha_baja: suministro.fecha_baja,
+          todasLasPropiedades: Object.keys(suministro)
+        });
+      }
+      
+      // Un punto está dado de baja si tiene fechaBaja y no es null
+      // También verificar si viene como fecha_baja (snake_case)
+      return (suministro.fechaBaja && suministro.fechaBaja !== null && suministro.fechaBaja !== '') ||
+             (suministro.fecha_baja && suministro.fecha_baja !== null && suministro.fecha_baja !== '');
+    },
+
+    // Maneja el cambio en el filtro de dados de baja
+    handleFilterChange() {
+      this.currentPage = 1; // Resetear a la primera página cuando cambie el filtro
+    },
+
+    // Alterna la visualización de puntos dados de baja
+    toggleMostrarDadosDeBaja() {
+      this.mostrarDadosDeBaja = !this.mostrarDadosDeBaja;
+      this.currentPage = 1; // Resetear a la primera página cuando cambie el filtro
+    },
+
   },
 
   // Se ejecuta cuando el componente es montado para cargar datos necesarios
@@ -1303,13 +1551,12 @@ export default {
     // Precargamos los arrays de los combos y datos necesarios
     try {
       
-      const [comercializadoras, tarifasGas, tarifasLuz, gestoras, productos, contratos] = await Promise.all([
+      const [comercializadoras, tarifasGas, tarifasLuz, gestoras, productos] = await Promise.all([
         axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-luz`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/gestoras`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/productos`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/contratos`),
       ]);
       
       this.comercializadoras = comercializadoras.data;
@@ -1317,7 +1564,10 @@ export default {
       this.tarifasLuz = tarifasLuz.data;
       this.gestoras = gestoras.data;
       this.productos = productos.data;
-      this.todosLosContratos = contratos.data;
+      
+      // Ya no necesitamos cargar todos los contratos aquí
+      // La información de contratos activos viene en el campo tarifaActual de los puntos de suministro
+      this.todosLosContratos = [];
       
       // Forzar una actualización de la vista para que se apliquen bien los datos de tarifa
       this.$nextTick(() => {
@@ -1325,6 +1575,8 @@ export default {
       });
     } catch (error) {
       console.error("Error al cargar datos iniciales:", error);
+      // En caso de error, inicializar arrays vacíos para evitar errores
+      this.todosLosContratos = [];
     } finally {
       setTimeout(() => { 
         this.loading = false; 
@@ -1644,6 +1896,13 @@ export default {
   background-color: rgba(255,152,0,0.1);
 }
 
+.btn-icon.btn-delete {
+  color: #dc3545; /* Rojo para eliminar */
+}
+.btn-icon.btn-delete:hover {
+  background-color: rgba(220,53,69,0.1);
+}
+
 .btn-icon.btn-view-details {
   color: #007bff; /* Azul para ver detalles */
 }
@@ -1770,6 +2029,39 @@ export default {
   box-shadow: 0 4px 8px rgba(33, 115, 70, 0.2);
 }
 
+.btn-toggle-baja {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-toggle-baja:hover {
+  background-color: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
+}
+
+.btn-toggle-baja.active {
+  background-color: #dc3545;
+}
+
+.btn-toggle-baja.active:hover {
+  background-color: #c82333;
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+}
+
+.btn-toggle-baja i {
+  font-size: 14px;
+}
+
 .records-per-page {
   display: flex;
   align-items: center;
@@ -1840,6 +2132,52 @@ export default {
 
 .sortable .column-title:hover {
   color: var(--primary-color);
+}
+
+/* Estilos para puntos dados de baja */
+.punto-dado-baja {
+  background-color: rgba(220, 53, 69, 0.05) !important;
+  opacity: 0.7;
+}
+
+.punto-dado-baja:hover {
+  background-color: rgba(220, 53, 69, 0.1) !important;
+  opacity: 0.8;
+}
+
+.cliente-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.baja-indicator {
+  color: #dc3545;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: rgba(220, 53, 69, 0.1);
+  flex-shrink: 0;
+}
+
+/* Estilos para los controles de filtro */
+.table-controls {
+  padding: 15px 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filters-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 </style>
 
