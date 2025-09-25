@@ -80,12 +80,29 @@
       <div class="table-header">
         <h2><i class="fas fa-table"></i> {{ tituloInforme }}</h2>
         <div class="table-actions">
+          <button class="btn btn-refresh" @click="actualizarInforme" title="Actualizar datos">
+            <i class="fas fa-sync-alt"></i>
+            <span>Actualizar</span>
+          </button>
           <button class="btn btn-export btn-excel" @click="exportarExcel" title="Excel">
             <i class="fas fa-file-excel"></i> Excel
           </button>
         </div>
       </div>
       <div class="table-responsive">
+        <div class="table-controls">
+          <div class="filters-container">
+            <div class="records-per-page">
+              <label for="recordsPerPage">Registros por página:</label>
+              <select v-model.number="recordsPerPageValue" @change="onRecordsPerPageChange" id="recordsPerPage" class="form-control">
+                <option :value="10">10</option>
+                <option :value="25">25</option>
+                <option :value="50">50</option>
+                <option :value="100">100</option>
+              </select>
+            </div>
+          </div>
+        </div>
         <table class="data-table">
           <thead>
             <tr>
@@ -117,8 +134,8 @@
                     <button 
                       class="btn btn-sm btn-mark-paid"
                       @click="confirmarMarcoPagado(fila)"
-                      :disabled="getPagosPagados(fila) === (fila.numeroCuotas || 12)"
-                      title="Marcar como pagado"
+                      :disabled="false"
+                      title="Marcar siguiente pago como pagado"
                       style="background: none; border: none; box-shadow: none; padding: 0; width: auto; height: auto; min-width: unset; min-height: unset;"
                     >
                       <i class="fas fa-money-bill-wave icono-billete-verde"></i>
@@ -134,50 +151,50 @@
             </tr>
           </tbody>
         </table>
-      </div>
-      <div class="pagination-controls">
-        <div class="records-per-page">
-          <label for="recordsPerPage">Registros por página:</label>
-          <select v-model.number="recordsPerPageValue" @change="onRecordsPerPageChange" id="recordsPerPage" class="form-control">
-            <option :value="10">10</option>
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-            <option :value="100">100</option>
-          </select>
-        </div>
-        <div class="pagination-info">
-          Mostrando {{ (currentPage - 1) * recordsPerPage + 1 }} - {{ Math.min(currentPage * recordsPerPage, filteredData.length) }} de {{ filteredData.length }} registros
-        </div>
-        <div class="pagination-buttons">
-          <button 
-            class="btn btn-outline" 
-            :disabled="currentPage === 1"
-            @click="currentPage = 1"
-          >
-            <i class="fas fa-angle-double-left"></i>
-          </button>
-          <button 
-            class="btn btn-outline" 
-            :disabled="currentPage === 1"
-            @click="currentPage--"
-          >
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
-          <button 
-            class="btn btn-outline" 
-            :disabled="currentPage === totalPages"
-            @click="currentPage++"
-          >
-            <i class="fas fa-chevron-right"></i>
-          </button>
-          <button 
-            class="btn btn-outline" 
-            :disabled="currentPage === totalPages"
-            @click="currentPage = totalPages"
-          >
-            <i class="fas fa-angle-double-right"></i>
-          </button>
+        <div class="pagination-controls">
+          <div class="records-per-page">
+            <label for="recordsPerPage">Registros por página:</label>
+            <select v-model.number="recordsPerPageValue" @change="onRecordsPerPageChange" id="recordsPerPage" class="form-control">
+              <option :value="10">10</option>
+              <option :value="25">25</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+            </select>
+          </div>
+          <div class="pagination-info">
+            Mostrando {{ (currentPage - 1) * recordsPerPage + 1 }} - {{ Math.min(currentPage * recordsPerPage, filteredData.length) }} de {{ filteredData.length }} registros
+          </div>
+          <div class="pagination-buttons">
+            <button 
+              class="btn btn-outline" 
+              :disabled="currentPage === 1"
+              @click="currentPage = 1"
+            >
+              <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button 
+              class="btn btn-outline" 
+              :disabled="currentPage === 1"
+              @click="currentPage--"
+            >
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+            <button 
+              class="btn btn-outline" 
+              :disabled="currentPage === totalPages"
+              @click="currentPage++"
+            >
+              <i class="fas fa-chevron-right"></i>
+            </button>
+            <button 
+              class="btn btn-outline" 
+              :disabled="currentPage === totalPages"
+              @click="currentPage = totalPages"
+            >
+              <i class="fas fa-angle-double-right"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -269,19 +286,33 @@ export default {
 
     // Método para confirmar antes de marcar como pagado
     async confirmarMarcoPagado(fila) {
-      const pagosPagados = this.getPagosPagados(fila);
-      const totalCuotas = fila.numeroCuotas || 12;
-      const pendientes = totalCuotas - pagosPagados;
+      
+      const siguientePago = fila.siguientePagoNumero;
+      const fechaPago = fila.fechaSiguientePago;
+      const importePago = fila.importeCuotaPendiente;
+      
+      
+      if (!siguientePago) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Sin pagos pendientes',
+          text: 'Este servicio no tiene pagos pendientes.',
+          timer: 1500,
+          showConfirmButton: false
+        });
+        return;
+      }
       
       const result = await Swal.fire({
         title: '¿Marcar como pagado?',
         html: `
           <div style="text-align: left; margin: 10px 0;">
             <p><strong>Cliente:</strong> ${fila.cliente}</p>
-            <p><strong>Servicio:</strong> ${fila.servicio}</p>
-            <p><strong>Cuotas pendientes:</strong> ${pendientes} de ${totalCuotas}</p>
+            <p><strong>Gestora:</strong> ${fila.gestora}</p>
+            <p><strong>Pago #${siguientePago}:</strong> ${this.formatearImporte(importePago)}</p>
+            <p><strong>Fecha de pago:</strong> ${this.formatearFecha(fechaPago)}</p>
           </div>
-          <p style="margin-top: 15px;">¿Está seguro que desea marcar todas las cuotas pendientes como pagadas?</p>
+          <p style="margin-top: 15px;">¿Está seguro que desea marcar este pago como pagado?</p>
         `,
         icon: 'question',
         showCancelButton: true,
@@ -297,7 +328,7 @@ export default {
       });
 
       if (result.isConfirmed) {
-        await this.marcarTodosPagados(fila, true);
+        await this.marcarSiguientePago(fila);
       }
     },
 
@@ -313,43 +344,35 @@ export default {
       return pagados;
     },
 
-    // Método para marcar todos los pagos como pagados o no pagados (robusto)
-    async marcarTodosPagados(fila, pagado) {
+    // Método para marcar el siguiente pago como pagado
+    async marcarSiguientePago(fila) {
       this.isSavingBulk = true;
       try {
-        const numCuotas = fila.numeroCuotas || 12;
-        const promises = [];
-        // Marcar como pagadas todas las cuotas existentes
-        for (let i = 1; i <= numCuotas; i++) {
-          if (fila[`pago${i}_pagado`] !== (pagado ? 1 : 0)) {
-            promises.push(
-              axios.put(`${process.env.VUE_APP_API_URL}/api/informes/servicios-pendientes-pago/actualizar-pago/${fila.idServicio}/${i}?pagado=${pagado}`)
-            );
-          }
-        }
-        // Marcar como pagadas las cuotas que no existen (por encima de numeroCuotas)
-        for (let i = numCuotas + 1; i <= 12; i++) {
-          // Siempre márcalas como pagadas (true)
-          promises.push(
-            axios.put(`${process.env.VUE_APP_API_URL}/api/informes/servicios-pendientes-pago/actualizar-pago/${fila.idServicio}/${i}?pagado=true`)
-          );
-        }
-        await Promise.all(promises);
+        await axios.put(`${process.env.VUE_APP_API_URL}/api/informes/servicios-pendientes-pago/marcar-siguiente-pago/${fila.idServicio}`);
+        
         Swal.fire({
           icon: 'success',
           title: '¡Éxito!',
-          text: `Todos los pagos han sido ${pagado ? 'marcados como pagados' : 'desmarcados'}.`,
+          text: 'El pago ha sido marcado como pagado correctamente.',
           timer: 1500,
           showConfirmButton: false
         });
-        await this.mostrarInforme('pantalla');
+        
+        // Recargar el informe para mostrar los cambios
+        await this.mostrarInforme(this.tipoSeleccionado);
       } catch (error) {
-        console.error('Error al actualizar pagos en lote:', error);
-        Swal.fire('Error', 'No se pudieron actualizar todos los pagos', 'error');
-        await this.mostrarInforme('pantalla');
+        console.error('Error al actualizar pago:', error);
+        Swal.fire('Error', 'No se pudo actualizar el pago', 'error');
       } finally {
         this.isSavingBulk = false;
       }
+    },
+
+    // Método para formatear fechas
+    formatearFecha(fecha) {
+      if (!fecha) return '';
+      const date = new Date(fecha);
+      return date.toLocaleDateString('es-ES');
     },
 
     // Método para mostrar el informe directamente en pantalla
@@ -369,6 +392,21 @@ export default {
       }
     },
 
+    // Método para actualizar el informe actual
+    async actualizarInforme() {
+      if (!this.tipoSeleccionado) return;
+      try {
+        const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/api/informes/${this.tipoSeleccionado}`);
+        this.procesarDatosParaTabla(respuesta.data);
+        // Resetear estado de paginación
+        this.currentPage = 1;
+        this.recordsPerPage = 10;
+        this.recordsPerPageValue = 10;
+      } catch (error) {
+        console.error("Error al actualizar el informe", error);
+      }
+    },
+
     // Filtra los datos para la tabla en pantalla
     procesarDatosParaTabla(datos) {
       const columnasPermitidas = {
@@ -383,8 +421,8 @@ export default {
         ],
         "servicios-pendientes-pago": [
           "idServicio", // identificador
-          "cliente", "servicio", "fechaVencimiento", "importeTotal",
-          "estadoVencimiento", "estadoPago", "numeroCuotas", // Añadir numeroCuotas
+          "cups", "cliente", "gestora", "importeCuotaPendiente", "fechaSiguientePago",
+          "estadoPago", "numeroCuotas", // Añadir numeroCuotas
           "pagos" // Esta columna se renderizará de forma personalizada al final
         ],
         "contratos-vigentes": [
@@ -437,9 +475,21 @@ export default {
 
     // Formatea el nombre de la columna para mostrar
     formatearColumna(texto) {
-      // Caso especial para la columna pagos
+      // Casos especiales para ciertas columnas
       if (texto === 'pagos') {
         return 'Marcar como pagado';
+      }
+      if (texto === 'fechaSiguientePago') {
+        return 'Fecha de pago';
+      }
+      if (texto === 'gestora') {
+        return 'Gestora';
+      }
+      if (texto === 'cups') {
+        return 'CUPS';
+      }
+      if (texto === 'importeCuotaPendiente') {
+        return 'Importe cuota';
       }
       return texto
         .replace(/([A-Z])/g, ' $1')
@@ -462,7 +512,7 @@ export default {
 
     // Método auxiliar para mostrar valores en la tabla
     mostrarValorCelda(fila, columna) {
-      if ((columna === 'importeTotal' && this.tipoSeleccionado === 'servicios-pendientes-pago') ||
+      if ((columna === 'importeCuotaPendiente' && this.tipoSeleccionado === 'servicios-pendientes-pago') ||
           (columna === 'importeFinal' && this.tipoSeleccionado === 'servicios-vigentes')) {
         return this.formatearImporte(fila[columna]);
       }
@@ -507,7 +557,7 @@ export default {
             }
             
             const formattedColumnaName = this.formatearColumna(columnaKey);
-            if ((columnaKey === 'importeTotal' && this.tipoSeleccionado === 'servicios-pendientes-pago') ||
+            if ((columnaKey === 'importeCuotaPendiente' && this.tipoSeleccionado === 'servicios-pendientes-pago') ||
                 (columnaKey === 'importeFinal' && this.tipoSeleccionado === 'servicios-vigentes')) {
               rowData[formattedColumnaName] = this.formatearImporte(item[columnaKey]);
             } else {
@@ -556,10 +606,10 @@ export default {
 /* Estilos existentes mantenidos... */
 .informes-container {
   display: grid;
-  grid-template-rows: auto auto auto;
-  gap: 1rem;
-  padding: 1rem;
-  width: 100%;
+  grid-template-rows: auto auto auto 1fr;
+  gap: 20px;
+  padding: 20px;
+  max-width: 90%;
   margin: 0 auto;
 }
 
@@ -714,20 +764,16 @@ export default {
   justify-content: center;
 }
 
-/* Panel de tabla */
+/* Panel de la tabla */
 .table-panel {
-  width: 100%;
-  margin: 0;
-  padding: 0;
+  background: white;
+  border-radius: 0.7rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   overflow: hidden;
 }
 
 .table-header {
-  background-color: var(--surface-color);
-  color: var(--text-primary);
-  padding: 15px 20px;
-  border-top-left-radius: var(--border-radius);
-  border-top-right-radius: var(--border-radius);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -906,7 +952,7 @@ export default {
 }
 
 .table-responsive {
-  overflow-x: hidden;
+  overflow-x: auto;
   width: 100%;
 }
 
@@ -968,18 +1014,12 @@ export default {
   padding: 20px;
   background-color: var(--surface-color);
   border-top: 1px solid var(--border-color);
-  flex-wrap: wrap;
-  gap: 15px;
 }
 
 .records-per-page {
   display: flex;
   align-items: center;
   gap: 10px;
-  background-color: white;
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .records-per-page label {
@@ -1050,7 +1090,7 @@ export default {
 /* Estilos para la tabla */
 .data-table {
   width: 100%;
-  table-layout: fixed;
+  min-width: 1200px; /* Ancho mínimo para acomodar columnas CUPS */
   border-collapse: separate;
   border-spacing: 0;
   margin-bottom: 0;
@@ -1060,29 +1100,26 @@ export default {
   background-color: var(--surface-color);
   color: var(--text-primary);
   font-weight: 600;
-  padding: 8px 10px;
+  padding: 15px;
   text-align: left;
   border-bottom: 2px solid var(--border-color);
   white-space: nowrap;
   position: sticky;
   top: 0;
   z-index: 10;
-  min-width: 100px;
 }
 
 .data-table td {
-  padding: 8px 10px;
+  padding: 12px 15px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
-  height: auto;
-  white-space: normal;
-  word-break: break-word;
+  height: 52px; /* Altura fija para las filas */
 }
 
 .text-truncate {
   max-width: 0;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1093,6 +1130,31 @@ export default {
 
 .sortable:hover {
   background-color: var(--hover-color);
+}
+
+/* Estilos para el botón de actualizar */
+.btn-refresh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background-color: #17a2b8 !important;
+  color: white !important;
+  border: none !important;
+  cursor: pointer;
+}
+
+.btn-refresh:hover {
+  background-color: #138496 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2);
+}
+
+.btn-refresh i {
+  font-size: 14px;
 }
 
 /* Estilos para el botón de exportar Excel */
@@ -1130,7 +1192,7 @@ export default {
   cursor: default;
   transition: background-color 0.2s ease;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1138,19 +1200,10 @@ export default {
   width: 100%;
   max-width: 180px;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
   padding-right: 20px;
-}
-
-/* Estilos para la edición inline */
-.cell-edit {
-  /* Eliminado: estilos de edición en línea */
-}
-
-.edit-input {
-  /* Eliminado: estilos de edición en línea */
 }
 
 /* Indicador visual de celda editable */
@@ -1158,80 +1211,27 @@ export default {
   background-color: var(--hover-color);
 }
 
-.table-cell:hover::after {
-  /* Eliminado: tooltip de edición en línea */
-}
-
 /* Ajustes para la tabla responsiva */
 .table-responsive {
-  overflow-x: hidden;
-  width: 100%;
+  overflow-x: auto;
+  background-color: white;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
-.data-table {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-bottom: 0;
+/* Estilos para los controles de filtro */
+.table-controls {
+  padding: 15px 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* Ajuste para columnas específicas que necesitan más espacio */
-.data-table th[data-column="cliente"],
-.data-table td[data-column="cliente"] {
-  min-width: 200px;
-}
-
-.data-table th[data-column="direccion"],
-.data-table td[data-column="direccion"] {
-  min-width: 250px;
-}
-
-/* CUPS Luz y CUPS Gas: dar más espacio, permitir wrap y sin puntos suspensivos */
-.data-table th[data-column="cupsLuz"],
-.data-table td[data-column="cupsLuz"],
-.data-table th[data-column="cupsGas"],
-.data-table td[data-column="cupsGas"] {
-  min-width: 180px;
-  max-width: 420px;
-  white-space: normal !important;
-  word-break: break-all !important;
-  text-overflow: unset !important;
-  font-size: 1em;
-}
-
-/* Quitar clip y nowrap en el contenido de CUPS */
-.data-table td[data-column="cupsLuz"] .cell-content,
-.data-table td[data-column="cupsGas"] .cell-content {
-  white-space: normal !important;
-  word-break: break-all !important;
-  text-overflow: unset !important;
-  overflow: visible !important;
-  max-width: 420px;
-}
-
-.data-table td[data-column="cupsLuz"],
-.data-table td[data-column="cupsGas"] {
-  white-space: normal !important;
-  word-break: break-all !important;
-  text-overflow: unset !important;
-  overflow: visible !important;
-}
-
-/* Reducir ancho de columnas menos críticas */
-.data-table th[data-column="tarifaLuz"],
-.data-table td[data-column="tarifaLuz"],
-.data-table th[data-column="tarifaGas"],
-.data-table td[data-column="tarifaGas"],
-.data-table th[data-column="contrato"],
-.data-table td[data-column="contrato"],
-.data-table th[data-column="comercializadoraActual"],
-.data-table td[data-column="comercializadoraActual"] {
-  min-width: 80px;
-  max-width: 120px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: clip;
+.filters-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 /* Permitir wrap en los nombres de las columnas */
@@ -1251,7 +1251,7 @@ export default {
   cursor: default;
   transition: background-color 0.2s ease;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1259,10 +1259,33 @@ export default {
   width: 100%;
   max-width: 140px;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
   padding-right: 20px;
+}
+
+/* Estilos específicos para la columna CUPS */
+.data-table th[data-column="cups"],
+.data-table th[data-column="cupsLuz"],
+.data-table th[data-column="cupsGas"],
+.data-table td[data-column="cups"],
+.data-table td[data-column="cupsLuz"],
+.data-table td[data-column="cupsGas"] {
+  min-width: 200px !important;
+  max-width: 250px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: ellipsis !important;
+}
+
+.data-table td[data-column="cups"] .cell-content,
+.data-table td[data-column="cupsLuz"] .cell-content,
+.data-table td[data-column="cupsGas"] .cell-content {
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
 }
 
 /* NUEVOS ESTILOS PARA EL GESTOR DE PAGOS INNOVADOR */

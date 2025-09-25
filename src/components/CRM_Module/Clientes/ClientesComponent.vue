@@ -253,7 +253,7 @@
                   <span v-if="estaClienteDadoDeBaja(cliente)" class="baja-indicator" title="Cliente dado de baja">
                     <i class="fas fa-ban"></i>
                   </span>
-                  {{ cliente.nombre }}
+                  <span class="cliente-nombre">{{ cliente.nombre }}</span>
                 </div>
               </td>
               <td class="text-truncate" :title="cliente.cif">{{ cliente.cif }}</td>
@@ -290,54 +290,54 @@
             </tr>
           </tbody>
         </table>
-        <div class="pagination-controls">
-          <div class="records-per-page">
-            <label for="recordsPerPage">Registros por página:</label>
-            <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-          </div>
-          <div class="pagination-info">
-            Mostrando {{ paginationStart }} - {{ paginationEnd }} de {{ filteredClientes.length }} registros
-          </div>
-          <div class="pagination-buttons">
-            <button 
-              class="btn btn-outline" 
-              :disabled="currentPage === 1"
-              @click="currentPage = 1"
-              title="Primera página"
-            >
-              <i class="fas fa-angle-double-left"></i>
-            </button>
-            <button 
-              class="btn btn-outline" 
-              :disabled="currentPage === 1"
-              @click="currentPage--"
-              title="Página anterior"
-            >
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
-            <button 
-              class="btn btn-outline" 
-              :disabled="currentPage === totalPages"
-              @click="currentPage++"
-              title="Página siguiente"
-            >
-              <i class="fas fa-chevron-right"></i>
-            </button>
-            <button 
-              class="btn btn-outline" 
-              :disabled="currentPage === totalPages"
-              @click="currentPage = totalPages"
-              title="Última página"
-            >
-              <i class="fas fa-angle-double-right"></i>
-            </button>
-          </div>
+      </div>
+      <div class="pagination-controls">
+        <div class="records-per-page">
+          <label for="recordsPerPage">Registros por página:</label>
+          <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <div class="pagination-info">
+          Mostrando {{ paginationStart }} - {{ paginationEnd }} de {{ filteredClientes.length }} registros
+        </div>
+        <div class="pagination-buttons">
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === 1"
+            @click="currentPage = 1"
+            title="Primera página"
+          >
+            <i class="fas fa-angle-double-left"></i>
+          </button>
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === 1"
+            @click="currentPage--"
+            title="Página anterior"
+          >
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === totalPages"
+            @click="currentPage++"
+            title="Página siguiente"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === totalPages"
+            @click="currentPage = totalPages"
+            title="Última página"
+          >
+            <i class="fas fa-angle-double-right"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -950,8 +950,16 @@ export default {
   grid-template-rows: auto auto auto 1fr;
   gap: 20px;
   padding: 20px;
-  max-width: 1600px;
+  max-width: 90%;
   margin: 0 auto;
+}
+
+/* Panel de la tabla */
+.table-panel {
+  background: white;
+  border-radius: 0.7rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  overflow: hidden;
 }
 
 /* Panel de estadísticas */
@@ -1047,10 +1055,7 @@ export default {
 
 
 .table-header {
-  background-color: white;
-  color: var(--text-primary);
-  border-top-left-radius: var(--border-radius);
-  border-top-right-radius: var(--border-radius);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1074,9 +1079,17 @@ export default {
 }
 
 .btn-refresh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
   background-color: #17a2b8;
   color: white;
   border: none;
+  cursor: pointer;
 }
 
 .btn-refresh:hover {
@@ -1341,7 +1354,7 @@ export default {
 .text-truncate {
   max-width: 0;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1569,6 +1582,15 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+}
+
+.cliente-nombre {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .baja-indicator {

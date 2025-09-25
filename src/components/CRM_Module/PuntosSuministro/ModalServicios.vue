@@ -112,7 +112,7 @@
                       <button @click="gestionarPagosServicio(servicio)" class="btn-icon btn-payment" title="Gestionar Pagos">
                         <i class="fas fa-euro-sign"></i>
                       </button>
-                      <button @click="eliminarServicio(servicio)" class="btn-icon btn-delete" title="Eliminar servicio">
+                      <button @click="eliminarServicio(servicio)" class="btn-icon btn-delete" title="Eliminar servicio" v-if="nivelAcceso === 1">
                         <i class="fas fa-trash"></i>
                       </button>
                     </td>
@@ -650,6 +650,7 @@ export default {
       puntosSuministro: [],
       comercializadorasList: [],
       modalidadesPago: [],
+      nivelAcceso: null, // Nivel de acceso del usuario
       cuotas: [],
       pagosExistentes: null, // Para preservar los datos de pagos existentes
       modalidadDebounceTimer: null, // Timer para debounce de validaciones
@@ -2398,6 +2399,12 @@ export default {
 
   async mounted() {
     this.cargandoDatos = false;
+    
+    // Obtener el nivel de acceso del usuario
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    if (usuario) {
+      this.nivelAcceso = usuario.nivelAcceso;
+    }
     
     // Cargar datos básicos independientemente de si el modal está visible
     try {

@@ -184,6 +184,24 @@
                   </div>
                 </div>
               </th>
+              <th style="width: 12%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('fechaFinUltimoContrato')">
+                    <i class="fas fa-calendar-alt mr-2"></i>Fin Contrato
+                    <i :class="getSortIcon('fechaFinUltimoContrato')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.fechaFinUltimoContrato" 
+                      @input="filterByColumn('fechaFinUltimoContrato', $event.target.value)"
+                      placeholder="Filtrar fecha..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
+              </th>
               <th style="width: 10%">
                 <div class="column-header">
                   <div class="column-title">
@@ -201,7 +219,7 @@
                   <span v-if="estaDadoDeBaja(suministro)" class="baja-indicator" title="Dado de baja">
                     <i class="fas fa-ban"></i>
                   </span>
-                  {{ suministro.cliente }}
+                  <span class="cliente-nombre">{{ suministro.cliente }}</span>
                 </div>
               </td>
               <td class="text-truncate" :title="`${suministro.direccion}, ${suministro.codigoPostal}, ${suministro.poblacion}, ${suministro.provincia}`">
@@ -229,6 +247,11 @@
                 </div>
               </td>
               <td>
+                <div class="fecha-fin-contrato">
+                  {{ getFechaFinUltimoContrato(suministro) }}
+                </div>
+              </td>
+              <td>
                 <div class="action-buttons">
                   <button class="btn-icon btn-view-details" @click="abrirModalPSConsulta(suministro)" title="Consultar punto de suministro">
                     <i class="fas fa-eye"></i>
@@ -242,14 +265,14 @@
                   <button class="btn-icon btn-add" v-if="nivelAcceso !== 4" @click="abrirModalServicios(suministro.id,suministro.idCliente)" title="Ver servicios">
                     <i class="fas fa-tools"></i>
                   </button>
-                  <button class="btn-icon btn-delete" v-if="nivelAcceso !== 4" @click="eliminarPuntoSuministro(suministro)" title="Eliminar punto de suministro">
+                  <button class="btn-icon btn-delete" v-if="nivelAcceso === 1" @click="eliminarPuntoSuministro(suministro)" title="Eliminar punto de suministro">
                     <i class="fas fa-trash"></i>
                   </button>
                 </div>
               </td>
             </tr>
             <tr v-if="paginatedPuntosSuministro.length === 0">
-              <td colspan="7" class="text-center py-4">
+              <td colspan="8" class="text-center py-4">
                 <div class="empty-state">
                   <i class="fas fa-search fa-3x text-muted"></i>
                   <p class="mt-3">No se encontraron puntos de suministro que coincidan con la búsqueda</p>
@@ -385,7 +408,8 @@ export default {
         identificacion: '',
         cupsluz: '',
         tipo: '',
-        tarifa: ''
+        tarifa: '',
+        fechaFinUltimoContrato: ''
       },
       formularioVisible: false,     // Control de visibilidad del formulario de actualización
       modoConsulta: false,          // Nuevo flag para controlar el modo consulta
@@ -510,6 +534,16 @@ export default {
               return tarifa === '-';
             }
             return tarifa.toLowerCase().includes(value.toLowerCase());
+          }
+
+          // Caso especial para el filtro de fecha fin del último contrato
+          if (key === 'fechaFinUltimoContrato') {
+            const fechaFin = this.getFechaFinUltimoContrato(suministro);
+            // Permitir filtrar por '-', que representa sin fecha
+            if (value.trim() === '-') {
+              return fechaFin === '-';
+            }
+            return fechaFin.toLowerCase().includes(value.toLowerCase());
           }
 
           // Para el resto de columnas
@@ -1268,6 +1302,22 @@ export default {
       return '-';
     },
 
+    getFechaFinUltimoContrato(suministro) {
+      // Verificar si tiene fecha fin del último contrato
+      if (suministro.fechaFinUltimoContrato && suministro.fechaFinUltimoContrato !== null) {
+        // Formatear la fecha para mostrar
+        const fecha = new Date(suministro.fechaFinUltimoContrato);
+        return fecha.toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+      }
+      
+      // Si no hay fecha disponible, mostrar guión
+      return '-';
+    },
+
 
 
 
@@ -1428,6 +1478,7 @@ export default {
           'CUPS': punto.cupsluz || punto.cupsgas || '-',
           'Tipo': this.getTipoCups(punto) || '-',
           'Tarifa': this.getTarifa(punto) || '-',
+          'Fin Contrato': this.getFechaFinUltimoContrato(punto) || '-',
           'Estado': this.estaDadoDeBaja(punto) ? 'Dado de baja' : 'Activo'
         }));
 
@@ -1442,6 +1493,7 @@ export default {
           {wch: 25}, // CUPS
           {wch: 10}, // Tipo
           {wch: 10}, // Tarifa
+          {wch: 15}, // Fin Contrato
           {wch: 15}  // Estado
         ];
         ws['!cols'] = wscols;
@@ -1700,7 +1752,7 @@ export default {
 .text-truncate {
   max-width: 0;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1708,7 +1760,7 @@ export default {
 .data-table td.cups-cell {
   white-space: nowrap !important; /* Cambia a nowrap para evitar saltos de línea */
   overflow: hidden !important; 
-  text-overflow: clip !important; /* Muestra puntos suspensivos si no cabe */
+  text-overflow: ellipsis !important; /* Muestra puntos suspensivos si no cabe */
   max-width: 600px; 
 }
 
@@ -1717,7 +1769,7 @@ export default {
 .data-table td.text-truncate[title*="cupsgas"] span {
   white-space: normal !important;
   word-break: break-all !important;
-  text-overflow: unset !important;
+  text-overflow: ellipsis !important;
   overflow: visible !important;
 }
 
@@ -2098,6 +2150,15 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+}
+
+.cliente-nombre {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .baja-indicator {
@@ -2127,6 +2188,19 @@ export default {
   display: flex;
   align-items: center;
   gap: 20px;
+}
+
+/* Estilos para la columna de fecha fin del último contrato */
+.fecha-fin-contrato {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.fecha-fin-contrato:empty::before {
+  content: '-';
+  color: var(--text-secondary);
 }
 </style>
 

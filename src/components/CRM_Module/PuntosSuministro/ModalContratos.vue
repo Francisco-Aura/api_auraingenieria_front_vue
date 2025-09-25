@@ -94,7 +94,10 @@
                         <span v-if="contrato.denunciaContrato" class="status-badge denuncia">
                           <i class="fas fa-exclamation-triangle"></i> Denunciado
                         </span>
-                        <span v-if="!contrato.autoconsumo && !contrato.denunciaContrato" class="status-badge normal">
+                        <span v-if="contrato.exencionImpuestoElectricidad === 1" class="status-badge exencion">
+                          <i class="fas fa-bolt"></i> Exención Impuesto
+                        </span>
+                        <span v-if="!contrato.autoconsumo && !contrato.denunciaContrato && contrato.exencionImpuestoElectricidad !== 1" class="status-badge normal">
                           <i class="fas fa-check-circle"></i> Normal
                         </span>
                       </div>
@@ -112,7 +115,7 @@
                       <button @click="descargarPDF(contrato)" class="btn-icon btn-download" title="Descargar PDF" v-if="contrato.rutaArchivoContrato">
                         <i class="fas fa-download"></i>
                       </button>
-                      <button @click="eliminarContrato(contrato)" class="btn-icon btn-delete" title="Eliminar contrato">
+                      <button @click="eliminarContrato(contrato)" class="btn-icon btn-delete" title="Eliminar contrato" v-if="nivelAcceso === 1">
                         <i class="fas fa-trash"></i>
                       </button>
                     </td>
@@ -465,6 +468,47 @@
                 </div>
               </div>
 
+              <!-- Sección de Gestión de Denuncia -->
+              <div class="form-section-modern">
+                <div class="section-header-modern">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <h3>Gestión de Denuncia</h3>
+                </div>
+                
+                <div class="form-group-modern">
+                  <!-- Contenedor compacto para denuncia -->
+                  <div class="denuncia-compacta">
+                    <div class="denuncia-checkbox-compacta">
+                      <label class="denuncia-label-compacta">
+                        <input 
+                          type="checkbox" 
+                          v-model="denunciaRealizada"
+                          class="denuncia-input"
+                          @change="actualizarDenuncia"
+                        />
+                        <span class="denuncia-checkmark"></span>
+                        <span class="denuncia-text">Denuncia realizada</span>
+                      </label>
+                    </div>
+
+                    <!-- Selector de fecha inline -->
+                    <div v-if="denunciaRealizada" class="fecha-denuncia-inline">
+                      <label for="fechaDenunciaContrato" class="fecha-label-compacta">
+                        <i class="fas fa-calendar-alt"></i>
+                        Fecha de gestión <span class="required">*</span>
+                      </label>
+                      <input 
+                        type="date" 
+                        id="fechaDenunciaContrato" 
+                        v-model="nuevoContrato.fechaDenunciaContrato" 
+                        class="fecha-input-compacta" 
+                        :required="denunciaRealizada"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
 
             </div>
 
@@ -543,6 +587,15 @@
                 <span class="info-value">
                   <span class="status-chip" :class="{ active: contratoDetalle?.autoconsumo }">
                     <i class="fas fa-solar-panel"></i> {{ contratoDetalle?.autoconsumo ? 'Sí' : 'No' }}
+                  </span>
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Exención Impuesto Eléctrico:</span>
+                <span class="info-value">
+                  <span class="status-chip exencion" :class="{ active: contratoDetalle?.exencionImpuestoElectricidad === 1 }">
+                    <i class="fas fa-bolt"></i> 
+                    {{ contratoDetalle?.exencionImpuestoElectricidad === 1 ? 'Sí' : 'No' }}
                   </span>
                 </span>
               </div>
@@ -740,12 +793,24 @@ export default {
       contratoDetalle: null,
       clienteDetalle: null,
       comercializadorasList: [],
+      nivelAcceso: null, // Nivel de acceso del usuario
     };
   },
 
   methods: {
     handleFileUpload(event) {
       this.selectedFile = event.target.files[0];
+    },
+
+    // Método para actualizar el estado de denuncia
+    actualizarDenuncia() {
+      if (this.denunciaRealizada && !this.nuevoContrato.fechaDenunciaContrato) {
+        // Si se marca la denuncia pero no hay fecha, usar la fecha actual
+        this.nuevoContrato.fechaDenunciaContrato = this.formatDateForInput(new Date());
+      } else if (!this.denunciaRealizada) {
+        // Si se desmarca la denuncia, limpiar la fecha
+        this.nuevoContrato.fechaDenunciaContrato = '';
+      }
     },
 
     formatDate(date) {
@@ -862,6 +927,11 @@ export default {
       // Asegurar que los campos de facturación online estén presentes
       this.nuevoContrato.userFO = this.contratoVigente.userFO || "";
       this.nuevoContrato.passwordFO = this.contratoVigente.passwordFO || "";
+      
+      // SINCRONIZAR con el punto de suministro actual
+      this.nuevoContrato.exencionImpuestoElectricidad = this.tieneExencionImpuestoElectrico ? 1 : 0;
+      this.nuevoContrato.autoconsumo = this.tieneAutoconsumo ? 1 : 0;
+      
       // Sincronizar potencias para los inputs
       for (let i = 1; i <= 6; i++) {
         this.nuevoContrato['pot' + i] = this.contratoVigente['potencia' + i] || 0;
@@ -884,11 +954,14 @@ export default {
         fechaEnvio: this.formatDateForInput(this.contratoVigente.fechaEnvio) || '', // INCLUIR fechas formateadas
         fechaInicio: this.formatDateForInput(this.contratoVigente.fechaInicio) || '', // INCLUIR fechas formateadas
         fechaFin: this.formatDateForInput(this.contratoVigente.fechaFin) || '', // INCLUIR fechas formateadas
-        fechaDenunciaContrato: '', // Limpiar denuncia
-        denunciaContrato: 0, // Limpiar denuncia
+        fechaDenunciaContrato: '', // Limpiar denuncia al renovar
+        denunciaContrato: 0, // Limpiar denuncia al renovar
         rutaArchivoContrato: '', // Limpiar archivo
         userFO: this.contratoVigente.userFO || '', // Mantener usuario FO
         passwordFO: this.contratoVigente.passwordFO || '', // Mantener contraseña FO
+        // SINCRONIZAR con el punto de suministro actual
+        exencionImpuestoElectricidad: this.tieneExencionImpuestoElectrico ? 1 : 0,
+        autoconsumo: this.tieneAutoconsumo ? 1 : 0,
       };
       // Sincronizar potencias para los inputs
       for (let i = 1; i <= 6; i++) {
@@ -914,6 +987,10 @@ export default {
       // Asegurar que los campos de facturación online estén presentes
       this.nuevoContrato.userFO = contrato.userFO || "";
       this.nuevoContrato.passwordFO = contrato.passwordFO || "";
+      
+      // SINCRONIZAR con el punto de suministro actual
+      this.nuevoContrato.exencionImpuestoElectricidad = this.tieneExencionImpuestoElectrico ? 1 : 0;
+      this.nuevoContrato.autoconsumo = this.tieneAutoconsumo ? 1 : 0;
       
       // Sincronizar potencias para los inputs
       for (let i = 1; i <= 6; i++) {
@@ -946,11 +1023,14 @@ export default {
         fechaEnvio: this.formatDateForInput(contrato.fechaEnvio) || '', // INCLUIR fechas formateadas
         fechaInicio: this.formatDateForInput(contrato.fechaInicio) || '', // INCLUIR fechas formateadas
         fechaFin: this.formatDateForInput(contrato.fechaFin) || '', // INCLUIR fechas formateadas
-        fechaDenunciaContrato: '', // Limpiar denuncia
-        denunciaContrato: 0, // Limpiar denuncia
+        fechaDenunciaContrato: '', // Limpiar denuncia al renovar
+        denunciaContrato: 0, // Limpiar denuncia al renovar
         rutaArchivoContrato: '', // Limpiar archivo
         userFO: contrato.userFO || '', // Mantener usuario FO
         passwordFO: contrato.passwordFO || '', // Mantener contraseña FO
+        // SINCRONIZAR con el punto de suministro actual
+        exencionImpuestoElectricidad: this.tieneExencionImpuestoElectrico ? 1 : 0,
+        autoconsumo: this.tieneAutoconsumo ? 1 : 0,
       };
       
       // Sincronizar potencias para los inputs
@@ -1198,6 +1278,7 @@ export default {
           ["Comercializadora Actual", this.getComercializadoraNombre(contrato.idComercializadoraActual)],
           ["Comercializadora Anterior", this.getComercializadoraNombre(contrato.idComercializadoraAnterior)],
           ["Autoconsumo", contrato.autoconsumo ? "Sí" : "No"],
+          ["Exención Impuesto Eléctrico", contrato.exencionImpuestoElectricidad === 1 ? "Sí" : "No"],
           ["Denuncia Contrato", contrato.denunciaContrato ? `Sí (${this.formatDate(contrato.fechaDenunciaContrato)})` : "No"],
           ["Observaciones", contrato.observaciones || "Ninguna"],
         ],
@@ -1285,6 +1366,19 @@ export default {
   },
 
   computed: {
+    // Computed para manejar el estado del checkbox de denuncia
+    denunciaRealizada: {
+      get() {
+        return this.nuevoContrato.denunciaContrato === 1;
+      },
+      set(value) {
+        this.nuevoContrato.denunciaContrato = value ? 1 : 0;
+        if (!value) {
+          this.nuevoContrato.fechaDenunciaContrato = '';
+        }
+      }
+    },
+
     // Combinar todos los contratos y ordenarlos de más actual a menos actual
     todosLosContratosOrdenados() {
       const todosLosContratos = [...this.contratos, ...this.contratosHistoricos];
@@ -1292,6 +1386,15 @@ export default {
       const contratosUnicos = todosLosContratos.filter((contrato, index, array) => 
         array.findIndex(c => c.id === contrato.id) === index
       );
+      
+      // SINCRONIZAR cada contrato con el punto de suministro actual
+      contratosUnicos.forEach(contrato => {
+        // Actualizar exención de impuesto eléctrico basándose en el punto de suministro
+        contrato.exencionImpuestoElectricidad = this.tieneExencionImpuestoElectrico ? 1 : 0;
+        // Actualizar autoconsumo basándose en el punto de suministro
+        contrato.autoconsumo = this.tieneAutoconsumo ? 1 : 0;
+      });
+      
       // Ordenar por fecha de inicio descendente (más actual primero)
       return contratosUnicos.sort((a, b) => {
         return new Date(b.fechaInicio) - new Date(a.fechaInicio);
@@ -1328,7 +1431,7 @@ export default {
     // Verificar si el punto de suministro tiene exención del impuesto eléctrico
     tieneExencionImpuestoElectrico() {
       return this.puntoSuministroData && 
-             this.puntoSuministroData.exencionImpuestoElectricidad === 1;
+             this.puntoSuministroData.exencionImpuestoElectrico === true;
     },
     
     // Determinar si el punto de suministro es de Gas
@@ -1532,6 +1635,12 @@ export default {
   async mounted() {
     // Inicializar como NO cargando
     this.cargandoDatos = false;
+    
+    // Obtener el nivel de acceso del usuario
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    if (usuario) {
+      this.nivelAcceso = usuario.nivelAcceso;
+    }
     
     // Solo cargar datos si el modal está visible Y faltan datos
     if (this.visible) {
@@ -1740,6 +1849,11 @@ export default {
 .status-badge.normal {
   background: #e2e3e5;
   color: #383d41;
+}
+
+.status-badge.exencion {
+  background: #fff3cd;
+  color: #856404;
 }
 
 /* Botones de acción en la tabla */
@@ -2321,6 +2435,129 @@ export default {
   font-size: 0.85rem;
 }
 
+/* Estilos compactos para la gestión de denuncia */
+.denuncia-compacta {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.3rem;
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.denuncia-checkbox-compacta {
+  display: flex;
+  align-items: center;
+}
+
+.denuncia-label-compacta {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #dc2626;
+  user-select: none;
+}
+
+.denuncia-input {
+  display: none;
+}
+
+.denuncia-checkmark {
+  height: 18px;
+  width: 18px;
+  background-color: white;
+  border: 2px solid #dc2626;
+  border-radius: 3px;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.denuncia-input:checked ~ .denuncia-checkmark {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+.denuncia-checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.denuncia-input:checked ~ .denuncia-checkmark:after {
+  display: block;
+}
+
+.denuncia-checkmark:after {
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.denuncia-text {
+  color: #dc2626;
+  font-weight: 500;
+  padding: 5px;
+}
+
+.fecha-denuncia-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-top: 0.3rem;
+  border-top: 1px solid #fecaca;
+  margin-top: 0.3rem;
+  animation: slideIn 0.3s ease-out;
+}
+
+.fecha-label-compacta {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #991b1b;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.2rem;
+}
+
+.fecha-input-compacta {
+  width: 100%;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #dc2626;
+  border-radius: 0.2rem;
+  font-size: 0.8rem;
+  background-color: white;
+  color: #991b1b;
+  height: 28px;
+}
+
+.fecha-input-compacta:focus {
+  outline: none;
+  border-color: #b91c1c;
+  box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.1);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Badges informativos compactos */
 .info-badge-modern {
   margin-top: 0.6rem;
@@ -2822,6 +3059,12 @@ export default {
   background: #e74c3c;
   color: #fff;
   border-color: #e74c3c;
+}
+
+.status-chip.exencion.active {
+  background: #ffc107;
+  color: #212529;
+  border-color: #ffc107;
 }
 
 @keyframes modalFadeIn {
