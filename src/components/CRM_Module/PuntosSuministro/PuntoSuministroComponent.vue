@@ -856,12 +856,7 @@ export default {
       // Mostrar el modal inmediatamente para dar feedback
       this.mostrarModalContratos = true;
       
-      // Establecer un límite máximo para el spinner de carga
-      setTimeout(() => {
-        if (this.loading) {
-          this.loading = false;
-        }
-      }, 8000); // 8 segundos máximo
+      // El loading se desactivará automáticamente cuando termine la consulta
       
       try {
         // Cargar datos básicos primero - cliente y punto de suministro
@@ -1579,9 +1574,7 @@ export default {
       // En caso de error, inicializar arrays vacíos para evitar errores
       this.todosLosContratos = [];
     } finally {
-      setTimeout(() => { 
-        this.loading = false; 
-      }, 1000); // Dar tiempo para que se procesen los datos
+      this.loading = false; // Desactivar loading inmediatamente cuando termine la consulta
     }
   },
 
