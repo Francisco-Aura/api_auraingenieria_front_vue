@@ -725,12 +725,7 @@ export default {
       } catch (error) {
         console.error("Error al cargar los puntos de suministro:", error);
       } finally {
-        // Asegurar que Vue tiene tiempo para renderizar la tabla
-        this.$nextTick(() => {
-          setTimeout(() => {
-            this.loading = false;
-          }, 200); // Tiempo mínimo para renderizado de la tabla
-        });
+        this.loading = false;
       }
     },
 
@@ -861,7 +856,12 @@ export default {
       // Mostrar el modal inmediatamente para dar feedback
       this.mostrarModalContratos = true;
       
-      // El loading se desactivará automáticamente cuando termine la consulta
+      // Establecer un límite máximo para el spinner de carga
+      setTimeout(() => {
+        if (this.loading) {
+          this.loading = false;
+        }
+      }, 8000); // 8 segundos máximo
       
       try {
         // Cargar datos básicos primero - cliente y punto de suministro
@@ -880,19 +880,17 @@ export default {
           console.error("Error al cargar datos del cliente o punto de suministro:", error);
         }
         
-        // Cargar contratos y datos necesarios
+        // Cargar tarifas, contratos y demás datos en paralelo
         try {
-          // Solo cargar tarifas si no están ya cargadas (optimización)
-          if (!this.tarifasGas.length || !this.tarifasLuz.length) {
-            const [tarifasGasResponse, tarifasLuzResponse] = await Promise.all([
-              axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
-              axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-luz`)
-            ]);
-            
-            // Actualizar tarifas inmediatamente
-            this.tarifasGas = tarifasGasResponse.data;
-            this.tarifasLuz = tarifasLuzResponse.data;
-          }
+          // Cargar tarifas primero - estas son rápidas y necesarias
+          const [tarifasGasResponse, tarifasLuzResponse] = await Promise.all([
+            axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
+            axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-luz`)
+          ]);
+          
+          // Actualizar tarifas inmediatamente
+          this.tarifasGas = tarifasGasResponse.data;
+          this.tarifasLuz = tarifasLuzResponse.data;
           
           // Ahora cargar contratos específicos del punto - esto es rápido y lo necesitamos
           const responseContratos = await axios.get(
@@ -902,23 +900,21 @@ export default {
           // Cargar solo los contratos necesarios
           this.contratos = responseContratos.data;
           
-          // Cargar solo si realmente necesitamos todos los contratos y no están ya cargados
-          if (!this.todosLosContratos.length) {
-            try {
-              // Esta llamada puede ser lenta, pero limitamos los resultados
-              const responseTodosContratos = await axios.get(
-                `${process.env.VUE_APP_API_URL}/api/contratos?limit=50`
-              );
-              
-              // Actualizar sólo si recibimos datos
-              if (responseTodosContratos.data && responseTodosContratos.data.length > 0) {
-                this.todosLosContratos = responseTodosContratos.data;
-              }
-            } catch (error) {
-              console.error("Error al cargar todos los contratos:", error);
-              // No interrumpir el flujo si falla esta llamada
-              this.todosLosContratos = [];
+          // No cargar todos los contratos si son demasiados - esto puede ser muy lento
+          // Podemos obtener la información mínima necesaria
+          try {
+            // Esta llamada podría ser lenta con 5000+ contratos, pero no bloqueamos la interfaz
+            const responseTodosContratos = await axios.get(
+              `${process.env.VUE_APP_API_URL}/api/contratos?limit=100`
+            );
+            
+            // Actualizar sólo si recibimos datos
+            if (responseTodosContratos.data && responseTodosContratos.data.length > 0) {
+              this.todosLosContratos = responseTodosContratos.data;
             }
+          } catch (error) {
+            console.error("Error al cargar todos los contratos:", error);
+            // No interrumpir el flujo si falla esta llamada
           }
           
           // Actualizar las tarifas y contratos - ya tenemos los datos específicos
@@ -950,12 +946,11 @@ export default {
       } catch (error) {
         console.error("Error general al abrir el modal de contratos:", error);
       } finally {
-        // Asegurar que el modal está completamente preparado antes de desactivar loading
+        this.loading = false;
+        
+        // Forzar actualización para asegurar que el componente se renderiza correctamente
         this.$nextTick(() => {
-          // Dar un tiempo mínimo para que el modal se renderice completamente
-          setTimeout(() => {
-            this.loading = false;
-          }, 300); // Tiempo mínimo para renderizado del modal
+          this.$forceUpdate();
         });
       }
     },
@@ -1584,12 +1579,9 @@ export default {
       // En caso de error, inicializar arrays vacíos para evitar errores
       this.todosLosContratos = [];
     } finally {
-      // Dar tiempo para que Vue renderice los datos antes de desactivar loading
-      this.$nextTick(() => {
-        setTimeout(() => {
-          this.loading = false;
-        }, 500); // Tiempo mínimo para renderizado
-      });
+      setTimeout(() => { 
+        this.loading = false; 
+      }, 2500); // Dar tiempo para que se procesen los datos
     }
   },
 
