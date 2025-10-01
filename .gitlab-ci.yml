@@ -12,39 +12,25 @@ deploy_frontend_PRE:
   only:
     - release
   variables:
-    VUE_APP_API_URL: "http://5.34.148.92:8986"  # URL del backend PRE
+    VUE_APP_API_URL: "http://5.34.148.92:8986"
   script:
     - set -eo pipefail
     - set -x
-
-    # 1. Limpiar entorno completamente
     - echo "Limpiando entorno anterior..."
     - rm -rf node_modules/ package-lock.json dist/
     - npm cache clean --force
-
-    # 2. Configurar variables de entorno para el build
     - echo "Configurando variables de entorno para PRE..."
     - echo "VUE_APP_API_URL=${VUE_APP_API_URL}" > .env
-    - cat .env  # Verificar contenido del .env generado
-
-    # 3. Instalar dependencias limpias
+    - cat .env
     - echo "Instalando dependencias de Node.js..."
     - npm install --legacy-peer-deps
-
-    # 4. Verificar instalación
     - echo "Verificando instalación..."
     - npm list --depth=0 || echo "Listado completado con warnings"
     - npm audit || echo "Audit completado con warnings"
-
-    # 5. Construir la app Vue con variables de PRE
     - echo "Construyendo la aplicación Vue para PRE..."
     - npm run build
-
-    # 6. Verificar que el build contiene la URL correcta
     - echo "Verificando URL compilada en el bundle..."
-    - grep -r "5.34.148.92" dist/ || echo " ADVERTENCIA: URL de PRE no encontrada en dist/"
-
-    # Debug build mejorado
+    - grep -r "5.34.148.92" dist/ || echo "⚠️ ADVERTENCIA - URL de PRE no encontrada en dist/"
     - echo "--- Contenido del directorio actual ---"
     - ls -la .
     - echo "--- Contenido de dist/ ---"
@@ -52,8 +38,6 @@ deploy_frontend_PRE:
     - echo "--- Tamaño de dist/ ---"
     - du -sh dist/ || echo "No se pudo calcular tamaño"
     - chmod -R 755 dist/ || echo "No se pudo cambiar permisos de dist"
-
-    # 7. Configurar SSH
     - echo "Configurando SSH con ssh-agent..."
     - apt-get update -y && apt-get install -y openssh-client
     - eval $(ssh-agent -s)
@@ -61,24 +45,14 @@ deploy_frontend_PRE:
     - mkdir -p ~/.ssh
     - ssh-keyscan 5.34.148.92 >> ~/.ssh/known_hosts
     - chmod 600 ~/.ssh/known_hosts
-
-    # 8. Instalar rsync
     - echo "Instalando rsync en el runner..."
     - apt-get install -y rsync
-
-    # 9. Directorio destino en Raspberry PRE
     - export FRONTEND_FINAL_DIR="/home/babenza/deploy/frontend"
     - ssh -o StrictHostKeyChecking=no babenza@5.34.148.92 "mkdir -p ${FRONTEND_FINAL_DIR} && rm -rf ${FRONTEND_FINAL_DIR}/*"
-
-    # 10. Copiar archivos con rsync
     - echo "Copiando archivos frontend a PRE..."
     - rsync -avzh --delete --progress -e "ssh -o StrictHostKeyChecking=no" dist/ babenza@5.34.148.92:"${FRONTEND_FINAL_DIR}/"
-
-    # 11. Verificar despliegue
     - echo "Verificando archivos desplegados..."
     - ssh -o StrictHostKeyChecking=no babenza@5.34.148.92 "ls -la ${FRONTEND_FINAL_DIR}/ && du -sh ${FRONTEND_FINAL_DIR}/"
-
-    # 12. Ejecutar script de post-despliegue
     - echo "Ejecutando script post-despliegue en PRE..."
     - ssh -o StrictHostKeyChecking=no babenza@5.34.148.92 "bash /home/babenza/deploy_frontend.sh"
 
@@ -91,39 +65,25 @@ deploy_frontend_PRO:
   only:
     - main
   variables:
-    VUE_APP_API_URL: "http://5.34.149.250:8986"  #  URL del backend PRO
+    VUE_APP_API_URL: "http://5.34.149.250:8986"
   script:
     - set -eo pipefail
     - set -x
-
-    # 1. Limpiar entorno completamente
     - echo "Limpiando entorno anterior..."
     - rm -rf node_modules/ package-lock.json dist/
     - npm cache clean --force
-
-    # 2. Configurar variables de entorno para el build
     - echo "Configurando variables de entorno para PRO..."
     - echo "VUE_APP_API_URL=${VUE_APP_API_URL}" > .env
-    - cat .env  # Verificar contenido del .env generado
-
-    # 3. Instalar dependencias limpias
+    - cat .env
     - echo "Instalando dependencias de Node.js..."
     - npm install --legacy-peer-deps
-
-    # 4. Verificar instalación
     - echo "Verificando instalación..."
     - npm list --depth=0 || echo "Listado completado con warnings"
     - npm audit || echo "Audit completado con warnings"
-
-    # 5. Construir la app Vue con variables de PRO
     - echo "Construyendo la aplicación Vue para PRO..."
     - npm run build
-
-    # 6. Verificar que el build contiene la URL correcta
     - echo "Verificando URL compilada en el bundle..."
-    - grep -r "5.34.149.250" dist/ || echo " ADVERTENCIA: URL de PRO no encontrada en dist/"
-
-    # Debug build mejorado
+    - grep -r "5.34.149.250" dist/ || echo "⚠️ ADVERTENCIA - URL de PRO no encontrada en dist/"
     - echo "--- Contenido del directorio actual ---"
     - ls -la .
     - echo "--- Contenido de dist/ ---"
@@ -131,8 +91,6 @@ deploy_frontend_PRO:
     - echo "--- Tamaño de dist/ ---"
     - du -sh dist/ || echo "No se pudo calcular tamaño"
     - chmod -R 755 dist/ || echo "No se pudo cambiar permisos de dist"
-
-    # 7. Configurar SSH
     - echo "Configurando SSH con ssh-agent..."
     - apt-get update -y && apt-get install -y openssh-client
     - eval $(ssh-agent -s)
@@ -140,23 +98,13 @@ deploy_frontend_PRO:
     - mkdir -p ~/.ssh
     - ssh-keyscan 5.34.149.250 >> ~/.ssh/known_hosts
     - chmod 600 ~/.ssh/known_hosts
-
-    # 8. Instalar rsync
     - echo "Instalando rsync en el runner..."
     - apt-get install -y rsync
-
-    # 9. Directorio destino en Raspberry PRO
     - export FRONTEND_FINAL_DIR="/home/babenza/deploy/frontend"
     - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "mkdir -p ${FRONTEND_FINAL_DIR} && rm -rf ${FRONTEND_FINAL_DIR}/*"
-
-    # 10. Copiar archivos con rsync
     - echo "Copiando archivos frontend a PRO..."
     - rsync -avzh --delete --progress -e "ssh -o StrictHostKeyChecking=no" dist/ babenza@5.34.149.250:"${FRONTEND_FINAL_DIR}/"
-
-    # 11. Verificar despliegue
     - echo "Verificando archivos desplegados..."
     - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "ls -la ${FRONTEND_FINAL_DIR}/ && du -sh ${FRONTEND_FINAL_DIR}/"
-
-    # 12. Ejecutar script de post-despliegue
     - echo "Ejecutando script post-despliegue en PRO..."
     - ssh -o StrictHostKeyChecking=no babenza@5.34.149.250 "bash /home/babenza/deploy_frontend.sh"
