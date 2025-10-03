@@ -422,7 +422,7 @@ export default {
         "servicios-pendientes-pago": [
           "idServicio", // identificador
           "cups", "cliente", "gestora", "importeCuotaPendiente", "fechaSiguientePago",
-          "estadoPago", "numeroCuotas", // Añadir numeroCuotas
+          "estadoPago", "numeroCuotas", "siguientePagoNumero", // Añadido para lógica de marcar como pagado
           "pagos" // Esta columna se renderizará de forma personalizada al final
         ],
         "contratos-vigentes": [
@@ -456,7 +456,7 @@ export default {
         });
         // Quita el identificador y numeroCuotas de los encabezados visibles
         this.encabezados = columnasPermitidas[this.tipoSeleccionado].filter(
-          col => !["codigoContrato", "idPS", "idServicio", "numeroCuotas"].includes(col)
+          col => !["codigoContrato", "idPS", "idServicio", "numeroCuotas", "siguientePagoNumero"].includes(col)
         );
       } else {
         this.datosInforme = datos;
