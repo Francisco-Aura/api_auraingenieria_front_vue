@@ -1521,8 +1521,9 @@ export default {
   display: flex;
   align-items: center;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
+  font-size: 10px;
 }
 
 .checkbox-label input {
