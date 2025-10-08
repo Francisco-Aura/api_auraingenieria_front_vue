@@ -143,7 +143,7 @@
                 <div class="form-compact-group half">
                   <label for="autoconsumo">Autoconsumo</label>
                   <select id="autoconsumo" v-model="puntoLocal.autoconsumo" :disabled="modoConsulta">
-                    <option :value="null">Seleccione</option>
+                    <option :value="null">NO</option>
                     <option value="Compensación de excedentes simplificada">Compensación de excedentes simplificada</option>
                     <option value="Compensación de excedentes colectiva">Compensación de excedentes colectiva</option>
                     <option value="Autoconsumo sin excedentes">Autoconsumo sin excedentes</option>
@@ -299,12 +299,24 @@
                 <textarea id="observaciones" v-model="puntoLocal.observaciones" :readonly="modoConsulta" rows="2" placeholder="Observaciones relevantes..."></textarea>
               </div>
             </div>
-
             
             <!-- Botones de acción de la pestaña principal -->
             <div class="modal-footer">
               <div class="required-note" v-if="!modoConsulta"><span class="required">*</span> Campos obligatorios</div>
               <div class="action-buttons">
+                <!-- Botón Dar de Baja (solo si está activo y en modo actualizar) -->
+                <button v-if="!modoConsulta && !isCreating && puntoLocal.id && !puntoLocal.fechaBaja" type="button" @click="confirmarBajaPunto" class="btn-compact btn-danger">
+                  <i class="fas fa-map-marker-alt"></i> Dar de Baja
+                </button>
+                <!-- Botón Reactivar (solo si está dado de baja y en modo actualizar) -->
+                <button v-if="!modoConsulta && !isCreating && puntoLocal.id && puntoLocal.fechaBaja" type="button" @click="confirmarReactivarPunto" class="btn-compact btn-success">
+                  <i class="fas fa-map-marker-alt"></i> Reactivar Punto
+                </button>
+                <!-- Mensaje de estado si está dado de baja -->
+                <div v-if="!modoConsulta && !isCreating && puntoLocal.id && puntoLocal.fechaBaja" class="status-message status-inactive">
+                  <i class="fas fa-map-marker-alt"></i>
+                  <span>Punto dado de baja el {{ formatFecha(puntoLocal.fechaBaja) }}</span>
+                </div>
                 <button type="button" @click="cerrarModal" class="btn btn-secondary">
                   <i class="fas fa-times"></i> {{ modoConsulta ? 'Cerrar' : 'Cancelar' }}
                 </button>
@@ -469,6 +481,19 @@
                 <i class="fas fa-arrow-left"></i> Anterior
               </button>
               <div class="action-buttons">
+                <!-- Botón Dar de Baja (solo si está activo y en modo actualizar) -->
+                <button v-if="!modoConsulta && !isCreating && puntoLocal.id && !puntoLocal.fechaBaja" type="button" @click="confirmarBajaPunto" class="btn-compact btn-danger">
+                  <i class="fas fa-map-marker-times"></i> Dar de Baja
+                </button>
+                <!-- Botón Reactivar (solo si está dado de baja y en modo actualizar) -->
+                <button v-if="!modoConsulta && !isCreating && puntoLocal.id && puntoLocal.fechaBaja" type="button" @click="confirmarReactivarPunto" class="btn-compact btn-success">
+                  <i class="fas fa-map-marker-alt"></i> Reactivar Punto
+                </button>
+                <!-- Mensaje de estado si está dado de baja -->
+                <div v-if="!modoConsulta && !isCreating && puntoLocal.id && puntoLocal.fechaBaja" class="status-message status-inactive">
+                  <i class="fas fa-map-marker-times"></i>
+                  <span>Punto dado de baja el {{ formatFecha(puntoLocal.fechaBaja) }}</span>
+                </div>
                 <button type="button" class="btn-compact btn-secondary" @click="cerrarModal">
                   <i class="fas fa-times"></i> Cancelar
                 </button>
@@ -507,6 +532,8 @@ export default {
   data() {
     return {
       activeTab: 'principal',
+      darDeBaja: false,
+      isSubmitting: false,
       puntoLocal: { 
         autoconsumo: null,
         fechaActivacionVertido: null,
@@ -527,6 +554,7 @@ export default {
         backup: "",
         peaksaving: "",
         integracionSistemasFVId: null,
+        fechaBaja: null,
         ...this.modificarPunto
       },
       distribuidoras: [],
@@ -630,6 +658,30 @@ export default {
       }
     },
 
+    // Método para normalizar valores CUPS antes del envío
+    normalizarCups(cups) {
+      console.log('Normalizando CUPS:', cups, 'tipo:', typeof cups);
+      
+      // Manejar todos los casos problemáticos
+      if (cups === null || cups === undefined) {
+        return null;
+      }
+      
+      // Convertir a string si no lo es
+      let cupsStr = String(cups);
+      
+      // Limpiar espacios
+      cupsStr = cupsStr.trim();
+      
+      // Si es string vacío, "null", "undefined", devolver null
+      if (cupsStr === '' || cupsStr === 'null' || cupsStr === 'undefined') {
+        return null;
+      }
+      
+      console.log('CUPS normalizado:', cupsStr);
+      return cupsStr;
+    },
+
     async loadMasterData() {
       try {
         const [distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes] = await Promise.all([
@@ -680,6 +732,7 @@ export default {
         potenciaBateriaAlmacenamiento: newVal.potenciaBateriaAlmacenamiento || '',
         backup: newVal.backup || '',
         peaksaving: newVal.peaksaving || '',
+        fechaBaja: newVal.fechaBaja || null,
         appMonitorizacionId: newVal.appMonitorizacion ? newVal.appMonitorizacion.id : null,
         integracionSistemasFVId: newVal.integracionSistemasFV ? newVal.integracionSistemasFV.id : null
       };
@@ -719,7 +772,15 @@ export default {
         return;
       }
 
-      if (!this.puntoLocal.cupsluz?.trim() && !this.puntoLocal.cupsgas?.trim()) {
+      // Normalizar CUPS antes de la validación
+      const cupsLuzNormalizado = this.normalizarCups(this.puntoLocal.cupsluz);
+      const cupsGasNormalizado = this.normalizarCups(this.puntoLocal.cupsgas);
+      
+      console.log('=== VALIDACIÓN EN FRONTEND ===');
+      console.log('CUPS Luz original:', this.puntoLocal.cupsluz, 'normalizado:', cupsLuzNormalizado);
+      console.log('CUPS Gas original:', this.puntoLocal.cupsgas, 'normalizado:', cupsGasNormalizado);
+
+      if (!cupsLuzNormalizado && !cupsGasNormalizado) {
         this.mostrarError('Debe proporcionar al menos un CUPS (luz o gas)', 'CUPS requerido');
         return;
       }
@@ -730,8 +791,8 @@ export default {
         codigoPostal: this.puntoLocal.codigoPostal.trim(),
         poblacion: this.puntoLocal.poblacion.trim(),
         provincia: this.puntoLocal.provincia.trim(),
-        CUPSluz: this.puntoLocal.cupsluz?.trim() || null,
-        CUPSgas: this.puntoLocal.cupsgas?.trim() || null,
+        CUPSluz: cupsLuzNormalizado,
+        CUPSgas: cupsGasNormalizado,
         observaciones: this.puntoLocal.observaciones?.trim() || null,
         fechaInstalacion: this.puntoLocal.fechaInstalacion || null,
         cliente: { id: this.puntoLocal.cliente.id },
@@ -769,7 +830,12 @@ export default {
         peaksaving: this.puntoLocal.peaksaving?.trim() || null,
         appMonitorizacion: this.puntoLocal.appMonitorizacionId ? { id: this.puntoLocal.appMonitorizacionId } : null,
         integracionSistemasFV: this.puntoLocal.integracionSistemasFVId ? { id: this.puntoLocal.integracionSistemasFVId } : null,
+        fechaBaja: this.puntoLocal.fechaBaja || null,
       };
+      
+      console.log('=== DATOS NORMALIZADOS ANTES DEL ENVÍO ===');
+      console.log('CUPSluz normalizado:', datosAdaptados.CUPSluz);
+      console.log('CUPSgas normalizado:', datosAdaptados.CUPSgas);
       
       this.$emit('actualizar-punto-suministro', datosAdaptados);
       this.cerrarModal();
@@ -783,6 +849,233 @@ export default {
         return `${(valorRedondeado/1000).toFixed(1)}MW`;
       }
       return `${valorRedondeado.toFixed(2)}kW`;
+    },
+    async confirmarBajaPunto() {
+      try {
+        const { value: fechaBaja, isConfirmed } = await this.$swal.fire({
+          title: '\u00bfDar de baja el punto de suministro?',
+          html: `
+            <div style="text-align: left; margin-top: 20px;">
+              <div style="background: #fef7f7; border: 1px solid #f5d5d5; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #b56767; font-weight: 500; margin-bottom: 8px;">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <span>Acci\u00f3n de baja de punto de suministro</span>
+                </div>
+                <p style="margin: 0; color: #8b4545; font-size: 14px;">Esta acci\u00f3n marcar\u00e1 el punto de suministro como dado de baja en el sistema.</p>
+              </div>
+              <label for="swal-fecha-baja-punto" style="display: block; font-weight: 500; color: #374151; margin-bottom: 8px;">
+                <i class="fas fa-calendar-alt" style="margin-right: 8px; color: #b56767;"></i>
+                Fecha de baja *
+              </label>
+              <input 
+                type="date" 
+                id="swal-fecha-baja-punto" 
+                class="swal2-input" 
+                style="margin: 0; border: 2px solid #f5b2b2; border-radius: 6px; color: #8b4545;" 
+                required
+              />
+            </div>
+          `,
+          icon: 'warning',
+          iconColor: '#b56767',
+          showCancelButton: true,
+          confirmButtonText: '<i class="fas fa-map-marker-times"></i> Confirmar Baja',
+          cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+          confirmButtonColor: '#f5b2b2',
+          cancelButtonColor: '#6b7280',
+          focusCancel: false,
+          customClass: {
+            popup: 'swal-baja-punto'
+          },
+          preConfirm: () => {
+            const fechaBaja = document.getElementById('swal-fecha-baja-punto').value;
+            if (!fechaBaja) {
+              this.$swal.showValidationMessage('Por favor, seleccione una fecha de baja');
+              return false;
+            }
+            return fechaBaja;
+          }
+        });
+
+        if (isConfirmed && fechaBaja) {
+          this.puntoLocal.fechaBaja = fechaBaja;
+          
+          console.log('=== DEBUG confirmarBajaPunto ===');
+          console.log('puntoLocal.cupsluz:', this.puntoLocal.cupsluz);
+          console.log('puntoLocal.cupsgas:', this.puntoLocal.cupsgas);
+          console.log('puntoLocal:', this.puntoLocal);
+          
+          // Normalizar CUPS antes del envío
+          const cupsLuzNormalizado = this.normalizarCups(this.puntoLocal.cupsluz);
+          const cupsGasNormalizado = this.normalizarCups(this.puntoLocal.cupsgas);
+          
+          console.log('=== VALIDACIÓN EN confirmarBajaPunto ===');
+          console.log('CUPS Luz original:', this.puntoLocal.cupsluz, 'normalizado:', cupsLuzNormalizado);
+          console.log('CUPS Gas original:', this.puntoLocal.cupsgas, 'normalizado:', cupsGasNormalizado);
+          
+          const datosAdaptados = {
+            id: this.puntoLocal.id,
+            direccion: this.puntoLocal.direccion.trim(),
+            codigoPostal: this.puntoLocal.codigoPostal.trim(),
+            poblacion: this.puntoLocal.poblacion.trim(),
+            provincia: this.puntoLocal.provincia.trim(),
+            CUPSluz: cupsLuzNormalizado,
+            CUPSgas: cupsGasNormalizado,
+            observaciones: this.puntoLocal.observaciones?.trim() || null,
+            fechaInstalacion: this.puntoLocal.fechaInstalacion || null,
+            cliente: { id: this.puntoLocal.cliente.id },
+            distribuidora: this.puntoLocal.distribuidora ? { id: this.puntoLocal.distribuidora.id } : null,
+            potenciaBIE: this.puntoLocal.potenciaBIE || 0.0,
+            potenciaTecnicaRed: this.puntoLocal.potenciaTecnicaRed || 0.0,
+            apmCentroTransformacion: this.puntoLocal.apmCentroTransformacion?.trim() || null,
+            tipoContador: this.puntoLocal.tipoContador ? { id: this.puntoLocal.tipoContador.id } : null,
+            tipoComunicacion: this.puntoLocal.tipoComunicacion ? { id: this.puntoLocal.tipoComunicacion.id } : null,
+            numeroContador: this.puntoLocal.numeroContador?.trim() || null,
+            numeroTelefono: this.puntoLocal.numeroTelefono?.trim() || null,
+            direccionEnlace: this.puntoLocal.direccionEnlace?.trim() || null,
+            puntoMedida: this.puntoLocal.puntoMedida?.trim() || null,
+            clave: this.puntoLocal.clave?.trim() || null,
+            propiedad: this.puntoLocal.propiedad ? { id: this.puntoLocal.propiedad.id } : null,
+            exencionImpuestoElectrico: this.puntoLocal.exencionImpuestoElectrico || false,
+            porcentajeConcesion: this.puntoLocal.porcentajeConcesion || 0.0,
+            fechaConcesion: this.puntoLocal.fechaConcesion || null,
+            autoconsumo: this.puntoLocal.autoconsumo || null,
+            fechaActivacionVertido: this.puntoLocal.autoconsumo ? (this.puntoLocal.fechaActivacionVertido || null) : null,
+            usuarioMonitorizacion: this.puntoLocal.usuarioMonitorizacion?.trim() || null,
+            passMonitorizacion: this.puntoLocal.passMonitorizacion?.trim() || null,
+            identificacion: this.puntoLocal.identificacion?.trim() || null,
+            ubicacion: this.puntoLocal.ubicacion?.trim() || null,
+            bateriaCondensadores: this.puntoLocal.bateriaCondensadores?.trim() || null,
+            potenciaBateria: this.puntoLocal.potenciaBateria?.trim() || null,
+            modeloBateria: this.puntoLocal.modeloBateria?.trim() || null,
+            instalacionFV: this.puntoLocal.instalacionFV?.trim() || null,
+            kwInversor: this.puntoLocal.kwInversor?.trim() || null,
+            kwPanelesSolares: this.puntoLocal.kwPanelesSolares?.trim() || null,
+            bateriaAlmacenamiento: this.puntoLocal.bateriaAlmacenamiento?.trim() || null,
+            potenciaBateriaAlmacenamiento: this.puntoLocal.potenciaBateriaAlmacenamiento?.trim() || null,
+            backup: this.puntoLocal.backup?.trim() || null,
+            peaksaving: this.puntoLocal.peaksaving?.trim() || null,
+            appMonitorizacion: this.puntoLocal.appMonitorizacionId ? { id: this.puntoLocal.appMonitorizacionId } : null,
+            integracionSistemasFV: this.puntoLocal.integracionSistemasFVId ? { id: this.puntoLocal.integracionSistemasFVId } : null,
+            fechaBaja: fechaBaja,
+          };
+          
+          console.log('=== ENVIANDO DATOS AL BACKEND ===');
+          console.log('fechaBaja:', fechaBaja);
+          console.log('puntoLocal.cupsluz:', this.puntoLocal.cupsluz);
+          console.log('puntoLocal.cupsgas:', this.puntoLocal.cupsgas);
+          console.log('CUPSluz normalizado:', datosAdaptados.CUPSluz);
+          console.log('CUPSgas normalizado:', datosAdaptados.CUPSgas);
+          console.log('datosAdaptados completo:', datosAdaptados);
+          
+          this.$emit('actualizar-punto-suministro', datosAdaptados);
+          this.cerrarModal();
+        }
+      } catch (error) {
+        console.error('Error en confirmaci\u00f3n de baja:', error);
+      }
+    },
+    
+    async confirmarReactivarPunto() {
+      try {
+        const { isConfirmed } = await this.$swal.fire({
+          title: '¿Reactivar punto de suministro?',
+          html: `
+            <div style="text-align: left; margin-top: 20px;">
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #16a34a; font-weight: 500; margin-bottom: 8px;">
+                  <i class="fas fa-map-marker-alt"></i>
+                  <span>Reactivación de punto de suministro</span>
+                </div>
+                <p style="margin: 0; color: #15803d; font-size: 14px;">Esta acción reactivará el punto de suministro en el sistema, eliminando la fecha de baja.</p>
+              </div>
+            </div>
+          `,
+          icon: 'success',
+          iconColor: '#16a34a',
+          showCancelButton: true,
+          confirmButtonText: '<i class="fas fa-map-marker-alt"></i> Confirmar Reactivación',
+          cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+          confirmButtonColor: '#16a34a',
+          cancelButtonColor: '#6b7280',
+          focusCancel: false,
+          customClass: {
+            popup: 'swal-reactivar-punto'
+          }
+        });
+
+        if (isConfirmed) {
+          // Normalizar CUPS antes del envío
+          const cupsLuzNormalizado = this.normalizarCups(this.puntoLocal.cupsluz);
+          const cupsGasNormalizado = this.normalizarCups(this.puntoLocal.cupsgas);
+          
+          const datosAdaptados = {
+            id: this.puntoLocal.id,
+            direccion: this.puntoLocal.direccion.trim(),
+            codigoPostal: this.puntoLocal.codigoPostal.trim(),
+            poblacion: this.puntoLocal.poblacion.trim(),
+            provincia: this.puntoLocal.provincia.trim(),
+            CUPSluz: cupsLuzNormalizado,
+            CUPSgas: cupsGasNormalizado,
+            observaciones: this.puntoLocal.observaciones?.trim() || null,
+            fechaInstalacion: this.puntoLocal.fechaInstalacion || null,
+            cliente: { id: this.puntoLocal.cliente.id },
+            distribuidora: this.puntoLocal.distribuidora ? { id: this.puntoLocal.distribuidora.id } : null,
+            potenciaBIE: this.puntoLocal.potenciaBIE || 0.0,
+            potenciaTecnicaRed: this.puntoLocal.potenciaTecnicaRed || 0.0,
+            apmCentroTransformacion: this.puntoLocal.apmCentroTransformacion?.trim() || null,
+            tipoContador: this.puntoLocal.tipoContador ? { id: this.puntoLocal.tipoContador.id } : null,
+            tipoComunicacion: this.puntoLocal.tipoComunicacion ? { id: this.puntoLocal.tipoComunicacion.id } : null,
+            numeroContador: this.puntoLocal.numeroContador?.trim() || null,
+            numeroTelefono: this.puntoLocal.numeroTelefono?.trim() || null,
+            direccionEnlace: this.puntoLocal.direccionEnlace?.trim() || null,
+            puntoMedida: this.puntoLocal.puntoMedida?.trim() || null,
+            clave: this.puntoLocal.clave?.trim() || null,
+            propiedad: this.puntoLocal.propiedad ? { id: this.puntoLocal.propiedad.id } : null,
+            exencionImpuestoElectrico: this.puntoLocal.exencionImpuestoElectrico || false,
+            porcentajeConcesion: this.puntoLocal.porcentajeConcesion || 0.0,
+            fechaConcesion: this.puntoLocal.fechaConcesion || null,
+            autoconsumo: this.puntoLocal.autoconsumo || null,
+            fechaActivacionVertido: this.puntoLocal.autoconsumo ? (this.puntoLocal.fechaActivacionVertido || null) : null,
+            usuarioMonitorizacion: this.puntoLocal.usuarioMonitorizacion?.trim() || null,
+            passMonitorizacion: this.puntoLocal.passMonitorizacion?.trim() || null,
+            identificacion: this.puntoLocal.identificacion?.trim() || null,
+            ubicacion: this.puntoLocal.ubicacion?.trim() || null,
+            bateriaCondensadores: this.puntoLocal.bateriaCondensadores?.trim() || null,
+            potenciaBateria: this.puntoLocal.potenciaBateria?.trim() || null,
+            modeloBateria: this.puntoLocal.modeloBateria?.trim() || null,
+            instalacionFV: this.puntoLocal.instalacionFV?.trim() || null,
+            kwInversor: this.puntoLocal.kwInversor?.trim() || null,
+            kwPanelesSolares: this.puntoLocal.kwPanelesSolares?.trim() || null,
+            bateriaAlmacenamiento: this.puntoLocal.bateriaAlmacenamiento?.trim() || null,
+            potenciaBateriaAlmacenamiento: this.puntoLocal.potenciaBateriaAlmacenamiento?.trim() || null,
+            backup: this.puntoLocal.backup?.trim() || null,
+            peaksaving: this.puntoLocal.peaksaving?.trim() || null,
+            appMonitorizacion: this.puntoLocal.appMonitorizacionId ? { id: this.puntoLocal.appMonitorizacionId } : null,
+            integracionSistemasFV: this.puntoLocal.integracionSistemasFVId ? { id: this.puntoLocal.integracionSistemasFVId } : null,
+            fechaBaja: null, // Eliminar la fecha de baja
+          };
+          
+          console.log('=== REACTIVANDO PUNTO DE SUMINISTRO ===');
+          console.log('Eliminando fecha de baja');
+          console.log('datosAdaptados completo:', datosAdaptados);
+          
+          this.$emit('actualizar-punto-suministro', datosAdaptados);
+          this.cerrarModal();
+        }
+      } catch (error) {
+        console.error('Error en confirmación de reactivación:', error);
+      }
+    },
+
+    formatFecha(fecha) {
+      if (!fecha) return '';
+      const fechaObj = new Date(fecha);
+      return fechaObj.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
     }
   }
 };
@@ -1498,6 +1791,42 @@ export default {
   transform: translateY(-1px);
 }
 
+.btn-danger {
+  background-color: #f5b2b2;
+  color: black;
+  border: 1px solid #f5b2b2;
+  font-weight: 600;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #f19999;
+  border-color: #f19999;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(245, 178, 178, 0.4);
+  color: black;
+}
+
+.btn-danger:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(245, 178, 178, 0.3);
+}
+
+/* Estilos personalizados para SweetAlert de baja */
+:global(.swal-baja-punto .swal2-popup) {
+  border-radius: 12px;
+  padding: 20px;
+}
+
+:global(.swal-baja-punto .swal2-title) {
+  color: #b56767;
+  font-weight: 600;
+}
+
+:global(.swal-baja-punto .swal2-icon.swal2-warning) {
+  border-color: #f5b2b2;
+  color: #b56767;
+}
+
 .tab-navigation {
   display: flex;
   justify-content: space-between;
@@ -1534,5 +1863,269 @@ export default {
     overflow-y: auto;
     max-height: calc(100vh - 150px);
   }
+}
+
+/* Estilos para el checkbox de baja */
+.service-checkbox {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  padding: 0.2rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.3s ease;
+}
+
+.service-checkbox:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+.service-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.checkmark {
+  height: 14px;
+  width: 14px;
+  background-color: #fff;
+  border: 2px solid #ddd;
+  border-radius: 0.2rem;
+  margin-right: 0.4rem;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.service-checkbox input[type="checkbox"]:checked + .checkmark {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.service-checkbox input[type="checkbox"]:checked + .checkmark:after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 0px;
+  width: 3px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.service-label {
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+}
+
+/* Estilos elegantes para la sección de baja con tonos rojos */
+.baja-compacta {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.3rem;
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.baja-compacta:hover {
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+  border-color: #fca5a5;
+}
+
+.baja-checkbox-compacta {
+  display: flex;
+  align-items: center;
+}
+
+.baja-label-compacta {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #dc2626;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.baja-label-compacta:hover {
+  color: #b91c1c;
+}
+
+.baja-input {
+  display: none;
+}
+
+.baja-checkmark {
+  height: 18px;
+  width: 18px;
+  background-color: white;
+  border: 2px solid #dc2626;
+  border-radius: 3px;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.baja-label-compacta:hover .baja-checkmark {
+  border-color: #b91c1c;
+  box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.1);
+}
+
+.baja-input:checked ~ .baja-checkmark {
+  background-color: #dc2626;
+  border-color: #dc2626;
+  transform: scale(1.1);
+}
+
+.baja-checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.baja-input:checked ~ .baja-checkmark:after {
+  display: block;
+}
+
+.baja-checkmark:after {
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.baja-text {
+  color: #dc2626;
+  font-weight: 500;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.baja-text i {
+  font-size: 0.9rem;
+}
+
+.fecha-baja-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-top: 0.3rem;
+  border-top: 1px solid #fecaca;
+  margin-top: 0.3rem;
+  animation: slideInBaja 0.3s ease-out;
+}
+
+.fecha-label-compacta {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #991b1b;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.2rem;
+}
+
+.fecha-input-compacta {
+  width: 100%;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #dc2626;
+  border-radius: 0.2rem;
+  font-size: 0.8rem;
+  background-color: white;
+  color: #991b1b;
+  height: 28px;
+  transition: all 0.2s ease;
+}
+
+.fecha-input-compacta:focus {
+  outline: none;
+  border-color: #b91c1c;
+  box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.1);
+}
+
+.fecha-input-compacta:hover {
+  border-color: #b91c1c;
+}
+
+@keyframes slideInBaja {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Estilo para el botón de reactivación verde */
+.btn-success {
+  background-color: #86efac;
+  color: black;
+  border: 1px solid #86efac;
+  font-weight: 600;
+}
+
+.btn-success:hover:not(:disabled) {
+  background-color: #4ade80;
+  border-color: #4ade80;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(134, 239, 172, 0.4);
+  color: black;
+}
+
+.btn-success:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(134, 239, 172, 0.3);
+}
+
+/* Estilos para mensajes de estado */
+.status-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.3rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+}
+
+.status-inactive {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+.status-inactive i {
+  color: #dc2626;
+}
+
+/* Estilos personalizados para SweetAlert de reactivación */
+:global(.swal-reactivar-punto .swal2-popup) {
+  border-radius: 12px;
+  padding: 20px;
+}
+
+:global(.swal-reactivar-punto .swal2-title) {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+:global(.swal-reactivar-punto .swal2-icon.swal2-success) {
+  border-color: #86efac;
+  color: #16a34a;
 }
 </style>
