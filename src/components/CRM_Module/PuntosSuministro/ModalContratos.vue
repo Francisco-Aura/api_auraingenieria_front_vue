@@ -344,7 +344,7 @@
                   <div class="input-with-icon-modern">
                     <i class="fas fa-lock icon-prefix"></i>
                     <input 
-                      type="password" 
+                      type="text" 
                       id="passwordFO" 
                       v-model="nuevoContrato.passwordFO" 
                       class="form-control-modern" 
@@ -924,9 +924,9 @@ export default {
       this.modoRenovacion = false;
       this.contratoEditandoId = this.contratoVigente.id;
       this.nuevoContrato = { ...this.contratoVigente };
-      // Asegurar que los campos de facturación online estén presentes
-      this.nuevoContrato.userFO = this.contratoVigente.userFO || "";
-      this.nuevoContrato.passwordFO = this.contratoVigente.passwordFO || "";
+      // Asegurar que los campos de facturación online estén presentes y preserven valores nulos/vacíos
+      this.nuevoContrato.userFO = this.contratoVigente.userFO !== undefined ? this.contratoVigente.userFO : "";
+      this.nuevoContrato.passwordFO = this.contratoVigente.passwordFO !== undefined ? this.contratoVigente.passwordFO : "";
       
       // SINCRONIZAR con el punto de suministro actual
       this.nuevoContrato.exencionImpuestoElectricidad = this.tieneExencionImpuestoElectrico ? 1 : 0;
@@ -957,8 +957,8 @@ export default {
         fechaDenunciaContrato: '', // Limpiar denuncia al renovar
         denunciaContrato: 0, // Limpiar denuncia al renovar
         rutaArchivoContrato: '', // Limpiar archivo
-        userFO: this.contratoVigente.userFO || '', // Mantener usuario FO
-        passwordFO: this.contratoVigente.passwordFO || '', // Mantener contraseña FO
+        userFO: this.contratoVigente.userFO !== undefined ? this.contratoVigente.userFO : '', // Mantener usuario FO
+        passwordFO: this.contratoVigente.passwordFO !== undefined ? this.contratoVigente.passwordFO : '', // Mantener contraseña FO
         // SINCRONIZAR con el punto de suministro actual
         exencionImpuestoElectricidad: this.tieneExencionImpuestoElectrico ? 1 : 0,
         autoconsumo: this.tieneAutoconsumo ? 1 : 0,
@@ -971,6 +971,12 @@ export default {
     },
 
     editarContratoGenerico(contrato) {
+      console.log('Datos del contrato al editar:', {
+        userFO: contrato.userFO,
+        passwordFO: contrato.passwordFO,
+        contrato: contrato
+      });
+      
       this.mostrandoFormulario = true;
       this.modoEdicion = true;
       this.modoRenovacion = false;
@@ -984,9 +990,14 @@ export default {
       this.nuevoContrato.idCliente = contrato.idCliente || contrato.cliente?.id || this.cliente?.id;
       this.nuevoContrato.idPuntoSuministro = contrato.idPuntoSuministro || contrato.puntoSuministro?.id || this.puntoSuministroData?.id;
       
-      // Asegurar que los campos de facturación online estén presentes
-      this.nuevoContrato.userFO = contrato.userFO || "";
-      this.nuevoContrato.passwordFO = contrato.passwordFO || "";
+      // Asegurar que los campos de facturación online estén presentes y preserven valores nulos/vacíos
+      this.nuevoContrato.userFO = contrato.userFO !== undefined ? contrato.userFO : "";
+      this.nuevoContrato.passwordFO = contrato.passwordFO !== undefined ? contrato.passwordFO : "";
+      
+      console.log('Valores asignados al formulario:', {
+        userFO: this.nuevoContrato.userFO,
+        passwordFO: this.nuevoContrato.passwordFO
+      });
       
       // SINCRONIZAR con el punto de suministro actual
       this.nuevoContrato.exencionImpuestoElectricidad = this.tieneExencionImpuestoElectrico ? 1 : 0;
@@ -1026,8 +1037,8 @@ export default {
         fechaDenunciaContrato: '', // Limpiar denuncia al renovar
         denunciaContrato: 0, // Limpiar denuncia al renovar
         rutaArchivoContrato: '', // Limpiar archivo
-        userFO: contrato.userFO || '', // Mantener usuario FO
-        passwordFO: contrato.passwordFO || '', // Mantener contraseña FO
+        userFO: contrato.userFO !== undefined ? contrato.userFO : '', // Mantener usuario FO
+        passwordFO: contrato.passwordFO !== undefined ? contrato.passwordFO : '', // Mantener contraseña FO
         // SINCRONIZAR con el punto de suministro actual
         exencionImpuestoElectricidad: this.tieneExencionImpuestoElectrico ? 1 : 0,
         autoconsumo: this.tieneAutoconsumo ? 1 : 0,
