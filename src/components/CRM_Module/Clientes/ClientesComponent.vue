@@ -59,6 +59,15 @@
             <i class="fas fa-file-pdf"></i>
             <span>PDF</span>
           </button>
+          <button 
+            class="btn btn-toggle-baja" 
+            :class="{ 'active': mostrarClientesDadosDeBaja }"
+            @click="toggleMostrarClientesDadosDeBaja" 
+            :title="mostrarClientesDadosDeBaja ? 'Ocultar clientes dados de baja' : 'Mostrar clientes dados de baja'"
+          >
+            <i class="fas fa-ban"></i>
+            <span>{{ mostrarClientesDadosDeBaja ? 'Ocultar dados de baja' : 'Mostrar dados de baja' }}</span>
+          </button>
         </div>
       </div>
       <div class="table-responsive">
@@ -237,8 +246,16 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="cliente in paginatedClientes" :key="cliente.idCliente">
-              <td class="text-truncate" :title="cliente.nombre">{{ cliente.nombre }}</td>
+            <tr v-for="cliente in paginatedClientes" :key="cliente.idCliente" 
+                :class="{ 'cliente-dado-baja': estaClienteDadoDeBaja(cliente) }">
+              <td class="text-truncate" :title="cliente.nombre">
+                <div class="cliente-cell">
+                  <span v-if="estaClienteDadoDeBaja(cliente)" class="baja-indicator" title="Cliente dado de baja">
+                    <i class="fas fa-ban"></i>
+                  </span>
+                  <span class="cliente-nombre">{{ cliente.nombre }}</span>
+                </div>
+              </td>
               <td class="text-truncate" :title="cliente.cif">{{ cliente.cif }}</td>
               <td class="text-truncate" :title="cliente.nombreComercial">{{ cliente.nombreComercial }}</td>
               <td class="text-truncate" :title="cliente.nombreSector || 'Sin sector'">{{ cliente.nombreSector || 'Sin sector' }}</td>
@@ -273,54 +290,54 @@
             </tr>
           </tbody>
         </table>
-        <div class="pagination-controls">
-          <div class="records-per-page">
-            <label for="recordsPerPage">Registros por página:</label>
-            <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-          </div>
-          <div class="pagination-info">
-            Mostrando {{ paginationStart }} - {{ paginationEnd }} de {{ filteredClientes.length }} registros
-          </div>
-          <div class="pagination-buttons">
-            <button 
-              class="btn btn-outline" 
-              :disabled="currentPage === 1"
-              @click="currentPage = 1"
-              title="Primera página"
-            >
-              <i class="fas fa-angle-double-left"></i>
-            </button>
-            <button 
-              class="btn btn-outline" 
-              :disabled="currentPage === 1"
-              @click="currentPage--"
-              title="Página anterior"
-            >
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
-            <button 
-              class="btn btn-outline" 
-              :disabled="currentPage === totalPages"
-              @click="currentPage++"
-              title="Página siguiente"
-            >
-              <i class="fas fa-chevron-right"></i>
-            </button>
-            <button 
-              class="btn btn-outline" 
-              :disabled="currentPage === totalPages"
-              @click="currentPage = totalPages"
-              title="Última página"
-            >
-              <i class="fas fa-angle-double-right"></i>
-            </button>
-          </div>
+      </div>
+      <div class="pagination-controls">
+        <div class="records-per-page">
+          <label for="recordsPerPage">Registros por página:</label>
+          <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <div class="pagination-info">
+          Mostrando {{ paginationStart }} - {{ paginationEnd }} de {{ filteredClientes.length }} registros
+        </div>
+        <div class="pagination-buttons">
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === 1"
+            @click="currentPage = 1"
+            title="Primera página"
+          >
+            <i class="fas fa-angle-double-left"></i>
+          </button>
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === 1"
+            @click="currentPage--"
+            title="Página anterior"
+          >
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === totalPages"
+            @click="currentPage++"
+            title="Página siguiente"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === totalPages"
+            @click="currentPage = totalPages"
+            title="Última página"
+          >
+            <i class="fas fa-angle-double-right"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -413,13 +430,17 @@ export default {
       modoConsulta: false,          // Flag para indicar si el ModalActualizarPuntoSuministro está en modo consulta
       isCreating: false,            // Flag para indicar si el ModalActualizarPuntoSuministro está en modo creación
       mostrarModalContratos: false, // Control de visibilidad del modal de contratos
+      mostrarClientesDadosDeBaja: false, // Control para mostrar/ocultar clientes dados de baja
     };
   },
   computed: {
     // Lista de clientes filtrados según el texto de búsqueda
     filteredClientes() {
       return this.clientes.filter((cliente) => {
-        // Primero aplicamos el filtro general
+        // Primero aplicamos el filtro de estado de baja
+        const estadoBajaFilter = this.mostrarClientesDadosDeBaja ? this.estaClienteDadoDeBaja(cliente) : !this.estaClienteDadoDeBaja(cliente);
+        
+        // Luego aplicamos el filtro general
         const generalFilter = Object.values(cliente).some((value) =>
           String(value).toLowerCase().includes(this.filter.toLowerCase())
         );
@@ -436,7 +457,7 @@ export default {
           this.selectedSectores.includes(cliente.nombreSector) ||
           (this.selectedSectores.includes('Sin sector') && !cliente.nombreSector);
 
-        return generalFilter && columnFilters && sectorFilter;
+        return estadoBajaFilter && generalFilter && columnFilters && sectorFilter;
       });
     },
     // Total de puntos de suministro de todos los clientes
@@ -843,6 +864,18 @@ export default {
       if (!dropdownContainer) {
         this.showSectorDropdown = false;
       }
+    },
+
+    // Verifica si un cliente está dado de baja
+    estaClienteDadoDeBaja(cliente) {
+      // Un cliente está dado de baja si tiene fechaBaja y no es null
+      return cliente.fechaBaja && cliente.fechaBaja !== null && cliente.fechaBaja !== '';
+    },
+
+    // Alterna la visualización de clientes dados de baja
+    toggleMostrarClientesDadosDeBaja() {
+      this.mostrarClientesDadosDeBaja = !this.mostrarClientesDadosDeBaja;
+      this.currentPage = 1; // Resetear a la primera página cuando cambie el filtro
     }
   },
   async mounted() {
@@ -865,9 +898,6 @@ export default {
       this.subtipologias = subtipologias.data;
       this.appMonitorizacion = appMonitorizacion.data;
       this.integracionSistemasFV = integracionSistemasFV.data;
-      // Debug: verificar que se cargan los datos
-      console.log('APP Monitorización cargadas:', this.appMonitorizacion);
-      console.log('Integración Sistemas FV cargadas:', this.integracionSistemasFV);
     } catch (error) {
       console.error("Error al cargar datos iniciales:", error);
       await this.$swal.fire({
@@ -920,8 +950,16 @@ export default {
   grid-template-rows: auto auto auto 1fr;
   gap: 20px;
   padding: 20px;
-  max-width: 1600px;
+  max-width: 90%;
   margin: 0 auto;
+}
+
+/* Panel de la tabla */
+.table-panel {
+  background: white;
+  border-radius: 0.7rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  overflow: hidden;
 }
 
 /* Panel de estadísticas */
@@ -1017,10 +1055,7 @@ export default {
 
 
 .table-header {
-  background-color: white;
-  color: var(--text-primary);
-  border-top-left-radius: var(--border-radius);
-  border-top-right-radius: var(--border-radius);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1044,9 +1079,17 @@ export default {
 }
 
 .btn-refresh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
   background-color: #17a2b8;
   color: white;
   border: none;
+  cursor: pointer;
 }
 
 .btn-refresh:hover {
@@ -1081,6 +1124,39 @@ export default {
   background-color: #c82333;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+}
+
+.btn-toggle-baja {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-toggle-baja:hover {
+  background-color: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
+}
+
+.btn-toggle-baja.active {
+  background-color: #dc3545;
+}
+
+.btn-toggle-baja.active:hover {
+  background-color: #c82333;
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+}
+
+.btn-toggle-baja i {
+  font-size: 14px;
 }
 
 .btn-export i {
@@ -1278,7 +1354,7 @@ export default {
 .text-truncate {
   max-width: 0;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1445,8 +1521,9 @@ export default {
   display: flex;
   align-items: center;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
+  font-size: 10px;
 }
 
 .checkbox-label input {
@@ -1489,6 +1566,45 @@ export default {
 .checkmark:after {
   content: "";
   display: none;
+}
+
+/* Estilos para clientes dados de baja */
+.cliente-dado-baja {
+  background-color: rgba(220, 53, 69, 0.05) !important;
+  opacity: 0.7;
+}
+
+.cliente-dado-baja:hover {
+  background-color: rgba(220, 53, 69, 0.1) !important;
+  opacity: 0.8;
+}
+
+.cliente-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.cliente-nombre {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.baja-indicator {
+  color: #dc3545;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: rgba(220, 53, 69, 0.1);
+  flex-shrink: 0;
 }
 </style>
 

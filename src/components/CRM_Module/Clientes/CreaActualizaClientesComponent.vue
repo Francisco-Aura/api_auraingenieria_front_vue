@@ -19,9 +19,6 @@
           <button type="button" class="tab-btn" :class="{ active: activeTab === 'contactos' }" @click="activeTab = 'contactos'">
             <i class="fas fa-address-book"></i> <span class="tab-text">Contactos & Adicionales</span>
           </button>
-          <button type="button" class="tab-btn" :class="{ active: activeTab === 'instalaciones' }" @click="activeTab = 'instalaciones'">
-            <i class="fas fa-tools"></i> <span class="tab-text">Instalaciones</span>
-          </button>
         </div>
 
         <div class="tab-container">
@@ -170,28 +167,28 @@
                 </div>
                 <div class="form-row-compact">
                   <div class="form-group-compact">
-                    <label for="nombreAutorizado">Nombre <span class="required">*</span></label>
-                    <input type="text" id="nombreAutorizado" v-model="clienteLocal.nombreAutorizado" class="form-control-compact" required />
+                    <label for="nombreAutorizado">Nombre</label>
+                    <input type="text" id="nombreAutorizado" v-model="clienteLocal.nombreAutorizado" class="form-control-compact"/>
                   </div>
                   <div class="form-group-compact">
-                    <label for="dniAutorizado">DNI <span class="required">*</span></label>
+                    <label for="dniAutorizado">DNI</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-id-badge icon-prefix"></i>
-                      <input type="text" id="dniAutorizado" v-model="clienteLocal.dniAutorizado" class="form-control-compact" required />
+                      <input type="text" id="dniAutorizado" v-model="clienteLocal.dniAutorizado" class="form-control-compact"/>
                     </div>
                   </div>
                   <div class="form-group-compact">
-                    <label for="telefonoAutorizado">Teléfono <span class="required">*</span></label>
+                    <label for="telefonoAutorizado">Teléfono</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-phone icon-prefix"></i>
-                      <input type="text" id="telefonoAutorizado" v-model="clienteLocal.telefonoAutorizado" class="form-control-compact" required />
+                      <input type="text" id="telefonoAutorizado" v-model="clienteLocal.telefonoAutorizado" class="form-control-compact"/>
                     </div>
                   </div>
                   <div class="form-group-compact">
-                    <label for="emailAutorizado">Email <span class="required">*</span></label>
+                    <label for="emailAutorizado">Email</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-envelope icon-prefix"></i>
-                      <input type="email" id="emailAutorizado" v-model="clienteLocal.emailAutorizado" class="form-control-compact" required />
+                      <input type="email" id="emailAutorizado" v-model="clienteLocal.emailAutorizado" class="form-control-compact" />
                     </div>
                   </div>
                 </div>
@@ -225,9 +222,24 @@
             <!-- Navegación de pestañas (nuevo) -->
             <div class="tab-navigation">
               <div></div> <!-- Espacio vacío para alinear -->
-              <button type="button" class="btn-compact btn-primary" @click="activeTab = 'contactos'">
-                <i class="fas fa-arrow-right"></i> Siguiente
-              </button>
+              <div class="action-buttons">
+                <!-- Botón Dar de Baja (solo si está activo y en modo actualizar) -->
+                <button v-if="modoActualizar && clienteLocal.id && !clienteLocal.fechaBaja" type="button" @click="confirmarBajaCliente" class="btn-compact btn-danger">
+                  <i class="fas fa-user-times"></i> Dar de Baja
+                </button>
+                <!-- Botón Reactivar (solo si está dado de baja y en modo actualizar) -->
+                <button v-if="modoActualizar && clienteLocal.id && clienteLocal.fechaBaja" type="button" @click="confirmarReactivarCliente" class="btn-compact btn-success">
+                  <i class="fas fa-user-check"></i> Reactivar Cliente
+                </button>
+                <!-- Mensaje de estado si está dado de baja -->
+                <div v-if="modoActualizar && clienteLocal.id && clienteLocal.fechaBaja" class="status-message status-inactive">
+                  <i class="fas fa-user-times"></i>
+                  <span>Cliente dado de baja el {{ formatFecha(clienteLocal.fechaBaja) }}</span>
+                </div>
+                <button type="button" class="btn-compact btn-primary" @click="activeTab = 'contactos'">
+                  <i class="fas fa-arrow-right"></i> Siguiente
+                </button>
+              </div>
             </div>
           </div>
 
@@ -407,163 +419,20 @@
               <button type="button" class="btn-compact btn-secondary" @click="activeTab = 'principal'">
                 <i class="fas fa-arrow-left"></i> Anterior
               </button>
-              <button type="button" class="btn-compact btn-primary" @click="activeTab = 'instalaciones'">
-                <i class="fas fa-arrow-right"></i> Siguiente
-              </button>
-            </div>
-          </div>
-
-          <!-- Contenido de la pestaña Instalaciones -->
-          <div v-show="activeTab === 'instalaciones'" class="tab-content" data-active-tab="instalaciones">
-            <div class="form-grid-compact">
-              <!-- Tres secciones de instalaciones en una fila -->
-              <div class="installations-row">
-                <!-- Batería de Condensadores -->
-                <div class="installation-card">
-                  <div class="section-header-compact">
-                    <i class="fas fa-battery-full"></i>
-                    <h3>Batería de Condensadores</h3>
-                  </div>
-                  <div class="form-group-compact">
-                    <label for="bateriaCondensadores">Batería de Condensadores <span class="required">*</span></label>
-                    <div class="select-container-compact">
-                      <select id="bateriaCondensadores" v-model="clienteLocal.bateriaCondensadores" class="form-select-compact" required>
-                        <option value="">Seleccione...</option>
-                        <option value="SI">SI</option>
-                        <option value="NO">NO</option>
-                      </select>
-                      <i class="fas fa-chevron-down select-icon"></i>
-                    </div>
-                  </div>
-                  <div class="form-group-compact">
-                    <label for="potenciaBateria">Potencia Batería</label>
-                    <div class="input-with-icon-compact">
-                      <i class="fas fa-bolt icon-prefix"></i>
-                      <input type="text" id="potenciaBateria" v-model="clienteLocal.potenciaBateria" class="form-control-compact" />
-                    </div>
-                  </div>
-                  <div class="form-group-compact">
-                    <label for="modeloBateria">Modelo</label>
-                    <div class="input-with-icon-compact">
-                      <i class="fas fa-tag icon-prefix"></i>
-                      <input type="text" id="modeloBateria" v-model="clienteLocal.modeloBateria" class="form-control-compact" />
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Instalación Fotovoltaica -->
-                <div class="installation-card">
-                  <div class="section-header-compact">
-                    <i class="fas fa-solar-panel"></i>
-                    <h3>Instalación Fotovoltaica</h3>
-                  </div>
-                  <div class="form-group-compact">
-                    <label for="instalacionFV">Instalación FV <span class="required">*</span></label>
-                    <div class="select-container-compact">
-                      <select id="instalacionFV" v-model="clienteLocal.instalacionFV" class="form-select-compact" required>
-                        <option value="">Seleccione...</option>
-                        <option value="SI">SI</option>
-                        <option value="NO">NO</option>
-                      </select>
-                      <i class="fas fa-chevron-down select-icon"></i>
-                    </div>
-                  </div>
-                  <div class="form-group-compact">
-                    <label for="kwInversor">KW Inversor</label>
-                    <div class="input-with-icon-compact">
-                      <i class="fas fa-microchip icon-prefix"></i>
-                      <input type="text" id="kwInversor" v-model="clienteLocal.kwInversor" class="form-control-compact" />
-                    </div>
-                  </div>
-                  <div class="form-group-compact">
-                    <label for="kwPanelesSolares">KW Paneles Solares</label>
-                    <div class="input-with-icon-compact">
-                      <i class="fas fa-sun icon-prefix"></i>
-                      <input type="text" id="kwPanelesSolares" v-model="clienteLocal.kwPanelesSolares" class="form-control-compact" />
-                    </div>
-                  </div>
-                  <div class="form-group-compact">
-                    <label for="appMonitorizacion">APP Monitorización</label>
-                    <div class="select-container-compact">
-                      <select id="appMonitorizacion" v-model="clienteLocal.appMonitorizacionId" class="form-select-compact">
-                        <option value="">Seleccione...</option>
-                        <option v-for="app in appMonitorizacion" :key="app.id" :value="app.id">
-                          {{ app.nombre }}
-                        </option>
-                      </select>
-                      <i class="fas fa-chevron-down select-icon"></i>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Almacenamiento Energético -->
-                <div class="installation-card">
-                  <div class="section-header-compact">
-                    <i class="fas fa-warehouse"></i>
-                    <h3>Almacenamiento Energético</h3>
-                  </div>
-                  <div class="form-group-compact">
-                    <label for="bateriaAlmacenamiento">Batería <span class="required">*</span></label>
-                    <div class="select-container-compact">
-                      <select id="bateriaAlmacenamiento" v-model="clienteLocal.bateriaAlmacenamiento" class="form-select-compact" required>
-                        <option value="">Seleccione...</option>
-                        <option value="SI">SI</option>
-                        <option value="NO">NO</option>
-                      </select>
-                      <i class="fas fa-chevron-down select-icon"></i>
-                    </div>
-                  </div>
-                  <div class="form-group-compact">
-                    <label for="potenciaBateriaAlmacenamiento">Potencia Batería</label>
-                    <div class="input-with-icon-compact">
-                      <i class="fas fa-bolt icon-prefix"></i>
-                      <input type="text" id="potenciaBateriaAlmacenamiento" v-model="clienteLocal.potenciaBateriaAlmacenamiento" class="form-control-compact" />
-                    </div>
-                  </div>
-                  <div class="form-group-compact">
-                    <label for="backup">Backup</label>
-                    <div class="select-container-compact">
-                      <select id="backup" v-model="clienteLocal.backup" class="form-select-compact">
-                        <option value="">Seleccione...</option>
-                        <option value="SI">SI</option>
-                        <option value="NO">NO</option>
-                      </select>
-                      <i class="fas fa-chevron-down select-icon"></i>
-                    </div>
-                  </div>
-                  <div class="form-group-compact">
-                    <label for="peaksaving">Peaksaving</label>
-                    <div class="select-container-compact">
-                      <select id="peaksaving" v-model="clienteLocal.peaksaving" class="form-select-compact">
-                        <option value="">Seleccione...</option>
-                        <option value="SI">SI</option>
-                        <option value="NO">NO</option>
-                      </select>
-                      <i class="fas fa-chevron-down select-icon"></i>
-                    </div>
-                  </div>
-                  <div class="form-group-compact">
-                    <label for="integracionSistemasFV">Integración con Sistemas Fotovoltaicos</label>
-                    <div class="select-container-compact">
-                      <select id="integracionSistemasFV" v-model="clienteLocal.integracionSistemasFVId" class="form-select-compact">
-                        <option value="">Seleccione...</option>
-                        <option v-for="sistema in integracionSistemasFV" :key="sistema.id" :value="sistema.id">
-                          {{ sistema.nombre }}
-                        </option>
-                      </select>
-                      <i class="fas fa-chevron-down select-icon"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Navegación y botones de acción -->
-            <div class="tab-navigation">
-              <button type="button" class="btn-compact btn-secondary" @click="activeTab = 'contactos'">
-                <i class="fas fa-arrow-left"></i> Anterior
-              </button>
               <div class="action-buttons">
+                <!-- Botón Dar de Baja (solo si está activo y en modo actualizar) -->
+                <button v-if="modoActualizar && clienteLocal.id && !clienteLocal.fechaBaja" type="button" @click="confirmarBajaCliente" class="btn-compact btn-danger">
+                  <i class="fas fa-user-times"></i> Dar de Baja
+                </button>
+                <!-- Botón Reactivar (solo si está dado de baja y en modo actualizar) -->
+                <button v-if="modoActualizar && clienteLocal.id && clienteLocal.fechaBaja" type="button" @click="confirmarReactivarCliente" class="btn-compact btn-success">
+                  <i class="fas fa-user-check"></i> Reactivar Cliente
+                </button>
+                <!-- Mensaje de estado si está dado de baja -->
+                <div v-if="modoActualizar && clienteLocal.id && clienteLocal.fechaBaja" class="status-message status-inactive">
+                  <i class="fas fa-user-times"></i>
+                  <span>Cliente dado de baja el {{ formatFecha(clienteLocal.fechaBaja) }}</span>
+                </div>
                 <button type="button" class="btn-compact btn-secondary" @click="cancelarFormulario">
                   <i class="fas fa-times"></i> Cancelar
                 </button>
@@ -574,6 +443,7 @@
               </div>
             </div>
           </div>
+
         </div>
       </form>
       
@@ -629,19 +499,6 @@ export default {
         userTelemedida: "",
         passTelemedida: "",
         usuario: null,
-        // Campos de instalaciones
-        bateriaCondensadores: "",
-        potenciaBateria: "",
-        modeloBateria: "",
-        instalacionFV: "",
-        kwInversor: "",
-        kwPanelesSolares: "",
-        appMonitorizacionId: null,
-        bateriaAlmacenamiento: "",
-        potenciaBateriaAlmacenamiento: "",
-        backup: "",
-        peaksaving: "",
-        integracionSistemasFVId: null,
         // Servicios del cliente
         gestionEnergetica: false,
         telemedida: false,
@@ -651,20 +508,13 @@ export default {
     sectores: Array,
     usuarios: Array,
     subtipologias: Array,
-    appMonitorizacion: {
-      type: Array,
-      default: () => []
-    },
-    integracionSistemasFV: {
-      type: Array,
-      default: () => []
-    },
     isSubmitting: Boolean,
   },
   data() {
     return {
       activeTab: 'principal',
       showPassword: false,
+      darDeBaja: false,
       clienteLocal: this.crearClienteVacio(),
     };
   },
@@ -692,8 +542,10 @@ export default {
             ...newVal,
             grupoEmpresarial: newVal.nombreComercial || newVal.grupoEmpresarial || ''
           };
+          this.darDeBaja = !!newVal.fechaBaja;
         } else {
           this.clienteLocal = this.crearClienteVacio();
+          this.darDeBaja = false;
         }
       },
     },
@@ -704,12 +556,6 @@ export default {
         );
         this.clienteLocal.usuario = usuario || null;
       }
-    },
-    appMonitorizacion(newVal) {
-      console.log('AppMonitorizacion props recibidas:', newVal);
-    },
-    integracionSistemasFV(newVal) {
-      console.log('IntegracionSistemasFV props recibidas:', newVal);
     }
   },
   methods: {
@@ -749,32 +595,25 @@ export default {
         userTelemedida: "",
         passTelemedida: "",
         usuario: null,
-        // Campos de instalaciones
-        bateriaCondensadores: "",
-        potenciaBateria: "",
-        modeloBateria: "",
-        instalacionFV: "",
-        kwInversor: "",
-        kwPanelesSolares: "",
-        appMonitorizacionId: null,
-        bateriaAlmacenamiento: "",
-        potenciaBateriaAlmacenamiento: "",
-        backup: "",
-        peaksaving: "",
-        integracionSistemasFVId: null,
         // Servicios del cliente
         gestionEnergetica: false,
         telemedida: false,
         monitorizacionEnergetica: false,
+        fechaBaja: null,
       };
     },
     cancelarFormulario() {
       this.$emit("cancelar-formulario");
     },
     crearCliente() {
+      if (this.darDeBaja && !this.clienteLocal.fechaBaja) {
+        alert("Debe proporcionar una fecha de baja cuando se marca la opción de dar de baja.");
+        return;
+      }
       const clienteParaEnviar = {
         ...this.clienteLocal,
-        nombreComercial: this.clienteLocal.grupoEmpresarial
+        nombreComercial: this.clienteLocal.grupoEmpresarial,
+        fechaBaja: this.darDeBaja ? this.clienteLocal.fechaBaja : null
       };
       this.$emit("crear-cliente", clienteParaEnviar);
     },
@@ -787,9 +626,14 @@ export default {
         console.error("El cliente no tiene un usuario asignado.");
         return;
       }
+      if (this.darDeBaja && !this.clienteLocal.fechaBaja) {
+        alert("Debe proporcionar una fecha de baja cuando se marca la opción de dar de baja.");
+        return;
+      }
       const clienteParaEnviar = {
         ...this.clienteLocal,
-        nombreComercial: this.clienteLocal.grupoEmpresarial
+        nombreComercial: this.clienteLocal.grupoEmpresarial,
+        fechaBaja: this.darDeBaja ? this.clienteLocal.fechaBaja : null
       };
       this.$emit("actualizar-cliente", clienteParaEnviar);
     },
@@ -800,12 +644,119 @@ export default {
       if (passInput) {
         passInput.type = this.showPassword ? 'text' : 'password';
       }
+    },
+    async confirmarBajaCliente() {
+      try {
+        const { value: fechaBaja, isConfirmed } = await this.$swal.fire({
+          title: '¿Dar de baja al cliente?',
+          html: `
+            <div style="text-align: left; margin-top: 20px;">
+              <div style="background: #fef7f7; border: 1px solid #f5d5d5; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #b56767; font-weight: 500; margin-bottom: 8px;">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <span>Acción de baja de cliente</span>
+                </div>
+                <p style="margin: 0; color: #8b4545; font-size: 14px;">Esta acción marcará al cliente como dado de baja en el sistema.</p>
+              </div>
+              <label for="swal-fecha-baja" style="display: block; font-weight: 500; color: #374151; margin-bottom: 8px;">
+                <i class="fas fa-calendar-alt" style="margin-right: 8px; color: #b56767;"></i>
+                Fecha de baja *
+              </label>
+              <input 
+                type="date" 
+                id="swal-fecha-baja" 
+                class="swal2-input" 
+                style="margin: 0; border: 2px solid #f5b2b2; border-radius: 6px; color: #8b4545;" 
+                required
+              />
+            </div>
+          `,
+          icon: 'warning',
+          iconColor: '#b56767',
+          showCancelButton: true,
+          confirmButtonText: '<i class="fas fa-user-times"></i> Confirmar Baja',
+          cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+          confirmButtonColor: '#f5b2b2',
+          cancelButtonColor: '#6b7280',
+          focusCancel: false,
+          customClass: {
+            popup: 'swal-baja-cliente'
+          },
+          preConfirm: () => {
+            const fechaBaja = document.getElementById('swal-fecha-baja').value;
+            if (!fechaBaja) {
+              this.$swal.showValidationMessage('Por favor, seleccione una fecha de baja');
+              return false;
+            }
+            return fechaBaja;
+          }
+        });
+
+        if (isConfirmed && fechaBaja) {
+          this.clienteLocal.fechaBaja = fechaBaja;
+          const clienteParaEnviar = {
+            ...this.clienteLocal,
+            nombreComercial: this.clienteLocal.grupoEmpresarial,
+            fechaBaja: fechaBaja
+          };
+          
+          this.$emit("actualizar-cliente", clienteParaEnviar);
+        }
+      } catch (error) {
+        console.error('Error en confirmación de baja:', error);
+      }
+    },
+    async confirmarReactivarCliente() {
+      try {
+        const { isConfirmed } = await this.$swal.fire({
+          title: '¿Reactivar cliente?',
+          html: `
+            <div style="text-align: left; margin-top: 20px;">
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #16a34a; font-weight: 500; margin-bottom: 8px;">
+                  <i class="fas fa-user-check"></i>
+                  <span>Reactivación de cliente</span>
+                </div>
+                <p style="margin: 0; color: #15803d; font-size: 14px;">Esta acción reactivará al cliente en el sistema, eliminando la fecha de baja.</p>
+              </div>
+            </div>
+          `,
+          icon: 'success',
+          iconColor: '#16a34a',
+          showCancelButton: true,
+          confirmButtonText: '<i class="fas fa-user-check"></i> Confirmar Reactivación',
+          cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+          confirmButtonColor: '#16a34a',
+          cancelButtonColor: '#6b7280',
+          focusCancel: false,
+          customClass: {
+            popup: 'swal-reactivar-cliente'
+          }
+        });
+
+        if (isConfirmed) {
+          this.clienteLocal.fechaBaja = null;
+          const clienteParaEnviar = {
+            ...this.clienteLocal,
+            nombreComercial: this.clienteLocal.grupoEmpresarial,
+            fechaBaja: null
+          };
+          
+          this.$emit("actualizar-cliente", clienteParaEnviar);
+        }
+      } catch (error) {
+        console.error('Error en confirmación de reactivación:', error);
+      }
+    },
+    formatFecha(fecha) {
+      if (!fecha) return '';
+      const fechaObj = new Date(fecha);
+      return fechaObj.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
     }
-  },
-  mounted() {
-    console.log('CreaActualizaClienteComponent mounted');
-    console.log('appMonitorizacion props:', this.appMonitorizacion);
-    console.log('integracionSistemasFV props:', this.integracionSistemasFV);
   },
 };
 </script>
@@ -1447,5 +1398,101 @@ export default {
   .services-checkboxes {
     grid-template-columns: 1fr;
   }
+}
+
+/* Estilo para el botón de baja rojo pastel */
+.btn-danger {
+  background-color: #f5b2b2;
+  color: black;
+  border: 1px solid #f5b2b2;
+  font-weight: 600;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #f19999;
+  border-color: #f19999;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(245, 178, 178, 0.4);
+  color: black;
+}
+
+.btn-danger:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(245, 178, 178, 0.3);
+}
+
+/* Estilo para el botón de reactivación verde */
+.btn-success {
+  background-color: #86efac;
+  color: black;
+  border: 1px solid #86efac;
+  font-weight: 600;
+}
+
+.btn-success:hover:not(:disabled) {
+  background-color: #4ade80;
+  border-color: #4ade80;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(134, 239, 172, 0.4);
+  color: black;
+}
+
+.btn-success:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(134, 239, 172, 0.3);
+}
+
+/* Estilos para mensajes de estado */
+.status-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.3rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+}
+
+.status-inactive {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+.status-inactive i {
+  color: #dc2626;
+}
+
+/* Estilos personalizados para SweetAlert de baja */
+:global(.swal-baja-cliente .swal2-popup) {
+  border-radius: 12px;
+  padding: 20px;
+}
+
+:global(.swal-baja-cliente .swal2-title) {
+  color: #b56767;
+  font-weight: 600;
+}
+
+:global(.swal-baja-cliente .swal2-icon.swal2-warning) {
+  border-color: #f5b2b2;
+  color: #b56767;
+}
+
+/* Estilos personalizados para SweetAlert de reactivación */
+:global(.swal-reactivar-cliente .swal2-popup) {
+  border-radius: 12px;
+  padding: 20px;
+}
+
+:global(.swal-reactivar-cliente .swal2-title) {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+:global(.swal-reactivar-cliente .swal2-icon.swal2-success) {
+  border-color: #86efac;
+  color: #16a34a;
 }
 </style>

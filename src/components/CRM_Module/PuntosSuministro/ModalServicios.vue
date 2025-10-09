@@ -112,6 +112,9 @@
                       <button @click="gestionarPagosServicio(servicio)" class="btn-icon btn-payment" title="Gestionar Pagos">
                         <i class="fas fa-euro-sign"></i>
                       </button>
+                      <button @click="eliminarServicio(servicio)" class="btn-icon btn-delete" title="Eliminar servicio" v-if="nivelAcceso === 1">
+                        <i class="fas fa-trash"></i>
+                      </button>
                     </td>
                   </tr>
                 </tbody>
@@ -327,6 +330,22 @@
                     />
                     <span class="euro-inline">€</span>
                   </div>
+                </div>
+
+                <div class="form-group-modern importe-euro-group">
+                  <label>Importe Pagado</label>
+                  <div class="input-euro-inline">
+                    <input
+                      type="number"
+                      :value="totalPagadoFormulario"
+                      class="form-control-modern importe-pagado-readonly"
+                      step="0.01"
+                      min="0"
+                      readonly
+                    />
+                    <span class="euro-inline">€</span>
+                  </div>
+                  <small class="field-help">Se actualiza automáticamente según las cuotas pagadas</small>
                 </div>
               </div>
 
@@ -631,6 +650,7 @@ export default {
       puntosSuministro: [],
       comercializadorasList: [],
       modalidadesPago: [],
+      nivelAcceso: null, // Nivel de acceso del usuario
       cuotas: [],
       pagosExistentes: null, // Para preservar los datos de pagos existentes
       modalidadDebounceTimer: null, // Timer para debounce de validaciones
@@ -638,6 +658,13 @@ export default {
   },
 
   methods: {
+    // Helper para obtener el CUPS correcto del punto de suministro
+    obtenerCupsDelPuntoSuministro() {
+      const cupsluz = this.puntoSuministroData?.cupsluz?.trim() || "";
+      const cupsgas = this.puntoSuministroData?.cupsgas?.trim() || "";
+      return cupsluz || cupsgas || "";
+    },
+
     formatDate(date) {
       if (!date) return '';
       return new Date(date).toLocaleDateString('es-ES');
@@ -748,9 +775,9 @@ export default {
         this.nuevoServicio = { 
           idCliente: servicioCompleto.idCliente,
           idPuntoSuministro: servicioCompleto.idPuntoSuministro,
-          cups: servicioCompleto.cups || this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "",
-          fechaInicioServicio: this.formatDate(servicioCompleto.fechaInicioServicio),
-          fechaFinServicio: this.formatDate(servicioCompleto.fechaFinServicio),
+          cups: this.obtenerCupsDelPuntoSuministro() || servicioCompleto.cups || "",
+          fechaInicioServicio: this.formatDateForInput(servicioCompleto.fechaInicioServicio),
+          fechaFinServicio: this.formatDateForInput(servicioCompleto.fechaFinServicio),
           descripcion: servicioCompleto.descripcion || "",
           idGestora: servicioCompleto.idGestora || 0,
           idProducto: servicioCompleto.idProducto || 0,
@@ -769,7 +796,7 @@ export default {
         
         // Asegurar que el campo CUPS esté siempre cargado
         if (!this.nuevoServicio.cups) {
-          this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
+          this.nuevoServicio.cups = this.obtenerCupsDelPuntoSuministro();
         }
       }
       
@@ -787,13 +814,14 @@ export default {
         id: undefined,
         idCliente: this.servicioVigente.idCliente || this.servicioVigente.cliente?.id || this.cliente?.id,
         idPuntoSuministro: this.servicioVigente.idPuntoSuministro || this.servicioVigente.puntoSuministro?.id || this.puntoSuministroData?.id,
+        cups: this.obtenerCupsDelPuntoSuministro() || this.servicioVigente.cups || "",
         fechaInicioServicio: this.formatDateForInput(this.servicioVigente.fechaInicioServicio) || '',
         fechaFinServicio: this.formatDateForInput(this.servicioVigente.fechaFinServicio) || '',
       };
       
       // Asegurar que el campo CUPS esté siempre cargado para renovación
       if (!this.nuevoServicio.cups) {
-        this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
+        this.nuevoServicio.cups = this.obtenerCupsDelPuntoSuministro();
       }
     },
 
@@ -812,7 +840,7 @@ export default {
           id: servicioCompleto.id,
           idCliente: servicioCompleto.idCliente || servicio.cliente?.id || this.cliente?.id,
           idPuntoSuministro: servicioCompleto.idPuntoSuministro || servicio.puntoSuministro?.id || this.puntoSuministroData?.id,
-          cups: servicioCompleto.cups || this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "",
+          cups: this.obtenerCupsDelPuntoSuministro() || servicioCompleto.cups || "",
           fechaInicioServicio: this.formatDateForInput(servicioCompleto.fechaInicioServicio),
           fechaFinServicio: this.formatDateForInput(servicioCompleto.fechaFinServicio),
           descripcion: servicioCompleto.descripcion || "",
@@ -836,7 +864,7 @@ export default {
         
         // Asegurar que el campo CUPS esté siempre cargado
         if (!this.nuevoServicio.cups) {
-          this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
+          this.nuevoServicio.cups = this.obtenerCupsDelPuntoSuministro();
         }
         
         this.nuevoServicio.fechaInicioServicio = this.formatDateForInput(servicio.fechaInicioServicio);
@@ -857,13 +885,14 @@ export default {
         id: undefined,
         idCliente: servicio.idCliente || servicio.cliente?.id || this.cliente?.id,
         idPuntoSuministro: servicio.idPuntoSuministro || servicio.puntoSuministro?.id || this.puntoSuministroData?.id,
+        cups: this.obtenerCupsDelPuntoSuministro() || servicio.cups || "",
         fechaInicioServicio: this.formatDateForInput(servicio.fechaInicioServicio) || '',
         fechaFinServicio: this.formatDateForInput(servicio.fechaFinServicio) || '',
       };
       
       // Asegurar que el campo CUPS esté siempre cargado para renovación
       if (!this.nuevoServicio.cups) {
-        this.nuevoServicio.cups = this.puntoSuministroData?.cupsluz || this.puntoSuministroData?.cupsgas || "";
+        this.nuevoServicio.cups = this.obtenerCupsDelPuntoSuministro();
       }
       
     },
@@ -1282,7 +1311,11 @@ export default {
     },
 
     verDetalleServicio(servicio) {
-      this.servicioDetalle = servicio;
+      // Crear una copia del servicio y asegurar que tenga el CUPS correcto
+      this.servicioDetalle = {
+        ...servicio,
+        cups: this.obtenerCupsDelPuntoSuministro() || servicio.cups || ""
+      };
       this.mostrarModalDetalleServicio = true;
     },
 
@@ -1298,9 +1331,7 @@ export default {
         });
         return;
       }
-      
-      console.log(`🎯 Iniciando gestión de pagos para servicio:`, servicio.id);
-      
+    
       // Asignar el servicio actual ANTES de cargar las cuotas
       this.servicioGestionPagos = { ...servicio }; // Crear una copia para evitar referencias
       this.mostrarModalGestionPagos = true;
@@ -1322,11 +1353,8 @@ export default {
     },
 
     inicializarNuevoServicio() {
-      // Obtener el CUPS del punto de suministro
-      const cupsValue = this.puntoSuministroData?.cupsluz || 
-                       this.puntoSuministroData?.cupsgas || 
-                       this.puntoSuministroActivo?.cupsluz || 
-                       this.puntoSuministroActivo?.cupsgas || "";
+      // Obtener el CUPS del punto de suministro usando el helper
+      const cupsValue = this.obtenerCupsDelPuntoSuministro();
       
       this.nuevoServicio = {
         idCliente: this.cliente?.id || "",
@@ -1361,7 +1389,6 @@ export default {
     },
 
     cerrarModalGestionPagos() {
-      console.log('🔒 Cerrando modal de gestión de pagos');
       
       this.mostrarModalGestionPagos = false;
       this.servicioGestionPagos = null;
@@ -1384,6 +1411,121 @@ export default {
       } catch (error) {
         console.error('Error al cargar comercializadoras:', error);
         this.comercializadorasList = [];
+      }
+    },
+
+    // Eliminar servicio con confirmación
+    async eliminarServicio(servicio) {
+      try {
+        // Verificar si el servicio tiene pagos asociados
+        let tienePagos = false;
+        try {
+          const responsePagos = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicio.id}`);
+          tienePagos = responsePagos.data && responsePagos.data.id;
+        } catch (error) {
+          // Si no hay pagos, continuar con la eliminación normal
+        }
+
+        // Crear mensaje de confirmación apropiado
+        let mensajeConfirmacion = `¿Deseas eliminar el servicio?`;
+        if (tienePagos) {
+          mensajeConfirmacion += '\n\n⚠️ Este servicio tiene pagos asociados que también se eliminarán.';
+        }
+
+        const result = await this.$swal.fire({
+          title: '¿Estás seguro?',
+          text: mensajeConfirmacion,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Sí, eliminar',
+          cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
+          // Mostrar loading
+          this.$swal.fire({
+            title: 'Eliminando...',
+            text: 'Por favor, espere mientras se elimina el servicio y sus datos asociados.',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+              this.$swal.showLoading();
+            }
+          });
+
+          try {
+            // Si tiene pagos, eliminarlos primero
+            if (tienePagos) {
+              await axios.delete(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicio.id}`);
+            }
+
+            // Luego eliminar el servicio
+            await axios.delete(`${process.env.VUE_APP_API_URL}/api/servicios/${servicio.id}`);
+            
+            // Mostrar mensaje de éxito
+            await this.$swal.fire({
+              title: 'Eliminado',
+              text: 'El servicio y sus datos asociados han sido eliminados correctamente.',
+              icon: 'success',
+              confirmButtonColor: 'rgba(252, 215, 0)',
+              confirmButtonText: 'Aceptar',
+              timer: 2000,
+              timerProgressBar: true
+            });
+
+            // Emitir evento para recargar servicios
+            this.$emit("recargar-servicios");
+          } catch (deleteError) {
+            console.error('Error durante la eliminación:', deleteError);
+            
+            // Si el error es por restricción de clave foránea, intentar eliminación en cascada
+            if (deleteError.response?.status === 500 && 
+                deleteError.response?.data?.message?.includes('foreign key constraint')) {
+              
+              // Intentar eliminación forzada desde el backend
+              try {
+                await axios.delete(`${process.env.VUE_APP_API_URL}/api/servicios/${servicio.id}/force`);
+                
+                await this.$swal.fire({
+                  title: 'Eliminado',
+                  text: 'El servicio ha sido eliminado correctamente.',
+                  icon: 'success',
+                  confirmButtonColor: 'rgba(252, 215, 0)',
+                  confirmButtonText: 'Aceptar',
+                  timer: 2000,
+                  timerProgressBar: true
+                });
+
+                this.$emit("recargar-servicios");
+                return;
+              } catch (forceDeleteError) {
+                console.error('Error en eliminación forzada:', forceDeleteError);
+              }
+            }
+            
+            throw deleteError;
+          }
+        }
+      } catch (error) {
+        console.error('Error al eliminar servicio:', error);
+        
+        let mensajeError = 'No se pudo eliminar el servicio. ';
+        if (error.response?.status === 500 && 
+            error.response?.data?.message?.includes('foreign key constraint')) {
+          mensajeError += 'El servicio tiene datos asociados que impiden su eliminación.';
+        } else {
+          mensajeError += 'Por favor, inténtalo de nuevo.';
+        }
+        
+        this.$swal.fire({
+          title: 'Error',
+          text: mensajeError,
+          icon: 'error',
+          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonText: 'Aceptar'
+        });
       }
     },
 
@@ -1422,17 +1564,15 @@ export default {
           this.cuotas = [];
           return;
         }
-        
-        console.log(`🔄 Cargando cuotas para servicio: ${servicioId}`);
+      
         
         // Intentar cargar desde el endpoint de cuotas primero
         try {
           const resp = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicioId}/cuotas`);
           this.cuotas = resp.data.map(c => ({ ...c, editado: false }));
-          console.log(`✅ Cuotas cargadas correctamente desde endpoint de cuotas para servicio ${servicioId}:`, this.cuotas.length);
           return;
         } catch (cuotasError) {
-          console.log('Endpoint de cuotas no disponible, intentando con datos de pagos');
+          console.error('Error al cargar cuotas:', cuotasError);
         }
         
         // Si no hay endpoint de cuotas, cargar desde servicios-pagos y convertir
@@ -1447,14 +1587,12 @@ export default {
         }
         
         if (pagos) {
-          console.log(`📊 Procesando datos de pagos para servicio ${servicioId}`);
           
           // Convertir los datos de pagos a formato de cuotas
           this.cuotas = [];
           
           // Obtener el número real de cuotas de la modalidad actual
           const numeroCuotasReales = this.obtenerNumeroCuotasDesdePagos(pagos);
-          console.log(`🔢 Número de cuotas de la modalidad: ${numeroCuotasReales}`);
           
           const cuotasData = [
             { num: 1, fecha: 'primerPagoFecha', importe: 'primerPagoImporte', pagado: 'primerPagoPagado' },
@@ -1495,13 +1633,10 @@ export default {
             }
           }
           
-          console.log(`✅ Se procesaron ${this.cuotas.length} cuotas para servicio ${servicioId}`);
         } else {
-          console.log(`❌ No se encontraron datos de pagos para servicio ${servicioId}`);
           this.cuotas = [];
         }
       } catch (e) {
-        console.error(`❌ Error al cargar cuotas para gestión del servicio ${servicioId}:`, e);
         this.cuotas = [];
       }
     },
@@ -1532,7 +1667,7 @@ export default {
           // El refresco se hará cuando se cierre el modal de gestión de pagos
           return;
         } catch (cuotaError) {
-          console.log('Endpoint de cuota individual no disponible, actualizando datos de pagos completos');
+          // No hacer nada
         }
         
         // Si no funciona el endpoint individual, actualizar todo el objeto de pagos
@@ -1939,7 +2074,7 @@ export default {
           const cuotasPagadas = this.contarCuotasPagadas();
           if (cuotasPagadas > 0) {
             if (infoNueva.cuotas < infoActual.cuotas && cuotasPagadas > infoNueva.cuotas) {
-              console.log(`ADVERTENCIA: Se perderán datos de ${cuotasPagadas - infoNueva.cuotas} cuotas pagadas`);
+              // No hacer nada
             }
           }
         }
@@ -1978,6 +2113,36 @@ export default {
       return pagos.pagoPlazos.numeroCuotas || 12;
     },
 
+    // Método para calcular el importe pagado desde los datos de pagos existentes
+    calcularImportePagadoDesdePagos(pagos) {
+      if (!pagos) return 0;
+      
+      const camposPagado = [
+        'primerPagoPagado', 'segundoPagoPagado', 'tercerPagoPagado', 'cuartoPagoPagado',
+        'quintoPagoPagado', 'sextoPagoPagado', 'septimoPagoPagado', 'octavoPagoPagado',
+        'novenoPagoPagado', 'decimoPagoPagado', 'decimoprimerPagoPagado', 'decimosegundoPagoPagado'
+      ];
+      
+      const camposImporte = [
+        'primerPagoImporte', 'segundoPagoImporte', 'tercerPagoImporte', 'cuartoPagoImporte',
+        'quintoPagoImporte', 'sextoPagoImporte', 'septimoPagoImporte', 'octavoPagoImporte',
+        'novenoPagoImporte', 'decimoPagoImporte', 'decimoprimerPagoImporte', 'decimosegundoPagoImporte'
+      ];
+      
+      let totalPagado = 0;
+      const numeroCuotas = this.obtenerNumeroCuotasDesdePagos(pagos);
+      
+      // Solo contar hasta el número real de cuotas de la modalidad
+      for (let i = 0; i < numeroCuotas && i < camposPagado.length; i++) {
+        if (pagos[camposPagado[i]]) {
+          totalPagado += parseFloat(pagos[camposImporte[i]]) || 0;
+        }
+      }
+      
+      // Redondear a 2 decimales
+      return Math.round(totalPagado * 100) / 100;
+    },
+
     // Método para validar cambios de modalidad en tiempo real (mejorado)
     async validarCambioModalidadTiempoReal() {
       if (!this.modoEdicion || !this.pagosExistentes || !this.nuevoServicio.idPagoPlazos) return;
@@ -2005,9 +2170,9 @@ export default {
             cuotasQueSePerderan
           });
         } else if (infoNueva.cuotas > infoActual.cuotas) {
-          console.log(`Aumento de cuotas: se preservarán todas las ${cuotasPagadas} cuotas pagadas`);
+          // No hacer nada
         } else {
-          console.log(`Reducción de cuotas sin pérdidas: se preservarán todas las ${cuotasPagadas} cuotas pagadas`);
+          // No hacer nada
         }
       }
     },
@@ -2112,7 +2277,24 @@ export default {
     },
 
     totalPagado() {
-      return this.cuotas.filter(c => c.pagado).reduce((acc, c) => acc + (parseFloat(c.importePago) || 0), 0);
+      const total = this.cuotas.filter(c => c.pagado).reduce((acc, c) => acc + (parseFloat(c.importePago) || 0), 0);
+      return Math.round(total * 100) / 100;
+    },
+
+    totalPagadoFormulario() {
+      let importePagado = 0;
+      
+      // Si estamos en modo edición y hay datos de pagos existentes, calcular desde ahí
+      if (this.modoEdicion && this.pagosExistentes) {
+        importePagado = this.calcularImportePagadoDesdePagos(this.pagosExistentes);
+      }
+      // Si hay cuotas cargadas, usar el método existente
+      else if (this.cuotas && this.cuotas.length > 0) {
+        importePagado = this.totalPagado;
+      }
+      
+      // Redondear a 2 decimales
+      return Math.round(importePagado * 100) / 100;
     },
 
     calcularImporteFinal() {
@@ -2217,6 +2399,12 @@ export default {
 
   async mounted() {
     this.cargandoDatos = false;
+    
+    // Obtener el nivel de acceso del usuario
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    if (usuario) {
+      this.nivelAcceso = usuario.nivelAcceso;
+    }
     
     // Cargar datos básicos independientemente de si el modal está visible
     try {
@@ -2452,6 +2640,15 @@ export default {
   background: rgba(25, 135, 84, 0.1);
   border-color: #198754;
   color: #198754;
+}
+
+.btn-icon.btn-delete {
+  color: #dc3545; /* Rojo para eliminar */
+}
+.btn-icon.btn-delete:hover {
+  background-color: rgba(220,53,69,0.1);
+  border-color: #dc3545;
+  color: #dc3545;
 }
 
 /* Tooltips mejorados */
@@ -3357,6 +3554,15 @@ export default {
   background-color: #f8f9fa !important;
   border-color: #e9ecef !important;
   color: #495057 !important;
+  cursor: not-allowed !important;
+  font-weight: 600 !important;
+}
+
+/* Estilos para campo de importe pagado readonly */
+.importe-pagado-readonly {
+  background-color: #e8f5e8 !important;
+  border-color: #c3e6c3 !important;
+  color: #2d5a2d !important;
   cursor: not-allowed !important;
   font-weight: 600 !important;
 }

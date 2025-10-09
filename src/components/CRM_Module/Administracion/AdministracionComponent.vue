@@ -1111,7 +1111,7 @@ export default {
 .cell-content {
   display: block;
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
