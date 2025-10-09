@@ -617,7 +617,7 @@
               <div class="info-row" v-if="contratoDetalle?.passwordFO">
                 <span class="info-label">Contraseña Facturación Online:</span>
                 <span class="info-value">
-                  <i class="fas fa-lock"></i> ••••••••
+                  <i class="fas fa-lock"></i> {{ contratoDetalle?.passwordFO }}
                 </span>
               </div>
             </div>
