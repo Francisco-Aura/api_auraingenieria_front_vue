@@ -1,6 +1,8 @@
 .DS_Store
 node_modules
 /dist
+#No subimos cambios de public, para diferenciar en la pestaña el entorno donde estamos
+/public
 
 
 # local env files

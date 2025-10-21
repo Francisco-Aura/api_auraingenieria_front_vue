@@ -51,7 +51,7 @@
             <i class="fas fa-sync-alt"></i>
             <span>Actualizar</span>
           </button>
-          <button class="btn btn-export btn-excel" @click="exportarExcel" title="Exportar a Excel">
+          <button class="btn btn-export btn-excel" v-if="nivelAcceso == 1" @click="exportarExcel" title="Exportar a Excel">
             <i class="fas fa-file-excel"></i>
             <span>Excel</span>
           </button>
@@ -431,8 +431,9 @@ export default {
       isCreating: false,            // Flag para indicar si el ModalActualizarPuntoSuministro está en modo creación
       mostrarModalContratos: false, // Control de visibilidad del modal de contratos
       mostrarClientesDadosDeBaja: false, // Control para mostrar/ocultar clientes dados de baja
+      nivelAcceso: null,            // Nivel de acceso del usuario
     };
-  },
+  },  
   computed: {
     // Lista de clientes filtrados según el texto de búsqueda
     filteredClientes() {
@@ -938,6 +939,13 @@ export default {
         // Cuando el formulario se cierra, asegurarnos de que nuevoCliente tenga un valor válido
         this.nuevoCliente = this.resetFormularioCliente();
       }
+    }
+  },
+  // Cargar nivel de acceso al crear el componente
+  created() {
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    if (usuario) {
+      this.nivelAcceso = usuario.nivelAcceso;
     }
   }
 };
