@@ -44,7 +44,7 @@
             <i class="fas fa-sync-alt"></i>
             <span>Actualizar</span>
           </button>
-          <button class="btn btn-export btn-excel" @click="exportarExcel" title="Exportar a Excel">
+          <button class="btn btn-export btn-excel" v-if="nivelAcceso == 1" @click="exportarExcel" title="Exportar a Excel">
             <i class="fas fa-file-excel"></i>
             <span>Excel</span>
           </button>
@@ -681,14 +681,14 @@ export default {
     }
   },
 
-  // Se ejecuta cuando el componente es creado para cargar datos iniciales
-  created() {
-    this.fetchPuntosSuministro();
-    const usuario = JSON.parse(localStorage.getItem('usuario'));
-    if (usuario) {
-      this.nivelAcceso = usuario.nivelAcceso;
-    }
-  },
+    // Se ejecuta cuando el componente es creado para cargar datos iniciales
+    created() {
+      this.fetchPuntosSuministro();
+      const usuario = JSON.parse(localStorage.getItem('usuario'));
+        if (usuario) {
+          this.nivelAcceso = usuario.nivelAcceso;
+        }
+    },
 
   methods: {
     // Carga todos los puntos de suministro desde la API
