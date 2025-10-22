@@ -12,7 +12,7 @@ deploy_frontend_PRE:
   only:
     - release
   variables:
-    VUE_APP_API_URL: "http://185.93.81.224:8986"
+    VUE_APP_API_URL: "http://5.34.148.141:8986"
   script:
     - set -eo pipefail
     - set -x
@@ -30,7 +30,7 @@ deploy_frontend_PRE:
     - echo "Construyendo la aplicación Vue para PRE..."
     - npm run build
     - echo "Verificando URL compilada en el bundle..."
-    - grep -r "185.93.81.224" dist/ || echo "⚠️ ADVERTENCIA - URL de PRE no encontrada en dist/"
+    - grep -r "5.34.148.141" dist/ || echo "⚠️ ADVERTENCIA - URL de PRE no encontrada en dist/"
     - echo "--- Contenido del directorio actual ---"
     - ls -la .
     - echo "--- Contenido de dist/ ---"
@@ -43,18 +43,18 @@ deploy_frontend_PRE:
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY_PRE" | ssh-add -
     - mkdir -p ~/.ssh
-    - ssh-keyscan 185.93.81.224 >> ~/.ssh/known_hosts
+    - ssh-keyscan 5.34.148.141 >> ~/.ssh/known_hosts
     - chmod 600 ~/.ssh/known_hosts
     - echo "Instalando rsync en el runner..."
     - apt-get install -y rsync
     - export FRONTEND_FINAL_DIR="/home/babenza/deploy/frontend"
-    - ssh -o StrictHostKeyChecking=no babenza@185.93.81.224 "mkdir -p ${FRONTEND_FINAL_DIR} && rm -rf ${FRONTEND_FINAL_DIR}/*"
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.148.141 "mkdir -p ${FRONTEND_FINAL_DIR} && rm -rf ${FRONTEND_FINAL_DIR}/*"
     - echo "Copiando archivos frontend a PRE..."
-    - rsync -avzh --delete --progress -e "ssh -o StrictHostKeyChecking=no" dist/ babenza@185.93.81.224:"${FRONTEND_FINAL_DIR}/"
+    - rsync -avzh --delete --progress -e "ssh -o StrictHostKeyChecking=no" dist/ babenza@5.34.148.141:"${FRONTEND_FINAL_DIR}/"
     - echo "Verificando archivos desplegados..."
-    - ssh -o StrictHostKeyChecking=no babenza@185.93.81.224 "ls -la ${FRONTEND_FINAL_DIR}/ && du -sh ${FRONTEND_FINAL_DIR}/"
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.148.141 "ls -la ${FRONTEND_FINAL_DIR}/ && du -sh ${FRONTEND_FINAL_DIR}/"
     - echo "Ejecutando script post-despliegue en PRE..."
-    - ssh -o StrictHostKeyChecking=no babenza@185.93.81.224 "bash /home/babenza/deploy_frontend.sh"
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.148.141 "bash /home/babenza/deploy_frontend.sh"
 
 # ============================
 # Despliegue FRONTEND en PRO
