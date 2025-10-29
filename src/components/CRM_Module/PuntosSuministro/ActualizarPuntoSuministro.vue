@@ -262,7 +262,7 @@
                   <label for="passMonitorizacion">Contraseña Monitorización</label>
                   <div class="input-with-icon">
                     <i class="fas fa-lock icon-prefix"></i>
-                    <input type="password" id="passMonitorizacion" v-model="puntoLocal.passMonitorizacion" :readonly="modoConsulta" />
+                    <input type="text" id="passMonitorizacion" v-model="puntoLocal.passMonitorizacion" :readonly="modoConsulta" />
                   </div>
                 </div>
               </div>

@@ -391,10 +391,7 @@
                       <label for="passTelemedida">Contraseña</label>
                       <div class="input-with-icon-compact">
                         <i class="fas fa-key icon-prefix"></i>
-                        <input type="password" id="passTelemedida" v-model="clienteLocal.passTelemedida" class="form-control-compact" />
-                        <button type="button" class="icon-suffix toggle-password" @click="togglePasswordVisibility">
-                          <i class="fas" :class="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
-                        </button>
+                        <input type="text" id="passTelemedida" v-model="clienteLocal.passTelemedida" class="form-control-compact" />
                       </div>
                     </div>
                   </div>
@@ -636,14 +633,6 @@ export default {
         fechaBaja: this.darDeBaja ? this.clienteLocal.fechaBaja : null
       };
       this.$emit("actualizar-cliente", clienteParaEnviar);
-    },
-    togglePasswordVisibility() {
-      this.showPassword = !this.showPassword;
-      const passInput = document.getElementById('passTelemedida');
-      
-      if (passInput) {
-        passInput.type = this.showPassword ? 'text' : 'password';
-      }
     },
     async confirmarBajaCliente() {
       try {
@@ -1027,10 +1016,6 @@ export default {
   color: #aaa;
   padding: 0;
   font-size: 0.8rem;
-}
-
-.toggle-password:hover {
-  color: rgba(252, 215, 0);
 }
 
 /* CORRECCIÓN: Optimizar tamaños de controles */
