@@ -30,7 +30,7 @@
           <div class="client-banner">
             <div class="client-info">
               <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Cargando...' }}</h4>
-              <span>DNI/CIF: {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'Cargando...' }}</span>
+              <span>DNI/CIF: {{ dniClienteActual || 'Cargando...' }}</span>
             </div>
           </div>
 
@@ -137,7 +137,7 @@
           <div class="client-banner">
             <div class="client-info">
               <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Cargando...' }}</h4>
-              <span>DNI/CIF: {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'Cargando...' }}</span>
+              <span>DNI/CIF: {{ dniClienteActual || 'Cargando...' }}</span>
             </div>
           </div>
 
@@ -548,7 +548,7 @@
               </div>
               <div class="info-row">
                 <span class="info-label">DNI/CIF:</span>
-                <span class="info-value">{{ clienteDetalle?.dniAutorizado?.trim() || clienteDetalle?.cif?.trim() || 'No disponible' }}</span>
+                <span class="info-value">{{ clienteDetalle?.dni?.trim() || clienteDetalle?.cif?.trim() || 'No disponible' }}</span>
               </div>
             </div>
             <div class="contrato-info">
@@ -1089,8 +1089,8 @@ export default {
           formData.append('contrato', JSON.stringify(this.nuevoContrato));
           formData.append('archivo', this.selectedFile);
           
-          if (this.cliente.dni) {
-            formData.append('dniCliente', this.cliente.dni);
+          if (this.dniClienteActual) {
+            formData.append('dniCliente', this.dniClienteActual);
           }
 
           if (this.modoEdicion && this.contratoEditandoId) {
@@ -1277,7 +1277,7 @@ export default {
       doc.text("Detalle del Contrato", 14, 18);
       doc.setFontSize(12);
       doc.text(`Cliente: ${this.cliente?.nombre || ''}`, 14, 30);
-      doc.text(`DNI: ${this.cliente?.dni || ''}`, 14, 38);
+      doc.text(`DNI: ${this.dniClienteActual || ''}`, 14, 38);
       doc.text(`Nº Contrato: ${contrato.contrato || ''}`, 14, 46);
       doc.text(`Vigencia: ${this.formatDate(contrato.fechaInicio)} - ${this.formatDate(contrato.fechaFin)}`, 14, 54);
       doc.autoTable({
@@ -1377,6 +1377,19 @@ export default {
   },
 
   computed: {
+    // Obtener el DNI/CIF del cliente de forma consistente
+    // Siempre prioriza el campo DNI (que es el CIF de BBDD)
+    dniClienteActual() {
+      // Prioridad: dni > cif (ignorar dniAutorizado)
+      if (this.cliente?.dni?.trim()) {
+        return this.cliente.dni.trim();
+      }
+      if (this.cliente?.cif?.trim()) {
+        return this.cliente.cif.trim();
+      }
+      return '';
+    },
+
     // Computed para manejar el estado del checkbox de denuncia
     denunciaRealizada: {
       get() {
