@@ -140,7 +140,7 @@
           <p>Cargando tareas...</p>
         </div>
 
-        <div v-else-if="tareasFiltradas.length === 0" class="empty-state">
+  <div v-else-if="tareasFiltradas.length === 0 && vista === 'tabla'" class="empty-state">
           <div class="empty-icon">
             <i class="fas fa-clipboard-list"></i>
           </div>
