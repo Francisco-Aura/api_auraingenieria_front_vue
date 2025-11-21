@@ -917,12 +917,20 @@ export default {
       this.selectedFile = null;
     },
 
-    modificarContratoActual() {
+    async modificarContratoActual() {
       if (!this.contratoVigente) return;
+      
+      // ASEGURAR que las comercializadoras estén cargadas
+      await this.asegurarComercializadorasCargadas();
+      
       this.mostrandoFormulario = true;
       this.modoEdicion = true;
       this.modoRenovacion = false;
       this.contratoEditandoId = this.contratoVigente.id;
+      
+      // Usar $nextTick para asegurar que el DOM está listo
+      await this.$nextTick();
+      
       this.nuevoContrato = { ...this.contratoVigente };
       // Asegurar que los campos de facturación online estén presentes y preserven valores nulos/vacíos
       this.nuevoContrato.userFO = this.contratoVigente.userFO !== undefined ? this.contratoVigente.userFO : "";
@@ -936,15 +944,29 @@ export default {
       for (let i = 1; i <= 6; i++) {
         this.nuevoContrato['pot' + i] = this.contratoVigente['potencia' + i] || 0;
       }
+      
+      // FORZAR la asignación de comercializadoras después de $nextTick
+      await this.$nextTick();
+      this.nuevoContrato.idComercializadoraActual = this.contratoVigente.idComercializadoraActual || "";
+      this.nuevoContrato.idComercializadoraAnterior = this.contratoVigente.idComercializadoraAnterior || "";
+      
       this.selectedFile = null;
     },
 
-    renovarContratoActual() {
+    async renovarContratoActual() {
       if (!this.contratoVigente) return;
+      
+      // ASEGURAR que las comercializadoras estén cargadas
+      await this.asegurarComercializadorasCargadas();
+      
       this.mostrandoFormulario = true;
       this.modoEdicion = false;
       this.modoRenovacion = true;
       this.contratoEditandoId = null;
+      
+      // Usar $nextTick para asegurar que el DOM está listo
+      await this.$nextTick();
+      
       // Precargar TODOS los valores incluyendo las fechas
       this.nuevoContrato = {
         ...this.contratoVigente,
@@ -967,20 +989,32 @@ export default {
       for (let i = 1; i <= 6; i++) {
         this.nuevoContrato['pot' + i] = this.contratoVigente['potencia' + i] || 0;
       }
+      
+      // FORZAR la asignación de comercializadoras después de $nextTick
+      await this.$nextTick();
+      this.nuevoContrato.idComercializadoraActual = this.contratoVigente.idComercializadoraActual || "";
+      this.nuevoContrato.idComercializadoraAnterior = this.contratoVigente.idComercializadoraAnterior || "";
+      
       this.selectedFile = null;
     },
 
-    editarContratoGenerico(contrato) {
+    async editarContratoGenerico(contrato) {
       console.log('Datos del contrato al editar:', {
         userFO: contrato.userFO,
         passwordFO: contrato.passwordFO,
         contrato: contrato
       });
       
+      // ASEGURAR que las comercializadoras estén cargadas
+      await this.asegurarComercializadorasCargadas();
+      
       this.mostrandoFormulario = true;
       this.modoEdicion = true;
       this.modoRenovacion = false;
       this.contratoEditandoId = contrato.id;
+      
+      // Usar $nextTick para asegurar que el DOM está listo
+      await this.$nextTick();
       
       // Hacer una copia profunda del contrato
       this.nuevoContrato = JSON.parse(JSON.stringify(contrato));
@@ -1016,14 +1050,25 @@ export default {
         this.nuevoContrato.fechaDenunciaContrato = this.formatDateForInput(contrato.fechaDenunciaContrato);
       }
       
+      // FORZAR la asignación de comercializadoras después de $nextTick
+      await this.$nextTick();
+      this.nuevoContrato.idComercializadoraActual = contrato.idComercializadoraActual || "";
+      this.nuevoContrato.idComercializadoraAnterior = contrato.idComercializadoraAnterior || "";
+      
       this.selectedFile = null;
     },
 
-    renovarContratoGenerico(contrato) {
+    async renovarContratoGenerico(contrato) {
+      // ASEGURAR que las comercializadoras estén cargadas
+      await this.asegurarComercializadorasCargadas();
+      
       this.mostrandoFormulario = true;
       this.modoEdicion = false;
       this.modoRenovacion = true;
       this.contratoEditandoId = null;
+      
+      // Usar $nextTick para asegurar que el DOM está listo
+      await this.$nextTick();
       
       // Precargar TODOS los valores incluyendo las fechas
       this.nuevoContrato = {
@@ -1048,6 +1093,11 @@ export default {
       for (let i = 1; i <= 6; i++) {
         this.nuevoContrato['pot' + i] = contrato['potencia' + i] || 0;
       }
+      
+      // FORZAR la asignación de comercializadoras después de $nextTick
+      await this.$nextTick();
+      this.nuevoContrato.idComercializadoraActual = contrato.idComercializadoraActual || "";
+      this.nuevoContrato.idComercializadoraAnterior = contrato.idComercializadoraAnterior || "";
       
       this.selectedFile = null;
     },
@@ -1314,10 +1364,34 @@ export default {
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`);
         this.comercializadorasList = response.data;
+        console.log('Comercializadoras cargadas:', this.comercializadorasList.length);
       } catch (error) {
         console.error('Error al cargar comercializadoras:', error);
         this.comercializadorasList = [];
       }
+    },
+
+    // Método auxiliar para asegurar que las comercializadoras estén cargadas
+    async asegurarComercializadorasCargadas() {
+      // Si ya están cargadas, no hacer nada
+      if (this.comercializadorasList && this.comercializadorasList.length > 0) {
+        console.log('Comercializadoras ya cargadas:', this.comercializadorasList.length);
+        return;
+      }
+      
+      // Si están en el prop, copiarlas al data interno
+      if (this.comercializadoras && this.comercializadoras.length > 0) {
+        this.comercializadorasList = [...this.comercializadoras];
+        console.log('Comercializadoras copiadas del prop:', this.comercializadorasList.length);
+        return;
+      }
+      
+      // Si no están ni cargadas ni en props, cargarlas
+      console.log('Cargando comercializadoras desde API...');
+      await this.cargarComercializadoras();
+      
+      // Esperar un tick adicional para asegurar reactividad
+      await this.$nextTick();
     },
 
     // Eliminar contrato con confirmación
@@ -1653,6 +1727,19 @@ export default {
           });
         }
       },
+      deep: true
+    },
+    
+    // Sincronizar comercializadoras del prop con el data interno
+    comercializadoras: {
+      handler(newVal) {
+        if (newVal && newVal.length > 0) {
+          // Actualizar la lista interna si el prop cambia
+          this.comercializadorasList = [...newVal];
+          console.log('Comercializadoras sincronizadas desde prop:', this.comercializadorasList.length);
+        }
+      },
+      immediate: true,
       deep: true
     }
   },
