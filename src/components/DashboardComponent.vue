@@ -103,8 +103,7 @@ export default {
         '/dashboard/clientes': 'Cartera de Clientes',
         '/dashboard/puntos-suministro': 'Puntos de Suministro',
         '/dashboard/informes': 'Informes',
-        '/dashboard/administracion': 'Administración',
-        '/dashboard/kanban': 'Tablero Kanban'
+        '/dashboard/administracion': 'Administración'
       }
     };
   },
@@ -139,7 +138,7 @@ export default {
       }
     }
   },
-  created() {
+  async created() {
     // Cargar nivel de acceso desde localStorage
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     if (usuario) {

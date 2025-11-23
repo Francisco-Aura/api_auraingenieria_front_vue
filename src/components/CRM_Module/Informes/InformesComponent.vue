@@ -203,8 +203,8 @@
 
 <script>
 import axios from 'axios';
-import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
+import ExcelJS from 'exceljs';
 
 export default {
   data() {
@@ -544,9 +544,9 @@ export default {
       this.columnFilters[column] = value;
     },
 
-    exportarExcel() {
+    async exportarExcel() {
       try {
-        // Usar los datos filtrados (incluyendo ordenamiento y filtros)
+                // Usar los datos filtrados (incluyendo ordenamiento y filtros)
         const data = this.filteredData.map(item => {
           const rowData = {};
           // Mapear las columnas según los encabezados actuales y formatear los nombres
@@ -573,17 +573,39 @@ export default {
         }
 
         // Crear un libro de trabajo y una hoja de cálculo
-        const ws = XLSX.utils.json_to_sheet(data);
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet(this.formatearTitulo(this.tipoSeleccionado));
 
-        // Opcional: Ajustar anchos de columna (aproximado)
-        const wscols = this.encabezados.map(() => ({ wch: 20 })); // Ancho por defecto de 20
-        ws['!cols'] = wscols;
+        // Obtener las columnas de los datos
+        const columnas = data.length > 0 ? Object.keys(data[0]) : [];
+        
+        // Configurar columnas con anchos
+        worksheet.columns = columnas.map(col => ({
+          header: col,
+          key: col,
+          width: 20
+        }));
 
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, this.formatearTitulo(this.tipoSeleccionado));
+        // Añadir datos
+        worksheet.addRows(data);
 
-        // Generar el archivo y descargarlo
-        XLSX.writeFile(wb, `${this.formatearTitulo(this.tipoSeleccionado)}.xlsx`);
+        // Estilizar encabezados
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Generar buffer y descargar
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${this.formatearTitulo(this.tipoSeleccionado)}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
 
       } catch (error) {
         console.error("Error al exportar a Excel:", error);

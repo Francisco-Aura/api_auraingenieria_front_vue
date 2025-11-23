@@ -384,7 +384,7 @@ import ModalContratos from './ModalContratos.vue';
 import ModalServicios from './ModalServicios.vue';
 import axios from "axios"; // Librería para hacer peticiones HTTP
 import Spinner from "@/components/SpinnerComponent.vue";
-import * as XLSX from 'xlsx/xlsx.mjs';
+import ExcelJS from 'exceljs';
 
 
 export default {
@@ -1462,7 +1462,7 @@ export default {
       }
     },
 
-    exportarExcel() {
+    async exportarExcel() {
       try {
         // Verificar si hay datos para exportar
         if (!this.filteredPuntosSuministro || this.filteredPuntosSuministro.length === 0) {
@@ -1482,32 +1482,46 @@ export default {
           'Estado': this.estaDadoDeBaja(punto) ? 'Dado de baja' : 'Activo'
         }));
 
-        // Crear la hoja de cálculo
-        const ws = XLSX.utils.json_to_sheet(data);
-
-        // Ajustar el ancho de las columnas
-        const wscols = [
-          {wch: 30}, // Cliente
-          {wch: 50}, // Dirección
-          {wch: 20}, // Identificación
-          {wch: 25}, // CUPS
-          {wch: 10}, // Tipo
-          {wch: 10}, // Tarifa
-          {wch: 15}, // Fin Contrato
-          {wch: 15}  // Estado
-        ];
-        ws['!cols'] = wscols;
-
         // Crear el libro de Excel
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'PuntosSuministro');
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('PuntosSuministro');
+
+        // Configurar columnas con anchos
+        worksheet.columns = [
+          { header: 'Cliente', key: 'Cliente', width: 30 },
+          { header: 'Dirección', key: 'Dirección', width: 50 },
+          { header: 'Identificación', key: 'Identificación', width: 20 },
+          { header: 'CUPS', key: 'CUPS', width: 25 },
+          { header: 'Tipo', key: 'Tipo', width: 10 },
+          { header: 'Tarifa', key: 'Tarifa', width: 10 },
+          { header: 'Fin Contrato', key: 'Fin Contrato', width: 15 },
+          { header: 'Estado', key: 'Estado', width: 15 }
+        ];
+
+        // Añadir datos
+        worksheet.addRows(data);
+
+        // Estilizar encabezados
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
 
         // Generar nombre de archivo con fecha
         const fecha = new Date().toISOString().split('T')[0];
         const nombreArchivo = `Puntos_Suministro_${fecha}.xlsx`;
 
-        // Exportar el archivo
-        XLSX.writeFile(wb, nombreArchivo);
+        // Generar buffer y descargar
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = nombreArchivo;
+        link.click();
+        window.URL.revokeObjectURL(url);
 
       } catch (error) {
         console.error('Error al exportar a Excel:', error);

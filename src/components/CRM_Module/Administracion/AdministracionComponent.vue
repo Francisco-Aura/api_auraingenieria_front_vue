@@ -272,8 +272,7 @@
 <script>
 import axios from 'axios';
 import Spinner from "@/components/SpinnerComponent.vue";
-import * as XLSX from 'xlsx';
-import 'jspdf-autotable';
+import ExcelJS from 'exceljs';
 
 export default {
   name: 'AdministracionComponent',
@@ -549,9 +548,9 @@ export default {
       }
     },
     
-    exportarExcel() {
+    async exportarExcel() {
       try {
-        const data = this.filteredDatos.map(fila => {
+          const data = this.filteredDatos.map(fila => {
           const row = {};
           this.columnas.forEach(col => {
             row[this.formatColumnName(col)] = this.formatCellValue(fila[col]);
@@ -559,14 +558,39 @@ export default {
           return row;
         });
 
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, this.tablaSeleccionada.nombre);
-        
-        const wscols = this.columnas.map(() => ({wch: 20}));
-        ws['!cols'] = wscols;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet(this.tablaSeleccionada.nombre);
 
-        XLSX.writeFile(wb, `${this.tablaSeleccionada.nombre}.xlsx`);
+        // Obtener las columnas de los datos
+        const columnas = data.length > 0 ? Object.keys(data[0]) : [];
+        
+        // Configurar columnas con anchos
+        worksheet.columns = columnas.map(col => ({
+          header: col,
+          key: col,
+          width: 20
+        }));
+
+        // Añadir datos
+        worksheet.addRows(data);
+
+        // Estilizar encabezados
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Generar buffer y descargar
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${this.tablaSeleccionada.nombre}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
       } catch (error) {
         console.error('Error al exportar a Excel:', error);
         alert('Error al exportar a Excel');
