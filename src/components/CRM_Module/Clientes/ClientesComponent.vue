@@ -55,10 +55,6 @@
             <i class="fas fa-file-excel"></i>
             <span>Excel</span>
           </button>
-          <button class="btn btn-export btn-pdf" @click="exportarPDF" title="Exportar a PDF" v-show="false">
-            <i class="fas fa-file-pdf"></i>
-            <span>PDF</span>
-          </button>
           <button 
             class="btn btn-toggle-baja" 
             :class="{ 'active': mostrarClientesDadosDeBaja }"
@@ -793,84 +789,6 @@ export default {
       }
     },
 
-    exportarPDF() {
-      try {
-        // Importar jsPDF dinámicamente cuando se necesita
-        import('jspdf').then(jspdfModule => {
-          const jsPDF = jspdfModule.jsPDF;
-          require('jspdf-autotable');
-          
-          const doc = new jsPDF();
-          
-          // Añadir logo
-          const logo = new Image();
-          logo.src = require('@/assets/logo.png');
-          doc.addImage(logo, 'PNG', 14, 10, 30, 30);
-          
-          // Título
-          doc.setFontSize(16);
-          doc.setTextColor(51, 51, 51); // Color gris oscuro para el título
-          doc.text('Cartera de Clientes', 50, 25);
-          
-          // Fecha de exportación
-          doc.setFontSize(10);
-          const fecha = new Date().toLocaleDateString();
-          doc.text(`Exportado el: ${fecha}`, 14, 45);
-
-          // Datos de la tabla
-          const data = this.filteredClientes.map(cliente => [
-            cliente.nombre,
-            cliente.cif,
-            cliente.direccionFiscal,
-            cliente.numeroPuntosSuministro,
-            cliente.usuarioAsignado
-          ]);
-
-          doc.autoTable({
-            head: [['Nombre Cliente', 'CIF', 'Dirección Fiscal', 'PS', 'Usuario']],
-            body: data,
-            startY: 50,
-            styles: { 
-              fontSize: 8,
-              cellPadding: 3
-            },
-            headStyles: { 
-              fillColor: [255, 193, 7],
-              textColor: [51, 51, 51],
-              fontStyle: 'bold',
-              halign: 'center'
-            },
-            columnStyles: {
-              0: { cellWidth: 40 },
-              1: { cellWidth: 25 },
-              2: { cellWidth: 60 },
-              3: { cellWidth: 15 },
-              4: { cellWidth: 25 }
-            }
-          });
-
-          doc.save('Cartera_Clientes.pdf');
-        }).catch(error => {
-          console.error('Error al cargar jsPDF:', error);
-          alert('Error al exportar PDF');
-        });
-      } catch (error) {
-        console.error('Error al exportar a PDF:', error);
-        this.$toast.error('Error al exportar a PDF');
-      }
-    },
-
-    mostrarNotificacionSubidaPDF() {
-      this.$swal.fire({
-        title: 'Subir Contrato',
-        text: 'Por favor, selecciona el archivo PDF del contrato',
-        icon: 'info',
-        confirmButtonText: 'Aceptar'
-      }).then(() => {
-        this.$refs.pdfInput.click();
-      });
-    },
-
     filterByColumn(column, value) {
       this.columnFilters[column] = value;
     },
@@ -1055,34 +973,20 @@ export default {
 }
 
 .action-card {
-  background-color: var(--primary-color);
   border-radius: var(--border-radius);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  padding: 0.7rem 1rem;
-  min-width: 180px;
+  min-width: auto;
 }
 
 .action-card .btn {
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  color: black;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border-radius: 6px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  /* Los estilos de .btn-primary tienen prioridad */
 }
 
 .action-card .btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: white;
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  /* Los estilos de hover de .btn-primary tienen prioridad */
 }
 
 
@@ -1103,92 +1007,13 @@ export default {
 .btn-export {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.8rem;
-  border-radius: 0.3rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.btn-refresh {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
   transition: all 0.3s ease;
-  background-color: #17a2b8;
-  color: white;
   border: none;
   cursor: pointer;
-}
-
-.btn-refresh:hover {
-  background-color: #138496;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2);
-}
-
-.btn-refresh i {
-  font-size: 14px;
-}
-
-.btn-excel {
-  background-color: #217346;
-  color: white;
-  border: none;
-}
-
-.btn-excel:hover {
-  background-color: #1e6b3d;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(33, 115, 70, 0.2);
-}
-
-.btn-pdf {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-}
-
-.btn-pdf:hover {
-  background-color: #c82333;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
-}
-
-.btn-toggle-baja {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-toggle-baja:hover {
-  background-color: #5a6268;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
-}
-
-.btn-toggle-baja.active {
-  background-color: #dc3545;
-}
-
-.btn-toggle-baja.active:hover {
-  background-color: #c82333;
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
-}
-
-.btn-toggle-baja i {
-  font-size: 14px;
 }
 
 .btn-export i {
@@ -1639,118 +1464,135 @@ export default {
   flex-shrink: 0;
 }
 
-/* Estilos de botones profesionales */
-.btn-refresh {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  background-color: #17a2b8;
-  color: white;
-  border: none;
-  cursor: pointer;
+/* Estilos Generales de Botones - Actualizados */
+.btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: none !important;
+  cursor: pointer !important;
+  letter-spacing: 0.3px !important;
 }
 
+.btn i {
+  font-size: 1.1em !important;
+}
+
+/* Estilos de botones profesionales */
 /* Botón Refresh/Actualizar */
 .btn-refresh {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1) !important;
 }
 
-.btn-refresh:hover {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.15);
+.btn-refresh:hover:not(:disabled) {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.15) !important;
+}
+
+.btn-refresh:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+  background: #9ca3af !important;
 }
 
 /* Botón Excel */
 .btn-excel {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1) !important;
 }
 
 .btn-excel:hover {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15);
-}
-
-/* Botón PDF */
-.btn-pdf {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1);
-}
-
-.btn-pdf:hover {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15);
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15) !important;
 }
 
 /* Botón Primary (Crear, Guardar, etc) */
 .btn-primary {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1);
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15);
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
+}
+
+.btn-primary i {
+  font-size: 1.1em !important;
+}
+
+/* Botón Create (Alias para Primary) */
+.btn-create {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
+}
+
+.btn-create:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
+}
+
+.btn-create i {
+  font-size: 1.1em !important;
 }
 
 /* Botón Toggle Baja (Mostrar/Ocultar dados de baja) */
 .btn-toggle-baja {
-  background: #f3f4f6;
-  color: #4b5563;
-  border: 1px solid #e5e7eb;
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  background: #f3f4f6 !important;
+  color: #4b5563 !important;
+  border: 1px solid #e5e7eb !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
 }
 
 .btn-toggle-baja:hover {
-  background: #e5e7eb;
-  color: #1f2937;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background: #e5e7eb !important;
+  color: #1f2937 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Estado Activo (Rojo) para Toggle Baja */
 .btn-toggle-baja.active {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  border-color: transparent;
-  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1);
-}
-
-.btn-toggle-baja.active:hover {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: white !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1) !important;
 }
 
 .btn-export {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  border: none !important;
+  cursor: pointer !important;
 }
 
 .btn-export i {
-  font-size: 1.2em;
+  font-size: 1.2em !important;
 }
 
 .btn-icon {

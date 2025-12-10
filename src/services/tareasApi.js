@@ -2,14 +2,48 @@ import axios from 'axios'
 
 const API_BASE_URL = `${process.env.VUE_APP_API_URL}/api`
 
-// Configuración base de Axios
+// Configuración base de Axios con timeout aumentado
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000, // 30 segundos (aumentado de 10s)
   headers: {
     'Content-Type': 'application/json',
   }
 })
+
+// Interceptor para reintentos automáticos en caso de timeout
+api.interceptors.response.use(
+  response => response,
+  async error => {
+    const config = error.config
+    
+    // Si no tiene configuración de reintentos, inicializarla
+    if (!config.__retryCount) {
+      config.__retryCount = 0
+    }
+    
+    // Solo reintentar en caso de timeout o error de red, máximo 2 reintentos
+    const shouldRetry = (
+      (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') &&
+      config.__retryCount < 2
+    )
+    
+    if (shouldRetry) {
+      config.__retryCount++
+      
+      // Backoff exponencial: 1s, 2s, 4s...
+      const delayMs = Math.pow(2, config.__retryCount) * 1000
+      
+      console.log(`Reintentando petición (intento ${config.__retryCount}/2) después de ${delayMs}ms...`)
+      
+      await new Promise(resolve => setTimeout(resolve, delayMs))
+      
+      return api(config)
+    }
+    
+    return Promise.reject(error)
+  }
+)
 
 export const tareasApi = {
   // Configuración de módulos
