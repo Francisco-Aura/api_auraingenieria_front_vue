@@ -1,5 +1,8 @@
 <template>
   <div class="informes-container fade-in">
+    <!-- Loading spinner -->
+    <Spinner :isLoading="loading" />
+    
     <!-- Panel de tipos de informes -->
     <div class="card info-panel">
       <div class="panel-header">
@@ -205,10 +208,15 @@
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import ExcelJS from 'exceljs';
+import Spinner from '@/components/SpinnerComponent.vue';
 
 export default {
+  components: {
+    Spinner
+  },
   data() {
     return {
+      loading: false,
       mostrarModal: false,
       mostrarTabla: false,
       nivelAcceso: null,            // Nivel de acceso del usuario
@@ -378,6 +386,7 @@ export default {
     // Método para mostrar el informe directamente en pantalla
     async mostrarInforme(tipo) {
       this.tipoSeleccionado = tipo;
+      this.loading = true;
       try {
         const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/api/informes/${tipo}`);
         this.procesarDatosParaTabla(respuesta.data);
@@ -389,12 +398,20 @@ export default {
         this.recordsPerPageValue = 10;
       } catch (error) {
         console.error("Error al obtener el informe", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo cargar el informe'
+        });
+      } finally {
+        this.loading = false;
       }
     },
 
     // Método para actualizar el informe actual
     async actualizarInforme() {
       if (!this.tipoSeleccionado) return;
+      this.loading = true;
       try {
         const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/api/informes/${this.tipoSeleccionado}`);
         this.procesarDatosParaTabla(respuesta.data);
@@ -404,6 +421,13 @@ export default {
         this.recordsPerPageValue = 10;
       } catch (error) {
         console.error("Error al actualizar el informe", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo actualizar el informe'
+        });
+      } finally {
+        this.loading = false;
       }
     },
 
@@ -1154,52 +1178,108 @@ export default {
   background-color: var(--hover-color);
 }
 
-/* Estilos para el botón de actualizar */
+/* Estilos Generales de Botones - Actualizados */
+.btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: none !important;
+  cursor: pointer !important;
+  letter-spacing: 0.3px !important;
+}
+
+.btn i {
+  font-size: 1.1em !important;
+}
+
+/* Botón Refresh/Actualizar */
 .btn-refresh {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  background-color: #17a2b8 !important;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
   color: white !important;
-  border: none !important;
-  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1) !important;
 }
 
-.btn-refresh:hover {
-  background-color: #138496 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2);
+.btn-refresh:hover:not(:disabled) {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.15) !important;
 }
 
-.btn-refresh i {
-  font-size: 14px;
+.btn-refresh:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+  background: #9ca3af !important;
 }
 
-/* Estilos para el botón de exportar Excel */
-.btn-export {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
+/* Botón Excel */
 .btn-excel {
-  background-color: #217346 !important;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
   color: white !important;
-  border: none !important;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1) !important;
 }
 
 .btn-excel:hover {
-  background-color: #1e6b3d !important;
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 4px 8px rgba(33, 115, 70, 0.2) !important;
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Botón Primary (Crear, Guardar, etc) */
+.btn-primary {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
+}
+
+.btn-primary i {
+  font-size: 1.1em !important;
+}
+
+/* Botón Create (Alias para Primary) */
+.btn-create {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
+}
+
+.btn-create:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
+}
+
+.btn-create i {
+  font-size: 1.1em !important;
+}
+
+.btn-export {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.btn-export i {
+  font-size: 1.2em !important;
 }
 
 /* Estilos para las celdas de la tabla */
@@ -1366,75 +1446,35 @@ export default {
   background-color: rgba(var(--primary-color-rgb), 0.05); /* Color primario con transparencia */
 }
 
-/* Estilos de botones profesionales */
-/* Botón Refresh/Actualizar */
-.btn-refresh {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1);
-}
-
-.btn-refresh:hover {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.15);
-}
-
-/* Botón Excel */
-.btn-excel {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1);
-}
-
-.btn-excel:hover {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15);
-}
-
-/* Botón PDF */
-.btn-pdf {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1);
-}
-
-.btn-pdf:hover {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15);
-}
-
 /* Botón Toggle Baja (Mostrar/Ocultar dados de baja) */
 .btn-toggle-baja {
-  background: #f3f4f6;
-  color: #4b5563;
-  border: 1px solid #e5e7eb;
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  background: #f3f4f6 !important;
+  color: #4b5563 !important;
+  border: 1px solid #e5e7eb !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
 }
 
 .btn-toggle-baja:hover {
-  background: #e5e7eb;
-  color: #1f2937;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  background: #e5e7eb !important;
+  color: #1f2937 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Estado Activo (Rojo) para Toggle Baja */
 .btn-toggle-baja.active {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  border-color: transparent;
-  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: white !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1) !important;
 }
 
 .btn-toggle-baja.active:hover {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15);
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15) !important;
 }
 
 /* Botón Primary (Crear, Guardar, etc) */
@@ -1448,22 +1488,6 @@ export default {
   background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
   transform: translateY(-2px);
   box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15);
-}
-
-.btn-export {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-export i {
-  font-size: 1.2em;
 }
 
 .btn-icon {
