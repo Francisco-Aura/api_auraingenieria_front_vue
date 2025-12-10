@@ -74,7 +74,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.cliente" 
-                      @input="filterByColumn('cliente', $event.target.value)"
+                      @input="filterByColumnDebounced('cliente', $event.target.value)"
                       placeholder="Filtrar..."
                       @click.stop
                     >
@@ -92,7 +92,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.direccion" 
-                      @input="filterByColumn('direccion', $event.target.value)"
+                      @input="filterByColumnDebounced('direccion', $event.target.value)"
                       placeholder="Filtrar..."
                       @click.stop
                     >
@@ -110,7 +110,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.identificacion" 
-                      @input="filterByColumn('identificacion', $event.target.value)"
+                      @input="filterByColumnDebounced('identificacion', $event.target.value)"
                       placeholder="Filtrar..."
                       @click.stop
                     >
@@ -128,7 +128,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.cupsluz" 
-                      @input="filterByColumn('cupsluz', $event.target.value)"
+                      @input="filterByColumnDebounced('cupsluz', $event.target.value)"
                       placeholder="Filtrar CUPS..."
                       @click.stop
                     >
@@ -146,7 +146,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.tipo" 
-                      @input="filterByColumn('tipo', $event.target.value)"
+                      @input="filterByColumnDebounced('tipo', $event.target.value)"
                       placeholder="Filtrar tipo..."
                       @click.stop
                     >
@@ -164,7 +164,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.tarifa" 
-                      @input="filterByColumn('tarifa', $event.target.value)"
+                      @input="filterByColumnDebounced('tarifa', $event.target.value)"
                       placeholder="Filtrar tarifa..."
                       @click.stop
                     >
@@ -182,7 +182,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.fechaFinUltimoContrato" 
-                      @input="filterByColumn('fechaFinUltimoContrato', $event.target.value)"
+                      @input="filterByColumnDebounced('fechaFinUltimoContrato', $event.target.value)"
                       placeholder="Filtrar fecha..."
                       @click.stop
                     >
@@ -479,68 +479,75 @@ export default {
       contratoActualData: null, // Almacena datos del contrato actual
       contratosHistoricosData: null, // Almacena datos de contratos históricos
       mostrarDadosDeBaja: false, // Control para mostrar/ocultar puntos dados de baja
+      filtrosTimer: null, // Timer para debounce de filtros
     };
   },
 
   computed: {
     // Filtra los puntos de suministro según el término ingresado en "filter"
     filteredPuntosSuministro() {
+      // Pre-calcular valores de filtro en minúsculas una sola vez
+      const filterLower = this.filter.toLowerCase();
+      const hasGeneralFilter = filterLower.length > 0;
+      
+      // Pre-calcular filtros de columna activos
+      const activeColumnFilters = Object.entries(this.columnFilters)
+        .filter(([, value]) => value && value.trim().length > 0)
+        .map(([key, value]) => ({ key, value: value.toLowerCase(), originalValue: value.trim() }));
+      const hasColumnFilters = activeColumnFilters.length > 0;
+
       const filtered = this.puntosSuministro.filter((suministro) => {
-        // Primero aplicamos el filtro de estado de baja
+        // Primero aplicamos el filtro de estado de baja (rápido)
         const estadoBajaFilter = this.mostrarDadosDeBaja ? this.estaDadoDeBaja(suministro) : !this.estaDadoDeBaja(suministro);
-        
-        // Debug: mostrar información cuando se activa el filtro de dados de baja
-        if (this.mostrarDadosDeBaja && Math.random() < 0.01) {
-          // No hacer nada
+        if (!estadoBajaFilter) return false;
+
+        // Luego aplicamos el filtro general (si existe)
+        if (hasGeneralFilter) {
+          const generalFilter = Object.values(suministro).some((value) =>
+            String(value).toLowerCase().includes(filterLower)
+          );
+          if (!generalFilter) return false;
         }
 
-        // Luego aplicamos el filtro general
-        const generalFilter = Object.values(suministro).some((value) =>
-          String(value).toLowerCase().includes(this.filter.toLowerCase())
-        );
-
-        // Luego aplicamos los filtros por columna
-        const columnFilters = Object.entries(this.columnFilters).every(([key, value]) => {
-          if (!value) return true; // Si no hay filtro para esta columna, no filtra
-
-          // Caso especial para el filtro de CUPS
-          if (key === 'cupsluz') {
-            const cupsValue = this.getCupsParaMostrar(suministro);
-            return cupsValue.toLowerCase().includes(value.toLowerCase());
-          }
-
-          // Caso especial para el filtro de tipo
-          if (key === 'tipo') {
-            const tipo = this.getTipoCups(suministro);
-            return tipo.toLowerCase().includes(value.toLowerCase());
-          }
-
-          // Caso especial para el filtro de tarifa (usa el valor mostrado en la tabla)
-          if (key === 'tarifa') {
-            const tarifa = this.getTarifa(suministro) || '-';
-            // Permitir filtrar por '-', que representa sin contrato activo
-            if (value.trim() === '-') {
-              return tarifa === '-';
+        // Luego aplicamos los filtros por columna (si existen)
+        if (hasColumnFilters) {
+          for (const { key, value, originalValue } of activeColumnFilters) {
+            let fieldValue;
+            
+            // Caso especial para el filtro de CUPS
+            if (key === 'cupsluz') {
+              fieldValue = this.getCupsParaMostrar(suministro).toLowerCase();
             }
-            return tarifa.toLowerCase().includes(value.toLowerCase());
-          }
-
-          // Caso especial para el filtro de fecha fin del último contrato
-          if (key === 'fechaFinUltimoContrato') {
-            const fechaFin = this.getFechaFinUltimoContrato(suministro);
-            // Permitir filtrar por '-', que representa sin fecha
-            if (value.trim() === '-') {
-              return fechaFin === '-';
+            // Caso especial para el filtro de tipo
+            else if (key === 'tipo') {
+              fieldValue = this.getTipoCups(suministro).toLowerCase();
             }
-            return fechaFin.toLowerCase().includes(value.toLowerCase());
+            // Caso especial para el filtro de tarifa
+            else if (key === 'tarifa') {
+              fieldValue = (this.getTarifa(suministro) || '-').toLowerCase();
+              if (originalValue === '-') {
+                if (fieldValue !== '-') return false;
+                continue;
+              }
+            }
+            // Caso especial para el filtro de fecha fin
+            else if (key === 'fechaFinUltimoContrato') {
+              fieldValue = this.getFechaFinUltimoContrato(suministro).toLowerCase();
+              if (originalValue === '-') {
+                if (fieldValue !== '-') return false;
+                continue;
+              }
+            }
+            // Para el resto de columnas
+            else {
+              fieldValue = String(suministro[key] || '').toLowerCase();
+            }
+            
+            if (!fieldValue.includes(value)) return false;
           }
+        }
 
-          // Para el resto de columnas
-          const fieldValue = String(suministro[key] || '').toLowerCase();
-          return fieldValue.includes(value.toLowerCase());
-        });
-
-        return estadoBajaFilter && generalFilter && columnFilters;
+        return true;
       });
       
       return filtered;
@@ -1225,6 +1232,18 @@ export default {
 
     filterByColumn(column, value) {
       this.columnFilters[column] = value;
+    },
+
+    // Método con debounce para filtrar por columna
+    filterByColumnDebounced(column, value) {
+      // Cancelar el timer anterior si existe
+      if (this.filtrosTimer) {
+        clearTimeout(this.filtrosTimer);
+      }
+      // Crear nuevo timer con delay de 150ms
+      this.filtrosTimer = setTimeout(() => {
+        this.columnFilters[column] = value;
+      }, 150);
     },
 
     isGas(suministro) {
