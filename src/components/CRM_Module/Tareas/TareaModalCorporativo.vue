@@ -165,43 +165,6 @@
               ></textarea>
             </div>
           </div>
-
-          <!-- Quinta fila: Comentarios -->
-          <div class="row-5">
-            <div class="form-group full-width">
-              <label><i class="fas fa-comments"></i> Comentarios</label>
-              <div class="comentarios-compact">
-                <div class="comentario-input">
-                  <textarea 
-                    v-model="nuevoComentario" 
-                    class="form-control"
-                    rows="2"
-                    placeholder="Añadir comentario..."
-                  ></textarea>
-                  <div class="comentario-actions">
-                    <button type="button" class="btn-attach">
-                      <i class="fas fa-paperclip"></i>
-                      Adjuntar
-                    </button>
-                  </div>
-                </div>
-                
-                <!-- Lista de comentarios existentes -->
-                <div v-if="formulario.comentarios && formulario.comentarios.length > 0" class="comentarios-lista">
-                  <div v-for="(comentario, index) in formulario.comentarios" :key="index" class="comentario-item">
-                    <div class="comentario-header">
-                      <span class="comentario-autor">{{ comentario.autor }}</span>
-                      <span class="comentario-fecha">{{ formatDate(comentario.fecha) }}</span>
-                      <button type="button" class="btn-star" @click="toggleFijarComentario(index)">
-                        <i :class="comentario.fijado ? 'fas fa-star' : 'far fa-star'"></i>
-                      </button>
-                    </div>
-                    <div class="comentario-texto">{{ comentario.texto }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </form>
       </div>
 
@@ -262,8 +225,7 @@ export default {
         subcategoriaId: null,
         notificar: false,
         fijada: false,
-        repetir: '',
-        comentarios: []
+        repetir: ''
       },
       busquedaCliente: '',
       mostrarDropdownClientes: false,
@@ -273,8 +235,6 @@ export default {
       horaInicio: '09:00',
       fechaVencimiento: '',
       horaVencimiento: '18:00',
-      nuevoComentario: '',
-      fijarComentario: false,
       seleccionandoTexto: false
     }
   },
@@ -336,15 +296,7 @@ export default {
           subcategoriaId: this.tarea.subcategoriaId || null,
           notificar: Boolean(this.tarea.notificar),
           fijada: Boolean(this.tarea.fijada),
-          repetir: this.tarea.repetir || '',
-          comentarios: Array.isArray(this.tarea.comentarios) 
-            ? this.tarea.comentarios.map(c => ({
-                texto: c.comentario || c.texto,
-                autor: c.usuarioNombre || c.autor || 'Usuario',
-                fecha: c.fechaCreacion || c.fecha,
-                fijado: false
-              }))
-            : []
+          repetir: this.tarea.repetir || ''
         }
         
         // Formatear fechas para los inputs
@@ -385,8 +337,7 @@ export default {
           subcategoriaId: null,
           notificar: false,
           fijada: false,
-          repetir: '',
-          comentarios: []
+          repetir: ''
         }
         
         // Estado por defecto (PENDIENTE)
@@ -485,12 +436,6 @@ export default {
       }
     },
 
-    toggleFijarComentario(index) {
-      if (this.formulario.comentarios[index]) {
-        this.formulario.comentarios[index].fijado = !this.formulario.comentarios[index].fijado
-      }
-    },
-
     formatDate(date) {
       if (!date) return ''
       const d = new Date(date)
@@ -522,18 +467,6 @@ export default {
       } else {
         this.formulario.fechaVencimiento = null
       }
-
-      // Añadir nuevo comentario si existe
-      if (this.nuevoComentario && this.nuevoComentario.trim() !== '') {
-        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
-        this.formulario.comentarios = this.formulario.comentarios || []
-        this.formulario.comentarios.push({
-          texto: this.nuevoComentario.trim(),
-          autor: usuario.nombre || 'Usuario',
-          fecha: new Date().toISOString(),
-          fijado: this.fijarComentario
-        })
-      }
       
       // Asegurar que el usuarioCreadorId esté presente para nuevas tareas
       if (!this.esEdicion && !this.formulario.usuarioCreadorId) {
@@ -557,8 +490,7 @@ export default {
         usuarioCreadorId: this.formulario.usuarioCreadorId || null,
         clienteRelacionadoId: this.formulario.clienteRelacionadoId || null,
         categoriaId: this.formulario.categoriaId || null,
-        subcategoriaId: this.formulario.subcategoriaId || null,
-        comentarios: this.formulario.comentarios || []
+        subcategoriaId: this.formulario.subcategoriaId || null
       }
 
       console.log('Emitiendo guardar con:', tareaDTO)
@@ -1100,6 +1032,73 @@ textarea.form-control {
   font-size: 0.7rem;
   color: #495057;
   line-height: 1.3;
+}
+
+.archivos-selector-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.archivos-count {
+  font-size: 0.7rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.btn-guardar-comentario {
+  background: rgb(252, 215, 0);
+  color: black;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+}
+
+.btn-guardar-comentario:hover:not(:disabled) {
+  background: #ffd700;
+}
+
+.btn-guardar-comentario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.comentario-adjuntos-mini {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #e9ecef;
+  font-size: 0.65rem;
+}
+
+.adjunto-mini {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #6c757d;
+  padding: 2px 0;
+}
+
+.adjunto-nombre-clickable {
+  cursor: pointer;
+  color: rgb(252, 215, 0);
+  text-decoration: underline;
+}
+
+.adjunto-nombre-clickable:hover {
+  color: #ffd700;
+}
+
+.adjunto-size {
+  color: #adb5bd;
+  font-size: 0.6rem;
 }
 
 /* Footer */

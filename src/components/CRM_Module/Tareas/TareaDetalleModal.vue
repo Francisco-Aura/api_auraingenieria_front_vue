@@ -30,18 +30,11 @@
               <div class="valor-campo descripcion-completa">{{ tarea.descripcion }}</div>
             </div>
 
-            <div class="campos-row">
-              <div class="campo-detalle">
-                <label>Tipo</label>
-                <span class="tipo-badge">{{ tarea.tipo || 'Por hacer' }}</span>
-              </div>
-
-              <div class="campo-detalle">
-                <label>Prioridad</label>
-                <span class="prioridad-badge" :class="`prioridad-${tarea.prioridad}`">
-                  {{ getPrioridadTexto(tarea.prioridad) }}
-                </span>
-              </div>
+            <div class="campo-detalle">
+              <label>Prioridad</label>
+              <span class="prioridad-badge" :class="`prioridad-${tarea.prioridad}`">
+                {{ getPrioridadTexto(tarea.prioridad) }}
+              </span>
             </div>
 
             <div class="campos-row" v-if="tarea.clienteRelacionadoNombre">
@@ -97,6 +90,106 @@
                 {{ formatearFecha(tarea.fechaCreacion) }}
               </div>
             </div>
+
+            <!-- Sección de comentarios -->
+            <div class="comentarios-section">
+              <label><i class="fas fa-comments"></i> Comentarios</label>
+              
+              <!-- Lista de comentarios existentes -->
+              <div v-if="cargandoComentarios" class="comentarios-loading">
+                <i class="fas fa-spinner fa-spin"></i> Cargando comentarios...
+              </div>
+              <div v-else-if="comentarios.length === 0" class="comentarios-vacio">
+                <i class="fas fa-comment-slash"></i> No hay comentarios aún
+              </div>
+              <div v-else class="comentarios-lista">
+                <div v-for="comentario in comentarios" :key="comentario.id" class="comentario-item">
+                  <div class="comentario-header">
+                    <span class="comentario-autor">{{ comentario.autor || 'Usuario' }}</span>
+                    <span class="comentario-fecha">{{ formatDate(comentario.fechaCreacion) }}</span>
+                    <i v-if="comentario.fijado" class="fas fa-star comentario-fijado"></i>
+                  </div>
+                  <div class="comentario-contenido">{{ comentario.contenido }}</div>
+                  
+                  <!-- Archivos adjuntos -->
+                  <div v-if="comentario.adjuntos && comentario.adjuntos.length > 0" class="comentario-adjuntos">
+                    <div class="adjuntos-titulo">
+                      <i class="fas fa-paperclip"></i>
+                      Archivos adjuntos ({{ comentario.adjuntos.length }})
+                    </div>
+                    <div class="adjuntos-lista">
+                      <div 
+                        v-for="adjunto in comentario.adjuntos" 
+                        :key="adjunto.id" 
+                        class="adjunto-item"
+                        @click="descargarAdjunto(adjunto)"
+                      >
+                        <i class="fas fa-file-download"></i>
+                        <span class="adjunto-nombre">{{ adjunto.nombreArchivo }}</span>
+                        <span class="adjunto-size">({{ formatFileSize(adjunto.tamanio) }})</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Añadir nuevo comentario -->
+              <div class="comentario-nuevo">
+                <textarea 
+                  v-model="nuevoComentario"
+                  class="form-control"
+                  rows="3"
+                  placeholder="Escribe un nuevo comentario..."
+                ></textarea>
+                
+                <!-- Selector de archivos -->
+                <div class="archivos-selector">
+                  <input 
+                    type="file" 
+                    ref="fileInput" 
+                    @change="onFilesSelected" 
+                    multiple 
+                    style="display: none"
+                  />
+                  <button 
+                    type="button" 
+                    class="btn-seleccionar-archivos"
+                    @click="$refs.fileInput.click()"
+                  >
+                    <i class="fas fa-paperclip"></i>
+                    Adjuntar archivos
+                  </button>
+                  
+                  <!-- Lista de archivos seleccionados -->
+                  <div v-if="archivosSeleccionados.length > 0" class="archivos-lista">
+                    <div v-for="(archivo, index) in archivosSeleccionados" :key="index" class="archivo-item">
+                      <i class="fas fa-file-alt"></i>
+                      <span class="archivo-nombre">{{ archivo.name }}</span>
+                      <span class="archivo-size">({{ formatFileSize(archivo.size) }})</span>
+                      <button 
+                        type="button" 
+                        class="btn-quitar-archivo"
+                        @click="quitarArchivo(index)"
+                      >
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="comentario-nuevo-actions">
+                  <button 
+                    type="button" 
+                    class="btn btn-adjuntar-comentario"
+                    @click="adjuntarComentario"
+                    :disabled="!nuevoComentario.trim() || guardandoComentario || subiendoArchivos"
+                  >
+                    <i :class="guardandoComentario || subiendoArchivos ? 'fas fa-spinner fa-spin' : 'fas fa-paper-plane'"></i>
+                    {{ guardandoComentario || subiendoArchivos ? 'Guardando...' : 'Enviar comentario' }}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Panel lateral de acciones -->
@@ -119,19 +212,24 @@
                   class="form-control"
                   @change="onEstadoChange"
                 >
-                  <option v-for="estado in estados" :key="estado.id" :value="estado.id">
+                  <option v-for="estado in estadosDisponibles" :key="estado.id" :value="estado.id">
                     {{ formatearEstadoNombre(estado.nombre) }}
                   </option>
                 </select>
 
-                <!-- Campo de motivo para bloqueo -->
-                <div v-if="esEstadoBloqueado" class="campo-motivo">
-                  <label for="motivoBloqueo">Motivo del bloqueo <span class="required">*</span></label>
+                <!-- Campo de comentario para cualquier cambio de estado -->
+                <div v-if="estadoSeleccionado && estadoSeleccionado !== tarea.estadoId" class="campo-motivo">
+                  <label for="comentarioCambioEstado">
+                    {{ esEstadoBloqueado ? 'Motivo del bloqueo' : 'Comentario sobre el cambio' }} 
+                    <span class="required">*</span>
+                  </label>
                   <textarea 
-                    id="motivoBloqueo"
-                    v-model="motivoBloqueo"
+                    id="comentarioCambioEstado"
+                    v-model="comentarioCambioEstado"
                     class="form-control"
-                    placeholder="Describe el motivo por el cual se bloquea esta tarea..."
+                    :placeholder="esEstadoBloqueado 
+                      ? 'Describe el motivo por el cual se bloquea esta tarea...' 
+                      : 'Describe el motivo del cambio de estado...'"
                     rows="3"
                   ></textarea>
                 </div>
@@ -271,6 +369,7 @@
 
 <script>
 import TareaAuditoriaModal from './TareaAuditoriaModal.vue'
+import { tareasApi } from '@/services/tareasApi'
 
 export default {
   name: 'TareaDetalleModal',
@@ -295,52 +394,82 @@ export default {
     return {
       estadoSeleccionado: null,
       motivoBloqueo: '',
+      comentarioCambioEstado: '',
       esEstadoBloqueado: false,
       mostrarAuditoria: false,
       mostrarConfirmacionCompletacion: false,
       comentarioCompletacion: '',
-      completandoTarea: false
+      completandoTarea: false,
+      comentarios: [],
+      cargandoComentarios: false,
+      nuevoComentario: '',
+      guardandoComentario: false,
+      archivosSeleccionados: [],
+      subiendoArchivos: false
     }
   },
   computed: {
+    // Filtrar estados sin el estado final (completado)
+    estadosDisponibles() {
+      return this.estados.filter(e => !e.estadoFinal)
+    },
     puedeAplicarCambio() {
       if (!this.estadoSeleccionado || this.estadoSeleccionado === this.tarea.estadoId) {
         return false
       }
-      if (this.esEstadoBloqueado) {
-        return this.motivoBloqueo.trim().length > 0
-      }
-      return true
+      // Siempre requerir comentario para cualquier cambio de estado
+      return this.comentarioCambioEstado.trim().length > 0
     }
   },
   watch: {
-    value(val) {
-      if (val && this.tarea) {
-        // Preseleccionar el estado actual cuando se abre el modal
-        this.estadoSeleccionado = this.tarea.estadoId
-        // Resetear campos de bloqueo
-        this.motivoBloqueo = ''
-        this.esEstadoBloqueado = false
-      }
-    },
-    
-    tarea: {
-      handler(newTarea) {
-        if (newTarea && this.value) {
-          // Actualizar el estado seleccionado cuando cambia la tarea
-          this.estadoSeleccionado = newTarea.estadoId
+    value: {
+      handler(val) {
+        if (val && this.tarea && this.tarea.id) {
+          // Preseleccionar el estado actual cuando se abre el modal
+          this.estadoSeleccionado = this.tarea.estadoId
+          // Resetear campos de comentario
+          this.motivoBloqueo = ''
+          this.comentarioCambioEstado = ''
+          this.esEstadoBloqueado = false
+          this.nuevoComentario = ''
+          this.archivosSeleccionados = []
+          // Cargar comentarios
+          this.$nextTick(() => {
+            this.cargarComentarios()
+          })
         }
       },
       immediate: true
+    },
+    
+    tarea: {
+      handler(newTarea, oldTarea) {
+        if (newTarea && newTarea.id && this.value) {
+          // Actualizar el estado seleccionado cuando cambia la tarea
+          this.estadoSeleccionado = newTarea.estadoId
+          
+          // Si la tarea cambió (no solo se actualizó), recargar comentarios
+          if (!oldTarea || oldTarea.id !== newTarea.id) {
+            this.$nextTick(() => {
+              this.cargarComentarios()
+            })
+          }
+        }
+      },
+      immediate: true,
+      deep: false
+    }
+  },
+  mounted() {
+    // Cargar comentarios cuando el componente se monta
+    if (this.value && this.tarea && this.tarea.id) {
+      this.cargarComentarios()
     }
   },
   methods: {
     onEstadoChange() {
       const estado = this.estados.find(e => e.id === this.estadoSeleccionado)
       this.esEstadoBloqueado = estado && estado.nombre && estado.nombre.toLowerCase().includes('bloqueada')
-      if (!this.esEstadoBloqueado) {
-        this.motivoBloqueo = ''
-      }
     },
 
     async aplicarCambioEstado() {
@@ -348,14 +477,29 @@ export default {
         return
       }
 
+      if (!this.comentarioCambioEstado.trim()) {
+        console.warn('Se requiere un comentario para cambiar el estado')
+        return
+      }
+
       try {
-        this.$emit('cambiar-estado', this.tarea.id, this.estadoSeleccionado, this.motivoBloqueo)
+        // Primero crear el comentario sobre el cambio de estado
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+        await this.$emit('crear-comentario-estado', {
+          tareaId: this.tarea.id,
+          contenido: this.comentarioCambioEstado.trim(),
+          autor: usuario.nombre || 'Usuario'
+        })
+        
+        // Luego cambiar el estado (con motivo si es bloqueo)
+        const motivo = this.esEstadoBloqueado ? this.comentarioCambioEstado.trim() : null
+        this.$emit('cambiar-estado', this.tarea.id, this.estadoSeleccionado, motivo)
       } catch (error) {
         console.error('Error cambiando estado:', error)
         // Revertir la selección en caso de error
         this.estadoSeleccionado = this.tarea.estadoId
         this.esEstadoBloqueado = false
-        this.motivoBloqueo = ''
+        this.comentarioCambioEstado = ''
       }
     },
 
@@ -451,6 +595,7 @@ export default {
       // Resetear campos de cambio de estado
       this.estadoSeleccionado = this.tarea ? this.tarea.estadoId : null
       this.motivoBloqueo = ''
+      this.comentarioCambioEstado = ''
       this.esEstadoBloqueado = false
       this.mostrarAuditoria = false
       this.$emit('cerrar')
@@ -490,6 +635,122 @@ export default {
       if (nombre.includes('progreso')) return 'fas fa-spinner fa-spin'
       
       return 'fas fa-circle'
+    },
+
+    async cargarComentarios() {
+      if (!this.tarea || !this.tarea.id) {
+        console.warn('No se puede cargar comentarios: tarea no válida')
+        return
+      }
+      
+      this.cargandoComentarios = true
+      this.comentarios = [] // Limpiar comentarios previos
+      
+      try {
+        console.log('Cargando comentarios para tarea:', this.tarea.id)
+        const comentariosData = await tareasApi.obtenerComentariosPorTarea(this.tarea.id)
+        console.log('Comentarios recibidos:', comentariosData)
+        
+        // Mapear los comentarios para usar el campo correcto
+        this.comentarios = (comentariosData || []).map(comentario => ({
+          id: comentario.id,
+          autor: comentario.usuarioNombre || 'Usuario',
+          contenido: comentario.comentario || '',
+          fechaCreacion: comentario.fechaCreacion,
+          fijado: comentario.fijado || false,
+          adjuntos: Array.isArray(comentario.adjuntos) ? comentario.adjuntos : []
+        }))
+        
+        console.log('Comentarios procesados:', this.comentarios.length)
+      } catch (error) {
+        console.error('Error cargando comentarios para tarea', this.tarea.id, ':', error)
+        this.comentarios = []
+      } finally {
+        this.cargandoComentarios = false
+      }
+    },
+
+    formatDate(fecha) {
+      if (!fecha) return '-'
+      return new Date(fecha).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    },
+
+    formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes'
+      const k = 1024
+      const sizes = ['Bytes', 'KB', 'MB', 'GB']
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+    },
+
+    async descargarAdjunto(adjunto) {
+      try {
+        await tareasApi.descargarAdjunto(adjunto.id, adjunto.nombreArchivo)
+      } catch (error) {
+        console.error('Error descargando archivo:', error)
+        alert('Error al descargar el archivo')
+      }
+    },
+
+    async adjuntarComentario() {
+      if (!this.nuevoComentario.trim()) return
+      
+      this.guardandoComentario = true
+      try {
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+        
+        // Crear el comentario primero con el formato correcto del DTO
+        const comentarioCreado = await tareasApi.crearComentario({
+          tareaId: this.tarea.id,
+          usuarioId: usuario.id,
+          comentario: this.nuevoComentario.trim()
+        })
+        
+        // Si hay archivos seleccionados, subirlos
+        if (this.archivosSeleccionados.length > 0) {
+          this.subiendoArchivos = true
+          
+          for (const archivo of this.archivosSeleccionados) {
+            try {
+              await tareasApi.subirAdjuntoComentario(comentarioCreado.id, archivo)
+            } catch (error) {
+              console.error('Error subiendo archivo:', archivo.name, error)
+              alert(`Error al subir el archivo ${archivo.name}`)
+            }
+          }
+          
+          this.subiendoArchivos = false
+        }
+        
+        // Limpiar campos y recargar comentarios
+        this.nuevoComentario = ''
+        this.archivosSeleccionados = []
+        await this.cargarComentarios()
+        
+        // Notificar éxito al componente padre
+        this.$emit('comentario-creado')
+      } catch (error) {
+        console.error('Error guardando comentario:', error)
+        alert('Error al guardar el comentario. Por favor, inténtalo de nuevo.')
+      } finally {
+        this.guardandoComentario = false
+        this.subiendoArchivos = false
+      }
+    },
+
+    onFilesSelected(event) {
+      const files = Array.from(event.target.files)
+      this.archivosSeleccionados = [...this.archivosSeleccionados, ...files]
+    },
+
+    quitarArchivo(index) {
+      this.archivosSeleccionados.splice(index, 1)
     }
   }
 }
@@ -864,6 +1125,261 @@ export default {
   color: #6c757d;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+/* Sección de comentarios */
+.comentarios-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid #e9ecef;
+}
+
+.comentarios-section > label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.comentarios-loading,
+.comentarios-vacio {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+  font-size: 0.9rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.comentarios-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.comentario-item {
+  background: #f8f9fa;
+  border-left: 4px solid #667eea;
+  border-radius: 6px;
+  padding: 12px;
+  transition: all 0.2s ease;
+}
+
+.comentario-item:hover {
+  background: #e9ecef;
+  transform: translateX(4px);
+}
+
+.comentario-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.comentario-autor {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.85rem;
+}
+
+.comentario-fecha {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.comentario-fijado {
+  color: #ffc107;
+  font-size: 0.9rem;
+  margin-left: auto;
+}
+
+.comentario-contenido {
+  font-size: 0.9rem;
+  color: #212529;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.comentario-nuevo {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comentario-nuevo-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-adjuntar-comentario {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-adjuntar-comentario:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-adjuntar-comentario:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Selector de archivos */
+.archivos-selector {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px dashed #dee2e6;
+}
+
+.btn-seleccionar-archivos {
+  background: white;
+  color: #667eea;
+  border: 1px solid #667eea;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-seleccionar-archivos:hover {
+  background: #667eea;
+  color: white;
+}
+
+.archivos-lista {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.archivo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.archivo-nombre {
+  flex: 1;
+  color: #495057;
+  font-weight: 500;
+}
+
+.archivo-size {
+  color: #6c757d;
+  font-size: 0.75rem;
+}
+
+.btn-quitar-archivo {
+  background: transparent;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-quitar-archivo:hover {
+  color: #a71d2a;
+  transform: scale(1.1);
+}
+
+/* Archivos adjuntos en comentarios */
+.comentario-adjuntos {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e9ecef;
+}
+
+.adjuntos-titulo {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6c757d;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.adjuntos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adjunto-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+}
+
+.adjunto-item:hover {
+  background: #f8f9fa;
+  border-color: #667eea;
+  transform: translateX(4px);
+}
+
+.adjunto-item i {
+  color: #667eea;
+}
+
+.adjunto-nombre {
+  flex: 1;
+  color: #495057;
+  font-weight: 500;
+}
+
+.adjunto-size {
+  color: #6c757d;
+  font-size: 0.75rem;
 }
 
 .accion-auditoria {

@@ -314,7 +314,9 @@
       :estados="estados"
       @actualizar="handleActualizarTarea"
       @cambiar-estado="handleCambiarEstado"
-      @cerrar="mostrarModalDetalle = false"
+      @completar-con-comentario="handleCompletarConComentario"
+      @crear-comentario-estado="handleCrearComentarioEstado"
+      @cerrar="cerrarModalDetalle"
     />
 
     <!-- Modal de creación/edición de tarea -->
@@ -829,10 +831,56 @@ export default {
           await this.$refs.estadisticas.cargarEstadisticas()
         }
         
-        this.mostrarModalDetalle = false
+        this.cerrarModalDetalle()
       } catch (error) {
         console.error('Error cambiando estado:', error)
         this.mostrarMensaje('Error al cambiar el estado', 'error')
+      }
+    },
+
+    async handleCompletarConComentario(data) {
+      try {
+        // Obtener usuario actual
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+        
+        // Primero crear el comentario
+        await tareasApi.crearComentario({
+          tareaId: data.tareaId,
+          usuarioId: usuario.id,
+          comentario: data.comentario.contenido
+        })
+        
+        // Luego cambiar el estado a completado
+        await tareasApi.cambiarEstadoTarea(data.tareaId, data.estadoId)
+        
+        this.mostrarMensaje('Tarea marcada como completada', 'success')
+        await this.cargarTareas()
+        
+        // Actualizar estadísticas
+        if (this.$refs.estadisticas) {
+          await this.$refs.estadisticas.cargarEstadisticas()
+        }
+        
+        this.cerrarModalDetalle()
+      } catch (error) {
+        console.error('Error completando tarea:', error)
+        this.mostrarMensaje('Error al completar la tarea', 'error')
+      }
+    },
+
+    async handleCrearComentarioEstado(data) {
+      try {
+        // Obtener usuario actual
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+        
+        await tareasApi.crearComentario({
+          tareaId: data.tareaId,
+          usuarioId: usuario.id,
+          comentario: data.contenido
+        })
+      } catch (error) {
+        console.error('Error creando comentario de estado:', error)
+        this.mostrarMensaje('Error al guardar el comentario', 'error')
       }
     },
     
@@ -877,8 +925,17 @@ export default {
     },
     
     async handleVerDetalle(tarea) {
-      this.tareaDetalle = tarea
+      // Crear una copia de la tarea para forzar reactividad
+      this.tareaDetalle = { ...tarea }
       this.mostrarModalDetalle = true
+    },
+
+    cerrarModalDetalle() {
+      this.mostrarModalDetalle = false
+      // Limpiar la tarea detalle después de cerrar
+      this.$nextTick(() => {
+        this.tareaDetalle = null
+      })
     },
     
     cerrarModal() {

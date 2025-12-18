@@ -187,6 +187,38 @@ export const tareasApi = {
     await api.delete(`/comentarios-tareas/${id}`)
   },
 
+  async subirAdjuntoComentario(comentarioId, file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const response = await api.post(`/comentarios-tareas/${comentarioId}/adjuntos`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    return response.data
+  },
+
+  async descargarAdjunto(adjuntoId, nombreArchivo) {
+    const response = await api.get(`/comentarios-tareas/adjuntos/${adjuntoId}`, {
+      responseType: 'blob'
+    })
+    
+    // Crear un enlace temporal para descargar el archivo
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', nombreArchivo)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  },
+
+  async eliminarAdjunto(adjuntoId) {
+    await api.delete(`/comentarios-tareas/adjuntos/${adjuntoId}`)
+  },
+
   async obtenerTareasPorCliente(clienteId) {
     const response = await api.get(`/tareas/cliente/${clienteId}`)
     return response.data
