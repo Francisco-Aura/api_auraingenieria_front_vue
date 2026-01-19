@@ -224,10 +224,10 @@
                   <button class="btn-icon btn-view" @click="handleVerDetalle(tarea)" title="Ver detalle">
                     <i class="fas fa-eye"></i>
                   </button>
-                  <button class="btn-icon btn-edit" @click="handleActualizarTarea(tarea)" title="Editar">
+                  <button v-if="puedeEditarTarea(tarea)" class="btn-icon btn-edit" @click="handleActualizarTarea(tarea)" title="Editar">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn-icon btn-delete" @click="handleEliminarTarea(tarea.id)" title="Eliminar">
+                  <button v-if="puedeEliminarTarea(tarea)" class="btn-icon btn-delete" @click="handleEliminarTarea(tarea.id)" title="Eliminar">
                     <i class="fas fa-trash"></i>
                   </button>
                 </div>
@@ -412,6 +412,11 @@ export default {
     }
   },
   computed: {
+    // Usuario actual logueado
+    usuarioActual() {
+      return JSON.parse(localStorage.getItem('usuario') || '{}')
+    },
+    
     esAdmin() {
       const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
       return usuario && usuario.nivelAcceso === 1
@@ -494,6 +499,44 @@ export default {
     await this.inicializar()
   },
   methods: {
+    /**
+     * Verifica si el usuario actual puede editar una tarea.
+     * Las tareas creadas por un administrador (nivel 1) solo pueden ser editadas por administradores.
+     * @param {Object} tarea - La tarea a verificar
+     * @returns {Boolean} - true si puede editar, false si no
+     */
+    puedeEditarTarea(tarea) {
+      if (!tarea) return false
+      
+      // Si el usuario actual es admin, puede editar cualquier tarea
+      if (this.esAdmin) return true
+      
+      // Si la tarea fue creada por un admin (nivel 1), solo admin puede editarla
+      if (tarea.nivelAccesoCreador === 1) return false
+      
+      // En cualquier otro caso, puede editar
+      return true
+    },
+    
+    /**
+     * Verifica si el usuario actual puede eliminar una tarea.
+     * Solo los administradores pueden eliminar tareas creadas por administradores.
+     * @param {Object} tarea - La tarea a verificar
+     * @returns {Boolean} - true si puede eliminar, false si no
+     */
+    puedeEliminarTarea(tarea) {
+      if (!tarea) return false
+      
+      // Si el usuario actual es admin, puede eliminar cualquier tarea
+      if (this.esAdmin) return true
+      
+      // Si la tarea fue creada por un admin (nivel 1), solo admin puede eliminarla
+      if (tarea.nivelAccesoCreador === 1) return false
+      
+      // En cualquier otro caso, puede eliminar
+      return true
+    },
+    
     abrirModalCrearTarea() {
       this.tareaEnEdicion = null // Asegurar que no hay tarea en edición
       this.mostrarModalCrearTarea = true
@@ -809,6 +852,12 @@ export default {
     },
     
     async handleActualizarTarea(tarea) {
+      // Verificar permisos antes de permitir la edición
+      if (!this.puedeEditarTarea(tarea)) {
+        this.mostrarMensaje('No tienes permisos para editar esta tarea. Solo los administradores pueden editar tareas creadas por administradores.', 'warning')
+        return
+      }
+      
       try {
         // Obtener la tarea completa para edición
         const tareaCompleta = await tareasApi.obtenerTareaPorId(tarea.id)
@@ -887,8 +936,8 @@ export default {
     async toggleFijada(tarea) {
       try {
         const nuevoEstadoFijada = !tarea.fijada
-        const tareaActualizada = { ...tarea, fijada: nuevoEstadoFijada }
-        await tareasApi.actualizarTarea(tarea.id, tareaActualizada)
+        // Usar nuevo endpoint PATCH optimizado
+        await tareasApi.toggleFijada(tarea.id, nuevoEstadoFijada)
         
         // Actualizar localmente
         tarea.fijada = nuevoEstadoFijada

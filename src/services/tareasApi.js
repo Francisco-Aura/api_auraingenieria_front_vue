@@ -112,6 +112,10 @@ export const tareasApi = {
     await api.delete(`/tareas/${id}`)
   },
 
+  async toggleFijada(id, fijada) {
+    await api.patch(`/tareas/${id}/fijada`, { fijada })
+  },
+
   async contarTareasActivasPorUsuario(usuarioId) {
     const response = await api.get(`/tareas/usuario/${usuarioId}/count`)
     return response.data.count
@@ -231,7 +235,6 @@ export const tareasApi = {
         url += `?nivelAcceso=${nivelAcceso}`
       }
       const response = await api.get(url)
-      console.log('Respuesta de estadísticas del API:', response.data)
       return response.data
     } catch (error) {
       console.error('Error en obtenerEstadisticasPorUsuario:', error)
@@ -264,7 +267,6 @@ export const tareasApi = {
   async obtenerHistorialTarea(tareaId) {
     try {
       const response = await api.get(`/tareas/${tareaId}/historial`)
-      console.log('Historial obtenido del backend:', response.data)
       return response.data
     } catch (error) {
       console.error('Error obteniendo historial:', error)
@@ -278,11 +280,7 @@ export const tareasApi = {
       const tarea = await this.obtenerTareaPorId(tareaId)
       const historial = await this.obtenerHistorialTarea(tareaId)
       
-      console.log('Tarea:', tarea)
-      console.log('Historial para métricas:', historial)
-      
       const metricas = this.calcularMetricasDesdeHistorial(historial, tarea)
-      console.log('Métricas calculadas:', metricas)
       
       return {
         tarea,

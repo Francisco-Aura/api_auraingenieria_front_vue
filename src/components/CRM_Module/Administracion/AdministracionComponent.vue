@@ -297,7 +297,10 @@ export default {
         { nombre: "Tipos de Comunicación", url: `${process.env.VUE_APP_API_URL}/api/tipos-comunicacion`, icono: "fas fa-wifi" },
         { nombre: "Propiedades", url: `${process.env.VUE_APP_API_URL}/api/propiedades`, icono: "fas fa-building" },
         { nombre: "APP Monitorización", url: `${process.env.VUE_APP_API_URL}/api/app-monitorizacion`, icono: "fas fa-chart-line" },
-        { nombre: "Integración Sistemas FV", url: `${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`, icono: "fas fa-solar-panel" }
+        { nombre: "Integración Sistemas FV", url: `${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`, icono: "fas fa-solar-panel" },
+        // Tablas del Módulo de Tareas
+        { nombre: "Tareas - Categorías", url: `${process.env.VUE_APP_API_URL}/api/tarea-categorias`, icono: "fas fa-folder" },
+        { nombre: "Tareas - Subcategorías", url: `${process.env.VUE_APP_API_URL}/api/tarea-subcategorias`, icono: "fas fa-folder-open" }
       ],
       tablaSeleccionada: null,
       datos: [],
@@ -423,7 +426,10 @@ export default {
         "Tipos de Comunicación": "Tipos de comunicación de contadores",
         "Propiedades": "Propiedad de equipos (Distribuidora, Cliente, Aura)",
         "APP Monitorización": "Aplicaciones de monitorización de instalaciones",
-        "Integración Sistemas FV": "Sistemas de integración fotovoltaica"
+        "Integración Sistemas FV": "Sistemas de integración fotovoltaica",
+        // Módulo de Tareas
+        "Tareas - Categorías": "Categorías para clasificar tareas",
+        "Tareas - Subcategorías": "Subcategorías de tareas"
       };
       return descripciones[nombre] || "Tabla del sistema";
     },
@@ -440,12 +446,16 @@ export default {
         "Subtipologías": 22,
         "Tarifas Gas": 35,
         "Tarifas Luz": 42,
-        "Usuarios": 28,        "Distribuidoras": 4,
+        "Usuarios": 28,        
+        "Distribuidoras": 4,
         "Tipos de Contador": 5,
         "Tipos de Comunicación": 4,
         "Propiedades": 3,
         "APP Monitorización": 8,
-        "Integración Sistemas FV": 8
+        "Integración Sistemas FV": 8,
+        // Módulo de Tareas
+        "Tareas - Categorías": 4,
+        "Tareas - Subcategorías": 36
       };
       return counts[nombreTabla] || 0;
     },

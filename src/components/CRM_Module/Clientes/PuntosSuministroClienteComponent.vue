@@ -1,5 +1,6 @@
 <template>
-  <div class="modal-overlay fade-in">
+  <div>
+    <div class="modal-overlay fade-in">
     <div class="modal-content">
       <div class="modal-header">
         <h2><i class="fas fa-bolt"></i> Puntos de Suministro</h2>
@@ -86,14 +87,15 @@
     </div>
   </div>
 
-  <!-- Modal de Detalles -->
-  <ModalActualizarPuntoSuministro
-    v-if="formularioVisible"
-    :modificarPunto="modificarPunto"
-    :modoConsulta="modoConsulta"
-    @cerrar-modal="cerrarModalActualizarPunto"
-    @actualizar-punto-suministro="onPuntoSuministroActualizado"
-  />
+    <!-- Modal de Detalles -->
+    <ModalActualizarPuntoSuministro
+      v-if="formularioVisible"
+      :modificarPunto="modificarPunto"
+      :modoConsulta="modoConsulta"
+      @cerrar-modal="cerrarModalActualizarPunto"
+      @actualizar-punto-suministro="onPuntoSuministroActualizado"
+    />
+  </div>
 </template>
 
 <script>

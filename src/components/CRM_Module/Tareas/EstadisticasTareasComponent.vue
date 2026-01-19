@@ -487,11 +487,12 @@ export default {
       
       const pendientes = tareasFiltradas.filter(t => t.estadoNombre?.toLowerCase() === 'pendiente').length
       const enProgreso = tareasFiltradas.filter(t => t.estadoNombre?.toLowerCase() === 'en progreso').length
-      const completadas = tareasFiltradas.filter(t => t.estadoNombre?.toLowerCase() === 'completada').length
-      const bloqueadas = tareasFiltradas.filter(t => t.estadoNombre?.toLowerCase() === 'bloqueada').length
+      const completadas = tareasFiltradas.filter(t => t.estadoFinal === true).length
+      // Usar el campo estadoBloqueo del DTO en vez de nombre hardcodeado
+      const bloqueadas = tareasFiltradas.filter(t => t.estadoBloqueo === true).length
       
       const vencidas = tareasFiltradas.filter(t => {
-        if (t.estadoNombre?.toLowerCase() === 'completada') return false
+        if (t.estadoFinal === true) return false
         if (!t.fechaVencimiento) return false
         return new Date(t.fechaVencimiento) < ahoraCalculo
       }).length
@@ -501,7 +502,7 @@ export default {
       
       // Estadísticas globales
       const tareasProximasAVencer = todasLasTareas.filter(t => {
-        if (t.estadoNombre?.toLowerCase() === 'completada') return false
+        if (t.estadoFinal === true) return false
         if (!t.fechaVencimiento) return false
         const fechaVenc = new Date(t.fechaVencimiento)
         const tresDiasDesdeAhora = new Date(ahoraCalculo.getTime() + 3 * 24 * 60 * 60 * 1000)
