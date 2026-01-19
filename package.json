@@ -60,6 +60,12 @@
     "not dead",
     "not ie 11"
   ],
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    },
+    "buildId": "img-23309214w"
+  },
   "overrides": {
     "cross-spawn": "^7.0.3",
     "postcss": "^8.4.31",

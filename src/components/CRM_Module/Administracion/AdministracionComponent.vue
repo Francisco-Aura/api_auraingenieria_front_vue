@@ -145,7 +145,7 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th v-for="col in columnas" :key="col" @click="sortBy(col)" class="sortable">
+                  <th v-for="col in columnasVisibles" :key="col" @click="sortBy(col)" class="sortable">
                     {{ formatColumnName(col) }}
                     <i :class="getSortIcon(col)"></i>
                   </th>
@@ -156,7 +156,7 @@
               </thead>
               <tbody>
                 <tr v-for="fila in paginatedDatos" :key="fila.id" class="table-row">
-                  <td v-for="col in columnas" :key="col" class="data-cell" :title="formatCellValue(fila[col])">
+                  <td v-for="col in columnasVisibles" :key="col" class="data-cell" :title="formatCellValue(fila[col])">
                     <span class="cell-content">{{ formatCellValue(fila[col]) }}</span>
                   </td>
                   <td class="actions-cell">
@@ -171,7 +171,7 @@
                   </td>
                 </tr>
                 <tr v-if="paginatedDatos.length === 0">
-                  <td :colspan="columnas.length + 1" class="empty-state-cell">
+                  <td :colspan="columnasVisibles.length + 1" class="empty-state-cell">
                     <div class="empty-state">
                       <i class="fas fa-inbox fa-3x"></i>
                       <h3>No hay registros</h3>
@@ -225,7 +225,7 @@
               <i :class="editando ? 'fas fa-edit' : 'fas fa-plus-circle'"></i>
             </div>
             <div class="title-text">
-              <h2>{{ editando ? 'Editar' : 'Nuevo' }} Registro</h2>
+              <h2>{{ editando ? 'Editar' : 'Nueva' }} {{ esTablaSubcategorias ? 'Subcategoría' : 'Registro' }}</h2>
               <p>{{ tablaSeleccionada?.nombre }}</p>
             </div>
           </div>
@@ -239,17 +239,54 @@
             <div v-for="col in columnasFiltradas" :key="col" class="form-group">
               <label :for="col" class="form-label">
                 {{ formatColumnName(col) }}
-                <span class="required-asterisk">*</span>
+                <span v-if="col === 'nombre'" class="required-asterisk">*</span>
               </label>
-              <input 
-                :id="col" 
-                v-model="registro[col]" 
-                class="form-input"
-                :placeholder="`Ingresa ${formatColumnName(col).toLowerCase()}`"
-                :required="col !== 'id'"
-                type="text"
-              />
+              <!-- Campo especial para activo: checkbox -->
+              <template v-if="col === 'activo'">
+                <label class="toggle-switch">
+                  <input type="checkbox" v-model="registro[col]" />
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">{{ registro[col] ? 'Activo' : 'Inactivo' }}</span>
+                </label>
+              </template>
+              <!-- Campos normales -->
+              <template v-else>
+                <input 
+                  :id="col" 
+                  v-model="registro[col]" 
+                  class="form-input"
+                  :placeholder="`Ingresa ${formatColumnName(col).toLowerCase()}`"
+                  :required="col === 'nombre'"
+                  type="text"
+                />
+              </template>
             </div>
+          </div>
+          
+          <!-- Selector de categorías para subcategorías -->
+          <div v-if="esTablaSubcategorias" class="categorias-selector">
+            <label class="form-label">
+              Categorías asociadas
+              <span class="required-asterisk">*</span>
+            </label>
+            <p class="selector-help">Selecciona las categorías a las que pertenece esta subcategoría</p>
+            <div class="categorias-grid">
+              <div 
+                v-for="cat in categoriasDisponibles" 
+                :key="cat.id"
+                class="categoria-chip"
+                :class="{ 'selected': isCategoriaSelected(cat.id) }"
+                @click="toggleCategoria(cat.id)"
+              >
+                <i :class="isCategoriaSelected(cat.id) ? 'fas fa-check-circle' : 'far fa-circle'"></i>
+                <span>{{ cat.nombre }}</span>
+                <span class="categoria-codigo">({{ cat.codigo }})</span>
+              </div>
+            </div>
+            <p v-if="selectedCategoriaIds.length === 0" class="validation-warning">
+              <i class="fas fa-exclamation-triangle"></i>
+              Debes seleccionar al menos una categoría
+            </p>
           </div>
           
           <div class="modal-footer">
@@ -257,7 +294,11 @@
               <i class="fas fa-times"></i>
               <span>Cancelar</span>
             </button>
-            <button type="submit" class="btn btn-save" :disabled="loading">
+            <button 
+              type="submit" 
+              class="btn btn-save" 
+              :disabled="loading || (esTablaSubcategorias && selectedCategoriaIds.length === 0)"
+            >
               <i class="fas fa-save"></i>
               <span>{{ editando ? 'Actualizar' : 'Guardar' }}</span>
             </button>
@@ -315,11 +356,28 @@ export default {
       recordsPerPage: 10,
       sortKey: null,
       sortOrder: null,
+      // Para gestión de subcategorías
+      categoriasDisponibles: [],
+      selectedCategoriaIds: [],
     };
   },
   computed: {
+    // Columnas para el formulario (sin id)
     columnasFiltradas() {
-      return this.columnas.filter(col => col !== "id");
+      // Excluir id, categoriaIds (interno) y categorias (se muestra aparte en subcategorías)
+      const excluidas = ['id', 'categoriaIds', 'categorias'];
+      return this.columnas.filter(col => !excluidas.includes(col));
+    },
+    
+    // Columnas visibles en la tabla (sin id ni categoriaIds)
+    columnasVisibles() {
+      const excluidas = ['id', 'categoriaIds'];
+      return this.columnas.filter(col => !excluidas.includes(col));
+    },
+    
+    // Detectar si estamos en la tabla de subcategorías
+    esTablaSubcategorias() {
+      return this.tablaSeleccionada?.nombre === 'Tareas - Subcategorías';
     },
     
     tablasFiltradas() {
@@ -392,6 +450,11 @@ export default {
         this.filterTabla = "";
         this.sortKey = null;
         this.sortOrder = null;
+        
+        // Si es tabla de subcategorías, cargar las categorías disponibles
+        if (tabla.nombre === 'Tareas - Subcategorías') {
+          await this.cargarCategoriasDisponibles();
+        }
       } catch (error) {
         console.error("Error al cargar datos", error);
         this.datos = [];
@@ -475,14 +538,47 @@ export default {
     
     nuevoRegistro() {
       this.registro = {};
+      this.selectedCategoriaIds = [];
       this.editando = false;
       this.mostrarFormulario = true;
     },
     
     editarRegistro(fila) {
       this.registro = { ...fila };
+      // Si es subcategoría, cargar las categorías seleccionadas
+      if (this.esTablaSubcategorias && fila.categoriaIds) {
+        this.selectedCategoriaIds = [...fila.categoriaIds];
+      } else {
+        this.selectedCategoriaIds = [];
+      }
       this.editando = true;
       this.mostrarFormulario = true;
+    },
+    
+    // Cargar categorías disponibles para el selector
+    async cargarCategoriasDisponibles() {
+      try {
+        const resp = await axios.get(`${process.env.VUE_APP_API_URL}/api/tarea-categorias`);
+        this.categoriasDisponibles = resp.data.filter(c => c.activo !== false);
+      } catch (error) {
+        console.error('Error al cargar categorías:', error);
+        this.categoriasDisponibles = [];
+      }
+    },
+    
+    // Toggle selección de categoría
+    toggleCategoria(categoriaId) {
+      const index = this.selectedCategoriaIds.indexOf(categoriaId);
+      if (index === -1) {
+        this.selectedCategoriaIds.push(categoriaId);
+      } else {
+        this.selectedCategoriaIds.splice(index, 1);
+      }
+    },
+    
+    // Verificar si una categoría está seleccionada
+    isCategoriaSelected(categoriaId) {
+      return this.selectedCategoriaIds.includes(categoriaId);
     },
     
     cerrarModalClick(event) {
@@ -495,11 +591,19 @@ export default {
     async guardarRegistro() {
       this.loading = true;
       try {
+        // Preparar datos a enviar
+        const datosEnviar = { ...this.registro };
+        
+        // Si es subcategoría, incluir las categorías seleccionadas
+        if (this.esTablaSubcategorias) {
+          datosEnviar.categoriaIds = this.selectedCategoriaIds;
+        }
+        
         if (this.editando) {
-          await axios.put(`${this.tablaSeleccionada.url}/${this.registro.id}`, this.registro);
+          await axios.put(`${this.tablaSeleccionada.url}/${this.registro.id}`, datosEnviar);
           alert("Registro actualizado correctamente");
         } else {
-          await axios.post(this.tablaSeleccionada.url, this.registro);
+          await axios.post(this.tablaSeleccionada.url, datosEnviar);
           alert("Registro creado correctamente");
         }
         this.mostrarFormulario = false;
@@ -1727,5 +1831,129 @@ export default {
 
 .btn-icon.btn-delete:hover {
   background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Selector de categorías para subcategorías */
+.categorias-selector {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.selector-help {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 5px 0 15px 0;
+}
+
+.categorias-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.categoria-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--surface-color);
+  border: 2px solid var(--border-color);
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.categoria-chip:hover {
+  border-color: var(--primary-color);
+  background: rgba(255, 196, 12, 0.05);
+}
+
+.categoria-chip.selected {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border-color: var(--primary-color);
+  color: #000;
+  font-weight: 600;
+}
+
+.categoria-chip.selected i {
+  color: #000;
+}
+
+.categoria-chip i {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.categoria-codigo {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.validation-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 15px;
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 8px;
+  color: #e65100;
+  font-size: 0.85rem;
+}
+
+.validation-warning i {
+  color: #ff9800;
+}
+
+/* Toggle Switch para campo activo */
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-switch input {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 50px;
+  height: 26px;
+  background: #ccc;
+  border-radius: 26px;
+  transition: all 0.3s ease;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: linear-gradient(135deg, #4caf50, #43a047);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(24px);
+}
+
+.toggle-label {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 </style>
