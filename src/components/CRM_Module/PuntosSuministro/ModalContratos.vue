@@ -1224,7 +1224,11 @@ export default {
 
     async descargarPDF(contrato) {
       if (!contrato.rutaArchivoContrato) {
-        alert('No hay archivo PDF disponible para este contrato');
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Archivo no disponible',
+          text: 'No hay archivo PDF disponible para este contrato'
+        })
         return;
       }
 
@@ -1243,7 +1247,11 @@ export default {
         link.remove();
       } catch (error) {
         console.error("Error al descargar el PDF:", error);
-        alert("Error al descargar el PDF del contrato");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al descargar el PDF del contrato'
+        })
       }
     },
 

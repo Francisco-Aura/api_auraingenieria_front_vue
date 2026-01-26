@@ -727,7 +727,14 @@ export default {
 
     // Abre el formulario de actualización de un punto de suministro
     async abrirFormularioPSActualizar(ps) {
-      if (!ps.id) return alert("Punto de suministro no válido");
+      if (!ps.id) {
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Punto de suministro no válido'
+        })
+        return
+      }
       try {
         // Cargar datos detallados del punto de suministro
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
@@ -1444,7 +1451,14 @@ export default {
 
     // Abre un modal para consultar los detalles de un punto de suministro
     async abrirModalPSConsulta(ps) {
-      if (!ps.id) return alert("Punto de suministro no válido");
+      if (!ps.id) {
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Punto de suministro no válido'
+        })
+        return
+      }
       try {
         // Cargar datos detallados del punto de suministro
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
@@ -1479,7 +1493,11 @@ export default {
       try {
         // Verificar si hay datos para exportar
         if (!this.filteredPuntosSuministro || this.filteredPuntosSuministro.length === 0) {
-          alert('No hay datos para exportar');
+          this.$swal.fire({
+            icon: 'warning',
+            title: 'Sin datos',
+            text: 'No hay datos para exportar'
+          })
           return;
         }
 
@@ -1538,7 +1556,11 @@ export default {
 
       } catch (error) {
         console.error('Error al exportar a Excel:', error);
-        alert('Error al exportar a Excel. Por favor, intente nuevamente.');
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al exportar a Excel. Por favor, intente nuevamente.'
+        })
       }
     },
 

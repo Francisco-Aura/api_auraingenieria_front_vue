@@ -652,7 +652,11 @@ export default {
         window.URL.revokeObjectURL(url)
       } catch (error) {
         console.error('Error exportando auditoría:', error)
-        alert('Error al exportar la auditoría a Excel')
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al exportar la auditoría a Excel'
+        })
       }
     },
 

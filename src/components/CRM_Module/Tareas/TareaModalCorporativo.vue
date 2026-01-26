@@ -446,7 +446,11 @@ export default {
       console.log('Guardando tarea...')
       // Validación básica
       if (!this.formulario.titulo || this.formulario.titulo.trim() === '') {
-        alert('El título es obligatorio')
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Campo requerido',
+          text: 'El título es obligatorio'
+        })
         return
       }
       

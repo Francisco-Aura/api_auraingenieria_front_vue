@@ -592,7 +592,11 @@ export default {
         });
 
         if (data.length === 0) {
-          alert("No hay datos para exportar a Excel.");
+          this.$swal.fire({
+            icon: 'warning',
+            title: 'Sin datos',
+            text: 'No hay datos para exportar a Excel.'
+          })
           return;
         }
 
@@ -633,7 +637,11 @@ export default {
 
       } catch (error) {
         console.error("Error al exportar a Excel:", error);
-        alert("Ocurrió un error al exportar a Excel.");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Ocurrió un error al exportar a Excel.'
+        })
       }
     },
   },

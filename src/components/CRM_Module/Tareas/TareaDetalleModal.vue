@@ -518,14 +518,22 @@ export default {
 
     async completarConComentario() {
       if (!this.comentarioCompletacion.trim()) {
-        alert('Por favor, introduce un comentario de finalización')
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Campo requerido',
+          text: 'Por favor, introduce un comentario de finalización'
+        })
         return
       }
 
       const estadoCompletado = this.estados.find(e => e.estadoFinal === true)
       if (!estadoCompletado) {
         console.error('No se encontró estado de finalización. Estados disponibles:', this.estados)
-        alert('Error: No se encontró el estado de finalización. Por favor, recarga la página.')
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se encontró el estado de finalización. Por favor, recarga la página.'
+        })
         return
       }
 
@@ -551,7 +559,11 @@ export default {
         }, 300)
       } catch (error) {
         console.error('Error completando tarea:', error)
-        alert('Error al completar la tarea: ' + error.message)
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al completar la tarea: ' + error.message
+        })
       } finally {
         this.completandoTarea = false
       }
@@ -695,7 +707,11 @@ export default {
         await tareasApi.descargarAdjunto(adjunto.id, adjunto.nombreArchivo)
       } catch (error) {
         console.error('Error descargando archivo:', error)
-        alert('Error al descargar el archivo')
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al descargar el archivo'
+        })
       }
     },
 
@@ -722,7 +738,11 @@ export default {
               await tareasApi.subirAdjuntoComentario(comentarioCreado.id, archivo)
             } catch (error) {
               console.error('Error subiendo archivo:', archivo.name, error)
-              alert(`Error al subir el archivo ${archivo.name}`)
+              this.$swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: `Error al subir el archivo ${archivo.name}`
+              })
             }
           }
           
@@ -738,7 +758,11 @@ export default {
         this.$emit('comentario-creado')
       } catch (error) {
         console.error('Error guardando comentario:', error)
-        alert('Error al guardar el comentario. Por favor, inténtalo de nuevo.')
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al guardar el comentario. Por favor, inténtalo de nuevo.'
+        })
       } finally {
         this.guardandoComentario = false
         this.subiendoArchivos = false
@@ -760,7 +784,11 @@ export default {
         await this.cargarComentarios()
       } catch (error) {
         console.error('Error al fijar/desfijar comentario:', error)
-        alert('Error al actualizar el comentario')
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al actualizar el comentario'
+        })
       }
     }
   }

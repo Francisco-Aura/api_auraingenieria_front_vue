@@ -531,7 +531,11 @@ export default {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${idCliente}`);
         this.puntosSuministro = response.data;
       } catch (error) {
-        alert("No se pudieron cargar los puntos de suministro.");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar los puntos de suministro.'
+        })
       } finally {
         this.loading = false;
       }
@@ -642,7 +646,11 @@ export default {
         this.formularioVisible = true;
       } catch (error) {
         console.error("Error al cargar datos del cliente:", error);
-        alert("No se pudieron cargar los datos del cliente.");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar los datos del cliente.'
+        })
       } finally {
         this.loading = false;
       }
@@ -655,7 +663,11 @@ export default {
       }
       try {
         await axios.put(`${process.env.VUE_APP_API_URL}/api/clientes/${clienteActualizado.id}`, clienteActualizado);
-        alert("Cliente actualizado.");
+        this.$swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Cliente actualizado.'
+        })
         this.fetchClientes(); // Actualiza la lista de clientes
         this.cancelarFormulario();
       } catch (error) {
@@ -667,7 +679,11 @@ export default {
       try {
         if (this.modoActualizar) return; // Evita llamadas erróneas en modo actualización
         await axios.post(`${process.env.VUE_APP_API_URL}/api/clientes`, clienteRecibido);
-        alert("Cliente creado con éxito.");
+        this.$swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Cliente creado con éxito.'
+        })
         this.fetchClientes(); // Actualiza la lista
         this.cancelarFormulario(); // Limpia y cierra el formulario
       } catch (error) {

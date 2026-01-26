@@ -459,7 +459,11 @@ export default {
         console.error("Error al cargar datos", error);
         this.datos = [];
         this.columnas = [];
-        alert("Error al cargar los datos de la tabla");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al cargar los datos de la tabla'
+        })
       } finally {
         this.loading = false;
       }
@@ -601,10 +605,18 @@ export default {
         
         if (this.editando) {
           await axios.put(`${this.tablaSeleccionada.url}/${this.registro.id}`, datosEnviar);
-          alert("Registro actualizado correctamente");
+          this.$swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: 'Registro actualizado correctamente'
+          })
         } else {
           await axios.post(this.tablaSeleccionada.url, datosEnviar);
-          alert("Registro creado correctamente");
+          this.$swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: 'Registro creado correctamente'
+          })
         }
         this.mostrarFormulario = false;
         if (this.tablaSeleccionada) {
@@ -612,7 +624,11 @@ export default {
         }
       } catch (error) {
         console.error("Error al guardar registro", error);
-        alert("Error al guardar el registro: " + (error.response?.data?.message || error.message));
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al guardar el registro: ' + (error.response?.data?.message || error.message)
+        })
       } finally {
         this.loading = false;
       }

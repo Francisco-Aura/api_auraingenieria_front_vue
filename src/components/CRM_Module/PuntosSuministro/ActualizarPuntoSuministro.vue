@@ -651,10 +651,15 @@ export default {
         });
       } else {
         // Fallback si no hay SweetAlert2
-        alert(mensaje);
-        if (modalOverlay) {
-          modalOverlay.style.zIndex = '9999';
-        }
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: mensaje
+        }).then(() => {
+          if (modalOverlay) {
+            modalOverlay.style.zIndex = '9999';
+          }
+        })
       }
     },
 

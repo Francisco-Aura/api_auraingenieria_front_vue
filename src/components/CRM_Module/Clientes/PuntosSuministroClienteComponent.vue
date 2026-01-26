@@ -241,7 +241,11 @@ export default {
         this.formularioVisible = true;
       } catch (error) {
         console.error("Error al obtener el punto de suministro:", error);
-        alert("Error al cargar los detalles del punto de suministro.");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al cargar los detalles del punto de suministro.'
+        })
       }
     },
     cerrarModalActualizarPunto() {
