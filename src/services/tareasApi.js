@@ -191,6 +191,11 @@ export const tareasApi = {
     await api.delete(`/comentarios-tareas/${id}`)
   },
 
+  async toggleFijadoComentario(id) {
+    const response = await api.patch(`/comentarios-tareas/${id}/fijado`)
+    return response.data
+  },
+
   async subirAdjuntoComentario(comentarioId, file) {
     const formData = new FormData()
     formData.append('file', file)

@@ -526,6 +526,7 @@ export default {
 .dia-celda {
   background: white;
   min-height: 90px;
+  max-height: 120px;
   padding: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -533,6 +534,7 @@ export default {
   border: none;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .dia-celda:hover {
@@ -617,6 +619,7 @@ export default {
   gap: 4px;
   flex: 1;
   overflow: hidden;
+  min-width: 0; /* Allow text truncation in children */
 }
 
 .tarea-item {
@@ -638,12 +641,34 @@ export default {
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   border: 1px solid #e9ecef;
   border-left-width: 4px;
+  max-width: 100%;
+  position: relative;
 }
 
 .tarea-item:hover {
   transform: translateY(-1px);
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
   z-index: 2;
+}
+
+/* Tooltip para título completo */
+.tarea-item:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: #2d3748;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: normal;
+  max-width: 250px;
+  word-wrap: break-word;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  margin-bottom: 4px;
+  pointer-events: none;
 }
 
 .panel-backdrop {

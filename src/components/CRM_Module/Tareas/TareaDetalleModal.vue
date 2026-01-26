@@ -17,19 +17,22 @@
 
       <!-- Body del modal -->
       <div class="modal-body">
+        <!-- Título y Descripción ARRIBA - Ancho completo -->
+        <div class="titulo-descripcion-header">
+          <div class="campo-detalle titulo-campo">
+            <label>Título</label>
+            <div class="valor-campo titulo-valor">{{ tarea.titulo }}</div>
+          </div>
+
+          <div class="campo-detalle descripcion-campo" v-if="tarea.descripcion">
+            <label>Descripción</label>
+            <div class="valor-campo descripcion-completa">{{ tarea.descripcion }}</div>
+          </div>
+        </div>
+
         <div class="detalle-grid">
           <!-- Información principal -->
           <div class="info-section">
-            <div class="campo-detalle">
-              <label>Título</label>
-              <div class="valor-campo">{{ tarea.titulo }}</div>
-            </div>
-
-            <div class="campo-detalle" v-if="tarea.descripcion">
-              <label>Descripción</label>
-              <div class="valor-campo descripcion-completa">{{ tarea.descripcion }}</div>
-            </div>
-
             <div class="campo-detalle">
               <label>Prioridad</label>
               <span class="prioridad-badge" :class="`prioridad-${tarea.prioridad}`">
@@ -131,7 +134,7 @@
                     class="select-cambiar-estado"
                     @change="onEstadoChange"
                   >
-                    <option :value="tarea.estadoId" disabled>Modificar estado</option>
+                    <option :value="null" disabled>Modificar estado</option>
                     <option v-for="estado in estadosDisponibles" :key="estado.id" :value="estado.id">
                       {{ formatearEstadoNombre(estado.nombre) }}
                     </option>
@@ -193,13 +196,14 @@
                   </div>
                 </div>
                 <div class="modal-footer-confirmacion">
-                  <button class="btn btn-cancelar" @click="cerrarConfirmacion">Cancelar</button>
+                  <button type="button" class="btn btn-cancelar" @click="cerrarConfirmacion">Cancelar</button>
                   <button 
+                    type="button"
                     class="btn btn-confirmar-completar" 
-                    @click="completarConComentario"
+                    @click.prevent="completarConComentario"
                     :disabled="comentarioCompletacion.trim().length === 0 || completandoTarea"
                   >
-                    {{ completandoTarea ? '...' : 'Confirmar' }}
+                    {{ completandoTarea ? 'Procesando...' : 'Confirmar' }}
                   </button>
                 </div>
               </div>
@@ -209,36 +213,7 @@
             <div class="comentarios-section-right">
               <label class="section-label"><i class="fas fa-comments"></i> Comentarios</label>
               
-              <div v-if="cargandoComentarios" class="comentarios-loading">
-                <i class="fas fa-spinner fa-spin"></i> Cargando...
-              </div>
-              <div v-else-if="comentarios.length === 0" class="comentarios-vacio">
-                No hay comentarios aún
-              </div>
-              <div v-else class="comentarios-lista-compact">
-                <div v-for="comentario in comentarios" :key="comentario.id" class="comentario-item-compact">
-                  <div class="comentario-header-compact">
-                    <span class="comentario-autor">{{ comentario.autor || 'Usuario' }}</span>
-                    <span class="comentario-fecha">{{ formatDate(comentario.fechaCreacion) }}</span>
-                  </div>
-                  <div class="comentario-contenido">{{ comentario.contenido }}</div>
-                  
-                  <div v-if="comentario.adjuntos && comentario.adjuntos.length > 0" class="comentario-adjuntos">
-                    <div class="adjuntos-lista">
-                      <div 
-                        v-for="adjunto in comentario.adjuntos" 
-                        :key="adjunto.id" 
-                        class="adjunto-item-compact"
-                        @click="descargarAdjunto(adjunto)"
-                      >
-                        <i class="fas fa-file-download"></i> {{ adjunto.nombreArchivo }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Nuevo Comentario Compacto -->
+              <!-- Nuevo Comentario siempre visible arriba -->
               <div class="comentario-nuevo-compact">
                 <textarea 
                   v-model="nuevoComentario"
@@ -277,6 +252,55 @@
                       <span>{{ archivo.name }}</span>
                       <span class="remove-file" @click="quitarArchivo(index)">&times;</span>
                     </div>
+                </div>
+              </div>
+              
+              <!-- Lista de comentarios con scroll -->
+              <div v-if="cargandoComentarios" class="comentarios-loading">
+                <i class="fas fa-spinner fa-spin"></i> Cargando...
+              </div>
+              <div v-else-if="comentarios.length === 0" class="comentarios-vacio">
+                No hay comentarios aún
+              </div>
+              <div v-else class="comentarios-lista-compact">
+                <div 
+                  v-for="comentario in comentarios" 
+                  :key="comentario.id" 
+                  class="comentario-item-compact"
+                  :class="{ 'comentario-fijado': comentario.fijado }"
+                >
+                  <div class="comentario-header-compact">
+                    <div class="comentario-info">
+                      <span class="comentario-autor">{{ comentario.autor || 'Usuario' }}</span>
+                      <span v-if="comentario.fijado" class="fijado-badge" title="Comentario fijado">
+                        <i class="fas fa-thumbtack"></i>
+                      </span>
+                    </div>
+                    <div class="comentario-actions">
+                      <button 
+                        class="btn-fijar-comentario" 
+                        @click="toggleFijadoComentario(comentario)"
+                        :title="comentario.fijado ? 'Desfijar comentario' : 'Fijar comentario'"
+                      >
+                        <i :class="comentario.fijado ? 'fas fa-thumbtack' : 'far fa-thumbtack'"></i>
+                      </button>
+                      <span class="comentario-fecha">{{ formatDate(comentario.fechaCreacion) }}</span>
+                    </div>
+                  </div>
+                  <div class="comentario-contenido">{{ comentario.contenido }}</div>
+                  
+                  <div v-if="comentario.adjuntos && comentario.adjuntos.length > 0" class="comentario-adjuntos">
+                    <div class="adjuntos-lista">
+                      <div 
+                        v-for="adjunto in comentario.adjuntos" 
+                        :key="adjunto.id" 
+                        class="adjunto-item-compact"
+                        @click="descargarAdjunto(adjunto)"
+                      >
+                        <i class="fas fa-file-download"></i> {{ adjunto.nombreArchivo }}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -382,12 +406,13 @@ export default {
       return true
     },
     
-    // Filtrar estados sin el estado final (completado)
+    // Filtrar estados disponibles (excluir el actual y finales)
     estadosDisponibles() {
-      return this.estados.filter(e => !e.estadoFinal)
+      if (!this.estados || !Array.isArray(this.estados)) return []
+      return this.estados.filter(e => !e.estadoFinal && e.id !== this.tarea?.estadoId)
     },
     puedeAplicarCambio() {
-      if (!this.estadoSeleccionado || this.estadoSeleccionado === this.tarea.estadoId) {
+      if (!this.estadoSeleccionado) {
         return false
       }
       // Siempre requerir comentario para cualquier cambio de estado
@@ -398,8 +423,8 @@ export default {
     value: {
       handler(val) {
         if (val && this.tarea && this.tarea.id) {
-          // Preseleccionar el estado actual cuando se abre el modal
-          this.estadoSeleccionado = this.tarea.estadoId
+          // Inicializar estado como null para mostrar "Modificar estado"
+          this.estadoSeleccionado = null
           // Resetear campos de comentario
           this.motivoBloqueo = ''
           this.comentarioCambioEstado = ''
@@ -418,8 +443,8 @@ export default {
     tarea: {
       handler(newTarea, oldTarea) {
         if (newTarea && newTarea.id && this.value) {
-          // Actualizar el estado seleccionado cuando cambia la tarea
-          this.estadoSeleccionado = newTarea.estadoId
+          // Resetear el selector al abrir nueva tarea
+          this.estadoSeleccionado = null
           
           // Si la tarea cambió (no solo se actualizó), recargar comentarios
           if (!oldTarea || oldTarea.id !== newTarea.id) {
@@ -493,13 +518,14 @@ export default {
 
     async completarConComentario() {
       if (!this.comentarioCompletacion.trim()) {
-        console.warn('Se requiere un comentario para completar')
+        alert('Por favor, introduce un comentario de finalización')
         return
       }
 
       const estadoCompletado = this.estados.find(e => e.estadoFinal === true)
       if (!estadoCompletado) {
-        console.error('No se encontró estado de finalización')
+        console.error('No se encontró estado de finalización. Estados disponibles:', this.estados)
+        alert('Error: No se encontró el estado de finalización. Por favor, recarga la página.')
         return
       }
 
@@ -507,7 +533,7 @@ export default {
       try {
         // Crear comentario sin mutar el prop
         const nuevoComentario = {
-          contenido: this.comentarioCompletacion,
+          contenido: this.comentarioCompletacion.trim(),
           fijado: false,
           esComentarioCompletacion: true
         }
@@ -519,12 +545,13 @@ export default {
           comentario: nuevoComentario
         })
         
-        // Cerrar modal
+        // Cerrar modal de confirmación después de un breve delay
         setTimeout(() => {
           this.cerrarConfirmacion()
-        }, 500)
+        }, 300)
       } catch (error) {
         console.error('Error completando tarea:', error)
+        alert('Error al completar la tarea: ' + error.message)
       } finally {
         this.completandoTarea = false
       }
@@ -567,7 +594,7 @@ export default {
 
     cerrar() {
       // Resetear campos de cambio de estado
-      this.estadoSeleccionado = this.tarea ? this.tarea.estadoId : null
+      this.estadoSeleccionado = null
       this.motivoBloqueo = ''
       this.comentarioCambioEstado = ''
       this.esEstadoBloqueado = false
@@ -725,6 +752,16 @@ export default {
 
     quitarArchivo(index) {
       this.archivosSeleccionados.splice(index, 1)
+    },
+
+    async toggleFijadoComentario(comentario) {
+      try {
+        await tareasApi.toggleFijadoComentario(comentario.id)
+        await this.cargarComentarios()
+      } catch (error) {
+        console.error('Error al fijar/desfijar comentario:', error)
+        alert('Error al actualizar el comentario')
+      }
     }
   }
 }
@@ -827,14 +864,55 @@ export default {
   flex: 1;
   padding: 24px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Título y descripción en la parte superior */
+.titulo-descripcion-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e9ecef;
+  flex-shrink: 0;
+}
+
+.titulo-campo {
+  width: 100%;
+}
+
+.titulo-valor {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2d3748;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.descripcion-campo {
+  width: 100%;
+}
+
+.descripcion-completa {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 4px solid #667eea;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 150px;
+  overflow-y: auto;
 }
 
 .detalle-grid {
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 20px;
-  height: 100%;
+  flex: 1;
   overflow: hidden;
+  min-height: 0;
 }
 
 /* Sección de información */
@@ -862,14 +940,6 @@ export default {
   font-size: 0.95rem;
   color: #212529;
   line-height: 1.4;
-}
-
-.descripcion-completa {
-  background: #f8f9fa;
-  padding: 12px;
-  border-radius: 6px;
-  border-left: 4px solid #667eea;
-  white-space: pre-wrap;
 }
 
 .campos-row {
@@ -1932,6 +2002,7 @@ export default {
   overflow: hidden; /* Important for scroll */
   border-top: 1px solid #e9ecef;
   padding-top: 10px;
+  min-height: 0; /* Critical for flex scroll */
 }
 
 .section-label {
@@ -1940,6 +2011,7 @@ export default {
   color: #4a5568;
   margin-bottom: 10px;
   display: block;
+  flex-shrink: 0;
 }
 
 .comentarios-lista-compact {
@@ -1950,6 +2022,8 @@ export default {
   flex-direction: column;
   gap: 10px;
   background: #fff;
+  min-height: 0; /* Critical for scroll */
+  max-height: calc(100% - 150px); /* Leave space for input */
 }
 
 .comentarios-vacio {
@@ -1965,24 +2039,70 @@ export default {
   border-radius: 4px;
   padding: 10px;
   font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.comentario-item-compact.comentario-fijado {
+  background: #fffbeb;
+  border-left-color: #f59e0b;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
 }
 
 .comentario-header-compact {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 0.75rem;
   color: #718096;
   margin-bottom: 5px;
 }
 
+.comentario-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .comentario-autor { font-weight: 600; color: #2d3748; }
 
+.fijado-badge {
+  color: #f59e0b;
+  font-size: 0.7rem;
+}
+
+.comentario-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-fijar-comentario {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  padding: 2px 5px;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+}
+
+.btn-fijar-comentario:hover {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.comentario-fijado .btn-fijar-comentario {
+  color: #f59e0b;
+}
+
 .comentario-nuevo-compact {
-  margin-top: 10px;
+  margin-bottom: 10px;
   background: #f1f5f9;
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
 .comentario-tools {
