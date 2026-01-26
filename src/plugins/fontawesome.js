@@ -69,7 +69,8 @@ import {
   faCommentAlt,
   faSignOutAlt,
   faPlusCircle,
-  faTasks
+  faTasks,
+  faThumbtack
 } from '@fortawesome/free-solid-svg-icons'
 
 // Agregar iconos a la librería
@@ -139,7 +140,8 @@ library.add(
   faCommentAlt,
   faSignOutAlt,
   faPlusCircle,
-  faTasks
+  faTasks,
+  faThumbtack
 )
 
 export { FontAwesomeIcon }

@@ -282,7 +282,7 @@
                         @click="toggleFijadoComentario(comentario)"
                         :title="comentario.fijado ? 'Desfijar comentario' : 'Fijar comentario'"
                       >
-                        <i :class="comentario.fijado ? 'fas fa-thumbtack' : 'far fa-thumbtack'"></i>
+                        <i class="fas fa-thumbtack"></i>
                       </button>
                       <span class="comentario-fecha">{{ formatDate(comentario.fechaCreacion) }}</span>
                     </div>
@@ -2079,21 +2079,24 @@ export default {
 .btn-fijar-comentario {
   background: none;
   border: none;
-  color: #a0aec0;
+  color: #cbd5e0;
   cursor: pointer;
-  padding: 2px 5px;
-  font-size: 0.85rem;
+  padding: 4px 6px;
+  font-size: 0.9rem;
   transition: all 0.2s ease;
   border-radius: 4px;
+  opacity: 0.5;
 }
 
 .btn-fijar-comentario:hover {
   color: #f59e0b;
   background: rgba(245, 158, 11, 0.1);
+  opacity: 1;
 }
 
 .comentario-fijado .btn-fijar-comentario {
   color: #f59e0b;
+  opacity: 1;
 }
 
 .comentario-nuevo-compact {
