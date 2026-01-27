@@ -1,24 +1,10 @@
 <template>
   <div v-if="value" class="modal-overlay" @click="cerrar">
     <div class="modal-content modal-detalle" @click.stop>
-      <!-- Header del modal -->
-      <div class="modal-header">
-        <div class="header-info">
-          <h2 class="modal-title">
-            <i class="fas fa-info-circle"></i>
-            Detalle de Tarea
-          </h2>
-          <span class="tarea-id">#{{ tarea.id }}</span>
-        </div>
-        <button type="button" class="close-button" @click="cerrar">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <!-- Body del modal -->
+      <!-- Body del modal (Sin header separado) -->
       <div class="modal-body">
-        <!-- Título y Descripción ARRIBA - Ancho completo -->
-        <div class="titulo-descripcion-header">
+          <!-- Título y Descripción ARRIBA - Ancho completo -->
+          <div class="titulo-descripcion-header">
           <div class="campo-detalle titulo-campo">
             <label>Título</label>
             <div class="valor-campo titulo-valor">{{ tarea.titulo }}</div>
@@ -40,49 +26,43 @@
               </span>
             </div>
 
-            <div class="campos-row" v-if="tarea.clienteRelacionadoNombre">
-              <div class="campo-detalle">
-                <label>Cliente</label>
-                <div class="cliente-info">
-                  <i class="fas fa-user"></i>
-                  {{ tarea.clienteRelacionadoNombre }}
-                </div>
+            <div class="campo-detalle" v-if="tarea.clienteRelacionadoNombre">
+              <label>Cliente</label>
+              <div class="cliente-info">
+                <i class="fas fa-user"></i>
+                {{ tarea.clienteRelacionadoNombre }}
               </div>
             </div>
 
-            <div class="campos-row">
-              <div class="campo-detalle">
-                <label>Asignado a</label>
-                <div class="usuario-info">
-                  <i class="fas fa-user-circle"></i>
-                  {{ tarea.usuarioAsignadoNombre }}
-                </div>
-              </div>
-
-              <div class="campo-detalle">
-                <label>Creado por</label>
-                <div class="usuario-info">
-                  <i class="fas fa-user"></i>
-                  {{ tarea.usuarioCreadorNombre }}
-                </div>
+            <div class="campo-detalle">
+              <label>Asignado a</label>
+              <div class="usuario-info">
+                <i class="fas fa-user-circle"></i>
+                {{ tarea.usuarioAsignadoNombre }}
               </div>
             </div>
 
-            <div class="campos-row">
-              <div class="campo-detalle" v-if="tarea.fechaInicio">
-                <label>Fecha de inicio</label>
-                <div class="fecha-info">
-                  <i class="fas fa-calendar-plus"></i>
-                  {{ formatearFecha(tarea.fechaInicio) }}
-                </div>
+            <div class="campo-detalle">
+              <label>Creado por</label>
+              <div class="usuario-info">
+                <i class="fas fa-user"></i>
+                {{ tarea.usuarioCreadorNombre }}
               </div>
+            </div>
 
-              <div class="campo-detalle" v-if="tarea.fechaVencimiento">
-                <label>Fecha de vencimiento</label>
-                <div class="fecha-info" :class="{ 'fecha-vencida': tarea.vencida }">
-                  <i class="fas fa-calendar-alt"></i>
-                  {{ formatearFecha(tarea.fechaVencimiento) }}
-                </div>
+            <div class="campo-detalle" v-if="tarea.fechaInicio">
+              <label>Fecha de inicio</label>
+              <div class="fecha-info">
+                <i class="fas fa-calendar-plus"></i>
+                {{ formatearFecha(tarea.fechaInicio) }}
+              </div>
+            </div>
+
+            <div class="campo-detalle" v-if="tarea.fechaVencimiento">
+              <label>Fecha de vencimiento</label>
+              <div class="fecha-info" :class="{ 'fecha-vencida': tarea.vencida }">
+                <i class="fas fa-calendar-alt"></i>
+                {{ formatearFecha(tarea.fechaVencimiento) }}
               </div>
             </div>
 
@@ -118,7 +98,7 @@
           <!-- Panel Derecho (Acciones y Comentarios) -->
           <div class="right-panel">
             <div class="acciones-bar">
-              <!-- Estado Actual Badge -->
+              <!-- Actions Row: Status Badge, Change Status Selector, Buttons -->
               <div class="acciones-row-horizontal">
                 <!-- Estado Actual -->
                 <div class="estado-badge-compact" :style="{ backgroundColor: tarea.estadoColor }">
@@ -152,7 +132,7 @@
                 </button>
               </div>
 
-              <!-- Motivo Cambio Estado (si se selecciona un nuevo estado) -->
+               <!-- Motivo Cambio Estado (si se selecciona un nuevo estado) -->
               <div v-if="estadoSeleccionado && estadoSeleccionado !== tarea.estadoId" class="motivo-cambio-container">
                  <textarea 
                     v-model="comentarioCambioEstado"
@@ -306,10 +286,10 @@
             </div>
           </div>
         </div>
-      </div>
+        </div>
 
-      <!-- Footer del modal -->
-      <div class="modal-footer">
+        <!-- Footer del modal -->
+        <div class="modal-footer">
         <div class="footer-info">
           <span class="fecha-actualizacion">
             Última actualización: {{ formatearFecha(tarea.fechaActualizacion || tarea.fechaCreacion) }}
@@ -817,7 +797,7 @@ export default {
   background: white;
   border-radius: 0.4rem;
   width: 95%;
-  height: 90%;
+  height: 95%;
   max-width: 1400px;
   display: flex;
   flex-direction: column;
@@ -839,38 +819,17 @@ export default {
 
 /* Header del modal */
 .modal-header {
-  color: white;
-  padding: 20px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: none; /* Ocultar header completamente */
 }
 
-.header-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tarea-id {
-  font-size: 0.8rem;
-  opacity: 0.8;
-  font-weight: 400;
-}
-
-.close-button {
-  background-color: rgba(255, 255, 255, 0.2);
+/* Botón cerrar flotante */
+.close-button-floating {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background-color: rgba(0, 0, 0, 0.5);
   border: none;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   cursor: pointer;
   color: white;
   width: 32px;
@@ -879,31 +838,102 @@ export default {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.close-button-floating:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+  transform: rotate(90deg);
+}
+
+.header-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #2d3748;
+}
+
+.tarea-id {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.close-button {
+  background-color: transparent;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #a0aec0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  margin-left: 8px;
 }
 
 .close-button:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: #f7fafc;
+  color: #2d3748;
   transform: rotate(90deg);
 }
 
 /* Body del modal */
 .modal-body {
   flex: 1;
-  padding: 24px;
-  overflow-y: auto;
+  padding: 8px 12px 0 12px;
+  overflow: hidden; /* Importante: hidden para delegar scroll a hijos */
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 4px;
+  min-height: 0;
+}
+
+/* Wrapper para body y footer */
+.modal-body-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
 }
 
 /* Título y descripción en la parte superior */
 .titulo-descripcion-header {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid #e9ecef;
+  gap: 2px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #e9ecef;
   flex-shrink: 0;
 }
 
@@ -912,11 +942,12 @@ export default {
 }
 
 .titulo-valor {
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   color: #2d3748;
   word-wrap: break-word;
   white-space: pre-wrap;
+  line-height: 1.1;
 }
 
 .descripcion-campo {
@@ -925,19 +956,21 @@ export default {
 
 .descripcion-completa {
   background: #f8f9fa;
-  padding: 12px;
-  border-radius: 6px;
-  border-left: 4px solid #667eea;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border-left: 3px solid #667eea;
   white-space: pre-wrap;
   word-wrap: break-word;
-  max-height: 150px;
+  max-height: 70px;
   overflow-y: auto;
+  font-size: 0.85rem;
+  line-height: 1.2;
 }
 
 .detalle-grid {
   display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 20px;
+  grid-template-columns: 200px 1fr;
+  gap: 10px;
   flex: 1;
   overflow: hidden;
   min-height: 0;
@@ -947,13 +980,15 @@ export default {
 .info-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .campo-detalle {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
 }
 
 .campo-detalle label {
@@ -1250,6 +1285,9 @@ export default {
   border-radius: 6px;
   padding: 12px;
   transition: all 0.2s ease;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .comentario-item:hover {
@@ -1287,6 +1325,10 @@ export default {
   color: #212529;
   line-height: 1.5;
   white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .comentario-nuevo {
@@ -1486,22 +1528,27 @@ export default {
 
 /* Footer del modal */
 .modal-footer {
-  padding: 20px 24px;
+  padding: 6px 12px; 
   border-top: 1px solid #e9ecef;
-  background: #f8f9fa;
+  background: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
+  gap: 12px;
+  margin-top: auto;
 }
 
 .footer-info {
   font-size: 0.8rem;
   color: #6c757d;
+  flex: 1;
 }
 
 .footer-actions {
   display: flex;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .btn {
@@ -1812,42 +1859,52 @@ export default {
 .right-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   height: 100%;
   overflow: hidden;
 }
 
 .acciones-bar {
-  padding: 12px;
+  padding: 8px;
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 /* Fila horizontal con todos los controles */
 .acciones-row-horizontal {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
   width: 100%;
+  flex-wrap: wrap; /* Para pantallas pequeñas */
 }
 
+/* Para hacerlo más bonito y alineado */
+.acciones-row-horizontal > * {
+  display: flex;
+  align-items: center;
+}
+
+
 .estado-badge-compact {
-  padding: 8px 12px;
+  padding: 6px 14px;
   border-radius: 20px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   color: white;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 /* Selector de cambio de estado mejorado */
@@ -1859,49 +1916,48 @@ export default {
 }
 
 .select-cambiar-estado {
-  padding: 8px 14px;
+  padding: 6px 14px;
   padding-left: 36px;
-  height: 36px;
+  height: 34px;
   font-size: 0.85rem;
   width: auto;
-  min-width: 140px;
-  border: 2px solid #e0e0ff;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #f5f7ff 0%, #f0f3ff 100%);
+  min-width: 150px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   font-weight: 600;
-  color: #4a5f7f;
+  color: #4a5568;
   appearance: none;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 16 16'%3E%3Cpath fill='%23667eea' d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 16 16'%3E%3Cpath fill='%23718096' d='M8 11L3 6h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
-  padding-right: 28px;
+  padding-right: 30px;
 }
 
 .select-cambiar-estado:hover {
-  border-color: #667eea;
-  background: linear-gradient(135deg, #eef2ff 0%, #e8ecff 100%);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  border-color: #cbd5e0;
+  background-color: #f7fafc;
   transform: translateY(-1px);
 }
 
 .select-cambiar-estado:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2), 0 4px 12px rgba(102, 126, 234, 0.15);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
 }
 
 /* Icono animado */
 .icon-cambiar-estado {
   position: absolute;
   left: 12px;
-  font-size: 0.95rem;
-  color: #667eea;
+  font-size: 0.9rem;
+  color: #718096;
   pointer-events: none;
   transition: all 0.3s ease;
-  opacity: 0.85;
+  opacity: 0.6;
 }
 
 .estado-selector-container:hover .icon-cambiar-estado {
@@ -1935,20 +1991,48 @@ export default {
 
 /* Botones de acciones compactos */
 .btn-action-compact {
-  padding: 8px 14px;
-  height: 36px;
-  border-radius: 6px;
+  padding: 0 16px;
+  height: 34px;
+  border-radius: 8px;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   color: white;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
   font-size: 0.85rem;
   font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-action-compact:active {
+  transform: scale(0.98);
+}
+
+.btn-action-compact i {
+  font-size: 0.95rem;
+}
+
+/* Specific colors for buttons if not defined elsewhere */
+.btn-completar-compact {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+}
+.btn-completar-compact:hover {
+  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+}
+
+.btn-auditoria-compact {
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+}
+.btn-auditoria-compact:hover {
+  background: linear-gradient(135deg, #3182ce 0%, #2b6cb0 100%);
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
 }
 
 .btn-completar-compact {
@@ -2029,15 +2113,16 @@ export default {
   flex: 1;
   overflow: hidden; /* Important for scroll */
   border-top: 1px solid #e9ecef;
-  padding-top: 10px;
+  padding-top: 4px;
   min-height: 0; /* Critical for flex scroll */
+  margin-top: 0;
 }
 
 .section-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #4a5568;
-  margin-bottom: 10px;
+  margin-bottom: 3px;
   display: block;
   flex-shrink: 0;
 }
@@ -2048,10 +2133,9 @@ export default {
   padding: 5px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   background: #fff;
   min-height: 0; /* Critical for scroll */
-  max-height: calc(100% - 150px); /* Leave space for input */
 }
 
 .comentarios-vacio {
@@ -2065,9 +2149,12 @@ export default {
   background: #f8f9fa;
   border-left: 3px solid #667eea;
   border-radius: 4px;
-  padding: 10px;
-  font-size: 0.9rem;
+  padding: 7px;
+  font-size: 0.85rem;
   transition: all 0.2s ease;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .comentario-item-compact.comentario-fijado {
@@ -2128,9 +2215,9 @@ export default {
 }
 
 .comentario-nuevo-compact {
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   background: #f1f5f9;
-  padding: 10px;
+  padding: 8px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   flex-shrink: 0;
