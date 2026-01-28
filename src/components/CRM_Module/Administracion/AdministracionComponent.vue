@@ -145,7 +145,7 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th v-for="col in columnas" :key="col" @click="sortBy(col)" class="sortable">
+                  <th v-for="col in columnasVisibles" :key="col" @click="sortBy(col)" class="sortable">
                     {{ formatColumnName(col) }}
                     <i :class="getSortIcon(col)"></i>
                   </th>
@@ -156,7 +156,7 @@
               </thead>
               <tbody>
                 <tr v-for="fila in paginatedDatos" :key="fila.id" class="table-row">
-                  <td v-for="col in columnas" :key="col" class="data-cell" :title="formatCellValue(fila[col])">
+                  <td v-for="col in columnasVisibles" :key="col" class="data-cell" :title="formatCellValue(fila[col])">
                     <span class="cell-content">{{ formatCellValue(fila[col]) }}</span>
                   </td>
                   <td class="actions-cell">
@@ -171,7 +171,7 @@
                   </td>
                 </tr>
                 <tr v-if="paginatedDatos.length === 0">
-                  <td :colspan="columnas.length + 1" class="empty-state-cell">
+                  <td :colspan="columnasVisibles.length + 1" class="empty-state-cell">
                     <div class="empty-state">
                       <i class="fas fa-inbox fa-3x"></i>
                       <h3>No hay registros</h3>
@@ -225,7 +225,7 @@
               <i :class="editando ? 'fas fa-edit' : 'fas fa-plus-circle'"></i>
             </div>
             <div class="title-text">
-              <h2>{{ editando ? 'Editar' : 'Nuevo' }} Registro</h2>
+              <h2>{{ editando ? 'Editar' : 'Nueva' }} {{ esTablaSubcategorias ? 'Subcategoría' : 'Registro' }}</h2>
               <p>{{ tablaSeleccionada?.nombre }}</p>
             </div>
           </div>
@@ -239,17 +239,54 @@
             <div v-for="col in columnasFiltradas" :key="col" class="form-group">
               <label :for="col" class="form-label">
                 {{ formatColumnName(col) }}
-                <span class="required-asterisk">*</span>
+                <span v-if="col === 'nombre'" class="required-asterisk">*</span>
               </label>
-              <input 
-                :id="col" 
-                v-model="registro[col]" 
-                class="form-input"
-                :placeholder="`Ingresa ${formatColumnName(col).toLowerCase()}`"
-                :required="col !== 'id'"
-                type="text"
-              />
+              <!-- Campo especial para activo: checkbox -->
+              <template v-if="col === 'activo'">
+                <label class="toggle-switch">
+                  <input type="checkbox" v-model="registro[col]" />
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">{{ registro[col] ? 'Activo' : 'Inactivo' }}</span>
+                </label>
+              </template>
+              <!-- Campos normales -->
+              <template v-else>
+                <input 
+                  :id="col" 
+                  v-model="registro[col]" 
+                  class="form-input"
+                  :placeholder="`Ingresa ${formatColumnName(col).toLowerCase()}`"
+                  :required="col === 'nombre'"
+                  type="text"
+                />
+              </template>
             </div>
+          </div>
+          
+          <!-- Selector de categorías para subcategorías -->
+          <div v-if="esTablaSubcategorias" class="categorias-selector">
+            <label class="form-label">
+              Categorías asociadas
+              <span class="required-asterisk">*</span>
+            </label>
+            <p class="selector-help">Selecciona las categorías a las que pertenece esta subcategoría</p>
+            <div class="categorias-grid">
+              <div 
+                v-for="cat in categoriasDisponibles" 
+                :key="cat.id"
+                class="categoria-chip"
+                :class="{ 'selected': isCategoriaSelected(cat.id) }"
+                @click="toggleCategoria(cat.id)"
+              >
+                <i :class="isCategoriaSelected(cat.id) ? 'fas fa-check-circle' : 'far fa-circle'"></i>
+                <span>{{ cat.nombre }}</span>
+                <span class="categoria-codigo">({{ cat.codigo }})</span>
+              </div>
+            </div>
+            <p v-if="selectedCategoriaIds.length === 0" class="validation-warning">
+              <i class="fas fa-exclamation-triangle"></i>
+              Debes seleccionar al menos una categoría
+            </p>
           </div>
           
           <div class="modal-footer">
@@ -257,7 +294,11 @@
               <i class="fas fa-times"></i>
               <span>Cancelar</span>
             </button>
-            <button type="submit" class="btn btn-save" :disabled="loading">
+            <button 
+              type="submit" 
+              class="btn btn-save" 
+              :disabled="loading || (esTablaSubcategorias && selectedCategoriaIds.length === 0)"
+            >
               <i class="fas fa-save"></i>
               <span>{{ editando ? 'Actualizar' : 'Guardar' }}</span>
             </button>
@@ -272,8 +313,7 @@
 <script>
 import axios from 'axios';
 import Spinner from "@/components/SpinnerComponent.vue";
-import * as XLSX from 'xlsx';
-import 'jspdf-autotable';
+import ExcelJS from 'exceljs';
 
 export default {
   name: 'AdministracionComponent',
@@ -298,7 +338,10 @@ export default {
         { nombre: "Tipos de Comunicación", url: `${process.env.VUE_APP_API_URL}/api/tipos-comunicacion`, icono: "fas fa-wifi" },
         { nombre: "Propiedades", url: `${process.env.VUE_APP_API_URL}/api/propiedades`, icono: "fas fa-building" },
         { nombre: "APP Monitorización", url: `${process.env.VUE_APP_API_URL}/api/app-monitorizacion`, icono: "fas fa-chart-line" },
-        { nombre: "Integración Sistemas FV", url: `${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`, icono: "fas fa-solar-panel" }
+        { nombre: "Integración Sistemas FV", url: `${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`, icono: "fas fa-solar-panel" },
+        // Tablas del Módulo de Tareas
+        { nombre: "Tareas - Categorías", url: `${process.env.VUE_APP_API_URL}/api/tarea-categorias`, icono: "fas fa-folder" },
+        { nombre: "Tareas - Subcategorías", url: `${process.env.VUE_APP_API_URL}/api/tarea-subcategorias`, icono: "fas fa-folder-open" }
       ],
       tablaSeleccionada: null,
       datos: [],
@@ -313,11 +356,28 @@ export default {
       recordsPerPage: 10,
       sortKey: null,
       sortOrder: null,
+      // Para gestión de subcategorías
+      categoriasDisponibles: [],
+      selectedCategoriaIds: [],
     };
   },
   computed: {
+    // Columnas para el formulario (sin id)
     columnasFiltradas() {
-      return this.columnas.filter(col => col !== "id");
+      // Excluir id, categoriaIds (interno) y categorias (se muestra aparte en subcategorías)
+      const excluidas = ['id', 'categoriaIds', 'categorias'];
+      return this.columnas.filter(col => !excluidas.includes(col));
+    },
+    
+    // Columnas visibles en la tabla (sin id ni categoriaIds)
+    columnasVisibles() {
+      const excluidas = ['id', 'categoriaIds'];
+      return this.columnas.filter(col => !excluidas.includes(col));
+    },
+    
+    // Detectar si estamos en la tabla de subcategorías
+    esTablaSubcategorias() {
+      return this.tablaSeleccionada?.nombre === 'Tareas - Subcategorías';
     },
     
     tablasFiltradas() {
@@ -390,11 +450,20 @@ export default {
         this.filterTabla = "";
         this.sortKey = null;
         this.sortOrder = null;
+        
+        // Si es tabla de subcategorías, cargar las categorías disponibles
+        if (tabla.nombre === 'Tareas - Subcategorías') {
+          await this.cargarCategoriasDisponibles();
+        }
       } catch (error) {
         console.error("Error al cargar datos", error);
         this.datos = [];
         this.columnas = [];
-        alert("Error al cargar los datos de la tabla");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al cargar los datos de la tabla'
+        })
       } finally {
         this.loading = false;
       }
@@ -424,7 +493,10 @@ export default {
         "Tipos de Comunicación": "Tipos de comunicación de contadores",
         "Propiedades": "Propiedad de equipos (Distribuidora, Cliente, Aura)",
         "APP Monitorización": "Aplicaciones de monitorización de instalaciones",
-        "Integración Sistemas FV": "Sistemas de integración fotovoltaica"
+        "Integración Sistemas FV": "Sistemas de integración fotovoltaica",
+        // Módulo de Tareas
+        "Tareas - Categorías": "Categorías para clasificar tareas",
+        "Tareas - Subcategorías": "Subcategorías de tareas"
       };
       return descripciones[nombre] || "Tabla del sistema";
     },
@@ -441,12 +513,16 @@ export default {
         "Subtipologías": 22,
         "Tarifas Gas": 35,
         "Tarifas Luz": 42,
-        "Usuarios": 28,        "Distribuidoras": 4,
+        "Usuarios": 28,        
+        "Distribuidoras": 4,
         "Tipos de Contador": 5,
         "Tipos de Comunicación": 4,
         "Propiedades": 3,
         "APP Monitorización": 8,
-        "Integración Sistemas FV": 8
+        "Integración Sistemas FV": 8,
+        // Módulo de Tareas
+        "Tareas - Categorías": 4,
+        "Tareas - Subcategorías": 36
       };
       return counts[nombreTabla] || 0;
     },
@@ -466,14 +542,47 @@ export default {
     
     nuevoRegistro() {
       this.registro = {};
+      this.selectedCategoriaIds = [];
       this.editando = false;
       this.mostrarFormulario = true;
     },
     
     editarRegistro(fila) {
       this.registro = { ...fila };
+      // Si es subcategoría, cargar las categorías seleccionadas
+      if (this.esTablaSubcategorias && fila.categoriaIds) {
+        this.selectedCategoriaIds = [...fila.categoriaIds];
+      } else {
+        this.selectedCategoriaIds = [];
+      }
       this.editando = true;
       this.mostrarFormulario = true;
+    },
+    
+    // Cargar categorías disponibles para el selector
+    async cargarCategoriasDisponibles() {
+      try {
+        const resp = await axios.get(`${process.env.VUE_APP_API_URL}/api/tarea-categorias`);
+        this.categoriasDisponibles = resp.data.filter(c => c.activo !== false);
+      } catch (error) {
+        console.error('Error al cargar categorías:', error);
+        this.categoriasDisponibles = [];
+      }
+    },
+    
+    // Toggle selección de categoría
+    toggleCategoria(categoriaId) {
+      const index = this.selectedCategoriaIds.indexOf(categoriaId);
+      if (index === -1) {
+        this.selectedCategoriaIds.push(categoriaId);
+      } else {
+        this.selectedCategoriaIds.splice(index, 1);
+      }
+    },
+    
+    // Verificar si una categoría está seleccionada
+    isCategoriaSelected(categoriaId) {
+      return this.selectedCategoriaIds.includes(categoriaId);
     },
     
     cerrarModalClick(event) {
@@ -486,12 +595,28 @@ export default {
     async guardarRegistro() {
       this.loading = true;
       try {
+        // Preparar datos a enviar
+        const datosEnviar = { ...this.registro };
+        
+        // Si es subcategoría, incluir las categorías seleccionadas
+        if (this.esTablaSubcategorias) {
+          datosEnviar.categoriaIds = this.selectedCategoriaIds;
+        }
+        
         if (this.editando) {
-          await axios.put(`${this.tablaSeleccionada.url}/${this.registro.id}`, this.registro);
-          alert("Registro actualizado correctamente");
+          await axios.put(`${this.tablaSeleccionada.url}/${this.registro.id}`, datosEnviar);
+          this.$swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: 'Registro actualizado correctamente'
+          })
         } else {
-          await axios.post(this.tablaSeleccionada.url, this.registro);
-          alert("Registro creado correctamente");
+          await axios.post(this.tablaSeleccionada.url, datosEnviar);
+          this.$swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: 'Registro creado correctamente'
+          })
         }
         this.mostrarFormulario = false;
         if (this.tablaSeleccionada) {
@@ -499,7 +624,11 @@ export default {
         }
       } catch (error) {
         console.error("Error al guardar registro", error);
-        alert("Error al guardar el registro: " + (error.response?.data?.message || error.message));
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al guardar el registro: ' + (error.response?.data?.message || error.message)
+        })
       } finally {
         this.loading = false;
       }
@@ -549,9 +678,9 @@ export default {
       }
     },
     
-    exportarExcel() {
+    async exportarExcel() {
       try {
-        const data = this.filteredDatos.map(fila => {
+          const data = this.filteredDatos.map(fila => {
           const row = {};
           this.columnas.forEach(col => {
             row[this.formatColumnName(col)] = this.formatCellValue(fila[col]);
@@ -559,14 +688,39 @@ export default {
           return row;
         });
 
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, this.tablaSeleccionada.nombre);
-        
-        const wscols = this.columnas.map(() => ({wch: 20}));
-        ws['!cols'] = wscols;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet(this.tablaSeleccionada.nombre);
 
-        XLSX.writeFile(wb, `${this.tablaSeleccionada.nombre}.xlsx`);
+        // Obtener las columnas de los datos
+        const columnas = data.length > 0 ? Object.keys(data[0]) : [];
+        
+        // Configurar columnas con anchos
+        worksheet.columns = columnas.map(col => ({
+          header: col,
+          key: col,
+          width: 20
+        }));
+
+        // Añadir datos
+        worksheet.addRows(data);
+
+        // Estilizar encabezados
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Generar buffer y descargar
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${this.tablaSeleccionada.nombre}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
       } catch (error) {
         console.error('Error al exportar a Excel:', error);
         alert('Error al exportar a Excel');
@@ -1545,5 +1699,277 @@ export default {
 .tables-selection-panel::-webkit-scrollbar-thumb:hover,
 .modal-body::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
+}
+
+/* Estilos de botones profesionales */
+/* Botón Refresh/Actualizar */
+.btn-refresh {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1);
+}
+
+.btn-refresh:hover {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.15);
+}
+
+/* Botón Excel */
+.btn-excel {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1);
+}
+
+.btn-excel:hover {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15);
+}
+
+/* Botón PDF */
+.btn-pdf {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1);
+}
+
+.btn-pdf:hover {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15);
+}
+
+/* Botón Toggle Baja (Mostrar/Ocultar dados de baja) */
+.btn-toggle-baja {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-toggle-baja:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Estado Activo (Rojo) para Toggle Baja */
+.btn-toggle-baja.active {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1);
+}
+
+.btn-toggle-baja.active:hover {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15);
+}
+
+/* Botón Primary (Crear, Guardar, etc) */
+.btn-primary {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15);
+}
+
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-export i {
+  font-size: 1.2em;
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin: 0;
+}
+
+.btn-icon i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.btn-icon.btn-edit {
+  color: #2196f3;
+}
+
+.btn-icon.btn-edit:hover {
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.btn-icon.btn-view {
+  color: #43a047;
+}
+
+.btn-icon.btn-view:hover {
+  background-color: rgba(67, 160, 71, 0.1);
+}
+
+.btn-icon.btn-delete {
+  color: #dc3545;
+}
+
+.btn-icon.btn-delete:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Selector de categorías para subcategorías */
+.categorias-selector {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.selector-help {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 5px 0 15px 0;
+}
+
+.categorias-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.categoria-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--surface-color);
+  border: 2px solid var(--border-color);
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.categoria-chip:hover {
+  border-color: var(--primary-color);
+  background: rgba(255, 196, 12, 0.05);
+}
+
+.categoria-chip.selected {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border-color: var(--primary-color);
+  color: #000;
+  font-weight: 600;
+}
+
+.categoria-chip.selected i {
+  color: #000;
+}
+
+.categoria-chip i {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.categoria-codigo {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.validation-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 15px;
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 8px;
+  color: #e65100;
+  font-size: 0.85rem;
+}
+
+.validation-warning i {
+  color: #ff9800;
+}
+
+/* Toggle Switch para campo activo */
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-switch input {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 50px;
+  height: 26px;
+  background: #ccc;
+  border-radius: 26px;
+  transition: all 0.3s ease;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: linear-gradient(135deg, #4caf50, #43a047);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(24px);
+}
+
+.toggle-label {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 </style>

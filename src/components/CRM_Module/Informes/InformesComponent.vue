@@ -1,5 +1,8 @@
 <template>
   <div class="informes-container fade-in">
+    <!-- Loading spinner -->
+    <Spinner :isLoading="loading" />
+    
     <!-- Panel de tipos de informes -->
     <div class="card info-panel">
       <div class="panel-header">
@@ -203,12 +206,17 @@
 
 <script>
 import axios from 'axios';
-import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
+import ExcelJS from 'exceljs';
+import Spinner from '@/components/SpinnerComponent.vue';
 
 export default {
+  components: {
+    Spinner
+  },
   data() {
     return {
+      loading: false,
       mostrarModal: false,
       mostrarTabla: false,
       nivelAcceso: null,            // Nivel de acceso del usuario
@@ -378,6 +386,7 @@ export default {
     // Método para mostrar el informe directamente en pantalla
     async mostrarInforme(tipo) {
       this.tipoSeleccionado = tipo;
+      this.loading = true;
       try {
         const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/api/informes/${tipo}`);
         this.procesarDatosParaTabla(respuesta.data);
@@ -389,12 +398,20 @@ export default {
         this.recordsPerPageValue = 10;
       } catch (error) {
         console.error("Error al obtener el informe", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo cargar el informe'
+        });
+      } finally {
+        this.loading = false;
       }
     },
 
     // Método para actualizar el informe actual
     async actualizarInforme() {
       if (!this.tipoSeleccionado) return;
+      this.loading = true;
       try {
         const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/api/informes/${this.tipoSeleccionado}`);
         this.procesarDatosParaTabla(respuesta.data);
@@ -404,6 +421,13 @@ export default {
         this.recordsPerPageValue = 10;
       } catch (error) {
         console.error("Error al actualizar el informe", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo actualizar el informe'
+        });
+      } finally {
+        this.loading = false;
       }
     },
 
@@ -544,9 +568,9 @@ export default {
       this.columnFilters[column] = value;
     },
 
-    exportarExcel() {
+    async exportarExcel() {
       try {
-        // Usar los datos filtrados (incluyendo ordenamiento y filtros)
+                // Usar los datos filtrados (incluyendo ordenamiento y filtros)
         const data = this.filteredData.map(item => {
           const rowData = {};
           // Mapear las columnas según los encabezados actuales y formatear los nombres
@@ -568,26 +592,56 @@ export default {
         });
 
         if (data.length === 0) {
-          alert("No hay datos para exportar a Excel.");
+          this.$swal.fire({
+            icon: 'warning',
+            title: 'Sin datos',
+            text: 'No hay datos para exportar a Excel.'
+          })
           return;
         }
 
         // Crear un libro de trabajo y una hoja de cálculo
-        const ws = XLSX.utils.json_to_sheet(data);
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet(this.formatearTitulo(this.tipoSeleccionado));
 
-        // Opcional: Ajustar anchos de columna (aproximado)
-        const wscols = this.encabezados.map(() => ({ wch: 20 })); // Ancho por defecto de 20
-        ws['!cols'] = wscols;
+        // Obtener las columnas de los datos
+        const columnas = data.length > 0 ? Object.keys(data[0]) : [];
+        
+        // Configurar columnas con anchos
+        worksheet.columns = columnas.map(col => ({
+          header: col,
+          key: col,
+          width: 20
+        }));
 
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, this.formatearTitulo(this.tipoSeleccionado));
+        // Añadir datos
+        worksheet.addRows(data);
 
-        // Generar el archivo y descargarlo
-        XLSX.writeFile(wb, `${this.formatearTitulo(this.tipoSeleccionado)}.xlsx`);
+        // Estilizar encabezados
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Generar buffer y descargar
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${this.formatearTitulo(this.tipoSeleccionado)}.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
 
       } catch (error) {
         console.error("Error al exportar a Excel:", error);
-        alert("Ocurrió un error al exportar a Excel.");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Ocurrió un error al exportar a Excel.'
+        })
       }
     },
   },
@@ -1132,52 +1186,108 @@ export default {
   background-color: var(--hover-color);
 }
 
-/* Estilos para el botón de actualizar */
+/* Estilos Generales de Botones - Actualizados */
+.btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: none !important;
+  cursor: pointer !important;
+  letter-spacing: 0.3px !important;
+}
+
+.btn i {
+  font-size: 1.1em !important;
+}
+
+/* Botón Refresh/Actualizar */
 .btn-refresh {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  background-color: #17a2b8 !important;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
   color: white !important;
-  border: none !important;
-  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1) !important;
 }
 
-.btn-refresh:hover {
-  background-color: #138496 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2);
+.btn-refresh:hover:not(:disabled) {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.15) !important;
 }
 
-.btn-refresh i {
-  font-size: 14px;
+.btn-refresh:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+  background: #9ca3af !important;
 }
 
-/* Estilos para el botón de exportar Excel */
-.btn-export {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
+/* Botón Excel */
 .btn-excel {
-  background-color: #217346 !important;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
   color: white !important;
-  border: none !important;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1) !important;
 }
 
 .btn-excel:hover {
-  background-color: #1e6b3d !important;
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 4px 8px rgba(33, 115, 70, 0.2) !important;
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Botón Primary (Crear, Guardar, etc) */
+.btn-primary {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
+}
+
+.btn-primary i {
+  font-size: 1.1em !important;
+}
+
+/* Botón Create (Alias para Primary) */
+.btn-create {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
+}
+
+.btn-create:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
+}
+
+.btn-create i {
+  font-size: 1.1em !important;
+}
+
+.btn-export {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.btn-export i {
+  font-size: 1.2em !important;
 }
 
 /* Estilos para las celdas de la tabla */
@@ -1342,5 +1452,97 @@ export default {
 /* Mejora visual para estados de hover en la tabla */
 .data-table tbody tr:hover {
   background-color: rgba(var(--primary-color-rgb), 0.05); /* Color primario con transparencia */
+}
+
+/* Botón Toggle Baja (Mostrar/Ocultar dados de baja) */
+.btn-toggle-baja {
+  background: #f3f4f6 !important;
+  color: #4b5563 !important;
+  border: 1px solid #e5e7eb !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-toggle-baja:hover {
+  background: #e5e7eb !important;
+  color: #1f2937 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Estado Activo (Rojo) para Toggle Baja */
+.btn-toggle-baja.active {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: white !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1) !important;
+}
+
+.btn-toggle-baja.active:hover {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* Botón Primary (Crear, Guardar, etc) */
+.btn-primary {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15);
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin: 0;
+}
+
+.btn-icon i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.btn-icon.btn-edit {
+  color: #2196f3;
+}
+
+.btn-icon.btn-edit:hover {
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.btn-icon.btn-view {
+  color: #43a047;
+}
+
+.btn-icon.btn-view:hover {
+  background-color: rgba(67, 160, 71, 0.1);
+}
+
+.btn-icon.btn-delete {
+  color: #dc3545;
+}
+
+.btn-icon.btn-delete:hover {
+  background-color: rgba(220, 53, 69, 0.1);
 }
 </style>

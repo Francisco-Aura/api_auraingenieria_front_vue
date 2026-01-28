@@ -60,19 +60,6 @@
         </div>
       </div>
       <div class="table-responsive">
-        <div class="table-controls">
-          <div class="filters-container">
-            <div class="records-per-page">
-              <label for="recordsPerPage">Registros por página:</label>
-              <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
-            </div>
-          </div>
-        </div>
         <table class="data-table">
           <thead>
             <tr>
@@ -87,7 +74,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.cliente" 
-                      @input="filterByColumn('cliente', $event.target.value)"
+                      @input="filterByColumnDebounced('cliente', $event.target.value)"
                       placeholder="Filtrar..."
                       @click.stop
                     >
@@ -105,7 +92,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.direccion" 
-                      @input="filterByColumn('direccion', $event.target.value)"
+                      @input="filterByColumnDebounced('direccion', $event.target.value)"
                       placeholder="Filtrar..."
                       @click.stop
                     >
@@ -123,7 +110,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.identificacion" 
-                      @input="filterByColumn('identificacion', $event.target.value)"
+                      @input="filterByColumnDebounced('identificacion', $event.target.value)"
                       placeholder="Filtrar..."
                       @click.stop
                     >
@@ -141,7 +128,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.cupsluz" 
-                      @input="filterByColumn('cupsluz', $event.target.value)"
+                      @input="filterByColumnDebounced('cupsluz', $event.target.value)"
                       placeholder="Filtrar CUPS..."
                       @click.stop
                     >
@@ -159,7 +146,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.tipo" 
-                      @input="filterByColumn('tipo', $event.target.value)"
+                      @input="filterByColumnDebounced('tipo', $event.target.value)"
                       placeholder="Filtrar tipo..."
                       @click.stop
                     >
@@ -177,7 +164,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.tarifa" 
-                      @input="filterByColumn('tarifa', $event.target.value)"
+                      @input="filterByColumnDebounced('tarifa', $event.target.value)"
                       placeholder="Filtrar tarifa..."
                       @click.stop
                     >
@@ -195,7 +182,7 @@
                       type="text" 
                       class="column-filter" 
                       v-model="columnFilters.fechaFinUltimoContrato" 
-                      @input="filterByColumn('fechaFinUltimoContrato', $event.target.value)"
+                      @input="filterByColumnDebounced('fechaFinUltimoContrato', $event.target.value)"
                       placeholder="Filtrar fecha..."
                       @click.stop
                     >
@@ -349,8 +336,8 @@
       :puntoSuministro="modalPuntoSuministro"
       :contratos="contratos"
       :comercializadoras="comercializadoras"
-      v-model:tarifasGas="tarifasGas"
-      v-model:tarifasLuz="tarifasLuz"
+      :tarifasGas="tarifasGas"
+      :tarifasLuz="tarifasLuz"
       :contratoActual="contratoActual"
       :contratosHistoricos="contratosHistoricos"
       @cerrar-modal="cerrarModalContratos"
@@ -358,6 +345,8 @@
       @contrato-actualizado="handleContratoActualizado"
       @contrato-renovado="handleContratoRenovado"
       @recargar-contratos="recargarContratosDelPuntoSuministro"
+      @update:tarifasGas="tarifasGas = $event"
+      @update:tarifasLuz="tarifasLuz = $event"
     />
 
     <!-- Modal de Servicios -->
@@ -384,7 +373,7 @@ import ModalContratos from './ModalContratos.vue';
 import ModalServicios from './ModalServicios.vue';
 import axios from "axios"; // Librería para hacer peticiones HTTP
 import Spinner from "@/components/SpinnerComponent.vue";
-import * as XLSX from 'xlsx/xlsx.mjs';
+import ExcelJS from 'exceljs';
 
 
 export default {
@@ -490,68 +479,75 @@ export default {
       contratoActualData: null, // Almacena datos del contrato actual
       contratosHistoricosData: null, // Almacena datos de contratos históricos
       mostrarDadosDeBaja: false, // Control para mostrar/ocultar puntos dados de baja
+      filtrosTimer: null, // Timer para debounce de filtros
     };
   },
 
   computed: {
     // Filtra los puntos de suministro según el término ingresado en "filter"
     filteredPuntosSuministro() {
+      // Pre-calcular valores de filtro en minúsculas una sola vez
+      const filterLower = this.filter.toLowerCase();
+      const hasGeneralFilter = filterLower.length > 0;
+      
+      // Pre-calcular filtros de columna activos
+      const activeColumnFilters = Object.entries(this.columnFilters)
+        .filter(([, value]) => value && value.trim().length > 0)
+        .map(([key, value]) => ({ key, value: value.toLowerCase(), originalValue: value.trim() }));
+      const hasColumnFilters = activeColumnFilters.length > 0;
+
       const filtered = this.puntosSuministro.filter((suministro) => {
-        // Primero aplicamos el filtro de estado de baja
+        // Primero aplicamos el filtro de estado de baja (rápido)
         const estadoBajaFilter = this.mostrarDadosDeBaja ? this.estaDadoDeBaja(suministro) : !this.estaDadoDeBaja(suministro);
-        
-        // Debug: mostrar información cuando se activa el filtro de dados de baja
-        if (this.mostrarDadosDeBaja && Math.random() < 0.01) {
-          // No hacer nada
+        if (!estadoBajaFilter) return false;
+
+        // Luego aplicamos el filtro general (si existe)
+        if (hasGeneralFilter) {
+          const generalFilter = Object.values(suministro).some((value) =>
+            String(value).toLowerCase().includes(filterLower)
+          );
+          if (!generalFilter) return false;
         }
 
-        // Luego aplicamos el filtro general
-        const generalFilter = Object.values(suministro).some((value) =>
-          String(value).toLowerCase().includes(this.filter.toLowerCase())
-        );
-
-        // Luego aplicamos los filtros por columna
-        const columnFilters = Object.entries(this.columnFilters).every(([key, value]) => {
-          if (!value) return true; // Si no hay filtro para esta columna, no filtra
-
-          // Caso especial para el filtro de CUPS
-          if (key === 'cupsluz') {
-            const cupsValue = this.getCupsParaMostrar(suministro);
-            return cupsValue.toLowerCase().includes(value.toLowerCase());
-          }
-
-          // Caso especial para el filtro de tipo
-          if (key === 'tipo') {
-            const tipo = this.getTipoCups(suministro);
-            return tipo.toLowerCase().includes(value.toLowerCase());
-          }
-
-          // Caso especial para el filtro de tarifa (usa el valor mostrado en la tabla)
-          if (key === 'tarifa') {
-            const tarifa = this.getTarifa(suministro) || '-';
-            // Permitir filtrar por '-', que representa sin contrato activo
-            if (value.trim() === '-') {
-              return tarifa === '-';
+        // Luego aplicamos los filtros por columna (si existen)
+        if (hasColumnFilters) {
+          for (const { key, value, originalValue } of activeColumnFilters) {
+            let fieldValue;
+            
+            // Caso especial para el filtro de CUPS
+            if (key === 'cupsluz') {
+              fieldValue = this.getCupsParaMostrar(suministro).toLowerCase();
             }
-            return tarifa.toLowerCase().includes(value.toLowerCase());
-          }
-
-          // Caso especial para el filtro de fecha fin del último contrato
-          if (key === 'fechaFinUltimoContrato') {
-            const fechaFin = this.getFechaFinUltimoContrato(suministro);
-            // Permitir filtrar por '-', que representa sin fecha
-            if (value.trim() === '-') {
-              return fechaFin === '-';
+            // Caso especial para el filtro de tipo
+            else if (key === 'tipo') {
+              fieldValue = this.getTipoCups(suministro).toLowerCase();
             }
-            return fechaFin.toLowerCase().includes(value.toLowerCase());
+            // Caso especial para el filtro de tarifa
+            else if (key === 'tarifa') {
+              fieldValue = (this.getTarifa(suministro) || '-').toLowerCase();
+              if (originalValue === '-') {
+                if (fieldValue !== '-') return false;
+                continue;
+              }
+            }
+            // Caso especial para el filtro de fecha fin
+            else if (key === 'fechaFinUltimoContrato') {
+              fieldValue = this.getFechaFinUltimoContrato(suministro).toLowerCase();
+              if (originalValue === '-') {
+                if (fieldValue !== '-') return false;
+                continue;
+              }
+            }
+            // Para el resto de columnas
+            else {
+              fieldValue = String(suministro[key] || '').toLowerCase();
+            }
+            
+            if (!fieldValue.includes(value)) return false;
           }
+        }
 
-          // Para el resto de columnas
-          const fieldValue = String(suministro[key] || '').toLowerCase();
-          return fieldValue.includes(value.toLowerCase());
-        });
-
-        return estadoBajaFilter && generalFilter && columnFilters;
+        return true;
       });
       
       return filtered;
@@ -683,7 +679,7 @@ export default {
 
     // Se ejecuta cuando el componente es creado para cargar datos iniciales
     created() {
-      this.fetchPuntosSuministro();
+      // Los puntos de suministro se cargan en mounted() después de cargar los datos de configuración
       const usuario = JSON.parse(localStorage.getItem('usuario'));
         if (usuario) {
           this.nivelAcceso = usuario.nivelAcceso;
@@ -694,10 +690,7 @@ export default {
     // Carga todos los puntos de suministro desde la API
     async fetchPuntosSuministro() {
       try {
-        this.loading = true;
-        
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/all`);
-        
         
         this.puntosSuministro = response.data.map(punto => {
           const newPunto = { ...punto };
@@ -724,14 +717,24 @@ export default {
 
       } catch (error) {
         console.error("Error al cargar los puntos de suministro:", error);
-      } finally {
-        this.loading = false;
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar los puntos de suministro'
+        });
       }
     },
 
     // Abre el formulario de actualización de un punto de suministro
     async abrirFormularioPSActualizar(ps) {
-      if (!ps.id) return alert("Punto de suministro no válido");
+      if (!ps.id) {
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Punto de suministro no válido'
+        })
+        return
+      }
       try {
         // Cargar datos detallados del punto de suministro
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
@@ -1023,7 +1026,12 @@ export default {
 
     // Método para refrescar todos los datos manualmente
     async refreshData() {
-      await this.fetchPuntosSuministro();
+      this.loading = true;
+      try {
+        await this.fetchPuntosSuministro();
+      } finally {
+        this.loading = false;
+      }
     },
 
     // Maneja la creación de un nuevo contrato (simplificado - sin recarga automática)
@@ -1238,6 +1246,18 @@ export default {
       this.columnFilters[column] = value;
     },
 
+    // Método con debounce para filtrar por columna
+    filterByColumnDebounced(column, value) {
+      // Cancelar el timer anterior si existe
+      if (this.filtrosTimer) {
+        clearTimeout(this.filtrosTimer);
+      }
+      // Crear nuevo timer con delay de 150ms
+      this.filtrosTimer = setTimeout(() => {
+        this.columnFilters[column] = value;
+      }, 150);
+    },
+
     isGas(suministro) {
       return suministro.cupsgas && suministro.cupsgas.trim() !== '' && 
              (!suministro.cupsluz || suministro.cupsluz.trim() === '');
@@ -1431,7 +1451,14 @@ export default {
 
     // Abre un modal para consultar los detalles de un punto de suministro
     async abrirModalPSConsulta(ps) {
-      if (!ps.id) return alert("Punto de suministro no válido");
+      if (!ps.id) {
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Punto de suministro no válido'
+        })
+        return
+      }
       try {
         // Cargar datos detallados del punto de suministro
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
@@ -1462,11 +1489,15 @@ export default {
       }
     },
 
-    exportarExcel() {
+    async exportarExcel() {
       try {
         // Verificar si hay datos para exportar
         if (!this.filteredPuntosSuministro || this.filteredPuntosSuministro.length === 0) {
-          alert('No hay datos para exportar');
+          this.$swal.fire({
+            icon: 'warning',
+            title: 'Sin datos',
+            text: 'No hay datos para exportar'
+          })
           return;
         }
 
@@ -1482,36 +1513,54 @@ export default {
           'Estado': this.estaDadoDeBaja(punto) ? 'Dado de baja' : 'Activo'
         }));
 
-        // Crear la hoja de cálculo
-        const ws = XLSX.utils.json_to_sheet(data);
-
-        // Ajustar el ancho de las columnas
-        const wscols = [
-          {wch: 30}, // Cliente
-          {wch: 50}, // Dirección
-          {wch: 20}, // Identificación
-          {wch: 25}, // CUPS
-          {wch: 10}, // Tipo
-          {wch: 10}, // Tarifa
-          {wch: 15}, // Fin Contrato
-          {wch: 15}  // Estado
-        ];
-        ws['!cols'] = wscols;
-
         // Crear el libro de Excel
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'PuntosSuministro');
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('PuntosSuministro');
+
+        // Configurar columnas con anchos
+        worksheet.columns = [
+          { header: 'Cliente', key: 'Cliente', width: 30 },
+          { header: 'Dirección', key: 'Dirección', width: 50 },
+          { header: 'Identificación', key: 'Identificación', width: 20 },
+          { header: 'CUPS', key: 'CUPS', width: 25 },
+          { header: 'Tipo', key: 'Tipo', width: 10 },
+          { header: 'Tarifa', key: 'Tarifa', width: 10 },
+          { header: 'Fin Contrato', key: 'Fin Contrato', width: 15 },
+          { header: 'Estado', key: 'Estado', width: 15 }
+        ];
+
+        // Añadir datos
+        worksheet.addRows(data);
+
+        // Estilizar encabezados
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
 
         // Generar nombre de archivo con fecha
         const fecha = new Date().toISOString().split('T')[0];
         const nombreArchivo = `Puntos_Suministro_${fecha}.xlsx`;
 
-        // Exportar el archivo
-        XLSX.writeFile(wb, nombreArchivo);
+        // Generar buffer y descargar
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = nombreArchivo;
+        link.click();
+        window.URL.revokeObjectURL(url);
 
       } catch (error) {
         console.error('Error al exportar a Excel:', error);
-        alert('Error al exportar a Excel. Por favor, intente nuevamente.');
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al exportar a Excel. Por favor, intente nuevamente.'
+        })
       }
     },
 
@@ -1547,11 +1596,11 @@ export default {
 
   // Se ejecuta cuando el componente es montado para cargar datos necesarios
   async mounted() {
-    this.loading = true; // Forzar la visibilidad del spinner
+    this.loading = true;
     
     // Precargamos los arrays de los combos y datos necesarios
     try {
-      
+      // Cargar datos de configuración en paralelo
       const [comercializadoras, tarifasGas, tarifasLuz, gestoras, productos] = await Promise.all([
         axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
@@ -1570,6 +1619,9 @@ export default {
       // La información de contratos activos viene en el campo tarifaActual de los puntos de suministro
       this.todosLosContratos = [];
       
+      // Esperar a que se carguen los puntos de suministro antes de desactivar el loading
+      await this.fetchPuntosSuministro();
+      
       // Forzar una actualización de la vista para que se apliquen bien los datos de tarifa
       this.$nextTick(() => {
         this.$forceUpdate();
@@ -1579,9 +1631,7 @@ export default {
       // En caso de error, inicializar arrays vacíos para evitar errores
       this.todosLosContratos = [];
     } finally {
-      setTimeout(() => { 
-        this.loading = false; 
-      }, 2500); // Dar tiempo para que se procesen los datos
+      this.loading = false;
     }
   },
 
@@ -1984,81 +2034,6 @@ export default {
   background-color: #f5f5f5;
 }
 
-.btn-export {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.btn-refresh {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  background-color: #17a2b8;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-refresh:hover {
-  background-color: #138496;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2);
-}
-
-.btn-refresh i {
-  font-size: 14px;
-}
-
-.btn-excel {
-  background-color: #217346;
-  color: white;
-  border: none;
-}
-
-.btn-excel:hover {
-  background-color: #1e6b3d;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(33, 115, 70, 0.2);
-}
-
-.btn-toggle-baja {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-toggle-baja:hover {
-  background-color: #5a6268;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
-}
-
-.btn-toggle-baja.active {
-  background-color: #dc3545;
-}
-
-.btn-toggle-baja.active:hover {
-  background-color: #c82333;
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
-}
-
 .btn-toggle-baja i {
   font-size: 14px;
 }
@@ -2201,6 +2176,208 @@ export default {
 .fecha-fin-contrato:empty::before {
   content: '-';
   color: var(--text-secondary);
+}
+
+/* Estilos de botones profesionales */
+/* Estilos Generales de Botones - Actualizados */
+.btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: none !important;
+  cursor: pointer !important;
+  letter-spacing: 0.3px !important;
+}
+
+.btn i {
+  font-size: 1.1em;
+}
+
+/* Botón Refresh/Actualizar */
+.btn-refresh {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1) !important;
+}
+
+.btn-refresh:hover {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Botón Excel */
+.btn-excel {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1) !important;
+}
+
+.btn-excel:hover {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Botón Primary (Crear, Guardar, etc) */
+.btn-primary {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
+}
+
+.btn-primary i {
+  font-size: 1.1em !important;
+}
+
+/* Botón Create (Alias para Primary) */
+.btn-create {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
+}
+
+.btn-create:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
+}
+
+.btn-create i {
+  font-size: 1.1em !important;
+}
+
+/* Botón PDF */
+.btn-pdf {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1) !important;
+}
+
+.btn-pdf:hover {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* Botón Toggle Baja (Mostrar/Ocultar dados de baja) */
+.btn-toggle-baja {
+  background: #f3f4f6 !important;
+  color: #4b5563 !important;
+  border: 1px solid #e5e7eb !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-toggle-baja:hover {
+  background: #e5e7eb !important;
+  color: #1f2937 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Estado Activo (Rojo) para Toggle Baja */
+.btn-toggle-baja.active {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: white !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1) !important;
+}
+
+.btn-toggle-baja.active:hover {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* Botón Primary (Crear, Guardar, etc) */
+.btn-primary {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
+}
+
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-export i {
+  font-size: 1.2em;
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin: 0;
+}
+
+.btn-icon i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.btn-icon.btn-edit {
+  color: #2196f3;
+}
+
+.btn-icon.btn-edit:hover {
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.btn-icon.btn-view {
+  color: #43a047;
+}
+
+.btn-icon.btn-view:hover {
+  background-color: rgba(67, 160, 71, 0.1);
+}
+
+.btn-icon.btn-delete {
+  color: #dc3545;
+}
+
+.btn-icon.btn-delete:hover {
+  background-color: rgba(220, 53, 69, 0.1);
 }
 </style>
 

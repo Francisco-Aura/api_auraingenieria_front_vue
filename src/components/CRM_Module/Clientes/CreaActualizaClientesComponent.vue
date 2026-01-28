@@ -604,7 +604,11 @@ export default {
     },
     crearCliente() {
       if (this.darDeBaja && !this.clienteLocal.fechaBaja) {
-        alert("Debe proporcionar una fecha de baja cuando se marca la opción de dar de baja.");
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Campo requerido',
+          text: 'Debe proporcionar una fecha de baja cuando se marca la opción de dar de baja.'
+        })
         return;
       }
       const clienteParaEnviar = {
@@ -624,7 +628,11 @@ export default {
         return;
       }
       if (this.darDeBaja && !this.clienteLocal.fechaBaja) {
-        alert("Debe proporcionar una fecha de baja cuando se marca la opción de dar de baja.");
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Campo requerido',
+          text: 'Debe proporcionar una fecha de baja cuando se marca la opción de dar de baja.'
+        })
         return;
       }
       const clienteParaEnviar = {

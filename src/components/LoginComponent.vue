@@ -93,7 +93,11 @@ export default {
 
     // Método para mostrar un mensaje al hacer clic en "¿Olvidaste tu contraseña?"
     showRecoverPasswordMessage() {
-      alert('La funcionalidad de recuperación de contraseña aún no está implementada.');
+      this.$swal.fire({
+        icon: 'info',
+        title: 'Función no disponible',
+        text: 'La funcionalidad de recuperación de contraseña aún no está implementada.'
+      })
     }
   }
 };

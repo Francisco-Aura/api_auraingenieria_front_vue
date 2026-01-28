@@ -1224,7 +1224,11 @@ export default {
 
     async descargarPDF(contrato) {
       if (!contrato.rutaArchivoContrato) {
-        alert('No hay archivo PDF disponible para este contrato');
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Archivo no disponible',
+          text: 'No hay archivo PDF disponible para este contrato'
+        })
         return;
       }
 
@@ -1243,7 +1247,11 @@ export default {
         link.remove();
       } catch (error) {
         console.error("Error al descargar el PDF:", error);
-        alert("Error al descargar el PDF del contrato");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al descargar el PDF del contrato'
+        })
       }
     },
 
@@ -1485,16 +1493,18 @@ export default {
         array.findIndex(c => c.id === contrato.id) === index
       );
       
-      // SINCRONIZAR cada contrato con el punto de suministro actual
-      contratosUnicos.forEach(contrato => {
+      // IMPORTANTE: Crear copias para NO MUTAR los datos originales
+      // Sincronizar cada contrato con el punto de suministro actual usando spread operator
+      const contratosConDatosSincronizados = contratosUnicos.map(contrato => ({
+        ...contrato,
         // Actualizar exención de impuesto eléctrico basándose en el punto de suministro
-        contrato.exencionImpuestoElectricidad = this.tieneExencionImpuestoElectrico ? 1 : 0;
+        exencionImpuestoElectricidad: this.tieneExencionImpuestoElectrico ? 1 : 0,
         // Actualizar autoconsumo basándose en el punto de suministro
-        contrato.autoconsumo = this.tieneAutoconsumo ? 1 : 0;
-      });
+        autoconsumo: this.tieneAutoconsumo ? 1 : 0
+      }));
       
       // Ordenar por fecha de inicio descendente (más actual primero)
-      return contratosUnicos.sort((a, b) => {
+      return contratosConDatosSincronizados.sort((a, b) => {
         return new Date(b.fechaInicio) - new Date(a.fechaInicio);
       });
     },
@@ -1676,22 +1686,85 @@ export default {
     // Cuando cambia el punto de suministro, limpiar datos y reinicializar
     puntoSuministro: {
       handler(newPunto, oldPunto) {
+        // Obtener IDs de forma segura (puede venir como objeto o como valor directo)
+        const newId = newPunto?.id || newPunto;
+        const oldId = oldPunto?.id || oldPunto;
+        
         // Si el modal está visible y cambió el punto de suministro
-        if (this.visible && newPunto && oldPunto && newPunto.id !== oldPunto.id) {
-          // Limpiar datos del formulario si está abierto
-          if (this.mostrandoFormulario) {
-            this.cancelarFormulario();
-          }
+        if (this.visible && newId !== oldId) {
+          console.log('[ModalContratos] Punto de suministro cambió de', oldId, 'a', newId);
           
-          // Limpiar datos de detalle si está abierto
-          if (this.mostrarModalDetalleContrato) {
-            this.cerrarModalDetalleContrato();
-          }
+          // LIMPIAR COMPLETAMENTE todos los estados del modal
+          this.mostrandoFormulario = false;
+          this.modoEdicion = false;
+          this.modoRenovacion = false;
+          this.contratoEditandoId = null;
+          this.selectedFile = null;
+          this.mostrarModalDetalleContrato = false;
+          this.contratoDetalle = null;
+          this.clienteDetalle = null;
           
-          // Reinicializar si estamos en modo crear
-          if (this.mostrandoFormulario && !this.modoEdicion) {
+          // Limpiar el formulario completamente
+          this.nuevoContrato = {
+            idCliente: "",
+            idPuntoSuministro: "",        
+            fecha: "",
+            fechaEnvio: "",
+            fechaInicio: "",
+            fechaFin: "",
+            contrato: "",
+            idTarifaGas: "",
+            idTarifaLuz: "",
+            potencia1: 0,        
+            potencia2: 0,
+            potencia3: 0,
+            potencia4: 0,
+            potencia5: 0,
+            potencia6: 0,
+            consumoAnual: 0,
+            exencionImpuestoElectricidad: 0,
+            idComercializadoraActual: "",
+            idComercializadoraAnterior: "",
+            autoconsumo: 0,
+            denunciaContrato: 0,
+            fechaDenunciaContrato: "",
+            observaciones: "",
+            userFO: "",
+            passwordFO: "",
+          };
+          
+          // Forzar actualización del componente para reflejar los nuevos datos
+          this.$nextTick(() => {
+            this.$forceUpdate();
+          });
+        }
+      },
+      deep: true,
+      immediate: false
+    },
+    
+    // Cuando cambian los contratos, forzar actualización de la vista
+    contratos: {
+      handler(newContratos, oldContratos) {
+        // Solo actuar si el modal está visible y los contratos realmente cambiaron
+        if (this.visible) {
+          const newIds = (newContratos || []).map(c => c.id).sort().join(',');
+          const oldIds = (oldContratos || []).map(c => c.id).sort().join(',');
+          
+          if (newIds !== oldIds) {
+            console.log('[ModalContratos] Contratos actualizados:', newContratos?.length || 0, 'contratos');
+            
+            // Limpiar formulario si estaba en modo edición de un contrato que ya no existe
+            if (this.modoEdicion && this.contratoEditandoId) {
+              const contratoExiste = (newContratos || []).some(c => c.id === this.contratoEditandoId);
+              if (!contratoExiste) {
+                this.cancelarFormulario();
+              }
+            }
+            
+            // Forzar actualización de la vista
             this.$nextTick(() => {
-              this.inicializarNuevoContrato();
+              this.$forceUpdate();
             });
           }
         }

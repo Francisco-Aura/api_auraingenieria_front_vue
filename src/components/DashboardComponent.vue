@@ -33,13 +33,11 @@
           <div v-if="sidebarCollapsed" class="tooltip">Informes</div>
         </router-link>
 
-         <!--
-        <router-link to="/dashboard/kanban" class="menu-item" active-class="active">
+        <router-link v-if="moduloTareasActivo" to="/dashboard/tareas" class="menu-item" active-class="active">
           <i class="fas fa-tasks menu-icon"></i>
-          <span v-if="!sidebarCollapsed" class="menu-text">Kanban</span>
-          <div v-if="sidebarCollapsed" class="tooltip">Kanban</div>
+          <span v-if="!sidebarCollapsed" class="menu-text">Gestión de Tareas</span>
+          <div v-if="sidebarCollapsed" class="tooltip">Gestión de Tareas</div>
         </router-link>
-        -->
         
         <router-link v-if="nivelAcceso === 1" to="/dashboard/administracion" class="menu-item" active-class="active">
           <i class="fas fa-cog menu-icon"></i>
@@ -77,6 +75,9 @@
             <h1>{{ pageTitle }}</h1>
           </div>
         </div>
+        <div class="header-right">
+          <NotificacionesComponent v-if="moduloTareasActivo" />
+        </div>
       </header>
 
       <!-- Main view area -->
@@ -90,8 +91,14 @@
 </template>
 
 <script>
+import NotificacionesComponent from '@/components/CRM_Module/Tareas/NotificacionesComponent.vue'
+import { tareasApi } from '@/services/tareasApi'
+
 export default {
   name: 'Dashboard-Component',
+  components: {
+    NotificacionesComponent
+  },
   data() {
     return {
       nivelAcceso: null,
@@ -104,8 +111,9 @@ export default {
         '/dashboard/puntos-suministro': 'Puntos de Suministro',
         '/dashboard/informes': 'Informes',
         '/dashboard/administracion': 'Administración',
-        '/dashboard/kanban': 'Tablero Kanban'
-      }
+        '/dashboard/tareas': 'Gestión de Tareas'
+      },
+      moduloTareasActivo: false
     };
   },
   computed: {
@@ -137,9 +145,18 @@ export default {
       } else {
         this.toggleUserMenu();
       }
+    },
+    async verificarModuloTareas() {
+      try {
+        this.moduloTareasActivo = await tareasApi.verificarModuloActivo()
+      } catch (error) {
+        console.error('Error verificando módulo de tareas:', error)
+        // Temporalmente activar el módulo para testing
+        this.moduloTareasActivo = true
+      }
     }
   },
-  created() {
+  async created() {
     // Cargar nivel de acceso desde localStorage
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     if (usuario) {
@@ -150,6 +167,9 @@ export default {
       // Si no hay usuario autenticado, redirigir al login
       this.$router.push('/');
     }
+
+    // Verificar si el módulo de tareas está activo
+    await this.verificarModuloTareas()
   },
   watch: {
     // Cerrar menú de usuario al cambiar de ruta

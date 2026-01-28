@@ -9,6 +9,7 @@ const ClientesComponent = () => import('@/components/CRM_Module/Clientes/Cliente
 const PuntosSuministroComponent = () => import('@/components/CRM_Module/PuntosSuministro/PuntoSuministroComponent.vue');
 const InformesComponent = () => import('@/components/CRM_Module/Informes/InformesComponent.vue');
 const AdministracionComponent = () => import('@/components/CRM_Module/Administracion/AdministracionComponent.vue');
+const TareasComponent = () => import('@/components/CRM_Module/Tareas/TareasComponent.vue');
 
 // Define las rutas
 const routes = [
@@ -40,6 +41,10 @@ const routes = [
         path: 'administracion',
         component: AdministracionComponent,
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'tareas',
+        component: TareasComponent
       }
     ]
   },  

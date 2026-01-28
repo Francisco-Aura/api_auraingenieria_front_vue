@@ -1,5 +1,6 @@
 <template>
-  <div class="modal-overlay fade-in">
+  <div>
+    <div class="modal-overlay fade-in">
     <div class="modal-content">
       <div class="modal-header">
         <h2><i class="fas fa-bolt"></i> Puntos de Suministro</h2>
@@ -86,14 +87,15 @@
     </div>
   </div>
 
-  <!-- Modal de Detalles -->
-  <ModalActualizarPuntoSuministro
-    v-if="formularioVisible"
-    :modificarPunto="modificarPunto"
-    :modoConsulta="modoConsulta"
-    @cerrar-modal="cerrarModalActualizarPunto"
-    @actualizar-punto-suministro="onPuntoSuministroActualizado"
-  />
+    <!-- Modal de Detalles -->
+    <ModalActualizarPuntoSuministro
+      v-if="formularioVisible"
+      :modificarPunto="modificarPunto"
+      :modoConsulta="modoConsulta"
+      @cerrar-modal="cerrarModalActualizarPunto"
+      @actualizar-punto-suministro="onPuntoSuministroActualizado"
+    />
+  </div>
 </template>
 
 <script>
@@ -239,7 +241,11 @@ export default {
         this.formularioVisible = true;
       } catch (error) {
         console.error("Error al obtener el punto de suministro:", error);
-        alert("Error al cargar los detalles del punto de suministro.");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al cargar los detalles del punto de suministro.'
+        })
       }
     },
     cerrarModalActualizarPunto() {

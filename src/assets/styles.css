@@ -31,14 +31,13 @@ h2 {
 /* =============================== */
 /*        Estilos de Botones       */
 /* =============================== */
+/* Nota: Los estilos específicos de botones en los componentes CRM tienen prioridad */
+/* usando scoped styles y !important. Los estilos base aquí son para botones fuera de CRM */
+
 .btn {
-  padding: 0.5rem 1rem;
-  margin: 0.2rem;
+  /* Los componentes CRM sobrescriben estos estilos con scoped styles + !important */
   cursor: pointer;
   border: none;
-  font-size: 1rem;
-  color: white;
-  background-color: rgb(252, 215, 0);
   border-radius: 6px;
   transition: all 0.3s ease;
   display: inline-flex;
@@ -49,7 +48,6 @@ h2 {
 
 /* Estilo de los botones al pasar el ratón */
 .btn:hover {
-  background-color: #b9a829;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
@@ -64,19 +62,15 @@ h2 {
 }
 
 button {
-  padding: 0.5rem 1rem;
-  margin: 0.2rem;
+  /* Estilos base para buttons genéricos */
   cursor: pointer;
   border: none;
-  font-size: 1rem;
-  color: white;
-  background-color: rgb(252, 215, 0);
   border-radius: 6px;
   transition: all 0.3s ease;
+  /* Los componentes específicos definen su propio styling */
 }
 
 button:hover {
-  background-color: #2980b9;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

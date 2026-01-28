@@ -55,10 +55,6 @@
             <i class="fas fa-file-excel"></i>
             <span>Excel</span>
           </button>
-          <button class="btn btn-export btn-pdf" @click="exportarPDF" title="Exportar a PDF" v-show="false">
-            <i class="fas fa-file-pdf"></i>
-            <span>PDF</span>
-          </button>
           <button 
             class="btn btn-toggle-baja" 
             :class="{ 'active': mostrarClientesDadosDeBaja }"
@@ -381,9 +377,7 @@ import Spinner from "@/components/SpinnerComponent.vue";
 import PuntosSuministroClienteComponent from "@/components/CRM_Module/Clientes/PuntosSuministroClienteComponent.vue";
 import CreaActualizaClienteComponent from "@/components/CRM_Module/Clientes/CreaActualizaClientesComponent.vue";
 import ModalActualizarPuntoSuministro from "@/components/CRM_Module/PuntosSuministro/ActualizarPuntoSuministro.vue";
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import ExcelJS from 'exceljs';
 
 export default {
   name: "ClientesComponent",
@@ -537,7 +531,11 @@ export default {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${idCliente}`);
         this.puntosSuministro = response.data;
       } catch (error) {
-        alert("No se pudieron cargar los puntos de suministro.");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar los puntos de suministro.'
+        })
       } finally {
         this.loading = false;
       }
@@ -648,7 +646,11 @@ export default {
         this.formularioVisible = true;
       } catch (error) {
         console.error("Error al cargar datos del cliente:", error);
-        alert("No se pudieron cargar los datos del cliente.");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar los datos del cliente.'
+        })
       } finally {
         this.loading = false;
       }
@@ -661,7 +663,11 @@ export default {
       }
       try {
         await axios.put(`${process.env.VUE_APP_API_URL}/api/clientes/${clienteActualizado.id}`, clienteActualizado);
-        alert("Cliente actualizado.");
+        this.$swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Cliente actualizado.'
+        })
         this.fetchClientes(); // Actualiza la lista de clientes
         this.cancelarFormulario();
       } catch (error) {
@@ -673,7 +679,11 @@ export default {
       try {
         if (this.modoActualizar) return; // Evita llamadas erróneas en modo actualización
         await axios.post(`${process.env.VUE_APP_API_URL}/api/clientes`, clienteRecibido);
-        alert("Cliente creado con éxito.");
+        this.$swal.fire({
+          icon: 'success',
+          title: 'Éxito',
+          text: 'Cliente creado con éxito.'
+        })
         this.fetchClientes(); // Actualiza la lista
         this.cancelarFormulario(); // Limpia y cierra el formulario
       } catch (error) {
@@ -743,7 +753,7 @@ export default {
       return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
     },
 
-    exportarExcel() {
+    async exportarExcel() {
       try {
         const data = this.filteredClientes.map(cliente => ({
           'Nombre Cliente': cliente.nombre,
@@ -755,96 +765,44 @@ export default {
           'Usuario Asignado': cliente.usuarioAsignado
         }));
 
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
-        
-        // Ajustar el ancho de las columnas
-        const wscols = [
-          {wch: 30}, // Nombre Cliente
-          {wch: 15}, // CIF
-          {wch: 25}, // Grupo Empresarial
-          {wch: 20}, // Sector
-          {wch: 40}, // Dirección Fiscal
-          {wch: 15}, // Puntos Suministro
-          {wch: 20}  // Usuario Asignado
-        ];
-        ws['!cols'] = wscols;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Clientes');
 
-        XLSX.writeFile(wb, 'Cartera_Clientes.xlsx');
+        // Añadir encabezados
+        worksheet.columns = [
+          { header: 'Nombre Cliente', key: 'Nombre Cliente', width: 30 },
+          { header: 'CIF', key: 'CIF', width: 15 },
+          { header: 'Grupo Empresarial', key: 'Grupo Empresarial', width: 25 },
+          { header: 'Sector', key: 'Sector', width: 20 },
+          { header: 'Dirección Fiscal', key: 'Dirección Fiscal', width: 40 },
+          { header: 'Puntos Suministro', key: 'Puntos Suministro', width: 15 },
+          { header: 'Usuario Asignado', key: 'Usuario Asignado', width: 20 }
+        ];
+
+        // Añadir datos
+        worksheet.addRows(data);
+
+        // Estilizar encabezados
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Generar buffer y descargar
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'Cartera_Clientes.xlsx';
+        link.click();
+        window.URL.revokeObjectURL(url);
       } catch (error) {
         console.error('Error al exportar a Excel:', error);
         this.$toast.error('Error al exportar a Excel');
       }
-    },
-
-    exportarPDF() {
-      try {
-        const doc = new jsPDF();
-        
-        // Añadir logo
-        const logo = new Image();
-        logo.src = require('@/assets/logo.png');
-        doc.addImage(logo, 'PNG', 14, 10, 30, 30);
-        
-        // Título
-        doc.setFontSize(16);
-        doc.setTextColor(51, 51, 51); // Color gris oscuro para el título
-        doc.text('Cartera de Clientes', 50, 25);
-        
-        // Fecha de exportación
-        doc.setFontSize(10);
-        const fecha = new Date().toLocaleDateString();
-        doc.text(`Exportado el: ${fecha}`, 14, 45);
-
-        // Datos de la tabla
-        const data = this.filteredClientes.map(cliente => [
-          cliente.nombre,
-          cliente.cif,
-          cliente.direccionFiscal,
-          cliente.numeroPuntosSuministro,
-          cliente.usuarioAsignado
-        ]);
-
-        doc.autoTable({
-          head: [['Nombre Cliente', 'CIF', 'Dirección Fiscal', 'PS', 'Usuario']],
-          body: data,
-          startY: 50,
-          styles: { 
-            fontSize: 8,
-            cellPadding: 3
-          },
-          headStyles: { 
-            fillColor: [255, 193, 7],
-            textColor: [51, 51, 51],
-            fontStyle: 'bold',
-            halign: 'center'
-          },
-          columnStyles: {
-            0: { cellWidth: 40 },
-            1: { cellWidth: 25 },
-            2: { cellWidth: 60 },
-            3: { cellWidth: 15 },
-            4: { cellWidth: 25 }
-          }
-        });
-
-        doc.save('Cartera_Clientes.pdf');
-      } catch (error) {
-        console.error('Error al exportar a PDF:', error);
-        this.$toast.error('Error al exportar a PDF');
-      }
-    },
-
-    mostrarNotificacionSubidaPDF() {
-      this.$swal.fire({
-        title: 'Subir Contrato',
-        text: 'Por favor, selecciona el archivo PDF del contrato',
-        icon: 'info',
-        confirmButtonText: 'Aceptar'
-      }).then(() => {
-        this.$refs.pdfInput.click();
-      });
     },
 
     filterByColumn(column, value) {
@@ -1031,34 +989,20 @@ export default {
 }
 
 .action-card {
-  background-color: var(--primary-color);
   border-radius: var(--border-radius);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  padding: 0.7rem 1rem;
-  min-width: 180px;
+  min-width: auto;
 }
 
 .action-card .btn {
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  color: black;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border-radius: 6px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  /* Los estilos de .btn-primary tienen prioridad */
 }
 
 .action-card .btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: white;
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  /* Los estilos de hover de .btn-primary tienen prioridad */
 }
 
 
@@ -1079,92 +1023,13 @@ export default {
 .btn-export {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.8rem;
-  border-radius: 0.3rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.btn-refresh {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
   transition: all 0.3s ease;
-  background-color: #17a2b8;
-  color: white;
   border: none;
   cursor: pointer;
-}
-
-.btn-refresh:hover {
-  background-color: #138496;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(23, 162, 184, 0.2);
-}
-
-.btn-refresh i {
-  font-size: 14px;
-}
-
-.btn-excel {
-  background-color: #217346;
-  color: white;
-  border: none;
-}
-
-.btn-excel:hover {
-  background-color: #1e6b3d;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(33, 115, 70, 0.2);
-}
-
-.btn-pdf {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-}
-
-.btn-pdf:hover {
-  background-color: #c82333;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
-}
-
-.btn-toggle-baja {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-toggle-baja:hover {
-  background-color: #5a6268;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
-}
-
-.btn-toggle-baja.active {
-  background-color: #dc3545;
-}
-
-.btn-toggle-baja.active:hover {
-  background-color: #c82333;
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
-}
-
-.btn-toggle-baja i {
-  font-size: 14px;
 }
 
 .btn-export i {
@@ -1613,6 +1478,185 @@ export default {
   border-radius: 50%;
   background-color: rgba(220, 53, 69, 0.1);
   flex-shrink: 0;
+}
+
+/* Estilos Generales de Botones - Actualizados */
+.btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: none !important;
+  cursor: pointer !important;
+  letter-spacing: 0.3px !important;
+}
+
+.btn i {
+  font-size: 1.1em !important;
+}
+
+/* Estilos de botones profesionales */
+/* Botón Refresh/Actualizar */
+.btn-refresh {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1) !important;
+}
+
+.btn-refresh:hover:not(:disabled) {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.15) !important;
+}
+
+.btn-refresh:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+  background: #9ca3af !important;
+}
+
+/* Botón Excel */
+.btn-excel {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1) !important;
+}
+
+.btn-excel:hover {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Botón Primary (Crear, Guardar, etc) */
+.btn-primary {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
+}
+
+.btn-primary i {
+  font-size: 1.1em !important;
+}
+
+/* Botón Create (Alias para Primary) */
+.btn-create {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
+}
+
+.btn-create:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
+}
+
+.btn-create i {
+  font-size: 1.1em !important;
+}
+
+/* Botón Toggle Baja (Mostrar/Ocultar dados de baja) */
+.btn-toggle-baja {
+  background: #f3f4f6 !important;
+  color: #4b5563 !important;
+  border: 1px solid #e5e7eb !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-toggle-baja:hover {
+  background: #e5e7eb !important;
+  color: #1f2937 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Estado Activo (Rojo) para Toggle Baja */
+.btn-toggle-baja.active {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: white !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1) !important;
+}
+
+.btn-export {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.btn-export i {
+  font-size: 1.2em !important;
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin: 0;
+}
+
+.btn-icon i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.btn-icon.btn-edit {
+  color: #2196f3;
+}
+
+.btn-icon.btn-edit:hover {
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.btn-icon.btn-view {
+  color: #43a047;
+}
+
+.btn-icon.btn-view:hover {
+  background-color: rgba(67, 160, 71, 0.1);
+}
+
+.btn-icon.btn-delete {
+  color: #dc3545;
+}
+
+.btn-icon.btn-delete:hover {
+  background-color: rgba(220, 53, 69, 0.1);
 }
 </style>
 
