@@ -264,10 +264,43 @@
                       >
                         <i class="fas fa-thumbtack"></i>
                       </button>
+                      <button 
+                        class="btn-editar-comentario" 
+                        @click="iniciarEdicionComentario(comentario)"
+                        title="Editar comentario"
+                      >
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button 
+                        class="btn-eliminar-comentario" 
+                        @click="confirmarEliminarComentario(comentario)"
+                        title="Eliminar comentario"
+                      >
+                        <i class="fas fa-trash"></i>
+                      </button>
                       <span class="comentario-fecha">{{ formatDate(comentario.fechaCreacion) }}</span>
                     </div>
                   </div>
-                  <div class="comentario-contenido">{{ comentario.contenido }}</div>
+                  
+                  <!-- Modo de edición -->
+                  <div v-if="comentarioEditando && comentarioEditando.id === comentario.id" class="comentario-edicion">
+                    <textarea 
+                      v-model="textoComentarioEditando"
+                      class="form-control"
+                      rows="3"
+                    ></textarea>
+                    <div class="comentario-edicion-actions">
+                      <button class="btn-guardar-edicion" @click="guardarEdicionComentario(comentario)">
+                        <i class="fas fa-check"></i> Guardar
+                      </button>
+                      <button class="btn-cancelar-edicion" @click="cancelarEdicionComentario">
+                        <i class="fas fa-times"></i> Cancelar
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- Modo de visualización -->
+                  <div v-else class="comentario-contenido">{{ comentario.contenido }}</div>
                   
                   <div v-if="comentario.adjuntos && comentario.adjuntos.length > 0" class="comentario-adjuntos">
                     <div class="adjuntos-lista">
@@ -275,9 +308,26 @@
                         v-for="adjunto in comentario.adjuntos" 
                         :key="adjunto.id" 
                         class="adjunto-item-compact"
-                        @click="descargarAdjunto(adjunto)"
                       >
-                        <i class="fas fa-file-download"></i> {{ adjunto.nombreArchivo }}
+                        <span class="adjunto-nombre" @click="descargarAdjunto(adjunto)">
+                          <i class="fas fa-file-download"></i> {{ adjunto.nombreArchivo }}
+                        </span>
+                        <div class="adjunto-actions">
+                          <button 
+                            class="btn-actualizar-adjunto" 
+                            @click="iniciarActualizacionAdjunto(adjunto)"
+                            title="Actualizar archivo"
+                          >
+                            <i class="fas fa-sync-alt"></i>
+                          </button>
+                          <button 
+                            class="btn-eliminar-adjunto" 
+                            @click="confirmarEliminarAdjunto(adjunto)"
+                            title="Eliminar archivo"
+                          >
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -355,7 +405,10 @@ export default {
       nuevoComentario: '',
       guardandoComentario: false,
       archivosSeleccionados: [],
-      subiendoArchivos: false
+      subiendoArchivos: false,
+      comentarioEditando: null,
+      textoComentarioEditando: '',
+      adjuntoActualizando: null
     }
   },
   computed: {
@@ -640,9 +693,9 @@ export default {
       this.comentarios = [] // Limpiar comentarios previos
       
       try {
-        console.log('Cargando comentarios para tarea:', this.tarea.id)
+
         const comentariosData = await tareasApi.obtenerComentariosPorTarea(this.tarea.id)
-        console.log('Comentarios recibidos:', comentariosData)
+
         
         // Mapear los comentarios para usar el campo correcto
         this.comentarios = (comentariosData || []).map(comentario => ({
@@ -654,7 +707,7 @@ export default {
           adjuntos: Array.isArray(comentario.adjuntos) ? comentario.adjuntos : []
         }))
         
-        console.log('Comentarios procesados:', this.comentarios.length)
+
       } catch (error) {
         console.error('Error cargando comentarios para tarea', this.tarea.id, ':', error)
         this.comentarios = []
@@ -769,6 +822,165 @@ export default {
           title: 'Error',
           text: 'Error al actualizar el comentario'
         })
+      }
+    },
+
+    iniciarEdicionComentario(comentario) {
+      this.comentarioEditando = comentario
+      this.textoComentarioEditando = comentario.contenido
+    },
+
+    cancelarEdicionComentario() {
+      this.comentarioEditando = null
+      this.textoComentarioEditando = ''
+    },
+
+    async guardarEdicionComentario(comentario) {
+      if (!this.textoComentarioEditando.trim()) {
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Campo requerido',
+          text: 'El comentario no puede estar vacío'
+        })
+        return
+      }
+
+      try {
+        await tareasApi.actualizarComentario(comentario.id, this.textoComentarioEditando.trim())
+        await this.cargarComentarios()
+        this.cancelarEdicionComentario()
+        
+        this.$swal.fire({
+          icon: 'success',
+          title: 'Actualizado',
+          text: 'Comentario actualizado correctamente',
+          timer: 1500,
+          showConfirmButton: false
+        })
+      } catch (error) {
+        console.error('Error al actualizar comentario:', error)
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al actualizar el comentario'
+        })
+      }
+    },
+
+    async confirmarEliminarComentario(comentario) {
+      const result = await this.$swal.fire({
+        title: '¿Eliminar comentario?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      })
+
+      if (result.isConfirmed) {
+        try {
+          await tareasApi.eliminarComentario(comentario.id)
+          await this.cargarComentarios()
+          
+          this.$swal.fire({
+            icon: 'success',
+            title: 'Eliminado',
+            text: 'Comentario eliminado correctamente',
+            timer: 1500,
+            showConfirmButton: false
+          })
+        } catch (error) {
+          console.error('Error al eliminar comentario:', error)
+          this.$swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al eliminar el comentario'
+          })
+        }
+      }
+    },
+
+    async iniciarActualizacionAdjunto(adjunto) {
+      // Crear input file temporal
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = '*/*'
+      
+      input.onchange = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        const result = await this.$swal.fire({
+          title: '¿Actualizar archivo?',
+          text: `Se reemplazará "${adjunto.nombreArchivo}" por "${file.name}"`,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Sí, actualizar',
+          cancelButtonText: 'Cancelar'
+        })
+
+        if (result.isConfirmed) {
+          try {
+            await tareasApi.actualizarAdjunto(adjunto.id, file)
+            await this.cargarComentarios()
+            
+            this.$swal.fire({
+              icon: 'success',
+              title: 'Actualizado',
+              text: 'Archivo actualizado correctamente',
+              timer: 1500,
+              showConfirmButton: false
+            })
+          } catch (error) {
+            console.error('Error al actualizar adjunto:', error)
+            this.$swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Error al actualizar el archivo'
+            })
+          }
+        }
+      }
+      
+      input.click()
+    },
+
+    async confirmarEliminarAdjunto(adjunto) {
+      const result = await this.$swal.fire({
+        title: '¿Eliminar archivo?',
+        text: `Se eliminará "${adjunto.nombreArchivo}"`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      })
+
+      if (result.isConfirmed) {
+        try {
+          await tareasApi.eliminarAdjunto(adjunto.id)
+          await this.cargarComentarios()
+          
+          this.$swal.fire({
+            icon: 'success',
+            title: 'Eliminado',
+            text: 'Archivo eliminado correctamente',
+            timer: 1500,
+            showConfirmButton: false
+          })
+        } catch (error) {
+          console.error('Error al eliminar adjunto:', error)
+          this.$swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al eliminar el archivo'
+          })
+        }
       }
     }
   }
@@ -2170,6 +2382,7 @@ export default {
   font-size: 0.75rem;
   color: #718096;
   margin-bottom: 5px;
+  gap: 8px;
 }
 
 .comentario-info {
@@ -2188,30 +2401,313 @@ export default {
 .comentario-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  background: rgba(102, 126, 234, 0.08);
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.comentario-item-compact:hover .comentario-actions {
+  background: rgba(102, 126, 234, 0.15);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+/* Botones de comentario con estilos mejorados */
+.btn-fijar-comentario,
+.btn-editar-comentario,
+.btn-eliminar-comentario {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  font-size: 1rem;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  position: relative;
+}
+
+.btn-fijar-comentario::before,
+.btn-editar-comentario::before,
+.btn-eliminar-comentario::before {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: -1;
 }
 
 .btn-fijar-comentario {
-  background: none;
-  border: none;
-  color: #cbd5e0;
-  cursor: pointer;
-  padding: 4px 6px;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  border-radius: 4px;
-  opacity: 0.5;
+  color: #f59e0b;
+}
+
+.btn-fijar-comentario::before {
+  background: rgba(245, 158, 11, 0.1);
+  transform: scale(0);
 }
 
 .btn-fijar-comentario:hover {
   color: #f59e0b;
-  background: rgba(245, 158, 11, 0.1);
   opacity: 1;
+  transform: scale(1.15);
+}
+
+.btn-fijar-comentario:hover::before {
+  transform: scale(1);
 }
 
 .comentario-fijado .btn-fijar-comentario {
   color: #f59e0b;
   opacity: 1;
+}
+
+.btn-editar-comentario {
+  color: #3182ce;
+}
+
+.btn-editar-comentario::before {
+  background: rgba(49, 130, 206, 0.1);
+  transform: scale(0);
+}
+
+.btn-editar-comentario:hover {
+  color: #3182ce;
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.btn-editar-comentario:hover::before {
+  transform: scale(1);
+}
+
+.btn-eliminar-comentario {
+  color: #e53e3e;
+}
+
+.btn-eliminar-comentario::before {
+  background: rgba(229, 62, 62, 0.1);
+  transform: scale(0);
+}
+
+.btn-eliminar-comentario:hover {
+  color: #e53e3e;
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.btn-eliminar-comentario:hover::before {
+  transform: scale(1);
+}
+
+/* Mostrar más prominentemente al hover del comentario */
+.comentario-item-compact:hover .btn-fijar-comentario,
+.comentario-item-compact:hover .btn-editar-comentario,
+.comentario-item-compact:hover .btn-eliminar-comentario {
+  opacity: 0.8;
+}
+
+.comentario-edicion {
+  margin-top: 8px;
+}
+
+.comentario-edicion textarea {
+  width: 100%;
+  padding: 8px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  resize: vertical;
+  transition: border-color 0.3s;
+}
+
+.comentario-edicion textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.comentario-edicion-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+.btn-guardar-edicion,
+.btn-cancelar-edicion {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-guardar-edicion {
+  background: #28a745;
+  color: white;
+}
+
+.btn-guardar-edicion:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.btn-cancelar-edicion {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-cancelar-edicion:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.adjunto-item-compact {
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
+  border: 1.5px solid #d6e4ff;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.adjunto-item-compact::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+
+.adjunto-item-compact:hover::before {
+  left: 100%;
+}
+
+.adjunto-item-compact:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+  background: linear-gradient(135deg, #f8faff 0%, #ffffff 100%);
+  transform: translateY(-2px);
+}
+
+.adjunto-nombre {
+  flex: 1;
+  color: #667eea;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.adjunto-nombre:hover {
+  text-decoration: underline;
+  color: #5568d3;
+}
+
+.adjunto-nombre i {
+  font-size: 0.9rem;
+}
+
+.adjunto-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.adjunto-item-compact:hover .adjunto-actions {
+  opacity: 1;
+}
+
+.btn-actualizar-adjunto,
+.btn-eliminar-adjunto {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.btn-actualizar-adjunto::before,
+.btn-eliminar-adjunto::before {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: -1;
+}
+
+.btn-actualizar-adjunto {
+  color: #3182ce;
+}
+
+.btn-actualizar-adjunto::before {
+  background: rgba(49, 130, 206, 0.1);
+  transform: scale(0);
+}
+
+.btn-actualizar-adjunto:hover {
+  color: #2c5282;
+  transform: scale(1.18) rotate(180deg);
+}
+
+.btn-actualizar-adjunto:hover::before {
+  transform: scale(1);
+}
+
+.btn-eliminar-adjunto {
+  color: #e53e3e;
+}
+
+.btn-eliminar-adjunto::before {
+  background: rgba(229, 62, 62, 0.1);
+  transform: scale(0);
+}
+
+.btn-eliminar-adjunto:hover {
+  color: #c53030;
+  transform: scale(1.18);
+}
+
+.btn-eliminar-adjunto:hover::before {
+  transform: scale(1);
 }
 
 .comentario-nuevo-compact {

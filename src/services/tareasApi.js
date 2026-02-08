@@ -228,6 +228,18 @@ export const tareasApi = {
     await api.delete(`/comentarios-tareas/adjuntos/${adjuntoId}`)
   },
 
+  async actualizarAdjunto(adjuntoId, file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const response = await api.put(`/comentarios-tareas/adjuntos/${adjuntoId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    return response.data
+  },
+
   async obtenerTareasPorCliente(clienteId) {
     const response = await api.get(`/tareas/cliente/${clienteId}`)
     return response.data

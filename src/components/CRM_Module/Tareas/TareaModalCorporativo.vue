@@ -250,15 +250,15 @@ export default {
   },
   watch: {
     value(val) {
-      console.log('TareaModalCorporativo - value changed:', val)
+
       if (val) {
         this.inicializarFormulario()
       }
     },
     
     tarea: {
-      handler(newVal) {
-        console.log('TareaModalCorporativo - tarea changed:', newVal)
+      handler() {
+
         if (this.value) {
           this.inicializarFormulario()
         }
@@ -277,9 +277,9 @@ export default {
   },
   methods: {
     inicializarFormulario() {
-      console.log('Inicializando formulario. Tarea:', this.tarea)
+
       if (this.tarea && this.tarea.id) {
-        console.log('Modo edición')
+
         // Modo edición: cargar datos de la tarea existente
         this.formulario = {
           id: this.tarea.id,
@@ -366,7 +366,7 @@ export default {
       this.nuevoComentario = ''
       this.fijarComentario = false
       
-      console.log('Formulario inicializado:', this.formulario)
+
     },
 
     async buscarClientes() {
@@ -443,7 +443,7 @@ export default {
     },
 
     guardar() {
-      console.log('Guardando tarea...')
+
       // Validación básica
       if (!this.formulario.titulo || this.formulario.titulo.trim() === '') {
         this.$swal.fire({
@@ -454,7 +454,7 @@ export default {
         return
       }
       
-      console.log('Formulario antes de guardar:', this.formulario)
+
       
       // Construir fechas completas manteniendo la zona horaria local
       if (this.fechaInicio && this.horaInicio) {
@@ -497,7 +497,7 @@ export default {
         subcategoriaId: this.formulario.subcategoriaId || null
       }
 
-      console.log('Emitiendo guardar con:', tareaDTO)
+
       this.$emit('guardar', tareaDTO)
     },
 
