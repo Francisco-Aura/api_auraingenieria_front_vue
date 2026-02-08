@@ -760,9 +760,7 @@ export default {
                 potencia5: puntoCartera.potencia5 || 0,
                 potencia6: puntoCartera.potencia6 || 0
               };
-            } else {
-              console.warn("No se encontró el punto en el endpoint de cartera");
-              // Establecer potencias en 0
+            } else {// Establecer potencias en 0
               puntoConPotencias = {
                 ...puntoConPotencias,
                 potencia1: 0,
@@ -773,9 +771,7 @@ export default {
                 potencia6: 0
               };
             }
-          } catch (carteraError) {
-            console.warn("Error al cargar desde cartera:", carteraError);
-            // Si falla la carga de cartera, usar valores por defecto
+          } catch (carteraError) {// Si falla la carga de cartera, usar valores por defecto
             puntoConPotencias = {
               ...puntoConPotencias,
               potencia1: 0,
@@ -786,9 +782,7 @@ export default {
               potencia6: 0
             };
           }
-        } else {
-          console.warn("No se encontró idCliente en el objeto ps");
-          // Si no tenemos ID de cliente, establecer potencias en 0
+        } else {// Si no tenemos ID de cliente, establecer potencias en 0
           puntoConPotencias = {
             ...puntoConPotencias,
             potencia1: 0,
@@ -1086,7 +1080,6 @@ export default {
     // Método para recargar específicamente los contratos del punto de suministro actual
     async recargarContratosDelPuntoSuministro() {
       if (!this.modalPuntoSuministro?.id) {
-        console.warn('No hay punto de suministro seleccionado para recargar contratos');
         return;
       }
 
@@ -1183,7 +1176,6 @@ export default {
           };
         } catch (error) {
           // Si no hay datos de pagos para este servicio, mantenerlo sin pagos
-          console.warn(`No se encontraron datos de pagos para el servicio ${servicio.id}:`, error.message);
           return {
             ...servicio,
             pagos: null
@@ -1374,8 +1366,6 @@ export default {
           const tarifaCorregida = await this.calcularTarifaActual(punto);
           if (tarifaCorregida) {
             return true;
-          } else {
-            // No hacer nada
           }
         } catch (error) {
           console.warn(`Error al corregir punto ${punto.id}:`, error.message);
@@ -2380,4 +2370,5 @@ export default {
   background-color: rgba(220, 53, 69, 0.1);
 }
 </style>
+
 

@@ -33,7 +33,7 @@ class NotificacionesPolling {
     this.activo = true
     this.erroresConsecutivos = 0
 
-    console.log('Iniciando polling de notificaciones cada', this.intervaloMs, 'ms para usuario', usuarioId)
+
 
     // Hacer la primera llamada inmediatamente
     this.verificarNotificaciones()
@@ -52,7 +52,7 @@ class NotificacionesPolling {
       this.activo = false
       this.enProgreso = false
       this.erroresConsecutivos = 0
-      console.log('Polling de notificaciones detenido')
+
     }
   }
 
@@ -105,7 +105,7 @@ class NotificacionesPolling {
     this.intervaloMs = ms
     
     if (this.activo && cambio) {
-      console.log('Cambiando intervalo de polling a', ms, 'ms')
+
       this.detener()
       this.iniciar(this.usuarioId)
     }

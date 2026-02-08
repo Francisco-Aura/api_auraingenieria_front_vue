@@ -1692,7 +1692,6 @@ export default {
         
         // Si el modal está visible y cambió el punto de suministro
         if (this.visible && newId !== oldId) {
-          console.log('[ModalContratos] Punto de suministro cambió de', oldId, 'a', newId);
           
           // LIMPIAR COMPLETAMENTE todos los estados del modal
           this.mostrandoFormulario = false;
@@ -1751,10 +1750,7 @@ export default {
           const newIds = (newContratos || []).map(c => c.id).sort().join(',');
           const oldIds = (oldContratos || []).map(c => c.id).sort().join(',');
           
-          if (newIds !== oldIds) {
-            console.log('[ModalContratos] Contratos actualizados:', newContratos?.length || 0, 'contratos');
-            
-            // Limpiar formulario si estaba en modo edición de un contrato que ya no existe
+          if (newIds !== oldIds) {// Limpiar formulario si estaba en modo edición de un contrato que ya no existe
             if (this.modoEdicion && this.contratoEditandoId) {
               const contratoExiste = (newContratos || []).some(c => c.id === this.contratoEditandoId);
               if (!contratoExiste) {
@@ -1809,7 +1805,6 @@ export default {
         if (newVal && newVal.length > 0) {
           // Actualizar la lista interna si el prop cambia
           this.comercializadorasList = [...newVal];
-          console.log('Comercializadoras sincronizadas desde prop:', this.comercializadorasList.length);
         }
       },
       immediate: true,

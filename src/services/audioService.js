@@ -18,7 +18,7 @@ class AudioService {
       // Sonido de notificación (campana suave)
       this.audioNotificacion.src = 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA=='
 
-      console.log('Audio service inicializado')
+
     } catch (error) {
       console.error('Error inicializando audio:', error)
     }
@@ -27,7 +27,7 @@ class AudioService {
   // Reproducir sonido de notificación
   reproducirNotificacion() {
     if (!this.sonidosPermitidos) {
-      console.log('Sonidos de notificación desactivados')
+
       return
     }
 
@@ -65,7 +65,7 @@ class AudioService {
       osc.start(ahora)
       osc.stop(ahora + 0.15)
       
-      console.log('Sonido discreto de notificación reproducido')
+
     } catch (error) {
       console.error('Error creando sonido:', error)
     }
@@ -75,7 +75,7 @@ class AudioService {
   alternarSonidos(estado) {
     this.sonidosPermitidos = estado
     localStorage.setItem('sonidos_notificaciones_enabled', estado ? 'true' : 'false')
-    console.log('Sonidos de notificaciones:', estado ? 'activados' : 'desactivados')
+
   }
 
   // Cambiar volumen
@@ -85,7 +85,6 @@ class AudioService {
     if (this.audioNotificacion) {
       this.audioNotificacion.volume = this.volumen
     }
-    console.log('Volumen de notificaciones:', Math.round(this.volumen * 100) + '%')
   }
 
   // Sonido de error

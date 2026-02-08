@@ -327,9 +327,9 @@ export default {
     async cargarAuditoria() {
       this.cargando = true
       try {
-        console.log('Cargando auditoría para tarea:', this.tareaId)
+
         const datos = await tareasApi.obtenerMetricasTarea(this.tareaId)
-        console.log('Datos recibidos:', datos)
+
         this.tarea = datos.tarea
         this.historial = datos.historial || []
         this.metricas = datos.metricas || {
@@ -342,7 +342,7 @@ export default {
           fechaCreacion: null,
           fechaFinalizacion: null
         }
-        console.log('Historial cargado:', this.historial.length, 'registros')
+
       } catch (error) {
         console.error('Error cargando auditoría:', error)
       } finally {

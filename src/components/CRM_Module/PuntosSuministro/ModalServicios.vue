@@ -680,7 +680,6 @@ export default {
         
         const date = new Date(dateString);
         if (isNaN(date.getTime())) {
-          console.warn('Fecha inválida:', dateString);
           return '';
         }
         
@@ -695,14 +694,12 @@ export default {
       if (!id || id === '') return 'Sin Gestora';
       
       if (!this.gestoras || !this.gestoras.length) {
-        console.warn("No se han cargado las gestoras aún");
         return 'Cargando...';
       }
       
       const gestora = this.gestoras.find(g => g.id == id);
       
       if (!gestora) {
-        console.warn(`No se encontró la gestora con ID: ${id}`, this.gestoras);
         return 'Gestora Desconocida';
       }
       
@@ -713,14 +710,12 @@ export default {
       if (!id || id === '') return 'Sin Producto';
       
       if (!this.productos || !this.productos.length) {
-        console.warn("No se han cargado los productos aún");
         return 'Cargando...';
       }
       
       const producto = this.productos.find(p => p.id == id);
       
       if (!producto) {
-        console.warn(`No se encontró el producto con ID: ${id}`, this.productos);
         return 'Producto Desconocido';
       }
       
@@ -737,14 +732,12 @@ export default {
       }
       
       if (!lista || !lista.length) {
-        console.warn("No se han cargado las comercializadoras aún");
         return 'Comercializadora Desconocida';
       }
       
       const comercializadora = lista.find(c => c.id == id);
       
       if (!comercializadora) {
-        console.warn(`No se encontró la comercializadora con ID: ${id}`, {id, lista});
         return 'Comercializadora Desconocida';
       }
       
@@ -1560,7 +1553,6 @@ export default {
       try {
         // Verificar que el servicioId es válido
         if (!servicioId) {
-          console.warn('Se intentó cargar cuotas sin servicioId válido');
           this.cuotas = [];
           return;
         }

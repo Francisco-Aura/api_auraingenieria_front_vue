@@ -271,7 +271,7 @@ export default {
               audioService.reproducirNotificacion()
             }
             
-            console.log('Notificaciones actualizadas automáticamente:', notificaciones.length)
+
           })
           
           // Cargar notificaciones iniciales
