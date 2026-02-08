@@ -257,7 +257,7 @@ export default {
     },
     
     tarea: {
-      handler(newVal) {
+      handler(_newVal) {
 
         if (this.value) {
           this.inicializarFormulario()
