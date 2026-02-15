@@ -251,9 +251,12 @@
                 >
                   <div class="comentario-header-compact">
                     <div class="comentario-info">
-                      <span class="comentario-autor">{{ comentario.autor || 'Usuario' }}</span>
+                      <span class="comentario-autor">{{ comentario.usuarioNombre || 'Usuario' }}</span>
                       <span v-if="comentario.fijado" class="fijado-badge" title="Comentario fijado">
                         <i class="fas fa-thumbtack"></i>
+                      </span>
+                      <span v-if="comentario.editado" class="editado-badge" title="Comentario editado">
+                        <i class="fas fa-pencil-alt"></i> Editado
                       </span>
                     </div>
                     <div class="comentario-actions">
@@ -267,18 +270,23 @@
                       <button 
                         class="btn-editar-comentario" 
                         @click="iniciarEdicionComentario(comentario)"
-                        title="Editar comentario"
+                        :disabled="!puedeEditarComentario(comentario)"
+                        :title="puedeEditarComentario(comentario) ? 'Editar comentario' : 'Solo el autor puede editar'"
                       >
                         <i class="fas fa-edit"></i>
                       </button>
                       <button 
                         class="btn-eliminar-comentario" 
                         @click="confirmarEliminarComentario(comentario)"
-                        title="Eliminar comentario"
+                        :disabled="!puedeEliminarComentario()"
+                        :title="puedeEliminarComentario() ? 'Eliminar comentario' : 'Solo administradores pueden eliminar'"
                       >
                         <i class="fas fa-trash"></i>
                       </button>
                       <span class="comentario-fecha">{{ formatDate(comentario.fechaCreacion) }}</span>
+                      <span v-if="comentario.editado && comentario.fechaEdicion" class="comentario-fecha-edicion">
+                        (Editado: {{ formatDate(comentario.fechaEdicion) }})
+                      </span>
                     </div>
                   </div>
                   
@@ -846,7 +854,8 @@ export default {
       }
 
       try {
-        await tareasApi.actualizarComentario(comentario.id, this.textoComentarioEditando.trim())
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+        await tareasApi.actualizarComentario(comentario.id, this.textoComentarioEditando.trim(), usuario.id)
         await this.cargarComentarios()
         this.cancelarEdicionComentario()
         
@@ -859,10 +868,11 @@ export default {
         })
       } catch (error) {
         console.error('Error al actualizar comentario:', error)
+        const mensaje = error.response?.data || 'Error al actualizar el comentario'
         this.$swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Error al actualizar el comentario'
+          text: mensaje
         })
       }
     },
@@ -881,7 +891,8 @@ export default {
 
       if (result.isConfirmed) {
         try {
-          await tareasApi.eliminarComentario(comentario.id)
+          const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+          await tareasApi.eliminarComentario(comentario.id, usuario.id)
           await this.cargarComentarios()
           
           this.$swal.fire({
@@ -893,13 +904,24 @@ export default {
           })
         } catch (error) {
           console.error('Error al eliminar comentario:', error)
+          const mensaje = error.response?.data || 'Error al eliminar el comentario'
           this.$swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Error al eliminar el comentario'
+            text: mensaje
           })
         }
       }
+    },
+
+    puedeEditarComentario(comentario) {
+      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+      return comentario.usuarioId === usuario.id
+    },
+
+    puedeEliminarComentario() {
+      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+      return usuario.nivelAcceso === 1
     },
 
     async iniciarActualizacionAdjunto(adjunto) {
@@ -2398,22 +2420,21 @@ export default {
   font-size: 0.7rem;
 }
 
-.comentario-actions {
-  display: flex;
+.editado-badge {
+  color: #8b5cf6;
+  font-size: 0.7rem;
+  font-style: italic;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(102, 126, 234, 0.08);
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
+  gap: 4px;
 }
 
-.comentario-item-compact:hover .comentario-actions {
-  background: rgba(102, 126, 234, 0.15);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+.comentario-fecha-edicion {
+  font-size: 0.7rem;
+  color: #a0aec0;
+  font-style: italic;
 }
 
-/* Botones de comentario con estilos mejorados */
 .btn-fijar-comentario,
 .btn-editar-comentario,
 .btn-eliminar-comentario {
@@ -2429,6 +2450,13 @@ export default {
   justify-content: center;
   opacity: 0.6;
   position: relative;
+}
+
+.btn-fijar-comentario:disabled,
+.btn-editar-comentario:disabled,
+.btn-eliminar-comentario:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .btn-fijar-comentario::before,
