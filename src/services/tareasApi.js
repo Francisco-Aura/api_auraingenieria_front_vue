@@ -182,13 +182,13 @@ export const tareasApi = {
     return response.data
   },
 
-  async actualizarComentario(id, comentario) {
-    const response = await api.put(`/comentarios-tareas/${id}`, { comentario })
+  async actualizarComentario(id, comentario, usuarioId) {
+    const response = await api.put(`/comentarios-tareas/${id}`, { comentario, usuarioId })
     return response.data
   },
 
-  async eliminarComentario(id) {
-    await api.delete(`/comentarios-tareas/${id}`)
+  async eliminarComentario(id, usuarioId) {
+    await api.delete(`/comentarios-tareas/${id}`, { params: { usuarioId } })
   },
 
   async toggleFijadoComentario(id) {
