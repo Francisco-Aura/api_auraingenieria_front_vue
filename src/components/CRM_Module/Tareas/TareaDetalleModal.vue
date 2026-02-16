@@ -258,6 +258,10 @@
                       <span v-if="comentario.editado" class="editado-badge" title="Comentario editado">
                         <i class="fas fa-pencil-alt"></i> Editado
                       </span>
+                      <span class="comentario-fecha">{{ formatDate(comentario.fechaCreacion) }}</span>
+                      <span v-if="comentario.editado && comentario.fechaEdicion" class="comentario-fecha-edicion">
+                        (Editado: {{ formatDate(comentario.fechaEdicion) }})
+                      </span>
                     </div>
                     <div class="comentario-actions">
                       <button 
@@ -283,10 +287,6 @@
                       >
                         <i class="fas fa-trash"></i>
                       </button>
-                      <span class="comentario-fecha">{{ formatDate(comentario.fechaCreacion) }}</span>
-                      <span v-if="comentario.editado && comentario.fechaEdicion" class="comentario-fecha-edicion">
-                        (Editado: {{ formatDate(comentario.fechaEdicion) }})
-                      </span>
                     </div>
                   </div>
                   
@@ -708,9 +708,12 @@ export default {
         // Mapear los comentarios para usar el campo correcto
         this.comentarios = (comentariosData || []).map(comentario => ({
           id: comentario.id,
-          autor: comentario.usuarioNombre || 'Usuario',
+          usuarioId: comentario.usuarioId,
+          usuarioNombre: comentario.usuarioNombre || 'Usuario',
           contenido: comentario.comentario || '',
           fechaCreacion: comentario.fechaCreacion,
+          fechaEdicion: comentario.fechaEdicion,
+          editado: comentario.editado || false,
           fijado: comentario.fijado || false,
           adjuntos: Array.isArray(comentario.adjuntos) ? comentario.adjuntos : []
         }))
@@ -2411,9 +2414,15 @@ export default {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .comentario-autor { font-weight: 600; color: #2d3748; }
+
+.comentario-fecha {
+  font-size: 0.7rem;
+  color: #a0aec0;
+}
 
 .fijado-badge {
   color: #f59e0b;
@@ -2433,6 +2442,22 @@ export default {
   font-size: 0.7rem;
   color: #a0aec0;
   font-style: italic;
+}
+
+.comentario-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  background: rgba(102, 126, 234, 0.08);
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.comentario-item-compact:hover .comentario-actions {
+  background: rgba(102, 126, 234, 0.15);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
 .btn-fijar-comentario,
