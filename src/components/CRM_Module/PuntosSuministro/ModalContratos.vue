@@ -1256,8 +1256,12 @@ export default {
     },
 
     verDetalleContrato(contrato) {
-      this.contratoDetalle = contrato;
-      this.clienteDetalle = contrato.cliente || this.cliente;
+      // Crear copia profunda para evitar mutaciones
+      // Esto previene que cambios en el modal de detalle afecten a otros contratos
+      this.contratoDetalle = JSON.parse(JSON.stringify(contrato));
+      this.clienteDetalle = contrato.cliente 
+        ? JSON.parse(JSON.stringify(contrato.cliente)) 
+        : this.cliente;
       this.mostrarModalDetalleContrato = true;
     },
 
@@ -1493,15 +1497,17 @@ export default {
         array.findIndex(c => c.id === contrato.id) === index
       );
       
-      // IMPORTANTE: Crear copias para NO MUTAR los datos originales
-      // Sincronizar cada contrato con el punto de suministro actual usando spread operator
-      const contratosConDatosSincronizados = contratosUnicos.map(contrato => ({
-        ...contrato,
-        // Actualizar exención de impuesto eléctrico basándose en el punto de suministro
-        exencionImpuestoElectricidad: this.tieneExencionImpuestoElectrico ? 1 : 0,
-        // Actualizar autoconsumo basándose en el punto de suministro
-        autoconsumo: this.tieneAutoconsumo ? 1 : 0
-      }));
+      // Crear copias profundas para NO MUTAR los datos originales
+      // Esto evita que al ver el detalle de un contrato se modifiquen los valores
+      // de otros contratos en la lista (bug de consumoAnual compartido)
+      const contratosConDatosSincronizados = contratosUnicos.map(contrato => {
+        // Copia profunda para evitar referencias compartidas
+        const copiaContrato = JSON.parse(JSON.stringify(contrato));
+        // Sincronizar con el punto de suministro actual
+        copiaContrato.exencionImpuestoElectricidad = this.tieneExencionImpuestoElectrico ? 1 : 0;
+        copiaContrato.autoconsumo = this.tieneAutoconsumo ? 1 : 0;
+        return copiaContrato;
+      });
       
       // Ordenar por fecha de inicio descendente (más actual primero)
       return contratosConDatosSincronizados.sort((a, b) => {
