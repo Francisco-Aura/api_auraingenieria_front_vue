@@ -1,6 +1,9 @@
 <template>
   <!-- Contenedor principal para la pantalla de inicio de sesión -->
   <div class="login-wrapper">
+    <!-- Loading Spinner -->
+    <Spinner :isLoading="isLoading" />
+
     <div class="login-container">
       <div class="logo-container">
         <img src="@/assets/logo.png" alt="Aura Ingeniería" class="logo">
@@ -39,8 +42,8 @@
           />
         </div>
         
-        <button type="submit" class="login-button">
-          <span>Acceder</span>
+        <button type="submit" class="login-button" :disabled="isLoading">
+          <span>{{ isLoading ? 'Autenticando...' : 'Acceder' }}</span>
           <i class="fas fa-arrow-right"></i>
         </button>
       </form>
@@ -50,21 +53,27 @@
 
 <script>
 import axios from 'axios'; // Importa Axios para realizar solicitudes HTTP
+import Spinner from '@/components/SpinnerComponent.vue'; // Importa el componente Spinner
 
 export default {
   name: 'LoginComponent',
+  components: {
+    Spinner
+  },
   // Define el estado reactivo del componente
   data() {
     return {
       username: '', // Almacena el nombre de usuario ingresado
       password: '',  // Almacena la contraseña ingresada
-      loginError: false // NUEVO: para mostrar el mensaje de error
+      loginError: false, // Para mostrar el mensaje de error
+      isLoading: false // Para controlar el estado de carga del login
     };
   },
   methods: {
     // Método para manejar el envío del formulario
     async submitForm() {
       this.loginError = false;
+      this.isLoading = true; // Activar loading
       try {
         // Realiza una solicitud GET a la API de autenticación
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/usuarios/login`, {
@@ -83,9 +92,11 @@ export default {
           this.$router.push('/dashboard/clientes');
         } else {
           this.loginError = true;
+          this.isLoading = false; // Desactivar loading si hay error
         }
       } catch (error) {
         this.loginError = true;
+        this.isLoading = false; // Desactivar loading en caso de error
         // Maneja errores en la solicitud, como credenciales incorrectas o problemas del servidor
         console.error('Error en la solicitud:', error);
       }
@@ -221,9 +232,14 @@ export default {
   transition: all 0.2s ease;
 }
 
-.login-button:hover {
+.login-button:hover:not(:disabled) {
   background: var(--secondary-color);
   transform: translateY(-1px);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .links-container {

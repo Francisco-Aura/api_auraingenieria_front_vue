@@ -350,14 +350,15 @@
     />
 
     <!-- Modal de Servicios -->
-    <ModalServicios v-if="modalCliente" 
+    <ModalServicios v-if="modalCliente && modalPuntoSuministro" 
       :visible="mostrarModalServicios" 
       :cargando="cargandoServicios"
       :cliente="modalCliente"
-      :puntoSuministroSeleccionado="getPuntoSuministroById(modalPuntoSuministro)"
+      :puntoSuministroSeleccionado="getPuntoSuministroById(modalPuntoSuministro) || {}"
       :servicios="servicios"
       :gestoras="gestoras"
       :productos="productos"
+      :comercializadoras="comercializadoras"
       :servicioActual="servicioActual"
       :serviciosHistoricos="serviciosHistoricos"
       @cerrar-modal="cerrarModalServicios"
@@ -480,6 +481,7 @@ export default {
       contratosHistoricosData: null, // Almacena datos de contratos históricos
       mostrarDadosDeBaja: false, // Control para mostrar/ocultar puntos dados de baja
       filtrosTimer: null, // Timer para debounce de filtros
+      currentContratosRequestId: null, // ID de la solicitud actual para evitar race conditions
     };
   },
 
@@ -838,127 +840,107 @@ export default {
 
     // Abre el modal de contratos con los datos del punto de suministro seleccionado
     async abrirModalContratos(idPuntoSuministro, idCliente) {
+      // Generar un ID único para esta solicitud para evitar race conditions
+      const requestId = Date.now() + '_' + idPuntoSuministro;
+      this.currentContratosRequestId = requestId;
+      
       this.loading = true;
       
-      // LIMPIAR COMPLETAMENTE todos los datos previos del modal
+      // LIMPIAR COMPLETAMENTE todos los datos previos del modal ANTES de cualquier otra cosa
       this.contratos = [];
       this.contratoActualData = null;
       this.contratosHistoricosData = null;
       this.todosLosContratos = [];
+      this.modalCliente = null;
+      this.modalPuntoSuministro = null;
       
-      // Inicializar valores mínimos para que el modal se pueda abrir
-      this.modalCliente = { id: idCliente, nombre: "Cargando..." };
-      this.modalPuntoSuministro = { id: idPuntoSuministro };
-      
-      // Mostrar el modal inmediatamente para dar feedback
-      this.mostrarModalContratos = true;
-      
-      // Establecer un límite máximo para el spinner de carga
-      setTimeout(() => {
-        if (this.loading) {
-          this.loading = false;
-        }
-      }, 8000); // 8 segundos máximo
+      // NO mostrar el modal hasta que tengamos los datos básicos cargados
+      // Esto evita el mensaje "No hay contratos disponibles" mientras carga
+      this.mostrarModalContratos = false;
       
       try {
-        // Cargar datos básicos primero - cliente y punto de suministro
-        try {
-          const [responseCliente, responsePuntoSuministro] = await Promise.all([
-            axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`),
-            axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${idPuntoSuministro}`)
-          ]);
-          
-          this.modalCliente = responseCliente.data;
-          // Asegurar que el ID se preserve
-          this.modalCliente.id = idCliente;
-          this.modalPuntoSuministro = responsePuntoSuministro.data;
-          
-        } catch (error) {
-          console.error("Error al cargar datos del cliente o punto de suministro:", error);
+        // Cargar TODOS los datos necesarios ANTES de mostrar el modal
+        const [responseCliente, responsePuntoSuministro, tarifasGasResponse, tarifasLuzResponse, responseContratos] = await Promise.all([
+          axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`),
+          axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${idPuntoSuministro}`),
+          axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
+          axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-luz`),
+          axios.get(`${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${idPuntoSuministro}`)
+        ]);
+        
+        // VERIFICAR que esta solicitud sigue siendo la actual (evita race conditions)
+        // Si el usuario hizo clic en otro punto mientras cargaba, ignoramos esta respuesta
+        if (this.currentContratosRequestId !== requestId) {
+          console.log('Solicitud cancelada: el usuario seleccionó otro punto de suministro');
+          return;
         }
         
-        // Cargar tarifas, contratos y demás datos en paralelo
-        try {
-          // Cargar tarifas primero - estas son rápidas y necesarias
-          const [tarifasGasResponse, tarifasLuzResponse] = await Promise.all([
-            axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
-            axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-luz`)
-          ]);
-          
-          // Actualizar tarifas inmediatamente
-          this.tarifasGas = tarifasGasResponse.data;
-          this.tarifasLuz = tarifasLuzResponse.data;
-          
-          // Ahora cargar contratos específicos del punto - esto es rápido y lo necesitamos
-          const responseContratos = await axios.get(
-            `${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${idPuntoSuministro}`
-          );
-          
-          // Cargar solo los contratos necesarios
-          this.contratos = responseContratos.data;
-          
-          // No cargar todos los contratos si son demasiados - esto puede ser muy lento
-          // Podemos obtener la información mínima necesaria
-          try {
-            // Esta llamada podría ser lenta con 5000+ contratos, pero no bloqueamos la interfaz
-            const responseTodosContratos = await axios.get(
-              `${process.env.VUE_APP_API_URL}/api/contratos?limit=100`
-            );
-            
-            // Actualizar sólo si recibimos datos
-            if (responseTodosContratos.data && responseTodosContratos.data.length > 0) {
-              this.todosLosContratos = responseTodosContratos.data;
-            }
-          } catch (error) {
-            console.error("Error al cargar todos los contratos:", error);
-            // No interrumpir el flujo si falla esta llamada
-          }
-          
-          // Actualizar las tarifas y contratos - ya tenemos los datos específicos
-          // No repetimos la asignación de tarifasGas y tarifasLuz aquí
-          this.contratos = responseContratos.data;
-          
-          // Calcular el contrato actual y los históricos
-          const ahora = new Date();
-          // No asignamos directamente a las propiedades computadas
-          const contratoActualTemp = this.contratos.find(contrato => 
-            new Date(contrato.fechaInicio) <= ahora && new Date(contrato.fechaFin) > ahora
-          ) || {};
-          const contratosHistoricosTemp = this.contratos.filter(contrato => 
-            new Date(contrato.fechaFin) <= ahora
-          );
-          
-          // Guardamos las referencias para usarlas en la interfaz
-          this.contratoActualData = contratoActualTemp;
-          this.contratosHistoricosData = contratosHistoricosTemp;
-        } catch (error) {
-          console.error("Error al cargar tarifas o contratos:", error);
-          // Asegurar que tenemos arrays vacíos en lugar de null
-          if (!this.tarifasGas) this.tarifasGas = [];
-          if (!this.tarifasLuz) this.tarifasLuz = [];
-          if (!this.contratos) this.contratos = [];
-          if (!this.todosLosContratos) this.todosLosContratos = [];
-          if (!this.contratosHistoricos) this.contratosHistoricos = [];
+        // Asignar datos del cliente
+        this.modalCliente = responseCliente.data;
+        this.modalCliente.id = idCliente;
+        
+        // Asignar datos del punto de suministro
+        this.modalPuntoSuministro = responsePuntoSuministro.data;
+        
+        // Asignar tarifas
+        this.tarifasGas = tarifasGasResponse.data;
+        this.tarifasLuz = tarifasLuzResponse.data;
+        
+        // Asignar contratos específicos del punto de suministro
+        this.contratos = responseContratos.data || [];
+        
+        // Calcular el contrato actual y los históricos
+        const ahora = new Date();
+        this.contratoActualData = this.contratos.find(contrato => 
+          new Date(contrato.fechaInicio) <= ahora && new Date(contrato.fechaFin) > ahora
+        ) || {};
+        this.contratosHistoricosData = this.contratos.filter(contrato => 
+          new Date(contrato.fechaFin) <= ahora
+        );
+        
+        // VERIFICAR una vez más antes de mostrar el modal
+        if (this.currentContratosRequestId !== requestId) {
+          console.log('Solicitud cancelada antes de mostrar modal');
+          return;
         }
+        
+        // AHORA sí mostrar el modal con todos los datos cargados
+        this.mostrarModalContratos = true;
+        
       } catch (error) {
-        console.error("Error general al abrir el modal de contratos:", error);
-      } finally {
-        this.loading = false;
+        console.error("Error al abrir el modal de contratos:", error);
         
-        // Forzar actualización para asegurar que el componente se renderiza correctamente
-        this.$nextTick(() => {
-          this.$forceUpdate();
-        });
+        // Solo mostrar error si esta solicitud sigue siendo la actual
+        if (this.currentContratosRequestId === requestId) {
+          // Asegurar que tenemos arrays vacíos en lugar de null
+          this.tarifasGas = this.tarifasGas || [];
+          this.tarifasLuz = this.tarifasLuz || [];
+          this.contratos = [];
+          this.todosLosContratos = [];
+          this.contratoActualData = null;
+          this.contratosHistoricosData = [];
+          
+          // Mostrar el modal vacío con mensaje de error si es necesario
+          this.mostrarModalContratos = true;
+        }
+      } finally {
+        // Solo desactivar loading si esta solicitud sigue siendo la actual
+        if (this.currentContratosRequestId === requestId) {
+          this.loading = false;
+        }
       }
     },
 
     // Cierra el modal de contratos
     cerrarModalContratos() {
       this.mostrarModalContratos = false;
+      // Invalidar cualquier solicitud pendiente para evitar race conditions
+      this.currentContratosRequestId = null;
       // Limpiar datos del modal para evitar mostrar información del punto anterior
       this.contratos = [];
       this.contratoActualData = null;
       this.contratosHistoricosData = null;
+      this.todosLosContratos = [];
       this.modalCliente = null;
       this.modalPuntoSuministro = null;
     },
