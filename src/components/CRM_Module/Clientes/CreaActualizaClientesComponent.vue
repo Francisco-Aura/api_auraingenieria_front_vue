@@ -219,6 +219,18 @@
               </div>
             </div>
             
+            <!-- Observaciones del Cliente -->
+            <div class="form-section-compact notes-section full-width">
+              <div class="section-header-compact">
+                <i class="fas fa-sticky-note"></i>
+                <h3>Notas y observaciones</h3>
+              </div>
+              <div class="form-group-compact">
+                <textarea id="notas" v-model="clienteLocal.notas" class="form-control-compact notes-textarea" 
+                  placeholder="Notas y observaciones..."></textarea>
+              </div>
+            </div>
+            
             <!-- Navegación de pestañas (nuevo) -->
             <div class="tab-navigation">
               <div></div> <!-- Espacio vacío para alinear -->
@@ -377,7 +389,7 @@
                 <div class="form-section-compact">
                   <div class="section-header-compact">
                     <i class="fas fa-tachometer-alt"></i>
-                    <h3>Telemedida</h3>
+                    <h3>Distribuidora</h3>
                   </div>
                   <div class="form-row-compact">
                     <div class="form-group-compact">
@@ -398,16 +410,6 @@
                 </div>
 
                 <!-- Notas en ancho completo -->
-                <div class="form-section-compact notes-section full-width">
-                  <div class="section-header-compact">
-                    <i class="fas fa-sticky-note"></i>
-                    <h3>Notas y observaciones</h3>
-                  </div>
-                  <div class="form-group-compact">
-                    <textarea id="notas" v-model="clienteLocal.notas" class="form-control-compact notes-textarea" 
-                      placeholder="Notas y observaciones..."></textarea>
-                  </div>
-                </div>
               </div>
             </div>
 

@@ -528,7 +528,7 @@ export default {
     async fetchPuntosSuministro(idCliente) {
       try {
         this.loading = true;
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${idCliente}`);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${idCliente}/cartera`);
         this.puntosSuministro = response.data;
       } catch (error) {
         this.$swal.fire({

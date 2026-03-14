@@ -93,19 +93,6 @@
         </div>
       </div>
       <div class="table-responsive">
-        <div class="table-controls">
-          <div class="filters-container">
-            <div class="records-per-page">
-              <label for="recordsPerPage">Registros por página:</label>
-              <select v-model.number="recordsPerPageValue" @change="onRecordsPerPageChange" id="recordsPerPage" class="form-control">
-                <option :value="10">10</option>
-                <option :value="25">25</option>
-                <option :value="50">50</option>
-                <option :value="100">100</option>
-              </select>
-            </div>
-          </div>
-        </div>
         <table class="data-table">
           <thead>
             <tr>
@@ -231,6 +218,21 @@ export default {
       recordsPerPageValue: 10,
       currentPage: 1,
       isSavingBulk: false,
+      // Mapeo de etiquetas para encabezados en español
+      etiquetasColumnas: {
+        codigoContrato: 'Código Contrato',
+        fechaInicio: 'Fecha Inicio',
+        fechaFin: 'Fecha Fin',
+        cliente: 'Cliente',
+        cups: 'CUPS',
+        contrato: 'Contrato',
+        tarifaLuz: 'Tarifa Luz',
+        tarifaGas: 'Tarifa Gas',
+        comercializadoraActual: 'Comercializadora Actual',
+        consumoAnual: 'Consumo Anual (kWh)',
+        importeCuotaPendiente: 'Importe Cuota Pendiente',
+        importeFinal: 'Importe Final',
+      }
     };
   },
   computed: {
@@ -436,8 +438,8 @@ export default {
       const columnasPermitidas = {
         "contratos-pendientes-renovacion": [
           "codigoContrato", // identificador
-          "fechaInicio", "fechaFin", "cliente", "cupsLuz", "cupsGas", 
-          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual"
+          "fechaInicio", "fechaFin", "cliente", "cupsLuz", "cupsGas", "cups",
+          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual", "consumoAnual"
         ],
         "puntos-suministro-sin-contrato": [
           "idPS", // identificador
@@ -451,8 +453,8 @@ export default {
         ],
         "contratos-vigentes": [
           "codigoContrato", // identificador
-          "fechaInicio", "fechaFin", "cliente", "cupsLuz", "cupsGas", 
-          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual"
+          "fechaInicio", "fechaFin", "cliente", "cupsLuz", "cupsGas", "cups",
+          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual", "consumoAnual"
         ],
         "servicios-vigentes": [
           "idServicio", // identificador
@@ -466,7 +468,12 @@ export default {
         this.datosInforme = datos.map(item => {
           const fila = {};
           columnasPermitidas[this.tipoSeleccionado].forEach(key => {
-            fila[key] = item[key];
+            if (key === 'cups') {
+              // Calcular identificador único para CUPS
+              fila[key] = this.obtenerCupsParaMostrar(item);
+            } else {
+              fila[key] = item[key];
+            }
           });
           if (this.tipoSeleccionado === 'servicios-pendientes-pago') {
             // Mapear los estados de pago solo hasta el número de cuotas real
@@ -480,7 +487,7 @@ export default {
         });
         // Quita el identificador y numeroCuotas de los encabezados visibles
         this.encabezados = columnasPermitidas[this.tipoSeleccionado].filter(
-          col => !["codigoContrato", "idPS", "idServicio", "numeroCuotas", "siguientePagoNumero"].includes(col)
+          col => !["codigoContrato", "idPS", "idServicio", "numeroCuotas", "siguientePagoNumero", "cupsLuz", "cupsGas"].includes(col)
         );
       } else {
         this.datosInforme = datos;
@@ -499,6 +506,11 @@ export default {
 
     // Formatea el nombre de la columna para mostrar
     formatearColumna(texto) {
+      // Usar mapeo de etiquetas si existe
+      if (this.etiquetasColumnas[texto]) {
+        return this.etiquetasColumnas[texto];
+      }
+      
       // Casos especiales para ciertas columnas
       if (texto === 'pagos') {
         return 'Marcar como pagado';
@@ -540,7 +552,49 @@ export default {
           (columna === 'importeFinal' && this.tipoSeleccionado === 'servicios-vigentes')) {
         return this.formatearImporte(fila[columna]);
       }
+      if (columna === 'consumoAnual') {
+        const valor = fila[columna];
+        if (valor) {
+          return `${valor} kWh`;
+        }
+        return '-';
+      }
+      if (columna === 'cups') {
+        const tipo = this.getTipoCups(fila);
+        const cups = fila[columna] || '-';
+        if (tipo) {
+          const icon = tipo === 'Gas' ? '🔥' : '⚡';
+          return `${icon} ${cups}`;
+        }
+        return cups;
+      }
       return fila[columna] ?? '';
+    },
+
+    // Obtiene el CUPS consolidado para mostrar (luz o gas)
+    obtenerCupsParaMostrar(item) {
+      if (item.cupsLuz && item.cupsLuz.trim() !== '') {
+        return item.cupsLuz;
+      }
+      if (item.cupsGas && item.cupsGas.trim() !== '') {
+        return item.cupsGas;
+      }
+      return '';
+    },
+
+    // Obtiene el tipo de CUPS (Luz o Gas)
+    getTipoCups(item) {
+      if (item.cupsLuz && item.cupsLuz.trim() !== '') {
+        return 'Luz';
+      }
+      if (item.cupsGas && item.cupsGas.trim() !== '') {
+        return 'Gas';
+      }
+      if (item.cups && item.cups.trim() !== '') {
+        // Si viene como cups consolidado, intentar determinar tipo
+        return 'Luz'; // Default
+      }
+      return '';
     },
 
     // Métodos para ordenamiento y filtrado
@@ -570,11 +624,30 @@ export default {
 
     async exportarExcel() {
       try {
-                // Usar los datos filtrados (incluyendo ordenamiento y filtros)
+        // Validar que hay datos y encabezados disponibles
+        if (!this.encabezados || this.encabezados.length === 0) {
+          this.$swal.fire({
+            icon: 'warning',
+            title: 'Sin datos',
+            text: 'No hay columnas para exportar. Por favor, carga un informe primero.'
+          });
+          return;
+        }
+
+        if (!this.filteredData || this.filteredData.length === 0) {
+          this.$swal.fire({
+            icon: 'warning',
+            title: 'Sin datos',
+            text: 'No hay datos para exportar a Excel.'
+          });
+          return;
+        }
+
+        // Usar los datos filtrados (incluyendo ordenamiento y filtros)
         const data = this.filteredData.map(item => {
           const rowData = {};
-          // Mapear las columnas según los encabezados actuales y formatear los nombres
-          this.encabezados.forEach(columnaKey => {
+          // Mapear las columnas según los encabezados actuales
+          (this.encabezados || []).forEach(columnaKey => {
             // Excluir la columna pagos de la exportación
             if (columnaKey === 'pagos') {
               return;
@@ -584,21 +657,17 @@ export default {
             if ((columnaKey === 'importeCuotaPendiente' && this.tipoSeleccionado === 'servicios-pendientes-pago') ||
                 (columnaKey === 'importeFinal' && this.tipoSeleccionado === 'servicios-vigentes')) {
               rowData[formattedColumnaName] = this.formatearImporte(item[columnaKey]);
+            } else if (columnaKey === 'cups') {
+              // Manejar CUPS especialmente para obtener el valor consolidado
+              const tipo = this.getTipoCups(item);
+              const valor = item[columnaKey] || '';
+              rowData[formattedColumnaName] = tipo ? `${tipo}: ${valor}` : valor;
             } else {
               rowData[formattedColumnaName] = item[columnaKey] ?? '';
             }
           });
           return rowData;
         });
-
-        if (data.length === 0) {
-          this.$swal.fire({
-            icon: 'warning',
-            title: 'Sin datos',
-            text: 'No hay datos para exportar a Excel.'
-          })
-          return;
-        }
 
         // Crear un libro de trabajo y una hoja de cálculo
         const workbook = new ExcelJS.Workbook();
@@ -607,23 +676,63 @@ export default {
         // Obtener las columnas de los datos
         const columnas = data.length > 0 ? Object.keys(data[0]) : [];
         
-        // Configurar columnas con anchos
-        worksheet.columns = columnas.map(col => ({
-          header: col,
-          key: col,
-          width: 20
-        }));
+        // Configurar columnas con anchos dinámicos y etiquetas en español
+        worksheet.columns = columnas.map(col => {
+          let ancho = 20;  // Ancho por defecto
+          
+          // Ajustar ancho basado en el tipo de columna
+          if (col.includes('Consumo') || col.includes('kWh')) {
+            ancho = 16;
+          } else if (col.includes('Código') || col.includes('CUPS')) {
+            ancho = 18;
+          } else if (col.includes('Importe') || col.includes('Precio')) {
+            ancho = 16;
+          } else if (col.includes('Fecha') || col.includes('Fin')) {
+            ancho = 14;
+          } else if (col.includes('Tarifa')) {
+            ancho = 12;
+          } else if (col.includes('Tipo') || col.includes('Comercial')) {
+            ancho = 14;
+          } else if (col.length > 20) {
+            ancho = Math.min(25, col.length / 1.5);
+          }
+          
+          return {
+            header: col,
+            key: col,
+            width: ancho
+          };
+        });
 
         // Añadir datos
         worksheet.addRows(data);
 
         // Estilizar encabezados
-        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).font = { bold: true, color: { argb: 'FF000000' } };
         worksheet.getRow(1).fill = {
           type: 'pattern',
           pattern: 'solid',
           fgColor: { argb: 'FFE0E0E0' }
         };
+        worksheet.getRow(1).alignment = {
+          vertical: 'center',
+          horizontal: 'left',
+          wrapText: true
+        };
+        
+        // Configurar altura de encabezado
+        worksheet.getRow(1).height = 30;
+        
+        // Aplicar estilos a todas las filas
+        (worksheet.rows || []).forEach((row, index) => {
+          if (index > 0) {
+            row.alignment = {
+              vertical: 'middle',
+              horizontal: 'left',
+              wrapText: false
+            };
+          }
+        });
 
         // Generar buffer y descargar
         const buffer = await workbook.xlsx.writeBuffer();
@@ -1014,20 +1123,26 @@ export default {
 .column-header {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .column-title {
   display: flex;
   align-items: center;
   cursor: pointer;
-  padding: 4px;
+  padding: 2px 0;
   border-radius: 4px;
   transition: background-color 0.2s ease;
+  gap: 4px;
+  font-size: 0.95rem;
+  min-height: 20px;
 }
 
 .column-text {
-  margin-right: 8px;
+  margin-right: 0;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.2;
 }
 
 .column-title:hover {
@@ -1036,17 +1151,19 @@ export default {
 
 .column-filter-container {
   position: relative;
+  min-width: 60px;
 }
 
 .column-filter {
   width: 100%;
-  padding: 6px 12px;
+  padding: 4px 6px;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 0.9rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
   background-color: white;
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  min-width: 55px;
 }
 
 .column-filter:focus {
@@ -1144,7 +1261,7 @@ export default {
 /* Estilos para la tabla */
 .data-table {
   width: 100%;
-  min-width: 1200px; /* Ancho mínimo para acomodar columnas CUPS */
+  min-width: auto;
   border-collapse: separate;
   border-spacing: 0;
   margin-bottom: 0;
@@ -1154,13 +1271,16 @@ export default {
   background-color: var(--surface-color);
   color: var(--text-primary);
   font-weight: 600;
-  padding: 15px;
+  padding: 12px 10px;
   text-align: left;
   border-bottom: 2px solid var(--border-color);
-  white-space: nowrap;
   position: sticky;
   top: 0;
   z-index: 10;
+  min-width: 120px;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.3;
 }
 
 .data-table td {
@@ -1311,8 +1431,10 @@ export default {
   max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-wrap: break-word;
   display: block;
+  line-height: 1.4;
   padding-right: 20px;
 }
 
@@ -1346,8 +1468,20 @@ export default {
 
 /* Permitir wrap en los nombres de las columnas */
 .data-table th .column-title {
-  white-space: normal !important;
-  word-break: break-word !important;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  word-break: break-word;
+  word-wrap: break-word;
+  white-space: normal;
+  line-height: 1.3;
+  min-height: 24px;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.data-table th .column-title i {
+  flex-shrink: 0;
 }
 
 /* Ajuste general: reducir max-width de otras celdas para optimizar espacio */

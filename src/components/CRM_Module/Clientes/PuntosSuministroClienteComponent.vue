@@ -34,11 +34,13 @@
                 <th><i class="fas fa-bolt"></i> P4</th>
                 <th><i class="fas fa-bolt"></i> P5</th>
                 <th><i class="fas fa-bolt"></i> P6</th>
+                <th><i class="fas fa-calendar-alt"></i> Fin Contrato</th>
+                <th><i class="fas fa-building"></i> Comercializadora</th>
                 <th class="actions-header"><i class="fas fa-cogs"></i> Acciones</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="punto in filteredPuntosSuministro" :key="punto.idPunto">
+              <tr v-for="punto in filteredPuntosSuministro" :key="punto.id">
                 <td class="text-truncate" :title="`${punto.direccion}, ${punto.codigoPostal}, ${punto.poblacion}, ${punto.provincia}`">
                   {{ punto.direccion }}, {{ punto.codigoPostal }}, {{ punto.poblacion }}, {{ punto.provincia }}
                 </td>
@@ -61,6 +63,8 @@
                 <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia4) }}</td>
                 <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia5) }}</td>
                 <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia6) }}</td>
+                <td class="text-center">{{ formatDate(punto.fechaFinUltimoContrato) }}</td>
+                <td class="text-center">{{ punto.comercializadoraActual || '-' }}</td>
                 <td class="actions-cell">
                   <div class="action-buttons">
                     <button class="btn-icon btn-view" @click="verDetallePunto(punto)" title="Ver Detalles">
@@ -308,6 +312,11 @@ export default {
       }
       return parseFloat(potencia).toFixed(2) + ' kW';
     },
+
+    formatDate(date) {
+      if (!date) return '-';
+      return new Date(date).toLocaleDateString('es-ES');
+    },
   },
 };
 </script>
@@ -358,7 +367,7 @@ export default {
   background: var(--background-color);
   border-radius: 1rem;
   width: 100%;
-  max-width: 95%;
+  max-width: 98%;
   max-height: 90%;
   display: flex;
   flex-direction: column;
@@ -455,8 +464,30 @@ export default {
   background: var(--background-color);
   border-radius: 1rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid var(--neutral-200);
+  max-width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: var(--neutral-400) var(--neutral-200);
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: var(--neutral-200);
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: var(--neutral-400);
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral-500);
 }
 
 .data-table {
@@ -470,11 +501,11 @@ export default {
   background: linear-gradient(135deg, var(--neutral-100) 0%, var(--neutral-50) 100%);
   color: var(--neutral-700);
   font-weight: 600;
-  padding: 1rem;
+  padding: 0.75rem 0.5rem;
   text-align: center;
   border-bottom: 2px solid var(--neutral-200);
   white-space: nowrap;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   letter-spacing: 0.025em;
   position: sticky;
   top: 0;
@@ -483,18 +514,23 @@ export default {
 
 .data-table th:first-child {
   text-align: left;
-  min-width: 250px; /* Asegurar un mínimo para la dirección */
-  max-width: none; /* Sin límite máximo */
+  min-width: 200px;
+  max-width: 250px;
 }
 
 .data-table th:nth-child(2) {
-  min-width: 100px;
-  max-width: 120px;
+  min-width: 80px;
+  max-width: 100px;
+}
+
+.data-table th:nth-child(3) {
+  min-width: 120px;
+  max-width: 140px;
 }
 
 .data-table th:nth-child(4) {
-  min-width: 60px;
-  max-width: 80px;
+  min-width: 50px;
+  max-width: 60px;
 }
 
 /* Encabezados de potencias más compactos */
@@ -504,8 +540,23 @@ export default {
 .data-table th:nth-child(8),
 .data-table th:nth-child(9),
 .data-table th:nth-child(10) {
-  padding: 0.8rem 0.4rem; /* Reducir padding horizontal */
-  font-size: 0.8rem; /* Tamaño de fuente más pequeño */
+  padding: 0.75rem 0.3rem;
+  min-width: 55px;
+  max-width: 60px;
+  font-size: 0.75rem;
+}
+
+/* Nuevas columnas: Fecha Fin Contrato y Comercializadora */
+.data-table th:nth-child(11) {
+  min-width: 100px;
+  max-width: 120px;
+  font-size: 0.75rem;
+}
+
+.data-table th:nth-child(12) {
+  min-width: 120px;
+  max-width: 150px;
+  font-size: 0.75rem;
 }
 
 .data-table th i {
@@ -537,31 +588,31 @@ export default {
 }
 
 .data-table td {
-  padding: 1rem;
+  padding: 0.75rem 0.5rem;
   vertical-align: middle;
   color: var(--neutral-600);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   border-bottom: 1px solid var(--neutral-100);
 }
 
 .data-table td:first-child {
-  min-width: 150px; /* Asegurar un mínimo para la dirección */
-  max-width: 250px; /* Sin límite máximo */
+  min-width: 200px;
+  max-width: 250px;
 }
 
 .data-table td:nth-child(3) {
-  min-width: 140px;
-  max-width: 170px;
+  min-width: 120px;
+  max-width: 140px;
 }
 
 .data-table td:nth-child(2) {
-  min-width: 100px;
-  max-width: 120px;
+  min-width: 80px;
+  max-width: 100px;
 }
 
 .data-table td:nth-child(4) {
-  min-width: 60px;
-  max-width: 80px;
+  min-width: 50px;
+  max-width: 60px;
 }
 
 /* Celdas de potencias más compactas */
@@ -571,7 +622,22 @@ export default {
 .data-table td:nth-child(8),
 .data-table td:nth-child(9),
 .data-table td:nth-child(10) {
-  padding: 0.8rem 0.3rem; /* Reducir padding horizontal */
+  padding: 0.75rem 0.3rem;
+  min-width: 55px;
+  max-width: 60px;
+}
+
+/* Nuevas celdas: Fecha Fin Contrato y Comercializadora */
+.data-table td:nth-child(11) {
+  min-width: 100px;
+  max-width: 120px;
+  font-size: 0.75rem;
+}
+
+.data-table td:nth-child(12) {
+  min-width: 120px;
+  max-width: 150px;
+  font-size: 0.75rem;
 }
 
 .text-truncate {
@@ -588,9 +654,9 @@ export default {
 .potencia-cell {
   font-weight: 500;
   color: var(--neutral-700);
-  min-width: 65px; /* Reducido de 80px a 65px */
-  max-width: 70px; /* Añadido para limitar el ancho máximo */
-  font-size: 0.8rem; /* Reducido ligeramente el tamaño de fuente */
+  min-width: 55px;
+  max-width: 60px;
+  font-size: 0.75rem;
 }
 
 .action-buttons {
@@ -604,18 +670,18 @@ export default {
   justify-content: center;
   align-items: center;
   text-align: center;
-  min-width: 60px; /* Reducido de 80px a 60px */
-  max-width: 65px; /* Añadido para limitar el ancho */
+  min-width: 50px;
+  max-width: 55px;
 }
 
 .btn-icon {
   background: transparent;
   border: 1px solid var(--neutral-300);
-  font-size: 0.8rem; /* Reducido de 0.875rem */
+  font-size: 0.75rem;
   cursor: pointer;
-  width: 32px; /* Reducido de 36px a 32px */
-  height: 32px; /* Reducido de 36px a 32px */
-  border-radius: 0.4rem; /* Ligeramente más pequeño */
+  width: 28px;
+  height: 28px;
+  border-radius: 0.3rem;
   display: flex;
   align-items: center;
   justify-content: center;
