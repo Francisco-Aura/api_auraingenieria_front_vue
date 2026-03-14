@@ -268,6 +268,17 @@
               </div>
             </div>
 
+            <!-- Observaciones -->
+            <div class="form-section full-width-observaciones">
+              <div class="section-header">
+                <i class="fas fa-comment-alt"></i>
+                <h3>Observaciones</h3>
+              </div>
+              <div class="form-compact-group">
+                <textarea id="observaciones" v-model="puntoLocal.observaciones" :readonly="modoConsulta" rows="2" placeholder="Observaciones relevantes..."></textarea>
+              </div>
+            </div>
+
             <!-- Sección de Potencias Contratadas - REUBICADA EN EL PANEL DERECHO -->
             <div v-if="modoConsulta && tienePotenciasContratadas" class="form-section potencias-section">
               <div class="section-header">
@@ -289,17 +300,6 @@
           </div>
             </div>
 
-            <!-- Observaciones (ANCHO COMPLETO EN LA PARTE INFERIOR) -->
-            <div class="form-section full-width-observaciones">
-              <div class="section-header">
-                <i class="fas fa-comment-alt"></i>
-                <h3>Observaciones</h3>
-              </div>
-              <div class="form-compact-group">
-                <textarea id="observaciones" v-model="puntoLocal.observaciones" :readonly="modoConsulta" rows="2" placeholder="Observaciones relevantes..."></textarea>
-              </div>
-            </div>
-            
             <!-- Botones de acción de la pestaña principal -->
             <div class="modal-footer">
               <div class="required-note" v-if="!modoConsulta"><span class="required">*</span> Campos obligatorios</div>

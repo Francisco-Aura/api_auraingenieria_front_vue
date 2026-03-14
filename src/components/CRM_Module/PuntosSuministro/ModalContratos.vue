@@ -29,8 +29,13 @@
           <!-- Banner del cliente -->
           <div class="client-banner">
             <div class="client-info">
-              <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Cargando...' }}</h4>
-              <span>DNI/CIF: {{ dniClienteActual || 'Cargando...' }}</span>
+              <div class="client-header">
+                <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'No disponible' }}</h4>
+                <div class="client-details">
+                  <span><strong>DNI/CIF:</strong> {{ dniClienteActual || 'No disponible' }}</span>
+                  <span><strong>CUPS:</strong> {{ obtenerCupsDelPuntoSuministro() || 'No disponible' }}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -136,8 +141,13 @@
           <!-- Banner del cliente -->
           <div class="client-banner">
             <div class="client-info">
-              <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Cargando...' }}</h4>
-              <span>DNI/CIF: {{ dniClienteActual || 'Cargando...' }}</span>
+              <div class="client-header">
+                <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'No disponible' }}</h4>
+                <div class="client-details">
+                  <span><strong>DNI/CIF:</strong> {{ dniClienteActual || 'No disponible' }}</span>
+                  <span><strong>CUPS:</strong> {{ obtenerCupsDelPuntoSuministro() || 'No disponible' }}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -550,6 +560,10 @@
                 <span class="info-label">DNI/CIF:</span>
                 <span class="info-value">{{ clienteDetalle?.dni?.trim() || clienteDetalle?.cif?.trim() || 'No disponible' }}</span>
               </div>
+              <div class="info-row">
+                <span class="info-label">CUPS:</span>
+                <span class="info-value">{{ obtenerCupsDelPuntoSuministro() || 'No disponible' }}</span>
+              </div>
             </div>
             <div class="contrato-info">
               <h4><i class="fas fa-file-alt"></i> Información del Contrato</h4>
@@ -816,6 +830,13 @@ export default {
     formatDate(date) {
       if (!date) return '';
       return new Date(date).toLocaleDateString('es-ES');
+    },
+
+    // Helper para obtener el CUPS correcto del punto de suministro
+    obtenerCupsDelPuntoSuministro() {
+      const cupsluz = this.puntoSuministroData?.cupsluz?.trim() || "";
+      const cupsgas = this.puntoSuministroData?.cupsgas?.trim() || "";
+      return cupsluz || cupsgas || "";
     },
 
     // Método auxiliar para formatear fechas para inputs tipo date
@@ -2268,7 +2289,26 @@ export default {
   gap: 6px;
 }
 
+.client-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 .client-info span {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.client-details {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.client-details span {
   color: #666;
   font-size: 0.85rem;
 }

@@ -29,8 +29,13 @@
           <!-- Banner del cliente -->
           <div class="client-banner">
             <div class="client-info">
-              <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Desconocido' }}</h4>
-              <span>DNI/CIF: {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'No disponible' }}</span>
+              <div class="client-header">
+                <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Desconocido' }}</h4>
+                <div class="client-details">
+                  <span><strong>DNI/CIF:</strong> {{ cliente?.cif?.trim() || cliente?.dniAutorizado?.trim() || 'No disponible' }}</span>
+                  <span><strong>CUPS:</strong> {{ obtenerCupsDelPuntoSuministro() || 'No disponible' }}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -132,8 +137,13 @@
           <!-- Banner del cliente -->
           <div class="client-banner">
             <div class="client-info">
-              <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Desconocido' }}</h4>
-              <span>DNI/CIF: {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'No disponible' }}</span>
+              <div class="client-header">
+                <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Desconocido' }}</h4>
+                <div class="client-details">
+                  <span><strong>DNI/CIF:</strong> {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'No disponible' }}</span>
+                  <span><strong>CUPS:</strong> {{ obtenerCupsDelPuntoSuministro() || 'No disponible' }}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -408,6 +418,10 @@
               <div class="info-row">
                 <span class="info-label">DNI/CIF:</span>
                 <span class="info-value">{{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'No disponible' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">CUPS:</span>
+                <span class="info-value">{{ obtenerCupsDelPuntoSuministro() || 'No disponible' }}</span>
               </div>
             </div>
             <div class="contrato-info">
@@ -2825,7 +2839,26 @@ export default {
   gap: 6px;
 }
 
+.client-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 .client-info span {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.client-details {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.client-details span {
   color: #666;
   font-size: 0.85rem;
 }

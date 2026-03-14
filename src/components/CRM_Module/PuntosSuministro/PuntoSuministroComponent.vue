@@ -63,7 +63,7 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th class="sortable" style="width: 20%">
+              <th class="sortable" style="width: 15%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('cliente')">
                     <i class="fas fa-user mr-2"></i>Cliente
@@ -81,7 +81,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 35%">
+              <th class="sortable" style="width: 25%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('direccion')">
                     <i class="fas fa-map-marker-alt mr-2"></i>Dirección
@@ -99,7 +99,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 15%">
+              <th class="sortable" style="width: 11%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('identificacion')">
                     <i class="fas fa-id-card mr-2"></i>Identificación
@@ -117,7 +117,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 15%">
+              <th class="sortable" style="width: 11%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('cupsluz')">
                     <i class="fas fa-bolt mr-2"></i>CUPS
@@ -135,7 +135,7 @@
                   </div>
                 </div>
               </th>
-              <th style="width: 10%">
+              <th style="width: 7%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('tipo')">
                     <i class="fas fa-tag mr-2"></i>Tipo
@@ -153,7 +153,7 @@
                   </div>
                 </div>
               </th>
-              <th style="width: 10%">
+              <th style="width: 7%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('tarifa')">
                     <i class="fas fa-tag mr-2"></i>Tarifa
@@ -171,7 +171,7 @@
                   </div>
                 </div>
               </th>
-              <th style="width: 12%">
+              <th style="width: 10%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('fechaFinUltimoContrato')">
                     <i class="fas fa-calendar-alt mr-2"></i>Fin Contrato
@@ -189,7 +189,15 @@
                   </div>
                 </div>
               </th>
-              <th style="width: 10%">
+              <th style="width: 5%">
+                <div class="column-header minimal-header">
+                  <div class="column-title" @click="sortBy('noSwitching')" title="No-Switching - Haz clic para ordenar">
+                    <i class="fas fa-network-wired"></i>
+                    <i :class="getSortIcon('noSwitching')"></i>
+                  </div>
+                </div>
+              </th>
+              <th style="width: 9%">
                 <div class="column-header">
                   <div class="column-title">
                     <i class="fas fa-cogs mr-2"></i>Acciones
@@ -238,6 +246,12 @@
                   {{ getFechaFinUltimoContrato(suministro) }}
                 </div>
               </td>
+              <td style="text-align: center; display: flex; align-items: center; justify-content: center; padding: 0.6rem;">
+                <div v-if="tieneServiciosNoSwitching(suministro.id)" class="no-switching-indicator" title="Este punto de suministro contiene servicios que no son Switching">
+                  <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div v-else class="no-switching-empty">-</div>
+              </td>
               <td>
                 <div class="action-buttons">
                   <button class="btn-icon btn-view-details" @click="abrirModalPSConsulta(suministro)" title="Consultar punto de suministro">
@@ -259,7 +273,7 @@
               </td>
             </tr>
             <tr v-if="paginatedPuntosSuministro.length === 0">
-              <td colspan="8" class="text-center py-4">
+              <td colspan="9" class="text-center py-4">
                 <div class="empty-state">
                   <i class="fas fa-search fa-3x text-muted"></i>
                   <p class="mt-3">No se encontraron puntos de suministro que coincidan con la búsqueda</p>
@@ -399,7 +413,8 @@ export default {
         cupsluz: '',
         tipo: '',
         tarifa: '',
-        fechaFinUltimoContrato: ''
+        fechaFinUltimoContrato: '',
+        noSwitching: ''
       },
       formularioVisible: false,     // Control de visibilidad del formulario de actualización
       modoConsulta: false,          // Nuevo flag para controlar el modo consulta
@@ -482,6 +497,7 @@ export default {
       mostrarDadosDeBaja: false, // Control para mostrar/ocultar puntos dados de baja
       filtrosTimer: null, // Timer para debounce de filtros
       currentContratosRequestId: null, // ID de la solicitud actual para evitar race conditions
+      puntosConServiciosNoSwitching: new Set(), // Cachea puntos con servicios no-switching
     };
   },
 
@@ -516,8 +532,15 @@ export default {
           for (const { key, value, originalValue } of activeColumnFilters) {
             let fieldValue;
             
+            // Caso especial para el filtro de no-switching
+            if (key === 'noSwitching') {
+              const tieneNoSwitching = this.tieneServiciosNoSwitching(suministro.id);
+              if (originalValue === 'si' && !tieneNoSwitching) return false;
+              if (originalValue === 'no' && tieneNoSwitching) return false;
+              continue;
+            }
             // Caso especial para el filtro de CUPS
-            if (key === 'cupsluz') {
+            else if (key === 'cupsluz') {
               fieldValue = this.getCupsParaMostrar(suministro).toLowerCase();
             }
             // Caso especial para el filtro de tipo
@@ -641,18 +664,30 @@ export default {
           // Si son del mismo tipo, ordenamos por el valor del CUPS
           aValue = this.getCupsValue(a);
           bValue = this.getCupsValue(b);
+        } else if (this.sortKey === 'noSwitching') {
+          // Ordenar por si tienen servicios no-switching
+          const aHasNoSwitching = this.tieneServiciosNoSwitching(a.id) ? 1 : 0;
+          const bHasNoSwitching = this.tieneServiciosNoSwitching(b.id) ? 1 : 0;
+          
+          if (this.sortOrder === 'asc') {
+            return aHasNoSwitching - bHasNoSwitching;
+          } else {
+            return bHasNoSwitching - aHasNoSwitching;
+          }
         } else {
           aValue = a[this.sortKey];
           bValue = b[this.sortKey];
         }
         
-        aValue = aValue ?? '';
-        bValue = bValue ?? '';
-        
-        if (this.sortOrder === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
+        if (this.sortKey !== 'noSwitching') {
+          aValue = aValue ?? '';
+          bValue = bValue ?? '';
+          
+          if (this.sortOrder === 'asc') {
+            return aValue > bValue ? 1 : -1;
+          } else {
+            return aValue < bValue ? 1 : -1;
+          }
         }
       });
       
@@ -1482,6 +1517,7 @@ export default {
           'Tipo': this.getTipoCups(punto) || '-',
           'Tarifa': this.getTarifa(punto) || '-',
           'Fin Contrato': this.getFechaFinUltimoContrato(punto) || '-',
+          'No-Switching': this.tieneServiciosNoSwitching(punto.id) ? 'Sí' : 'No',
           'Estado': this.estaDadoDeBaja(punto) ? 'Dado de baja' : 'Activo'
         }));
 
@@ -1498,6 +1534,7 @@ export default {
           { header: 'Tipo', key: 'Tipo', width: 10 },
           { header: 'Tarifa', key: 'Tarifa', width: 10 },
           { header: 'Fin Contrato', key: 'Fin Contrato', width: 15 },
+          { header: 'No-Switching', key: 'No-Switching', width: 12 },
           { header: 'Estado', key: 'Estado', width: 15 }
         ];
 
@@ -1553,6 +1590,46 @@ export default {
              (suministro.fecha_baja && suministro.fecha_baja !== null && suministro.fecha_baja !== '');
     },
 
+    // Verifica si un punto de suministro tiene servicios con productos no-switching
+    tieneServiciosNoSwitching(idPuntoSuministro) {
+      return this.puntosConServiciosNoSwitching.has(idPuntoSuministro);
+    },
+
+    // Carga los puntos de suministro que tienen servicios no-switching
+    async cargarPuntosConServiciosNoSwitching() {
+      try {
+        if (!this.productos || this.productos.length === 0) {
+          return; // No podemos determinar sin los productos
+        }
+
+        // Obtener todos los servicios de todos los puntos
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios`);
+        const todosLosServicios = response.data || [];
+
+        // Limpiar el set anterior
+        this.puntosConServiciosNoSwitching.clear();
+
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        // Para cada servicio, verificar si su producto es no-switching y si está activo
+        todosLosServicios.forEach((servicio) => {
+          // Verificar que el servicio está ACTIVO (no tiene fecha de fin o la fecha de fin es futura)
+          const isActivo = !servicio.fechaFinServicio || new Date(servicio.fechaFinServicio) > hoy;
+          
+          if (isActivo && servicio.idProducto) {
+            const producto = this.productos.find(p => p.id == servicio.idProducto);
+            if (producto && producto.nombre && !producto.nombre.toLowerCase().includes('switching')) {
+              // Este punto tiene un servicio no-switching ACTIVO
+              this.puntosConServiciosNoSwitching.add(servicio.idPuntoSuministro);
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error al cargar puntos con servicios no-switching:', error);
+      }
+    },
+
     // Maneja el cambio en el filtro de dados de baja
     handleFilterChange() {
       this.currentPage = 1; // Resetear a la primera página cuando cambie el filtro
@@ -1593,6 +1670,9 @@ export default {
       
       // Esperar a que se carguen los puntos de suministro antes de desactivar el loading
       await this.fetchPuntosSuministro();
+      
+      // Cargar información de puntos con servicios no-switching
+      await this.cargarPuntosConServiciosNoSwitching();
       
       // Forzar una actualización de la vista para que se apliquen bien los datos de tarifa
       this.$nextTick(() => {
@@ -2119,6 +2199,66 @@ export default {
   border-radius: 50%;
   background-color: rgba(220, 53, 69, 0.1);
   flex-shrink: 0;
+}
+
+/* Indicador de servicios no-switching */
+.no-switching-indicator {
+  color: #ff9800;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  cursor: help;
+}
+
+.no-switching-indicator:hover {
+  background-color: rgba(255, 152, 0, 0.3);
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
+  color: #f57c00;
+}
+
+.no-switching-empty {
+  color: #ccc;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* Estilos para columna No-Switching optimizada */
+.minimal-header {
+  padding: 8px 4px !important;
+}
+
+.minimal-header .column-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 0.9rem;
+  min-width: auto;
+}
+
+.minimal-filter {
+  margin-top: 4px !important;
+  min-width: 40px;
+}
+
+.minimal-select {
+  width: 100% !important;
+  padding: 4px !important;
+  height: 28px !important;
+  font-size: 0.8rem !important;
+}
+
+.column-filter-select {
+  padding: 0.4rem 0.5rem !important;
+  height: 32px !important;
 }
 
 /* Estilos para los controles de filtro */
