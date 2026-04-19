@@ -154,6 +154,12 @@ export default {
         // Temporalmente activar el módulo para testing
         this.moduloTareasActivo = true
       }
+    },
+    handleResize() {
+      if (window.innerWidth < 900 && !this.sidebarCollapsed) {
+        this.sidebarCollapsed = true;
+        this.userMenuOpen = false;
+      }
     }
   },
   async created() {
@@ -170,6 +176,16 @@ export default {
 
     // Verificar si el módulo de tareas está activo
     await this.verificarModuloTareas()
+  },
+  mounted() {
+    // Colapsar sidebar en pantallas pequeñas al cargar y al redimensionar
+    if (window.innerWidth < 900) {
+      this.sidebarCollapsed = true;
+    }
+    window.addEventListener('resize', this.handleResize);
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.handleResize);
   },
   watch: {
     // Cerrar menú de usuario al cambiar de ruta

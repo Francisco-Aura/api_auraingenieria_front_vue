@@ -808,24 +808,30 @@ export default {
 
         if (!isConfirmed) return;
 
-        // Reactivar cliente
-        this.clienteLocal.fechaBaja = null;
+        // Reactivar cliente directamente via API (sin emitir al padre, para no interrumpir el flujo async)
         const clienteParaEnviar = {
           ...this.clienteLocal,
           nombreComercial: this.clienteLocal.grupoEmpresarial,
           fechaBaja: null
         };
-        this.$emit("actualizar-cliente", clienteParaEnviar);
+        await axios.put(`${process.env.VUE_APP_API_URL}/api/clientes/${clienteParaEnviar.id}`, clienteParaEnviar);
+        this.clienteLocal.fechaBaja = null;
 
         // Paso 2: obtener PS dados de baja de este cliente
         const clienteId = this.clienteLocal.id;
-        if (!clienteId) return;
+        if (!clienteId) {
+          this.$emit("cliente-reactivado");
+          return;
+        }
 
         const { data: psDadosDeBaja } = await axios.get(
           `${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${clienteId}/dados-de-baja`
         );
 
-        if (!psDadosDeBaja || psDadosDeBaja.length === 0) return;
+        if (!psDadosDeBaja || psDadosDeBaja.length === 0) {
+          this.$emit("cliente-reactivado");
+          return;
+        }
 
         // Paso 3: mostrar diálogo de selección de PS a reactivar
         const checkboxesHtml = psDadosDeBaja.map(ps => {
@@ -862,7 +868,10 @@ export default {
           }
         });
 
-        if (!confirmarPS || !idsSeleccionados || idsSeleccionados.length === 0) return;
+        if (!confirmarPS || !idsSeleccionados || idsSeleccionados.length === 0) {
+          this.$emit("cliente-reactivado");
+          return;
+        }
 
         // Paso 4: reactivar cada PS seleccionado
         await Promise.all(
@@ -880,6 +889,8 @@ export default {
           timer: 3000,
           timerProgressBar: true
         });
+
+        this.$emit("cliente-reactivado");
 
       } catch (error) {
         console.error('Error en confirmación de reactivación:', error);

@@ -1008,6 +1008,17 @@ export default {
     
     async confirmarReactivarPunto() {
       try {
+        // Validar que el cliente no esté dado de baja
+        if (this.puntoLocal.cliente && this.puntoLocal.cliente.fechaBaja) {
+          await this.$swal.fire({
+            title: 'No se puede reactivar',
+            text: 'El cliente asociado a este punto de suministro está dado de baja. Debe reactivar el cliente primero.',
+            icon: 'error',
+            confirmButtonColor: '#dc2626'
+          });
+          return;
+        }
+
         const { isConfirmed } = await this.$swal.fire({
           title: '¿Reactivar punto de suministro?',
           html: `
@@ -1091,7 +1102,6 @@ export default {
           console.log('datosAdaptados completo:', datosAdaptados);
           
           this.$emit('actualizar-punto-suministro', datosAdaptados);
-          this.cerrarModal();
         }
       } catch (error) {
         console.error('Error en confirmación de reactivación:', error);

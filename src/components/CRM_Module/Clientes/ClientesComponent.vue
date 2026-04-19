@@ -359,6 +359,7 @@
       @cancelar-formulario="cancelarFormulario"
       @crear-cliente="crearCliente"
       @actualizar-cliente="actualizarCliente"
+      @cliente-reactivado="onClienteReactivado"
     />
 
     <ModalActualizarPuntoSuministro
@@ -684,6 +685,11 @@ export default {
         });
       }
     },    
+    // Handler para cuando se completa la reactivación de un cliente (y opcionalmente sus PS)
+    onClienteReactivado() {
+      this.fetchClientes();
+      this.cancelarFormulario();
+    },
     // Lógica para crear cliente
     async crearCliente(clienteRecibido) {
       try {

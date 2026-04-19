@@ -856,12 +856,16 @@ export default {
     async handleUpdate(datosAdaptados) {
       try {
         await axios.post(`${process.env.VUE_APP_API_URL}/api/puntos-suministro`, datosAdaptados);
+        const esReactivacion = datosAdaptados.fechaBaja === null && this.modificarPunto.fechaBaja;
         await this.$swal.fire({
           icon: 'success',
           title: 'Éxito',
-          text: 'Punto de suministro actualizado correctamente'
+          text: esReactivacion ? 'Punto de suministro reactivado correctamente' : 'Punto de suministro actualizado correctamente'
         });
         this.cerrarModal();
+        if (esReactivacion && this.mostrarDadosDeBaja) {
+          this.mostrarDadosDeBaja = false;
+        }
         this.fetchPuntosSuministro();
       } catch (error) {
         console.error('Error al actualizar punto de suministro:', error);
