@@ -7,30 +7,30 @@
     <!-- Panel superior con stats y botón de crear cliente -->
     <div class="stats-panel">
       <div class="stats-container">
-        <div class="stat-card">
+        <div class="stat-card" style="animation-delay: 0s">
           <div class="stat-icon">
             <i class="fas fa-users"></i>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ clientes.length }}</div>
+            <div class="stat-value">{{ animatedClientes }}</div>
             <div class="stat-label">Total Clientes</div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="animation-delay: 0.1s">
           <div class="stat-icon">
             <i class="fas fa-bolt"></i>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ totalPuntosSuministro }}</div>
+            <div class="stat-value">{{ animatedPuntos }}</div>
             <div class="stat-label">Puntos Suministro</div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="animation-delay: 0.2s">
           <div class="stat-icon">
             <i class="fas fa-industry"></i>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ sectores.length }}</div>
+            <div class="stat-value">{{ animatedSectores }}</div>
             <div class="stat-label">Sectores</div>
           </div>
         </div>
@@ -270,7 +270,11 @@
                   <button class="btn-icon btn-edit" @click="cargarDatosCliente(cliente.idCliente)" title="Consultar Cliente">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn-icon btn-add" @click="abrirFormularioNuevoPunto(cliente)" title="Crear Punto de Suministro">
+                  <button class="btn-icon btn-add" 
+                    @click="abrirFormularioNuevoPunto(cliente)" 
+                    :disabled="estaClienteDadoDeBaja(cliente)"
+                    :title="estaClienteDadoDeBaja(cliente) ? 'No se pueden crear puntos de suministro en un cliente dado de baja' : 'Crear Punto de Suministro'"
+                    :style="estaClienteDadoDeBaja(cliente) ? 'opacity: 0.4; cursor: not-allowed;' : ''">
                     <i class="fas fa-plus-circle"></i>
                   </button>
                 </div>
@@ -353,11 +357,13 @@
       :sectores="sectores"
       :usuarios="usuarios"
       :subtipologias="subtipologias"
+      :cargosContacto="cargosContacto"
       :appMonitorizacion="appMonitorizacion"
       :integracionSistemasFV="integracionSistemasFV"
       @cancelar-formulario="cancelarFormulario"
       @crear-cliente="crearCliente"
       @actualizar-cliente="actualizarCliente"
+      @cliente-reactivado="onClienteReactivado"
     />
 
     <ModalActualizarPuntoSuministro
@@ -412,6 +418,7 @@ export default {
       sectores: [], // Opciones de sectores
       usuarios: [], // Opciones de usuarios
       subtipologias: [], // Opciones de subtipologías
+      cargosContacto: [], // Opciones de cargos de contacto
       appMonitorizacion: [], // Opciones de aplicaciones de monitorización
       integracionSistemasFV: [], // Opciones de integración sistemas FV
       isSubmitting: false, // Evita múltiples envíos del formulario
@@ -424,7 +431,11 @@ export default {
       modoConsulta: false,          // Flag para indicar si el ModalActualizarPuntoSuministro está en modo consulta
       isCreating: false,            // Flag para indicar si el ModalActualizarPuntoSuministro está en modo creación
       mostrarModalContratos: false, // Control de visibilidad del modal de contratos
-      mostrarClientesDadosDeBaja: false, // Control para mostrar/ocultar clientes dados de baja
+      mostrarClientesDadosDeBaja: false,
+      // Contadores animados
+      animatedClientes: 0,
+      animatedPuntos: 0,
+      animatedSectores: 0, // Control para mostrar/ocultar clientes dados de baja
       nivelAcceso: null,            // Nivel de acceso del usuario
     };
   },  
@@ -672,8 +683,21 @@ export default {
         this.cancelarFormulario();
       } catch (error) {
         console.error("Error al actualizar cliente:", error);
+        const errData = error.response?.data;
+        const detalle = errData?.message || errData?.error || errData?.mensaje || (typeof errData === 'string' ? errData : '') || error.message || '';
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error al actualizar cliente',
+          text: detalle ? `No se pudo actualizar el cliente: ${detalle}` : 'No se pudo actualizar el cliente. Por favor, inténtelo de nuevo.',
+          confirmButtonColor: 'rgba(252, 215, 0)'
+        });
       }
     },    
+    // Handler para cuando se completa la reactivación de un cliente (y opcionalmente sus PS)
+    onClienteReactivado() {
+      this.fetchClientes();
+      this.cancelarFormulario();
+    },
     // Lógica para crear cliente
     async crearCliente(clienteRecibido) {
       try {
@@ -688,6 +712,14 @@ export default {
         this.cancelarFormulario(); // Limpia y cierra el formulario
       } catch (error) {
         console.error("Error al crear cliente:", error);
+        const errData = error.response?.data;
+        const detalle = errData?.message || errData?.error || errData?.mensaje || (typeof errData === 'string' ? errData : '') || error.message || '';
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error al crear cliente',
+          text: detalle ? `No se pudo crear el cliente: ${detalle}` : 'No se pudo crear el cliente. Por favor, inténtelo de nuevo.',
+          confirmButtonColor: 'rgba(252, 215, 0)'
+        });
       }
     },
     // Muestra el modal para crear un punto de suministro (reutilizando ModalActualizarPuntoSuministro)
@@ -728,7 +760,7 @@ export default {
         await this.$swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Error al guardar el punto de suministro: ' + (error.response?.data?.mensaje || error.message)
+          text: 'Error al guardar el punto de suministro: ' + (error.response?.data?.mensaje || error.response?.data?.error || error.message)
         });
       }
     },
@@ -835,6 +867,21 @@ export default {
     toggleMostrarClientesDadosDeBaja() {
       this.mostrarClientesDadosDeBaja = !this.mostrarClientesDadosDeBaja;
       this.currentPage = 1; // Resetear a la primera página cuando cambie el filtro
+    },
+    animateCounter(prop, target) {
+      const duration = 600;
+      const start = this[prop];
+      const diff = target - start;
+      if (diff === 0) return;
+      const startTime = performance.now();
+      const step = (now) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        this[prop] = Math.round(start + diff * ease);
+        if (progress < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
     }
   },
   async mounted() {
@@ -843,11 +890,12 @@ export default {
     document.addEventListener('click', this.handleClickOutside);
     
     try {
-      const [clientes, usuarios, sectores, subtipologias, appMonitorizacion, integracionSistemasFV] = await Promise.all([
+      const [clientes, usuarios, sectores, subtipologias, cargosContacto, appMonitorizacion, integracionSistemasFV] = await Promise.all([
         axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/usuarios`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/sectores`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/subtipologias`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/cargos-contacto`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/app-monitorizacion`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`),
       ]);
@@ -855,6 +903,7 @@ export default {
       this.usuarios = usuarios.data;
       this.sectores = sectores.data;
       this.subtipologias = subtipologias.data;
+      this.cargosContacto = cargosContacto.data;
       this.appMonitorizacion = appMonitorizacion.data;
       this.integracionSistemasFV = integracionSistemasFV.data;
     } catch (error) {
@@ -897,6 +946,15 @@ export default {
         // Cuando el formulario se cierra, asegurarnos de que nuevoCliente tenga un valor válido
         this.nuevoCliente = this.resetFormularioCliente();
       }
+    },
+    'clientes.length'(val) {
+      this.animateCounter('animatedClientes', val);
+    },
+    totalPuntosSuministro(val) {
+      this.animateCounter('animatedPuntos', val);
+    },
+    'sectores.length'(val) {
+      this.animateCounter('animatedSectores', val);
     }
   },
   // Cargar nivel de acceso al crear el componente
@@ -951,6 +1009,18 @@ export default {
   align-items: center;
   transition: all 0.3s ease;
   flex: 1;
+  animation: statCardEntrance 0.5s ease both;
+}
+
+@keyframes statCardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .stat-card:hover {
@@ -1222,6 +1292,31 @@ export default {
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
   height: 52px; /* Altura fija para las filas */
+}
+
+/* Row fade-in animation */
+.data-table tbody tr {
+  animation: rowFadeIn 0.3s ease both;
+}
+.data-table tbody tr:nth-child(1) { animation-delay: 0s; }
+.data-table tbody tr:nth-child(2) { animation-delay: 0.03s; }
+.data-table tbody tr:nth-child(3) { animation-delay: 0.06s; }
+.data-table tbody tr:nth-child(4) { animation-delay: 0.09s; }
+.data-table tbody tr:nth-child(5) { animation-delay: 0.12s; }
+.data-table tbody tr:nth-child(n+6) { animation-delay: 0.15s; }
+
+@keyframes rowFadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Highlight flash for recently updated rows */
+.row-highlight {
+  animation: highlightFlash 1.5s ease;
+}
+@keyframes highlightFlash {
+  0% { background-color: rgba(76, 175, 80, 0.3); }
+  100% { background-color: transparent; }
 }
 
 .text-truncate {

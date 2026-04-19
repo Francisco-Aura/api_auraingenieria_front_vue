@@ -154,6 +154,12 @@ export default {
         // Temporalmente activar el módulo para testing
         this.moduloTareasActivo = true
       }
+    },
+    handleResize() {
+      if (window.innerWidth < 900 && !this.sidebarCollapsed) {
+        this.sidebarCollapsed = true;
+        this.userMenuOpen = false;
+      }
     }
   },
   async created() {
@@ -170,6 +176,16 @@ export default {
 
     // Verificar si el módulo de tareas está activo
     await this.verificarModuloTareas()
+  },
+  mounted() {
+    // Colapsar sidebar en pantallas pequeñas al cargar y al redimensionar
+    if (window.innerWidth < 900) {
+      this.sidebarCollapsed = true;
+    }
+    window.addEventListener('resize', this.handleResize);
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.handleResize);
   },
   watch: {
     // Cerrar menú de usuario al cambiar de ruta
@@ -291,22 +307,20 @@ export default {
   padding: 14px 20px;
   color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
   position: relative;
   margin-bottom: 6px;
-  border-left: 3px solid transparent;
+  border-left: none;
 }
 
 .menu-item:hover {
   background-color: rgba(255, 255, 255, 0.1);
   color: white;
-  border-left: 3px solid rgba(243, 156, 18, 0.5);
 }
 
 .menu-item.active {
   background: linear-gradient(to right, rgba(52, 152, 219, 0.2), transparent);
   color: white;
-  border-left: 3px solid rgba(252, 215, 0);
 }
 
 .menu-icon {
@@ -764,6 +778,51 @@ export default {
   animation: fadeSlideDown 0.25s ease;
   background: rgba(38,53,69,0.98);
   backdrop-filter: blur(2.5px);
+}
+
+/* ===== SIDEBAR ACTIVE INDICATOR ANIMATION ===== */
+.menu-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: rgba(252, 215, 0);
+  transform: scaleY(0);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0 2px 2px 0;
+}
+.menu-item.active::before {
+  transform: scaleY(1);
+}
+.menu-item:hover::before {
+  transform: scaleY(0.6);
+  background: rgba(243, 156, 18, 0.5);
+}
+.menu-item.active:hover::before {
+  transform: scaleY(1);
+  background: rgba(252, 215, 0);
+}
+
+/* ===== SIDEBAR ICON HOVER PULSE ===== */
+.menu-item:hover .menu-icon {
+  animation: iconPulse 0.3s ease;
+}
+@keyframes iconPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* ===== TOOLTIP SLIDE ANIMATION (collapsed sidebar) ===== */
+.tooltip {
+  transform: translateY(-50%) translateX(-4px);
+}
+.menu-item:hover .tooltip {
+  opacity: 1;
+  left: calc(100% + 8px);
+  transform: translateY(-50%) translateX(0);
 }
 </style>
 

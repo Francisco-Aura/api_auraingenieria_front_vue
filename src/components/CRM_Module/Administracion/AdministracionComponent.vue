@@ -234,7 +234,7 @@
           </button>
         </div>
         
-        <form @submit.prevent="guardarRegistro" class="modal-body">
+        <form @submit.prevent="guardarRegistro" class="modal-body" novalidate>
           <div class="form-grid">
             <div v-for="col in columnasFiltradas" :key="col" class="form-group">
               <label :for="col" class="form-label">
@@ -255,10 +255,13 @@
                   :id="col" 
                   v-model="registro[col]" 
                   class="form-input"
+                  :class="{ 'input-error': col === 'nombre' && errorNombre }"
+                  @input="col === 'nombre' && (errorNombre = '')"
                   :placeholder="`Ingresa ${formatColumnName(col).toLowerCase()}`"
                   :required="col === 'nombre'"
                   type="text"
                 />
+                <small v-if="col === 'nombre' && errorNombre" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errorNombre }}</small>
               </template>
             </div>
           </div>
@@ -341,7 +344,9 @@ export default {
         { nombre: "Integración Sistemas FV", url: `${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`, icono: "fas fa-solar-panel" },
         // Tablas del Módulo de Tareas
         { nombre: "Tareas - Categorías", url: `${process.env.VUE_APP_API_URL}/api/tarea-categorias`, icono: "fas fa-folder" },
-        { nombre: "Tareas - Subcategorías", url: `${process.env.VUE_APP_API_URL}/api/tarea-subcategorias`, icono: "fas fa-folder-open" }
+        { nombre: "Tareas - Subcategorías", url: `${process.env.VUE_APP_API_URL}/api/tarea-subcategorias`, icono: "fas fa-folder-open" },
+        // Clientes
+        { nombre: "Cargos de Contacto", url: `${process.env.VUE_APP_API_URL}/api/cargos-contacto`, icono: "fas fa-id-badge" }
       ],
       tablaSeleccionada: null,
       datos: [],
@@ -359,6 +364,7 @@ export default {
       // Para gestión de subcategorías
       categoriasDisponibles: [],
       selectedCategoriaIds: [],
+      errorNombre: '',
     };
   },
   computed: {
@@ -496,7 +502,9 @@ export default {
         "Integración Sistemas FV": "Sistemas de integración fotovoltaica",
         // Módulo de Tareas
         "Tareas - Categorías": "Categorías para clasificar tareas",
-        "Tareas - Subcategorías": "Subcategorías de tareas"
+        "Tareas - Subcategorías": "Subcategorías de tareas",
+        // Clientes
+        "Cargos de Contacto": "Cargos o puestos de los contactos de clientes"
       };
       return descripciones[nombre] || "Tabla del sistema";
     },
@@ -522,7 +530,9 @@ export default {
         "Integración Sistemas FV": 8,
         // Módulo de Tareas
         "Tareas - Categorías": 4,
-        "Tareas - Subcategorías": 36
+        "Tareas - Subcategorías": 36,
+        // Clientes
+        "Cargos de Contacto": 0
       };
       return counts[nombreTabla] || 0;
     },
@@ -593,6 +603,16 @@ export default {
     },
     
     async guardarRegistro() {
+      this.errorNombre = '';
+      if (!this.registro.nombre || !String(this.registro.nombre).trim()) {
+        this.errorNombre = 'El nombre es obligatorio';
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Campo obligatorio',
+          text: 'El campo Nombre es obligatorio'
+        });
+        return;
+      }
       this.loading = true;
       try {
         // Preparar datos a enviar
@@ -624,10 +644,15 @@ export default {
         }
       } catch (error) {
         console.error("Error al guardar registro", error);
+        const mensajeError = error.response?.data?.message
+          || error.response?.data?.error
+          || error.response?.data
+          || error.message
+          || 'Error desconocido al guardar';
         this.$swal.fire({
           icon: 'error',
-          title: 'Error',
-          text: 'Error al guardar el registro: ' + (error.response?.data?.message || error.message)
+          title: 'Error al guardar',
+          text: `No se pudo guardar el registro: ${mensajeError}`
         })
       } finally {
         this.loading = false;
@@ -1514,6 +1539,20 @@ export default {
 .required-asterisk {
   color: #f44336;
   margin-left: 4px;
+}
+
+/* Validación de errores */
+.input-error,
+.input-error:focus {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15) !important;
+}
+.error-text {
+  display: block;
+  color: #e74c3c;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  line-height: 1.2;
 }
 
 .form-input {

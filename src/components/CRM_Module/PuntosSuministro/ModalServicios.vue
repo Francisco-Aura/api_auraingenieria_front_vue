@@ -147,7 +147,7 @@
             </div>
           </div>
 
-          <form @submit.prevent="guardarServicio" class="modern-form">
+          <form @submit.prevent="guardarServicio" class="modern-form" novalidate>
             <div class="form-grid-modern">
               <!-- Sección de Información del Servicio -->
               <div class="form-section-modern">
@@ -173,11 +173,12 @@
 
                 <div class="form-group-modern">
                   <label for="producto">Producto <span class="required">*</span></label>
-                  <div class="select-container-modern">
+                  <div class="select-container-modern" :class="{ 'select-error': errores.idProducto }">
                     <select
                       id="producto"
                       v-model="nuevoServicio.idProducto"
                       class="form-select-modern"
+                      @change="errores.idProducto = ''"
                       required
                     >
                       <option value="">Seleccione un producto...</option>
@@ -186,15 +187,17 @@
                       </option>
                     </select>
                   </div>
+                  <small v-if="errores.idProducto" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.idProducto }}</small>
                 </div>
 
                 <div class="form-group-modern">
                   <label for="gestora">Gestora <span class="required">*</span></label>
-                  <div class="select-container-modern">
+                  <div class="select-container-modern" :class="{ 'select-error': errores.idGestora }">
                     <select
                       id="gestora"
                       v-model="nuevoServicio.idGestora"
                       class="form-select-modern"
+                      @change="errores.idGestora = ''"
                       required
                     >
                       <option value="">Seleccione una gestora...</option>
@@ -203,15 +206,17 @@
                       </option>
                     </select>
                   </div>
+                  <small v-if="errores.idGestora" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.idGestora }}</small>
                 </div>
 
                 <div class="form-group-modern">
                   <label for="comercializadora">Comercializadora <span class="required">*</span></label>
-                  <div class="select-container-modern">
+                  <div class="select-container-modern" :class="{ 'select-error': errores.idComercializadora }">
                     <select
                       id="comercializadora"
                       v-model="nuevoServicio.idComercializadora"
                       class="form-select-modern"
+                      @change="errores.idComercializadora = ''"
                       required
                     >
                       <option value="">Seleccione una comercializadora...</option>
@@ -220,10 +225,9 @@
                       </option>
                     </select>
                   </div>
+                  <small v-if="errores.idComercializadora" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.idComercializadora }}</small>
                 </div>
               </div>
-
-              <!-- Sección de Fechas -->
               <div class="form-section-modern">
                 <div class="section-header-modern">
                   <i class="fas fa-calendar-alt"></i>
@@ -238,10 +242,12 @@
                       type="date"
                       id="fechaInicioServicio"
                       v-model="nuevoServicio.fechaInicioServicio"
-                      class="form-control-modern"
+                      class="form-control-modern" :class="{ 'input-error': errores.fechaInicioServicio }"
+                      @change="errores.fechaInicioServicio = ''"
                       required
                     />
                   </div>
+                  <small v-if="errores.fechaInicioServicio" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaInicioServicio }}</small>
                 </div>
 
                 <div class="form-group-modern">
@@ -252,10 +258,12 @@
                       type="date"
                       id="fechaFinServicio"
                       v-model="nuevoServicio.fechaFinServicio"
-                      class="form-control-modern"
+                      class="form-control-modern" :class="{ 'input-error': errores.fechaFinServicio }"
+                      @change="errores.fechaFinServicio = ''"
                       required
                     />
                   </div>
+                  <small v-if="errores.fechaFinServicio" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaFinServicio }}</small>
                 </div>
                 
                 <div class="form-group-modern">
@@ -267,6 +275,7 @@
                       id="descripcion"
                       v-model="nuevoServicio.descripcion"
                       class="form-control-modern"
+                      maxlength="250"
                       placeholder="Descripción del servicio"
                     />
                   </div>
@@ -282,11 +291,12 @@
 
                 <div class="form-group-modern">
                   <label for="modalidadPago">Modalidad de Pago <span class="required">*</span></label>
-                  <div class="select-container-modern">
+                  <div class="select-container-modern" :class="{ 'select-error': errores.idPagoPlazos }">
                     <select
                       id="modalidadPago"
                       v-model="nuevoServicio.idPagoPlazos"
                       class="form-select-modern"
+                      @change="errores.idPagoPlazos = ''"
                       required
                     >
                       <option value="">Seleccione modalidad...</option>
@@ -295,6 +305,7 @@
                       </option>
                     </select>
                   </div>
+                  <small v-if="errores.idPagoPlazos" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.idPagoPlazos }}</small>
                 </div>
 
                 <div class="form-group-modern importe-euro-group">
@@ -373,6 +384,7 @@
                     v-model="nuevoServicio.observaciones"
                     class="form-control-modern textarea-modern"
                     rows="4"
+                    maxlength="10000"
                     placeholder="Añada aquí cualquier observación relevante sobre el servicio..."
                   ></textarea>
                 </div>
@@ -664,14 +676,50 @@ export default {
       puntosSuministro: [],
       comercializadorasList: [],
       modalidadesPago: [],
-      nivelAcceso: null, // Nivel de acceso del usuario
+      nivelAcceso: null,
       cuotas: [],
-      pagosExistentes: null, // Para preservar los datos de pagos existentes
-      modalidadDebounceTimer: null, // Timer para debounce de validaciones
+      pagosExistentes: null,
+      modalidadDebounceTimer: null,
+      errores: {},
     };
   },
 
   methods: {
+    // Validación del formulario de servicio
+    validarServicio() {
+      this.errores = {};
+      let valido = true;
+      if (!this.nuevoServicio.idProducto) {
+        this.errores.idProducto = 'Producto es obligatorio';
+        valido = false;
+      }
+      if (!this.nuevoServicio.idGestora) {
+        this.errores.idGestora = 'Gestora es obligatoria';
+        valido = false;
+      }
+      if (!this.nuevoServicio.idComercializadora) {
+        this.errores.idComercializadora = 'Comercializadora es obligatoria';
+        valido = false;
+      }
+      if (!this.nuevoServicio.fechaInicioServicio) {
+        this.errores.fechaInicioServicio = 'Fecha de inicio es obligatoria';
+        valido = false;
+      }
+      if (!this.nuevoServicio.fechaFinServicio) {
+        this.errores.fechaFinServicio = 'Fecha de fin es obligatoria';
+        valido = false;
+      }
+      if (this.nuevoServicio.fechaInicioServicio && this.nuevoServicio.fechaFinServicio &&
+          this.nuevoServicio.fechaFinServicio < this.nuevoServicio.fechaInicioServicio) {
+        this.errores.fechaFinServicio = 'La fecha de fin no puede ser anterior a la fecha de inicio';
+        valido = false;
+      }
+      if (!this.nuevoServicio.idPagoPlazos) {
+        this.errores.idPagoPlazos = 'Modalidad de pago es obligatoria';
+        valido = false;
+      }
+      return valido;
+    },
     // Helper para obtener el CUPS correcto del punto de suministro
     obtenerCupsDelPuntoSuministro() {
       const cupsluz = this.puntoSuministroData?.cupsluz?.trim() || "";
@@ -914,8 +962,19 @@ export default {
     },
 
     async guardarServicio() {
+      // Validar campos obligatorios con indicadores visuales
+      if (!this.validarServicio()) {
+        await this.$swal.fire({
+          icon: 'warning',
+          title: 'Campos obligatorios',
+          text: 'Revise los campos marcados en rojo antes de guardar.',
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'Entendido'
+        });
+        return;
+      }
+
       try {
-        
         if (!this.nuevoServicio.idPuntoSuministro) {
           await this.$swal.fire({
             icon: 'warning',
@@ -925,17 +984,7 @@ export default {
           });
           return;
         }
-        
-        if (!this.nuevoServicio.fechaInicioServicio) {
-          await this.$swal.fire({
-            icon: 'warning',
-            title: 'Campos requeridos',
-            text: 'Por favor, ingrese la fecha de inicio del servicio',
-            confirmButtonColor: '#3085d6'
-          });
-          return;
-        }
-        
+
         // Validar importes no negativos
         if (this.nuevoServicio.importe < 0 || this.nuevoServicio.descuento < 0 || this.nuevoServicio.importeFinal < 0) {
           await this.$swal.fire({
@@ -946,7 +995,7 @@ export default {
           });
           return;
         }
-        
+
         // Validar que el descuento no sea mayor que el importe
         if (this.nuevoServicio.descuento > this.nuevoServicio.importe) {
           await this.$swal.fire({
@@ -957,7 +1006,7 @@ export default {
           });
           return;
         }
-        
+
         this.$swal.fire({
           title: 'Guardando servicio...',
           text: 'Por favor, espere mientras se procesa la información.',
@@ -1255,10 +1304,11 @@ export default {
         
       } catch (error) {
         console.error("Error al guardar el servicio:", error);
-        console.error("Detalles del error:", error.response?.data);
+        const errData = error.response?.data;
+        const detalle = errData?.message || errData?.error || errData?.mensaje || (typeof errData === 'string' ? errData : '') || error.message || '';
         this.$swal.fire({
           title: 'Error',
-          text: `No se pudo ${this.modoEdicion ? 'actualizar' : (this.modoRenovacion ? 'renovar' : 'crear')} el servicio. Por favor, verifica los datos e inténtalo de nuevo.`,
+          text: `No se pudo ${this.modoEdicion ? 'actualizar' : (this.modoRenovacion ? 'renovar' : 'crear')} el servicio.${detalle ? ' ' + detalle : ' Por favor, verifica los datos e inténtalo de nuevo.'}`,
           icon: 'error',
           confirmButtonColor: 'rgba(252, 215, 0)',
           confirmButtonText: 'Aceptar'
@@ -2775,14 +2825,13 @@ export default {
 }
 
 .modal-header {
-  padding: 0.8rem 1.3rem;
+  padding: 0.8rem 0 0.8rem 1.3rem;
   border-bottom: 1px solid #e0e0e0;
   background: var(--primary-color);
   color: white;
-  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   flex-shrink: 0;
 }
 
@@ -2795,29 +2844,26 @@ export default {
 }
 
 .close-button {
-  position: absolute;
-  top: 0.6rem;
-  right: 0.8rem;
-  background-color: #e74c3c;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  color: white;
-  width: 28px;
-  height: 28px;
+  align-self: stretch;
+  min-width: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  z-index: 10;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  background: #c0392b;
+  border: none;
+  border-left: 1px solid rgba(0, 0, 0, 0.12);
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: white;
+  border-radius: 0 0.4rem 0 0;
+  transition: background-color 0.15s ease;
+  flex-shrink: 0;
 }
 
 .close-button:hover {
-  background-color: #c0392b;
+  background-color: #96281b;
   color: white;
-  transform: rotate(90deg);
+  border-left-color: transparent;
 }
 
 /* Banner del cliente compacto */
@@ -2935,9 +2981,22 @@ export default {
   margin-left: 2px;
 }
 
-/* Inputs compactos */
-.input-with-icon-modern {
-  position: relative;
+/* Validación de errores */
+.input-error,
+.input-error:focus {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15) !important;
+}
+.select-error select {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15) !important;
+}
+.error-text {
+  display: block;
+  color: #e74c3c;
+  font-size: 0.72rem;
+  margin-top: 2px;
+  line-height: 1.2;
 }
 
 .icon-prefix {
