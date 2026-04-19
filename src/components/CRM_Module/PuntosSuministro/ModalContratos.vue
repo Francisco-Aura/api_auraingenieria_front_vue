@@ -151,7 +151,7 @@
             </div>
           </div>
 
-          <form @submit.prevent="guardarContrato" class="modern-form">
+          <form @submit.prevent="guardarContrato" class="modern-form" novalidate>
             <div class="form-grid-modern">
               <!-- Sección de Fechas -->
               <div class="form-section-modern">
@@ -168,10 +168,12 @@
                       type="date" 
                       id="fechaEnvioContrato" 
                       v-model="nuevoContrato.fechaEnvio" 
-                      class="form-control-modern" 
+                      class="form-control-modern" :class="{ 'input-error': errores.fechaEnvio }"
+                      @change="errores.fechaEnvio = ''"
                       required 
                     />
                   </div>
+                  <small v-if="errores.fechaEnvio" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaEnvio }}</small>
                 </div>
 
                 <div class="form-group-modern">
@@ -182,10 +184,12 @@
                       type="date" 
                       id="fechaInicioContrato" 
                       v-model="nuevoContrato.fechaInicio" 
-                      class="form-control-modern" 
+                      class="form-control-modern" :class="{ 'input-error': errores.fechaInicio }"
+                      @change="errores.fechaInicio = ''"
                       required 
                     />
                   </div>
+                  <small v-if="errores.fechaInicio" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaInicio }}</small>
                 </div>
 
                 <div class="form-group-modern">
@@ -196,10 +200,12 @@
                       type="date" 
                       id="fechaFinContrato" 
                       v-model="nuevoContrato.fechaFin" 
-                      class="form-control-modern" 
+                      class="form-control-modern" :class="{ 'input-error': errores.fechaFin }"
+                      @change="errores.fechaFin = ''"
                       required 
                     />
                   </div>
+                  <small v-if="errores.fechaFin" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaFin }}</small>
                 </div>
 
                 <div class="form-group-modern">
@@ -207,11 +213,12 @@
                     <i class="fas fa-building"></i>
                     Comercializadora Actual <span class="required">*</span>
                   </label>
-                  <div class="select-container-modern">
+                  <div class="select-container-modern" :class="{ 'select-error': errores.idComercializadoraActual }">
                     <select 
                       id="comercializadoraActual" 
                       v-model="nuevoContrato.idComercializadoraActual" 
                       class="form-select-modern" 
+                      @change="errores.idComercializadoraActual = ''"
                       required
                     >
                       <option value="">Seleccione una comercializadora...</option>
@@ -220,6 +227,7 @@
                       </option>
                     </select>
                   </div>
+                  <small v-if="errores.idComercializadoraActual" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.idComercializadoraActual }}</small>
                 </div>
 
                 <div class="form-group-modern">
@@ -258,10 +266,13 @@
                       type="text" 
                       id="contrato" 
                       v-model="nuevoContrato.contrato" 
-                      class="form-control-modern" 
+                      class="form-control-modern" :class="{ 'input-error': errores.contrato }"
+                      @input="errores.contrato = ''"
+                      maxlength="100"
                       required 
                     />
                   </div>
+                  <small v-if="errores.contrato" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.contrato }}</small>
                 </div>
 
                 <div class="form-group-modern">
@@ -340,6 +351,7 @@
                       id="userFO" 
                       v-model="nuevoContrato.userFO" 
                       class="form-control-modern" 
+                      maxlength="200"
                       placeholder="Usuario para facturación online"
                     />
                   </div>
@@ -358,6 +370,7 @@
                       id="passwordFO" 
                       v-model="nuevoContrato.passwordFO" 
                       class="form-control-modern" 
+                      maxlength="200"
                       placeholder="Contraseña para facturación online"
                     />
                   </div>
@@ -401,6 +414,7 @@
                     v-model="nuevoContrato.observaciones" 
                     class="form-control-modern textarea-modern" 
                     rows="100"
+                    maxlength="10000"
                     placeholder="Añada aquí cualquier observación relevante sobre el contrato..."
                   ></textarea>
                 </div>
@@ -807,13 +821,44 @@ export default {
       contratoDetalle: null,
       clienteDetalle: null,
       comercializadorasList: [],
-      nivelAcceso: null, // Nivel de acceso del usuario
+      nivelAcceso: null,
+      errores: {},
     };
   },
 
   methods: {
     handleFileUpload(event) {
       this.selectedFile = event.target.files[0];
+    },
+    validarContrato() {
+      this.errores = {};
+      let valido = true;
+      if (!this.nuevoContrato.fechaEnvio) {
+        this.errores.fechaEnvio = 'Fecha de envío es obligatoria';
+        valido = false;
+      }
+      if (!this.nuevoContrato.fechaInicio) {
+        this.errores.fechaInicio = 'Fecha de inicio es obligatoria';
+        valido = false;
+      }
+      if (!this.nuevoContrato.fechaFin) {
+        this.errores.fechaFin = 'Fecha de fin es obligatoria';
+        valido = false;
+      }
+      if (this.nuevoContrato.fechaInicio && this.nuevoContrato.fechaFin &&
+          this.nuevoContrato.fechaFin < this.nuevoContrato.fechaInicio) {
+        this.errores.fechaFin = 'La fecha de fin no puede ser anterior a la fecha de inicio';
+        valido = false;
+      }
+      if (!this.nuevoContrato.idComercializadoraActual) {
+        this.errores.idComercializadoraActual = 'Comercializadora actual es obligatoria';
+        valido = false;
+      }
+      if (!this.nuevoContrato.contrato || !String(this.nuevoContrato.contrato).trim()) {
+        this.errores.contrato = 'Número de contrato es obligatorio';
+        valido = false;
+      }
+      return valido;
     },
 
     // Método para actualizar el estado de denuncia
@@ -1132,6 +1177,16 @@ export default {
     },
 
     async guardarContrato() {
+      if (!this.validarContrato()) {
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Campos obligatorios',
+          text: 'Revise los campos marcados en rojo antes de guardar.',
+          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonText: 'Entendido'
+        });
+        return;
+      }
       try {
         // Copiar los valores de los inputs pot1...pot6 a potencia1...potencia6 antes de enviar
         for (let i = 1; i <= 6; i++) {
@@ -1225,10 +1280,11 @@ export default {
         
       } catch (error) {
         console.error("Error al guardar el contrato:", error);
-        console.error("Detalles del error:", error.response?.data); // Debug adicional
+        const errData = error.response?.data;
+        const detalle = errData?.message || errData?.error || errData?.mensaje || (typeof errData === 'string' ? errData : '') || error.message || '';
         this.$swal.fire({
           title: 'Error',
-          text: `No se pudo ${this.modoEdicion ? 'actualizar' : (this.modoRenovacion ? 'renovar' : 'crear')} el contrato. Por favor, verifica los datos e inténtalo de nuevo.`,
+          text: `No se pudo ${this.modoEdicion ? 'actualizar' : (this.modoRenovacion ? 'renovar' : 'crear')} el contrato.${detalle ? ' ' + detalle : ' Por favor, verifica los datos e inténtalo de nuevo.'}`,
           icon: 'error',
           confirmButtonColor: 'rgba(252, 215, 0)',
           confirmButtonText: 'Aceptar'
@@ -2225,14 +2281,13 @@ export default {
 }
 
 .modal-header {
-  padding: 0.8rem 1.3rem;
+  padding: 0.8rem 0 0.8rem 1.3rem;
   border-bottom: 1px solid #e0e0e0;
   background: var(--primary-color);
   color: white;
-  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   flex-shrink: 0;
 }
 
@@ -2245,29 +2300,26 @@ export default {
 }
 
 .close-button {
-  position: absolute;
-  top: 0.6rem;
-  right: 0.8rem;
-  background-color: #e74c3c;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  color: white;
-  width: 28px;
-  height: 28px;
+  align-self: stretch;
+  min-width: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  z-index: 10;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  background: #c0392b;
+  border: none;
+  border-left: 1px solid rgba(0, 0, 0, 0.12);
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: white;
+  border-radius: 0 0.4rem 0 0;
+  transition: background-color 0.15s ease;
+  flex-shrink: 0;
 }
 
 .close-button:hover {
-  background-color: #c0392b;
+  background-color: #96281b;
   color: white;
-  transform: rotate(90deg);
+  border-left-color: transparent;
 }
 
 /* Banner del cliente compacto */
@@ -2383,6 +2435,24 @@ export default {
 .required {
   color: #e74c3c;
   margin-left: 2px;
+}
+
+/* Validación de errores */
+.input-error,
+.input-error:focus {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15) !important;
+}
+.select-error select {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15) !important;
+}
+.error-text {
+  display: block;
+  color: #e74c3c;
+  font-size: 0.72rem;
+  margin-top: 2px;
+  line-height: 1.2;
 }
 
 /* Inputs compactos */

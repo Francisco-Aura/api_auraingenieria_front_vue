@@ -15,7 +15,7 @@
       </div>
 
       <!-- Formulario compacto para punto de suministro -->
-      <form @submit.prevent="actualizarPS" class="compact-form-content">
+      <form @submit.prevent="actualizarPS" class="compact-form-content" novalidate>
         <!-- Pestañas para organizar el contenido -->        
         <div class="form-tabs">
           <button type="button" class="tab-btn" :class="{ active: activeTab === 'principal' }" @click="activeTab = 'principal'">
@@ -42,21 +42,25 @@
                 <label for="direccion">Dirección <span class="required">*</span></label>
                 <div class="input-with-icon">
                   <i class="fas fa-home icon-prefix"></i>
-                  <input type="text" id="direccion" v-model="puntoLocal.direccion" :readonly="modoConsulta" required />
+                  <input type="text" id="direccion" v-model="puntoLocal.direccion" :readonly="modoConsulta" :class="{ 'input-error': errores.direccion }" @input="errores.direccion = ''" maxlength="100" required />
                 </div>
+                <small v-if="errores.direccion" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.direccion }}</small>
               </div>
               <div class="form-row triple">
                 <div class="form-compact-group">
                   <label for="codigoPostal">CP <span class="required">*</span></label>
-                  <input type="text" id="codigoPostal" v-model="puntoLocal.codigoPostal" :readonly="modoConsulta" required />
+                  <input type="text" id="codigoPostal" v-model="puntoLocal.codigoPostal" :readonly="modoConsulta" :class="{ 'input-error': errores.codigoPostal }" @input="errores.codigoPostal = ''" maxlength="10" required />
+                  <small v-if="errores.codigoPostal" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.codigoPostal }}</small>
                 </div>
                 <div class="form-compact-group">
                   <label for="poblacion">Población <span class="required">*</span></label>
-                  <input type="text" id="poblacion" v-model="puntoLocal.poblacion" :readonly="modoConsulta" required />
+                  <input type="text" id="poblacion" v-model="puntoLocal.poblacion" :readonly="modoConsulta" :class="{ 'input-error': errores.poblacion }" @input="errores.poblacion = ''" maxlength="100" required />
+                  <small v-if="errores.poblacion" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.poblacion }}</small>
                 </div>
                 <div class="form-compact-group">
                   <label for="provincia">Provincia <span class="required">*</span></label>
-                  <input type="text" id="provincia" v-model="puntoLocal.provincia" :readonly="modoConsulta" required />
+                  <input type="text" id="provincia" v-model="puntoLocal.provincia" :readonly="modoConsulta" :class="{ 'input-error': errores.provincia }" @input="errores.provincia = ''" maxlength="100" required />
+                  <small v-if="errores.provincia" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.provincia }}</small>
                 </div>
               </div>
               <div class="form-row">
@@ -64,14 +68,14 @@
                   <label for="identificacion">Identificación</label>
                   <div class="input-with-icon">
                     <i class="fas fa-id-card icon-prefix"></i>
-                    <input type="text" id="identificacion" v-model="puntoLocal.identificacion" :readonly="modoConsulta" />
+                    <input type="text" id="identificacion" v-model="puntoLocal.identificacion" :readonly="modoConsulta" maxlength="255" />
                   </div>
                 </div>
                 <div class="form-compact-group half">
                   <label for="ubicacion">Ubicación Maps</label>
                   <div class="input-with-icon">
                     <i class="fas fa-map-marker-alt icon-prefix"></i>
-                    <input type="text" id="ubicacion" v-model="puntoLocal.ubicacion" :readonly="modoConsulta" />
+                    <input type="text" id="ubicacion" v-model="puntoLocal.ubicacion" :readonly="modoConsulta" maxlength="1000" />
                   </div>
                 </div>
               </div>
@@ -88,17 +92,18 @@
                   <label for="cupsluz">CUPS Luz</label>
                   <div class="input-with-icon">
                     <i class="fas fa-lightbulb icon-prefix"></i>
-                    <input type="text" id="cupsluz" v-model="puntoLocal.cupsluz" :readonly="modoConsulta" />
+                    <input type="text" id="cupsluz" v-model="puntoLocal.cupsluz" :readonly="modoConsulta" :class="{ 'input-error': errores.cups }" @input="errores.cups = ''" maxlength="100" />
                   </div>
                 </div>
                 <div class="form-compact-group half">
                   <label for="cupsgas">CUPS Gas</label>
                   <div class="input-with-icon">
                     <i class="fas fa-fire icon-prefix"></i>
-                    <input type="text" id="cupsgas" v-model="puntoLocal.cupsgas" :readonly="modoConsulta" />
+                    <input type="text" id="cupsgas" v-model="puntoLocal.cupsgas" :readonly="modoConsulta" :class="{ 'input-error': errores.cups }" @input="errores.cups = ''" maxlength="100" />
                   </div>
                 </div>
               </div>
+              <small v-if="errores.cups" class="error-text" style="display:block;margin-top:2px"><i class="fas fa-exclamation-circle"></i> {{ errores.cups }}</small>
               <div class="form-compact-group">
                 <label for="distribuidora">Distribuidora</label>
                 <div class="input-with-icon">
@@ -119,8 +124,12 @@
               </div>
               <div class="form-row triple">
                 <div class="form-compact-group">
-                  <label for="fechaInstalacion">F. Instalación</label>
-                  <input type="date" id="fechaInstalacion" v-model="puntoLocal.fechaInstalacion" :readonly="modoConsulta" />
+                  <label for="exencionImpuestoElectrico">Exención Imp. Eléctrico</label>
+                  <select id="exencionImpuestoElectrico" v-model="puntoLocal.exencionImpuestoElectrico" :disabled="modoConsulta">
+                    <option :value="null">Seleccione</option>
+                    <option :value="true">SI</option>
+                    <option :value="false">NO</option>
+                  </select>
                 </div>
                 <div class="form-compact-group">
                   <label for="porcentajeConcesion">% Concesión</label>
@@ -133,14 +142,6 @@
               </div>
               <div class="form-row">
                 <div class="form-compact-group half">
-                  <label for="exencionImpuestoElectrico">Exención Imp. Eléctrico</label>
-                  <select id="exencionImpuestoElectrico" v-model="puntoLocal.exencionImpuestoElectrico" :disabled="modoConsulta">
-                    <option :value="null">Seleccione</option>
-                    <option :value="true">SI</option>
-                    <option :value="false">NO</option>
-                  </select>
-                </div>
-                <div class="form-compact-group half">
                   <label for="autoconsumo">Autoconsumo</label>
                   <select id="autoconsumo" v-model="puntoLocal.autoconsumo" :disabled="modoConsulta">
                     <option :value="null">NO</option>
@@ -149,16 +150,24 @@
                     <option value="Autoconsumo sin excedentes">Autoconsumo sin excedentes</option>
                   </select>
                 </div>
-              </div>
-              <div class="form-compact-group" v-if="puntoLocal.autoconsumo">
-                <label for="fechaActivacionVertido">Fecha Activación Vertido</label>
-                <input type="date" id="fechaActivacionVertido" v-model="puntoLocal.fechaActivacionVertido" :readonly="modoConsulta" />
+                <div class="form-compact-group half">
+                  <label for="fechaActivacionVertido">Fecha Activación Vertido</label>
+                  <input type="date" id="fechaActivacionVertido" v-model="puntoLocal.fechaActivacionVertido" :readonly="modoConsulta" />
+                </div>
               </div>
             </div>
           </div>
           
           <!-- Panel derecho - Equipos de Medida, Monitorización y Potencias -->
           <div class="panel-right">
+            <!-- F. Instalación -->
+            <div class="form-section">
+              <div class="form-compact-group">
+                <label for="fechaInstalacion">F. Instalación</label>
+                <input type="date" id="fechaInstalacion" v-model="puntoLocal.fechaInstalacion" :readonly="modoConsulta" />
+              </div>
+            </div>
+
             <!-- Sección de Equipos de Medida -->
             <div class="form-section">
               <div class="section-header">
@@ -184,7 +193,7 @@
               </div>
               <div class="form-compact-group">
                 <label for="apmCentroTransformacion">APM Centro Transformación</label>
-                <input type="text" id="apmCentroTransformacion" v-model="puntoLocal.apmCentroTransformacion" :readonly="modoConsulta" />
+                <input type="text" id="apmCentroTransformacion" v-model="puntoLocal.apmCentroTransformacion" :readonly="modoConsulta" maxlength="255" />
               </div>
               <div class="form-row">
                 <div class="form-compact-group half">
@@ -211,7 +220,7 @@
               <div class="form-row triple">
                 <div class="form-compact-group">
                   <label for="numeroContador">Nº Contador</label>
-                  <input type="text" id="numeroContador" v-model="puntoLocal.numeroContador" :readonly="modoConsulta" />
+                  <input type="text" id="numeroContador" v-model="puntoLocal.numeroContador" :readonly="modoConsulta" maxlength="255" />
                 </div>
                 <div class="form-compact-group">
                   <label for="numeroTelefono">Nº Teléfono/IP</label>
@@ -219,17 +228,17 @@
                 </div>
                 <div class="form-compact-group">
                   <label for="direccionEnlace">Dir. Enlace</label>
-                  <input type="text" id="direccionEnlace" v-model="puntoLocal.direccionEnlace" :readonly="modoConsulta" />
+                  <input type="text" id="direccionEnlace" v-model="puntoLocal.direccionEnlace" :readonly="modoConsulta" maxlength="255" />
                 </div>
               </div>
               <div class="form-row triple">
                 <div class="form-compact-group">
                   <label for="puntoMedida">Punto Medida</label>
-                  <input type="text" id="puntoMedida" v-model="puntoLocal.puntoMedida" :readonly="modoConsulta" />
+                  <input type="text" id="puntoMedida" v-model="puntoLocal.puntoMedida" :readonly="modoConsulta" maxlength="255" />
                 </div>
                 <div class="form-compact-group">
                   <label for="clave">Clave</label>
-                  <input type="text" id="clave" v-model="puntoLocal.clave" :readonly="modoConsulta" />
+                  <input type="text" id="clave" v-model="puntoLocal.clave" :readonly="modoConsulta" maxlength="255" />
                 </div>
                 <div class="form-compact-group">
                   <label for="propiedad">Propiedad</label>
@@ -255,32 +264,23 @@
                   <label for="usuarioMonitorizacion">Usuario Monitorización</label>
                   <div class="input-with-icon">
                     <i class="fas fa-user icon-prefix"></i>
-                    <input type="text" id="usuarioMonitorizacion" v-model="puntoLocal.usuarioMonitorizacion" :readonly="modoConsulta" />
+                    <input type="text" id="usuarioMonitorizacion" v-model="puntoLocal.usuarioMonitorizacion" :readonly="modoConsulta" maxlength="255" />
                   </div>
                 </div>
                 <div class="form-compact-group half">
                   <label for="passMonitorizacion">Contraseña Monitorización</label>
                   <div class="input-with-icon">
                     <i class="fas fa-lock icon-prefix"></i>
-                    <input type="text" id="passMonitorizacion" v-model="puntoLocal.passMonitorizacion" :readonly="modoConsulta" />
+                    <input type="text" id="passMonitorizacion" v-model="puntoLocal.passMonitorizacion" :readonly="modoConsulta" maxlength="255" />
                   </div>
                 </div>
               </div>
             </div>
-
-            <!-- Observaciones -->
-            <div class="form-section full-width-observaciones">
-              <div class="section-header">
-                <i class="fas fa-comment-alt"></i>
-                <h3>Observaciones</h3>
-              </div>
-              <div class="form-compact-group">
-                <textarea id="observaciones" v-model="puntoLocal.observaciones" :readonly="modoConsulta" rows="2" placeholder="Observaciones relevantes..."></textarea>
-              </div>
+          </div>
             </div>
 
-            <!-- Sección de Potencias Contratadas - REUBICADA EN EL PANEL DERECHO -->
-            <div v-if="modoConsulta && tienePotenciasContratadas" class="form-section potencias-section">
+            <!-- Potencias Contratadas - ancho completo -->
+            <div v-if="modoConsulta && tienePotenciasContratadas" class="form-section potencias-fullwidth">
               <div class="section-header">
                 <i class="fas fa-battery-three-quarters"></i>
                 <h3>Potencias Contratadas</h3>
@@ -297,7 +297,16 @@
                 </div>
               </div>
             </div>
-          </div>
+
+            <!-- Observaciones - ancho completo -->
+            <div class="form-section observaciones-fullwidth">
+              <div class="section-header">
+                <i class="fas fa-comment-alt"></i>
+                <h3>Observaciones</h3>
+              </div>
+              <div class="form-compact-group" style="margin-bottom:0">
+                <textarea id="observaciones" v-model="puntoLocal.observaciones" :readonly="modoConsulta" rows="1" maxlength="10000" placeholder="Observaciones relevantes..."></textarea>
+              </div>
             </div>
 
             <!-- Botones de acción de la pestaña principal -->
@@ -356,14 +365,14 @@
                     <label for="potenciaBateria">Potencia Batería</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-bolt icon-prefix"></i>
-                      <input type="text" id="potenciaBateria" v-model="puntoLocal.potenciaBateria" class="form-control-compact" />
+                      <input type="text" id="potenciaBateria" v-model="puntoLocal.potenciaBateria" class="form-control-compact" maxlength="100" />
                     </div>
                   </div>
                   <div class="form-group-compact">
                     <label for="modeloBateria">Modelo</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-tag icon-prefix"></i>
-                      <input type="text" id="modeloBateria" v-model="puntoLocal.modeloBateria" class="form-control-compact" />
+                      <input type="text" id="modeloBateria" v-model="puntoLocal.modeloBateria" class="form-control-compact" maxlength="100" />
                     </div>
                   </div>
                 </div>
@@ -389,14 +398,14 @@
                     <label for="kwInversor">KW Inversor</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-microchip icon-prefix"></i>
-                      <input type="text" id="kwInversor" v-model="puntoLocal.kwInversor" class="form-control-compact" />
+                      <input type="text" id="kwInversor" v-model="puntoLocal.kwInversor" class="form-control-compact" maxlength="100" />
                     </div>
                   </div>
                   <div class="form-group-compact">
                     <label for="kwPanelesSolares">KW Paneles Solares</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-sun icon-prefix"></i>
-                      <input type="text" id="kwPanelesSolares" v-model="puntoLocal.kwPanelesSolares" class="form-control-compact" />
+                      <input type="text" id="kwPanelesSolares" v-model="puntoLocal.kwPanelesSolares" class="form-control-compact" maxlength="100" />
                     </div>
                   </div>
                   <div class="form-group-compact">
@@ -434,7 +443,7 @@
                     <label for="potenciaBateriaAlmacenamiento">Potencia Batería</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-bolt icon-prefix"></i>
-                      <input type="text" id="potenciaBateriaAlmacenamiento" v-model="puntoLocal.potenciaBateriaAlmacenamiento" class="form-control-compact" />
+                      <input type="text" id="potenciaBateriaAlmacenamiento" v-model="puntoLocal.potenciaBateriaAlmacenamiento" class="form-control-compact" maxlength="100" />
                     </div>
                   </div>
                   <div class="form-group-compact">
@@ -534,6 +543,7 @@ export default {
       activeTab: 'principal',
       darDeBaja: false,
       isSubmitting: false,
+      errores: {},
       puntoLocal: { 
         autoconsumo: null,
         fechaActivacionVertido: null,
@@ -771,22 +781,37 @@ export default {
     async actualizarPS() {
       if (this.modoConsulta) return;
 
-      if (!this.puntoLocal.direccion?.trim() || !this.puntoLocal.codigoPostal?.trim() || 
-          !this.puntoLocal.poblacion?.trim() || !this.puntoLocal.provincia?.trim()) {
-        this.mostrarError('Por favor, complete todos los campos obligatorios marcados con *', 'Campos obligatorios');
-        return;
+      this.errores = {};
+      let valido = true;
+
+      if (!this.puntoLocal.direccion?.trim()) {
+        this.errores.direccion = 'Dirección es obligatoria';
+        valido = false;
+      }
+      if (!this.puntoLocal.codigoPostal?.trim()) {
+        this.errores.codigoPostal = 'Código Postal es obligatorio';
+        valido = false;
+      }
+      if (!this.puntoLocal.poblacion?.trim()) {
+        this.errores.poblacion = 'Población es obligatoria';
+        valido = false;
+      }
+      if (!this.puntoLocal.provincia?.trim()) {
+        this.errores.provincia = 'Provincia es obligatoria';
+        valido = false;
       }
 
-      // Normalizar CUPS antes de la validación
       const cupsLuzNormalizado = this.normalizarCups(this.puntoLocal.cupsluz);
       const cupsGasNormalizado = this.normalizarCups(this.puntoLocal.cupsgas);
-      
-      console.log('=== VALIDACIÓN EN FRONTEND ===');
-      console.log('CUPS Luz original:', this.puntoLocal.cupsluz, 'normalizado:', cupsLuzNormalizado);
-      console.log('CUPS Gas original:', this.puntoLocal.cupsgas, 'normalizado:', cupsGasNormalizado);
 
       if (!cupsLuzNormalizado && !cupsGasNormalizado) {
-        this.mostrarError('Debe proporcionar al menos un CUPS (luz o gas)', 'CUPS requerido');
+        this.errores.cups = 'Debe indicar al menos un CUPS (luz o gas)';
+        valido = false;
+      }
+
+      if (!valido) {
+        this.activeTab = 'principal';
+        this.mostrarError('Revise los campos marcados en rojo.', 'Campos obligatorios');
         return;
       }
 
@@ -1157,70 +1182,68 @@ export default {
 }
 
 .modal-header {
-  padding: 0.8rem 1.3rem;
+  padding: 0.45rem 0 0.45rem 1.3rem;
   border-bottom: 1px solid #e0e0e0;
   background: var(--primary-color);
-  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   flex-shrink: 0;
 }
 
 .header-content {
   display: flex;
   align-items: center;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
 }
 
 .modal-title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: black;
   flex-grow: 1;
 }
 
 .close-button {
-  position: absolute;
-  top: 0.6rem;
-  right: 0.8rem;
-  background-color: #e74c3c;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  color: white;
-  width: 28px;
-  height: 28px;
+  align-self: stretch;
+  min-width: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  z-index: 10;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  background: #c0392b;
+  border: none;
+  border-left: 1px solid rgba(0, 0, 0, 0.12);
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: white;
+  border-radius: 0 0.4rem 0 0;
+  transition: background-color 0.15s ease;
+  flex-shrink: 0;
 }
 
 .close-button:hover {
-  background-color: #c0392b;
-  transform: rotate(90deg);
+  background-color: #96281b;
+  color: white;
+  border-left-color: transparent;
 }
 
 .compact-form-content {
   flex: 1;
   overflow-y: auto !important;
-  padding: 0.8rem;
+  padding: 0.5rem;
   display: flex;
   flex-direction: column;
   max-height: calc(95vh - 120px);
   min-height: 0;
-  gap: 0.6rem;
+  gap: 0.4rem;
 }
 
 .form-sections-container {
   display: flex;
-  gap: 0.8rem;
-  margin-bottom: 0.6rem;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 .panel-left,
@@ -1229,13 +1252,13 @@ export default {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.4rem;
 }
 
 .form-section {
   background: var(--surface-color);
   border-radius: 0.3rem;
-  padding: 0.6rem;
+  padding: 0.4rem;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   border: 1px solid var(--border-color);
 }
@@ -1247,43 +1270,61 @@ export default {
   border: 1px solid #dee2e6;
 }
 
+.observaciones-fullwidth {
+  width: 100%;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  flex-shrink: 0;
+}
+
+.potencias-fullwidth {
+  width: 100%;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  flex-shrink: 0;
+}
+
+.potencias-fullwidth .potencias-grid {
+  grid-template-columns: repeat(6, 1fr);
+}
+
 .section-header {
   display: flex;
   align-items: center;
-  padding-bottom: 0.4rem;
-  margin-bottom: 0.6rem;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
   border-bottom: 1px solid var(--border-color);
 }
 
 .section-header i {
   color: black;
   margin-right: 0.4rem;
-  font-size: 1rem;
+  font-size: 0.85rem;
 }
 
 .section-header h3 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   color: var(--text-primary);
   font-weight: 600;
 }
 
 .form-compact-group {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
 }
 
 .form-compact-group label {
   display: block;
   font-weight: 500;
   color: var(--text-primary);
-  font-size: 0.8rem;
-  margin-bottom: 0.2rem;
+  font-size: 0.78rem;
+  margin-bottom: 0.1rem;
 }
 
 .form-row {
   display: flex;
-  gap: 0.6rem;
-  margin-bottom: 0.5rem;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
 }
 
 .form-row .half {
@@ -1292,23 +1333,23 @@ export default {
 
 .form-row.triple {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
 .form-row.triple .form-compact-group {
   flex: 1;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
 }
 
 .form-compact-group input,
 .form-compact-group select,
 .form-compact-group textarea {
   width: 100%;
-  padding: 0.25rem 0.4rem;
-  font-size: 0.85rem;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.82rem;
   border: 1px solid #ddd;
   border-radius: 0.2rem;
-  height: 28px;
+  height: 25px;
   background-color: white;
   color: var(--text-primary);
   transition: border-color 0.2s;
@@ -1377,6 +1418,20 @@ export default {
   margin-left: 2px;
 }
 
+/* Validación de errores */
+.input-error,
+.input-error:focus {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15) !important;
+}
+.error-text {
+  display: block;
+  color: #e74c3c;
+  font-size: 0.72rem;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
 /* Estilos elegantes para las potencias en el panel derecho */
 .potencias-section {
   border-radius: 0.4rem;
@@ -1436,7 +1491,7 @@ export default {
 }
 
 .modal-footer {
-  padding: 0.8rem;
+  padding: 0.45rem 0.8rem;
   border-top: 1px solid var(--border-color);
   background: var(--surface-color);
   display: flex;
@@ -1457,7 +1512,7 @@ export default {
 }
 
 .btn {
-  padding: 0.5rem 1rem;
+  padding: 0.35rem 0.85rem;
   border-radius: 0.3rem;
   font-weight: 500;
   transition: all 0.2s;
@@ -1466,7 +1521,7 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   border: none;
   outline: none;
 }
@@ -1546,40 +1601,51 @@ export default {
 /* Estilos para el sistema de pestañas */
 .form-tabs {
   display: flex;
-  background-color: #fff;
-  border-bottom: 1px solid #e0e0e0;
+  background-color: #e4e6ea;
+  border-bottom: 2px solid #d0d3d8;
   flex-shrink: 0;
+  gap: 3px;
+  padding: 0 0.5rem;
+  padding-top: 4px;
 }
 
 .tab-btn {
-  padding: 0.5rem 1rem;
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
+  padding: 0.35rem 1.2rem;
+  background: #d0d3d8;
+  border: 1px solid #bfc2c8;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
   font-weight: 500;
-  color: #666;
+  color: #555;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  font-size: 1rem;
+  gap: 0.35rem;
+  font-size: 0.9rem;
   flex: 1;
   justify-content: center;
+  position: relative;
+  top: 2px;
 }
 
-.tab-btn:hover {
-  background-color: #f8f9fa;
-}
-
-.tab-btn.active {
-  border-bottom-color: rgba(252, 215, 0);
-  background-color: #fcfbf9;
+.tab-btn:hover:not(.active) {
+  background: #c0c3c8;
   color: #333;
 }
 
+.tab-btn.active {
+  background: #ffffff;
+  border-color: #d0d3d8;
+  border-bottom: 2px solid #ffffff;
+  color: #222;
+  font-weight: 600;
+  box-shadow: 0 -2px 0 0 #f5c900;
+  z-index: 1;
+}
+
 .tab-text {
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .tab-container {

@@ -868,7 +868,7 @@ export default {
         await this.$swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Error al actualizar el punto de suministro: ' + (error.response?.data?.mensaje || error.message)
+          text: 'Error al actualizar el punto de suministro: ' + (error.response?.data?.mensaje || error.response?.data?.error || error.message)
         });
       }
     },
@@ -1592,7 +1592,7 @@ export default {
 
     // Verifica si un punto de suministro tiene servicios con productos no-switching
     tieneServiciosNoSwitching(idPuntoSuministro) {
-      return this.puntosConServiciosNoSwitching.has(idPuntoSuministro);
+      return this.puntosConServiciosNoSwitching.has(Number(idPuntoSuministro));
     },
 
     // Carga los puntos de suministro que tienen servicios no-switching
@@ -1602,29 +1602,29 @@ export default {
           return; // No podemos determinar sin los productos
         }
 
-        // Obtener todos los servicios de todos los puntos
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios`);
-        const todosLosServicios = response.data || [];
+        // Calcular IDs de productos no-switching en el frontend
+        const idsNoSwitching = this.productos
+          .filter(p => p.nombre && !p.nombre.toLowerCase().includes('switching'))
+          .map(p => p.id);
 
-        // Limpiar el set anterior
-        this.puntosConServiciosNoSwitching.clear();
+        if (idsNoSwitching.length === 0) {
+          this.puntosConServiciosNoSwitching.clear();
+          return;
+        }
 
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-
-        // Para cada servicio, verificar si su producto es no-switching y si está activo
-        todosLosServicios.forEach((servicio) => {
-          // Verificar que el servicio está ACTIVO (no tiene fecha de fin o la fecha de fin es futura)
-          const isActivo = !servicio.fechaFinServicio || new Date(servicio.fechaFinServicio) > hoy;
-          
-          if (isActivo && servicio.idProducto) {
-            const producto = this.productos.find(p => p.id == servicio.idProducto);
-            if (producto && producto.nombre && !producto.nombre.toLowerCase().includes('switching')) {
-              // Este punto tiene un servicio no-switching ACTIVO
-              this.puntosConServiciosNoSwitching.add(servicio.idPuntoSuministro);
+        // Llamar al endpoint eficiente — devuelve solo los IDs de puntos afectados
+        const response = await axios.get(
+          `${process.env.VUE_APP_API_URL}/api/servicios/puntos-con-servicio-activo`,
+          { params: { idProductos: idsNoSwitching }, paramsSerializer: params => {
+              return Object.entries(params)
+                .flatMap(([k, v]) => Array.isArray(v) ? v.map(i => `${k}=${i}`) : [`${k}=${v}`])
+                .join('&');
             }
           }
-        });
+        );
+
+        this.puntosConServiciosNoSwitching.clear();
+        (response.data || []).forEach(id => this.puntosConServiciosNoSwitching.add(Number(id)));
       } catch (error) {
         console.error('Error al cargar puntos con servicios no-switching:', error);
       }

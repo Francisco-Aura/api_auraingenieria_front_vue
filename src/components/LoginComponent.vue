@@ -19,17 +19,19 @@
       </div>
       
       <!-- Formulario de inicio de sesión -->
-      <form @submit.prevent="submitForm" class="login-form">
+      <form @submit.prevent="submitForm" class="login-form" novalidate>
         <div class="input-group">
           <i class="fas fa-user"></i>
           <input 
             type="text" 
             v-model="username" 
             placeholder="Usuario" 
-            required 
+            :class="{ 'input-error': errores.username }"
+            @input="errores.username = ''"
             class="input-field"
           />
         </div>
+        <small v-if="errores.username" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.username }}</small>
         
         <div class="input-group">
           <i class="fas fa-lock"></i>
@@ -37,10 +39,12 @@
             type="password" 
             v-model="password" 
             placeholder="Contraseña" 
-            required 
+            :class="{ 'input-error': errores.password }"
+            @input="errores.password = ''"
             class="input-field"
           />
         </div>
+        <small v-if="errores.password" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.password }}</small>
         
         <button type="submit" class="login-button" :disabled="isLoading">
           <span>{{ isLoading ? 'Autenticando...' : 'Acceder' }}</span>
@@ -63,17 +67,37 @@ export default {
   // Define el estado reactivo del componente
   data() {
     return {
-      username: '', // Almacena el nombre de usuario ingresado
-      password: '',  // Almacena la contraseña ingresada
-      loginError: false, // Para mostrar el mensaje de error
-      isLoading: false // Para controlar el estado de carga del login
+      username: '',
+      password: '',
+      loginError: false,
+      isLoading: false,
+      errores: {}
     };
   },
   methods: {
     // Método para manejar el envío del formulario
+    validarFormulario() {
+      this.errores = {};
+      if (!this.username || !this.username.trim()) {
+        this.errores.username = 'El usuario es obligatorio';
+      }
+      if (!this.password) {
+        this.errores.password = 'La contraseña es obligatoria';
+      }
+      if (Object.keys(this.errores).length > 0) {
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Campos obligatorios',
+          text: 'Por favor, revise los campos marcados en rojo'
+        });
+        return false;
+      }
+      return true;
+    },
     async submitForm() {
       this.loginError = false;
-      this.isLoading = true; // Activar loading
+      if (!this.validarFormulario()) return;
+      this.isLoading = true;
       try {
         // Realiza una solicitud GET a la API de autenticación
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/usuarios/login`, {
@@ -298,5 +322,19 @@ export default {
 }
 .alert-message {
   font-size: 0.9rem;
+}
+
+.input-error,
+.input-error:focus {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15) !important;
+}
+
+.error-text {
+  display: block;
+  color: #e74c3c;
+  font-size: 0.72rem;
+  margin-top: 2px;
+  line-height: 1.2;
 }
 </style>

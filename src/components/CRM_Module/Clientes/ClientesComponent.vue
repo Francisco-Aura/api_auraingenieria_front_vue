@@ -353,6 +353,7 @@
       :sectores="sectores"
       :usuarios="usuarios"
       :subtipologias="subtipologias"
+      :cargosContacto="cargosContacto"
       :appMonitorizacion="appMonitorizacion"
       :integracionSistemasFV="integracionSistemasFV"
       @cancelar-formulario="cancelarFormulario"
@@ -412,6 +413,7 @@ export default {
       sectores: [], // Opciones de sectores
       usuarios: [], // Opciones de usuarios
       subtipologias: [], // Opciones de subtipologías
+      cargosContacto: [], // Opciones de cargos de contacto
       appMonitorizacion: [], // Opciones de aplicaciones de monitorización
       integracionSistemasFV: [], // Opciones de integración sistemas FV
       isSubmitting: false, // Evita múltiples envíos del formulario
@@ -672,6 +674,14 @@ export default {
         this.cancelarFormulario();
       } catch (error) {
         console.error("Error al actualizar cliente:", error);
+        const errData = error.response?.data;
+        const detalle = errData?.message || errData?.error || errData?.mensaje || (typeof errData === 'string' ? errData : '') || error.message || '';
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error al actualizar cliente',
+          text: detalle ? `No se pudo actualizar el cliente: ${detalle}` : 'No se pudo actualizar el cliente. Por favor, inténtelo de nuevo.',
+          confirmButtonColor: 'rgba(252, 215, 0)'
+        });
       }
     },    
     // Lógica para crear cliente
@@ -688,6 +698,14 @@ export default {
         this.cancelarFormulario(); // Limpia y cierra el formulario
       } catch (error) {
         console.error("Error al crear cliente:", error);
+        const errData = error.response?.data;
+        const detalle = errData?.message || errData?.error || errData?.mensaje || (typeof errData === 'string' ? errData : '') || error.message || '';
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error al crear cliente',
+          text: detalle ? `No se pudo crear el cliente: ${detalle}` : 'No se pudo crear el cliente. Por favor, inténtelo de nuevo.',
+          confirmButtonColor: 'rgba(252, 215, 0)'
+        });
       }
     },
     // Muestra el modal para crear un punto de suministro (reutilizando ModalActualizarPuntoSuministro)
@@ -728,7 +746,7 @@ export default {
         await this.$swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Error al guardar el punto de suministro: ' + (error.response?.data?.mensaje || error.message)
+          text: 'Error al guardar el punto de suministro: ' + (error.response?.data?.mensaje || error.response?.data?.error || error.message)
         });
       }
     },
@@ -843,11 +861,12 @@ export default {
     document.addEventListener('click', this.handleClickOutside);
     
     try {
-      const [clientes, usuarios, sectores, subtipologias, appMonitorizacion, integracionSistemasFV] = await Promise.all([
+      const [clientes, usuarios, sectores, subtipologias, cargosContacto, appMonitorizacion, integracionSistemasFV] = await Promise.all([
         axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/usuarios`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/sectores`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/subtipologias`),
+        axios.get(`${process.env.VUE_APP_API_URL}/api/cargos-contacto`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/app-monitorizacion`),
         axios.get(`${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`),
       ]);
@@ -855,6 +874,7 @@ export default {
       this.usuarios = usuarios.data;
       this.sectores = sectores.data;
       this.subtipologias = subtipologias.data;
+      this.cargosContacto = cargosContacto.data;
       this.appMonitorizacion = appMonitorizacion.data;
       this.integracionSistemasFV = integracionSistemasFV.data;
     } catch (error) {

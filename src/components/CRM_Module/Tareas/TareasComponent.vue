@@ -847,7 +847,9 @@ export default {
         this.cerrarModal()
       } catch (error) {
         console.error('Error guardando tarea:', error)
-        this.mostrarMensaje('Error al guardar la tarea', 'error')
+        const errData = error.response?.data;
+        const detalle = errData?.message || errData?.error || errData?.mensaje || (typeof errData === 'string' ? errData : '') || error.message || '';
+        this.mostrarMensaje(detalle ? `Error al guardar la tarea: ${detalle}` : 'Error al guardar la tarea', 'error')
       }
     },
     

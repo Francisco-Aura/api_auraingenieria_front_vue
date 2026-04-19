@@ -74,6 +74,19 @@
               <i class="fas fa-chevron-right"></i>
             </div>
           </div>
+
+          <div class="card informe-card" @click="mostrarInforme('contactos-clientes')">
+            <div class="informe-icon">
+              <i class="fas fa-address-book"></i>
+            </div>
+            <div class="informe-info">
+              <h3>Contactos de Clientes</h3>
+              <p>Directorio de teléfonos y correos de todos los clientes y sus contactos</p>
+            </div>
+            <div class="informe-action">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -134,7 +147,11 @@
                 </template>
                 <template v-else>
                   <div class="cell-content" :title="mostrarValorCelda(fila, columna)">
-                    {{ mostrarValorCelda(fila, columna) }}
+                    <span
+                      v-if="columna === 'estadoBaja'"
+                      :class="fila[columna] === 'SI' ? 'badge badge-baja' : 'badge badge-activo'"
+                    >{{ fila[columna] }}</span>
+                    <template v-else>{{ mostrarValorCelda(fila, columna) }}</template>
                   </div>
                 </template>
               </td>
@@ -232,6 +249,12 @@ export default {
         consumoAnual: 'Consumo Anual (kWh)',
         importeCuotaPendiente: 'Importe Cuota Pendiente',
         importeFinal: 'Importe Final',
+        nombreCliente: 'Nombre Cliente',
+        tipoContacto: 'Tipo Contacto',
+        nombre: 'Nombre',
+        telefono: 'Teléfono',
+        correo: 'Correo',
+        estadoBaja: 'De Baja',
       }
     };
   },
@@ -461,6 +484,9 @@ export default {
           "cliente", "servicio", "fechaInicioServicio", "fechaFinServicio", 
           "gestora", "producto", "comercializadora", "importeFinal",
           "estadoVencimiento", "estadoPago"
+        ],
+        "contactos-clientes": [
+          "nombreCliente", "tipoContacto", "nombre", "telefono", "correo", "estadoBaja"
         ]
       };
 
@@ -567,6 +593,11 @@ export default {
           return `${icon} ${cups}`;
         }
         return cups;
+      }
+      // En el informe de contactos, mostrar '-' en lugar de celda vacía
+      if (this.tipoSeleccionado === 'contactos-clientes') {
+        const valor = fila[columna];
+        return (valor !== null && valor !== undefined && String(valor).trim() !== '') ? valor : '-';
       }
       return fila[columna] ?? '';
     },
@@ -1678,5 +1709,27 @@ export default {
 
 .btn-icon.btn-delete:hover {
   background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* Badges estado baja */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-baja {
+  background-color: rgba(220, 53, 69, 0.12);
+  color: #b91c1c;
+  border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.badge-activo {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+  border: 1px solid rgba(34, 197, 94, 0.3);
 }
 </style>

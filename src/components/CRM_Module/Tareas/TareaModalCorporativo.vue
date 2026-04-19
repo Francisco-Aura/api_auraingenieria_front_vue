@@ -11,7 +11,7 @@
 
       <!-- Body del modal -->
       <div class="modal-body">
-        <form @submit.prevent="guardar" class="form-compact">
+        <form @submit.prevent="guardar" class="form-compact" novalidate>
           
           <!-- Primera fila: Nombre, Cliente -->
           <div class="row-1">
@@ -21,9 +21,13 @@
                 type="text" 
                 v-model="formulario.titulo" 
                 class="form-control"
+                :class="{ 'input-error': errores.titulo }"
+                @input="errores.titulo = ''"
                 required
+                maxlength="200"
                 placeholder="Título de la tarea"
               />
+              <small v-if="errores.titulo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.titulo }}</small>
             </div>
 
             <div class="form-group cliente-field">
@@ -161,6 +165,7 @@
                 v-model="formulario.descripcion" 
                 class="form-control"
                 rows="2"
+                maxlength="10000"
                 placeholder="Descripción detallada de la tarea..."
               ></textarea>
             </div>
@@ -235,7 +240,8 @@ export default {
       horaInicio: '09:00',
       fechaVencimiento: '',
       horaVencimiento: '18:00',
-      seleccionandoTexto: false
+      seleccionandoTexto: false,
+      errores: {}
     }
   },
   computed: {
@@ -443,9 +449,11 @@ export default {
     },
 
     guardar() {
+      this.errores = {};
 
-      // Validación básica
+      // Validación de campos obligatorios
       if (!this.formulario.titulo || this.formulario.titulo.trim() === '') {
+        this.errores.titulo = 'El título es obligatorio';
         this.$swal.fire({
           icon: 'warning',
           title: 'Campo requerido',
@@ -683,6 +691,20 @@ export default {
 
 .required {
   color: #dc3545;
+}
+
+/* Validación de errores */
+.input-error,
+.input-error:focus {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15) !important;
+}
+.error-text {
+  display: block;
+  color: #e74c3c;
+  font-size: 0.72rem;
+  margin-top: 2px;
+  line-height: 1.2;
 }
 
 /* Controles de formulario */
