@@ -234,13 +234,21 @@
             
             <!-- Observaciones del Cliente -->
             <div class="form-section-compact notes-section full-width">
-              <div class="section-header-compact">
-                <i class="fas fa-sticky-note"></i>
-                <h3>Notas y observaciones</h3>
+              <div class="section-header-compact" style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <i class="fas fa-sticky-note"></i>
+                  <h3>Notas y observaciones</h3>
+                </div>
+                <button type="button" class="btn-expand-notes" @click="abrirNotasCompletas" title="Ver / editar notas completas">
+                  <i class="fas fa-expand-alt"></i>
+                </button>
               </div>
               <div class="form-group-compact">
-                <textarea id="notas" v-model="clienteLocal.notas" class="form-control-compact notes-textarea" 
-                  placeholder="Notas y observaciones..."></textarea>
+                <textarea id="notas" v-model="clienteLocal.notas" 
+                  class="form-control-compact notes-textarea" 
+                  placeholder="Notas y observaciones..."
+                  ref="notasTextarea"
+                  @input="autoResizeNotas"></textarea>
               </div>
             </div>
             
@@ -446,11 +454,6 @@
 
         </div>
       </form>
-      
-      <!-- Botón Cancelar flotante siempre visible -->
-      <button type="button" class="btn-compact btn-secondary btn-cancel" @click="cancelarFormulario">
-        <i class="fas fa-times"></i>
-      </button>
     </div>
   </div>
 </template>
@@ -518,6 +521,7 @@ export default {
       activeTab: 'principal',
       showPassword: false,
       darDeBaja: false,
+      expandirNotas: false,
       clienteLocal: this.crearClienteVacio(),
       errores: {},
     };
@@ -910,6 +914,36 @@ export default {
         month: '2-digit',
         day: '2-digit'
       });
+    },
+    autoResizeNotas() {
+      const textarea = this.$refs.notasTextarea;
+      if (!textarea) return;
+      textarea.style.height = '50px';
+      const maxH = 200;
+      textarea.style.height = Math.min(textarea.scrollHeight, maxH) + 'px';
+    },
+    async abrirNotasCompletas() {
+      const { value: nuevasNotas } = await this.$swal.fire({
+        title: 'Notas y observaciones',
+        input: 'textarea',
+        inputValue: this.clienteLocal.notas || '',
+        inputPlaceholder: 'Escribe las notas y observaciones...',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-save"></i> Guardar',
+        cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+        confirmButtonColor: '#16a34a',
+        cancelButtonColor: '#6b7280',
+        inputAttributes: {
+          style: 'height: 300px; font-size: 14px; line-height: 1.5; resize: none;'
+        },
+        width: '700px',
+        customClass: {
+          input: 'swal-notas-textarea'
+        }
+      });
+      if (nuevasNotas !== undefined) {
+        this.clienteLocal.notas = nuevasNotas;
+      }
     }
   },
 };
@@ -1219,8 +1253,29 @@ export default {
 
 .notes-textarea {
   height: 60px !important;
-  resize: vertical;
+  resize: none;
   min-height: 50px;
+  max-height: 200px;
+  overflow-y: auto;
+  transition: height 0.2s ease;
+}
+
+.btn-expand-notes {
+  background: rgba(0,0,0,0.05);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  color: #666;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.btn-expand-notes:hover {
+  background: rgba(0,0,0,0.1);
+  color: #333;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Selectores */
@@ -1303,16 +1358,7 @@ export default {
   transform: translateY(-1px);
 }
 
-/* CORRECCIÓN: Botón cancelar flotante siempre visible */
-.btn-secondary.btn-cancel {
-  display: flex !important;
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  z-index: 100;
-  opacity: 0.9;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
+/* CORRECCIÓN: Botón cancelar flotante eliminado */
 
 /* CORRECCIÓN: Reducir espacios en footer */
 .modal-footer-compact {

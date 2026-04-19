@@ -6,30 +6,30 @@
     <!-- Panel superior con stats y botón de crear-->
     <div class="stats-panel">
       <div class="stats-container">
-        <div class="stat-card">
+        <div class="stat-card" style="animation-delay: 0s">
           <div class="stat-icon">
             <i class="fas fa-bolt"></i>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ puntosSuministro.length }}</div>
+            <div class="stat-value">{{ animatedPuntos }}</div>
             <div class="stat-label">Total Puntos</div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="animation-delay: 0.1s">
           <div class="stat-icon">
             <i class="fas fa-file-contract"></i>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ totalContratos }}</div>
+            <div class="stat-value">{{ animatedContratos }}</div>
             <div class="stat-label">Contratos Activos</div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="animation-delay: 0.2s">
           <div class="stat-icon">
             <i class="fas fa-tools"></i>
           </div>
           <div class="stat-content">
-            <div class="stat-value">{{ totalServicios }}</div>
+            <div class="stat-value">{{ animatedServicios }}</div>
             <div class="stat-label">Servicios Activos</div>
           </div>
         </div>
@@ -495,6 +495,10 @@ export default {
       contratoActualData: null, // Almacena datos del contrato actual
       contratosHistoricosData: null, // Almacena datos de contratos históricos
       mostrarDadosDeBaja: false, // Control para mostrar/ocultar puntos dados de baja
+      // Contadores animados
+      animatedPuntos: 0,
+      animatedContratos: 0,
+      animatedServicios: 0,
       filtrosTimer: null, // Timer para debounce de filtros
       currentContratosRequestId: null, // ID de la solicitud actual para evitar race conditions
       puntosConServiciosNoSwitching: new Set(), // Cachea puntos con servicios no-switching
@@ -724,6 +728,21 @@ export default {
     },
 
   methods: {
+    animateCounter(prop, target) {
+      const duration = 600;
+      const start = this[prop];
+      const diff = target - start;
+      if (diff === 0) return;
+      const startTime = performance.now();
+      const step = (now) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        this[prop] = Math.round(start + diff * ease);
+        if (progress < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    },
     // Carga todos los puntos de suministro desde la API
     async fetchPuntosSuministro() {
       try {
@@ -1703,6 +1722,15 @@ export default {
     },
     filter() {
       this.currentPage = 1;
+    },
+    'puntosSuministro.length'(val) {
+      this.animateCounter('animatedPuntos', val);
+    },
+    totalContratos(val) {
+      this.animateCounter('animatedContratos', val);
+    },
+    totalServicios(val) {
+      this.animateCounter('animatedServicios', val);
     }
   }
 };
@@ -1742,6 +1770,18 @@ export default {
   align-items: center;
   transition: all 0.3s ease;
   flex: 1;
+  animation: statCardEntrance 0.5s ease both;
+}
+
+@keyframes statCardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .stat-icon {
@@ -1853,6 +1893,31 @@ export default {
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
   height: 46px; /* Altura fija para las filas */
+}
+
+/* Row fade-in animation */
+.data-table tbody tr {
+  animation: rowFadeIn 0.3s ease both;
+}
+.data-table tbody tr:nth-child(1) { animation-delay: 0s; }
+.data-table tbody tr:nth-child(2) { animation-delay: 0.03s; }
+.data-table tbody tr:nth-child(3) { animation-delay: 0.06s; }
+.data-table tbody tr:nth-child(4) { animation-delay: 0.09s; }
+.data-table tbody tr:nth-child(5) { animation-delay: 0.12s; }
+.data-table tbody tr:nth-child(n+6) { animation-delay: 0.15s; }
+
+@keyframes rowFadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Highlight flash for recently updated rows */
+.row-highlight {
+  animation: highlightFlash 1.5s ease;
+}
+@keyframes highlightFlash {
+  0% { background-color: rgba(76, 175, 80, 0.3); }
+  100% { background-color: transparent; }
 }
 
 .text-truncate {
