@@ -270,7 +270,11 @@
                   <button class="btn-icon btn-edit" @click="cargarDatosCliente(cliente.idCliente)" title="Consultar Cliente">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn-icon btn-add" @click="abrirFormularioNuevoPunto(cliente)" title="Crear Punto de Suministro">
+                  <button class="btn-icon btn-add" 
+                    @click="abrirFormularioNuevoPunto(cliente)" 
+                    :disabled="estaClienteDadoDeBaja(cliente)"
+                    :title="estaClienteDadoDeBaja(cliente) ? 'No se pueden crear puntos de suministro en un cliente dado de baja' : 'Crear Punto de Suministro'"
+                    :style="estaClienteDadoDeBaja(cliente) ? 'opacity: 0.4; cursor: not-allowed;' : ''">
                     <i class="fas fa-plus-circle"></i>
                   </button>
                 </div>
