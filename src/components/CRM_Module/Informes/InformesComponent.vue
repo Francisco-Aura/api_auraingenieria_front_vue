@@ -146,11 +146,31 @@
                   </div>
                 </template>
                 <template v-else>
-                  <div class="cell-content" :title="mostrarValorCelda(fila, columna)">
+                  <div class="cell-content" :class="{'cell-contacto': tipoSeleccionado === 'contactos-clientes'}" :title="mostrarValorCelda(fila, columna)">
                     <span
                       v-if="columna === 'estadoBaja'"
                       :class="fila[columna] === 'SI' ? 'badge badge-baja' : 'badge badge-activo'"
                     >{{ fila[columna] }}</span>
+                    <template v-else-if="tipoSeleccionado === 'contactos-clientes' && columna === 'correo' && fila[columna] && fila[columna] !== '-'">
+                      <div class="contacto-link-wrapper">
+                        <span class="contacto-email-text">
+                          <i class="fas fa-envelope"></i> {{ fila[columna] }}
+                        </span>
+                        <button class="btn-copy-cell" @click.stop="copiarAlPortapapeles(fila[columna])" title="Copiar correo">
+                          <i class="fas fa-copy"></i>
+                        </button>
+                      </div>
+                    </template>
+                    <template v-else-if="tipoSeleccionado === 'contactos-clientes' && columna === 'telefono' && fila[columna] && fila[columna] !== '-'">
+                      <div class="contacto-link-wrapper">
+                        <span class="contacto-phone-text">
+                          <i class="fas fa-phone"></i> {{ fila[columna] }}
+                        </span>
+                        <button class="btn-copy-cell" @click.stop="copiarAlPortapapeles(fila[columna])" title="Copiar teléfono">
+                          <i class="fas fa-copy"></i>
+                        </button>
+                      </div>
+                    </template>
                     <template v-else>{{ mostrarValorCelda(fila, columna) }}</template>
                   </div>
                 </template>
@@ -570,6 +590,29 @@ export default {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       }).format(numero);
+    },
+
+    // Copiar texto al portapapeles
+    copiarAlPortapapeles(texto) {
+      navigator.clipboard.writeText(texto).then(() => {
+        this.$swal.fire({
+          icon: 'success',
+          title: 'Copiado',
+          text: `"${texto}" copiado al portapapeles`,
+          timer: 1200,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+      }).catch(() => {
+        // Fallback for older browsers
+        const el = document.createElement('textarea');
+        el.value = texto;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      });
     },
 
     // Método auxiliar para mostrar valores en la tabla
@@ -1561,6 +1604,131 @@ export default {
   overflow: visible !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
+}
+
+/* ── Estilos específicos para informe Contactos Clientes ── */
+.data-table td[data-column="correo"],
+.data-table th[data-column="correo"] {
+  min-width: 220px !important;
+  max-width: 320px !important;
+}
+
+.data-table td[data-column="telefono"],
+.data-table th[data-column="telefono"] {
+  min-width: 140px !important;
+  max-width: 180px !important;
+}
+
+.data-table td[data-column="nombreCliente"],
+.data-table th[data-column="nombreCliente"] {
+  min-width: 180px !important;
+  max-width: 260px !important;
+}
+
+.cell-contacto {
+  max-width: none !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  word-break: break-word;
+}
+
+.contacto-link-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.contacto-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.2s;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.contacto-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.contacto-link i {
+  font-size: 0.8em;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.contacto-email {
+  color: #2563eb;
+}
+
+.contacto-email-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #374151;
+  font-weight: 500;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.contacto-email-text i {
+  font-size: 0.8em;
+  opacity: 0.5;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.contacto-phone {
+  color: #059669;
+}
+
+.contacto-phone:hover {
+  color: #047857;
+}
+
+.contacto-phone-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #374151;
+  font-weight: 500;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.contacto-phone-text i {
+  font-size: 0.8em;
+  opacity: 0.5;
+  color: #059669;
+  flex-shrink: 0;
+}
+
+.btn-copy-cell {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px 5px;
+  font-size: 0.75em;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.btn-copy-cell:hover {
+  color: #2563eb;
+  border-color: #2563eb;
+  background: #eff6ff;
 }
 
 /* NUEVOS ESTILOS PARA EL GESTOR DE PAGOS INNOVADOR */
