@@ -32,7 +32,19 @@
 
             <div class="form-group cliente-field">
               <label><i class="fas fa-user-tie"></i> Dirigido a <span class="required">*</span></label>
-              <div class="input-with-icon cliente-input-wrapper">
+              
+              <!-- Toggle cliente registrado / potencial -->
+              <div class="cliente-tipo-toggle">
+                <button type="button" :class="['btn-tipo', !esPotencial ? 'active' : '']" @click="esPotencial = false; formulario.clientePotencialNombre = null">
+                  <i class="fas fa-user-check"></i> Cliente registrado
+                </button>
+                <button type="button" :class="['btn-tipo', esPotencial ? 'active' : '']" @click="esPotencial = true; formulario.clienteRelacionadoId = null; busquedaCliente = ''">
+                  <i class="fas fa-user-clock"></i> Cliente potencial
+                </button>
+              </div>
+
+              <!-- Búsqueda de cliente registrado -->
+              <div v-if="!esPotencial" class="input-with-icon cliente-input-wrapper">
                 <i class="fas fa-arrow-right cliente-arrow"></i>
                 <input 
                   type="text" 
@@ -66,6 +78,18 @@
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <!-- Texto libre para cliente potencial -->
+              <div v-if="esPotencial" class="input-with-icon">
+                <input
+                  type="text"
+                  v-model="formulario.clientePotencialNombre"
+                  class="form-control"
+                  placeholder="Nombre del cliente potencial..."
+                  maxlength="200"
+                />
+                <small class="hint-text"><i class="fas fa-info-circle"></i> No creará registro en la BD</small>
               </div>
             </div>
           </div>
@@ -170,6 +194,36 @@
               ></textarea>
             </div>
           </div>
+
+          <!-- Quinta fila: Adjuntos (solo en creación) -->
+          <div v-if="!esEdicion" class="row-5">
+            <div class="form-group full-width">
+              <label><i class="fas fa-paperclip"></i> Adjuntos</label>
+              <div class="adjuntos-crear-wrapper">
+                <input
+                  type="file"
+                  ref="fileInputCrear"
+                  multiple
+                  style="display:none"
+                  @change="onArchivosCrearSelected"
+                />
+                <button type="button" class="btn-adjuntar-crear" @click="$refs.fileInputCrear.click()">
+                  <i class="fas fa-cloud-upload-alt"></i> Seleccionar archivos
+                </button>
+                <span v-if="archivosACrear.length > 0" class="adjuntos-count">
+                  {{ archivosACrear.length }} archivo{{ archivosACrear.length > 1 ? 's' : '' }} seleccionado{{ archivosACrear.length > 1 ? 's' : '' }}
+                </span>
+                <ul v-if="archivosACrear.length > 0" class="adjuntos-lista-crear">
+                  <li v-for="(f, idx) in archivosACrear" :key="idx">
+                    <i class="fas fa-file"></i> {{ f.name }}
+                    <button type="button" class="btn-remove-adjunto" @click="archivosACrear.splice(idx, 1)" title="Quitar">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </form>
       </div>
 
@@ -226,12 +280,15 @@ export default {
         fechaInicio: null,
         fechaVencimiento: null,
         clienteRelacionadoId: null,
+        clientePotencialNombre: null,
         categoriaId: null,
         subcategoriaId: null,
         notificar: false,
         fijada: false,
         repetir: ''
       },
+      esPotencial: false,
+      archivosACrear: [],
       busquedaCliente: '',
       mostrarDropdownClientes: false,
       clientesFiltrados: [],
@@ -298,12 +355,16 @@ export default {
           fechaInicio: this.tarea.fechaInicio || null,
           fechaVencimiento: this.tarea.fechaVencimiento || null,
           clienteRelacionadoId: this.tarea.clienteRelacionadoId || null,
+          clientePotencialNombre: this.tarea.clientePotencialNombre || null,
           categoriaId: this.tarea.categoriaId || null,
           subcategoriaId: this.tarea.subcategoriaId || null,
           notificar: Boolean(this.tarea.notificar),
           fijada: Boolean(this.tarea.fijada),
           repetir: this.tarea.repetir || ''
         }
+        
+        // Detectar si es cliente potencial al editar
+        this.esPotencial = !this.tarea.clienteRelacionadoId && !!this.tarea.clientePotencialNombre
         
         // Formatear fechas para los inputs
         if (this.tarea.fechaInicio) {
@@ -324,6 +385,9 @@ export default {
             id: this.tarea.clienteRelacionadoId, 
             nombre: this.tarea.clienteRelacionadoNombre 
           }]
+        } else if (this.tarea.clientePotencialNombre) {
+          this.busquedaCliente = ''
+          this.esPotencial = true
         }
       } else {
         // Modo creación: valores por defecto
@@ -366,13 +430,11 @@ export default {
         this.busquedaCliente = ''
         this.clientesFiltrados = []
         this.oportunidadesFiltradas = []
+        this.esPotencial = false
+        this.formulario.clientePotencialNombre = null
+        this.archivosACrear = []
       }
       
-      // Limpiar nuevo comentario
-      this.nuevoComentario = ''
-      this.fijarComentario = false
-      
-
     },
 
     async buscarClientes() {
@@ -418,6 +480,13 @@ export default {
         this.clientesFiltrados = []
         this.oportunidadesFiltradas = []
       }
+    },
+
+    onArchivosCrearSelected(event) {
+      const nuevos = Array.from(event.target.files)
+      this.archivosACrear.push(...nuevos)
+      // Limpiar el input para permitir seleccionar los mismos archivos otra vez
+      event.target.value = ''
     },
 
     seleccionarCliente(cliente) {
@@ -493,7 +562,6 @@ export default {
         descripcion: this.formulario.descripcion || null,
         prioridad: parseInt(this.formulario.prioridad) !== null && !isNaN(parseInt(this.formulario.prioridad)) ? parseInt(this.formulario.prioridad) : 2,
         notificar: Boolean(this.formulario.notificar),
-        enviarCorreo: Boolean(this.formulario.enviarCorreo),
         repetir: this.formulario.repetir || null,
         fechaInicio: this.formulario.fechaInicio,
         fechaVencimiento: this.formulario.fechaVencimiento,
@@ -501,12 +569,13 @@ export default {
         usuarioAsignadoId: this.formulario.usuarioAsignadoId || null,
         usuarioCreadorId: this.formulario.usuarioCreadorId || null,
         clienteRelacionadoId: this.formulario.clienteRelacionadoId || null,
+        clientePotencialNombre: this.esPotencial ? (this.formulario.clientePotencialNombre || null) : null,
         categoriaId: this.formulario.categoriaId || null,
         subcategoriaId: this.formulario.subcategoriaId || null
       }
 
 
-      this.$emit('guardar', tareaDTO)
+      this.$emit('guardar', tareaDTO, this.archivosACrear.slice())
     },
 
     cerrar() {
@@ -517,12 +586,13 @@ export default {
       }
       
       // Limpiar formulario al cerrar
-      this.nuevoComentario = ''
-      this.fijarComentario = false
       this.busquedaCliente = ''
       this.mostrarDropdownClientes = false
       this.clientesFiltrados = []
       this.oportunidadesFiltradas = []
+      this.esPotencial = false
+      this.formulario.clientePotencialNombre = null
+      this.archivosACrear = []
       
       this.$emit('update:value', false)
       this.$emit('cerrar')
@@ -654,6 +724,96 @@ export default {
 
 .cliente-field {
   position: relative;
+}
+
+.cliente-tipo-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.btn-tipo {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  border: 1px solid #cbd5e0;
+  background: #f7fafc;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #4a5568;
+  transition: all 0.15s;
+}
+
+.btn-tipo.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+  font-weight: 600;
+}
+
+.hint-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #718096;
+}
+
+.adjuntos-crear-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-adjuntar-crear {
+  align-self: flex-start;
+  padding: 6px 14px;
+  background: #f0f4ff;
+  border: 1px dashed #667eea;
+  border-radius: 6px;
+  color: #667eea;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-adjuntar-crear:hover {
+  background: #e0e7ff;
+}
+
+.adjuntos-count {
+  font-size: 0.8rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.adjuntos-lista-crear {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adjuntos-lista-crear li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #2d3748;
+  background: #f7fafc;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.btn-remove-adjunto {
+  background: none;
+  border: none;
+  color: #e53e3e;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 0.8rem;
+  margin-left: auto;
 }
 
 .options-group {

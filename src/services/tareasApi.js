@@ -88,6 +88,24 @@ export const tareasApi = {
     return response.data
   },
 
+  async subirAdjuntosTarea(tareaId, archivos) {
+    const resultados = []
+    for (const archivo of archivos) {
+      const formData = new FormData()
+      formData.append('file', archivo)
+      const response = await api.post(`/tareas/${tareaId}/adjuntos`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      resultados.push(response.data)
+    }
+    return resultados
+  },
+
+  async obtenerAdjuntosTarea(tareaId) {
+    const response = await api.get(`/tareas/${tareaId}/adjuntos`)
+    return response.data
+  },
+
   async actualizarTarea(id, tarea) {
     const response = await api.put(`/tareas/${id}`, tarea)
     return response.data
