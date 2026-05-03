@@ -445,7 +445,7 @@ export default {
       this.tareaSeleccionada = null;
     },
 
-    async handleActualizarTareaCliente(tarea) {
+    async handleActualizarTareaCliente(_tarea) {
       await this.cargarTareas();
     },
 

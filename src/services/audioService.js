@@ -9,6 +9,7 @@ class AudioService {
 
   inicializarAudio() {
     try {
+      // Inicialización reservada para futuras implementaciones de audio
     } catch (error) {
       console.error('Error inicializando audio:', error)
     }
