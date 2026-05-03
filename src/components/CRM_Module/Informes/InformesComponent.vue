@@ -272,8 +272,10 @@ export default {
         nombreCliente: 'Nombre Cliente',
         tipoContacto: 'Tipo Contacto',
         nombre: 'Nombre',
+        cargo: 'Cargo',
         telefono: 'Teléfono',
         correo: 'Correo',
+        sector: 'Sector',
         estadoBaja: 'De Baja',
       }
     };
@@ -506,7 +508,7 @@ export default {
           "estadoVencimiento", "estadoPago"
         ],
         "contactos-clientes": [
-          "nombreCliente", "tipoContacto", "nombre", "telefono", "correo", "estadoBaja"
+          "nombreCliente", "tipoContacto", "nombre", "cargo", "telefono", "correo", "sector", "estadoBaja"
         ]
       };
 
@@ -514,8 +516,8 @@ export default {
         this.datosInforme = datos.map(item => {
           const fila = {};
           columnasPermitidas[this.tipoSeleccionado].forEach(key => {
-            if (key === 'cups') {
-              // Calcular identificador único para CUPS
+            if (key === 'cups' && this.tipoSeleccionado !== 'servicios-pendientes-pago') {
+              // Calcular identificador único para CUPS (desde cupsLuz/cupsGas del item)
               fila[key] = this.obtenerCupsParaMostrar(item);
             } else {
               fila[key] = item[key];
@@ -594,7 +596,7 @@ export default {
 
     // Copiar texto al portapapeles
     copiarAlPortapapeles(texto) {
-      navigator.clipboard.writeText(texto).then(() => {
+      const mostrarExito = () => {
         this.$swal.fire({
           icon: 'success',
           title: 'Copiado',
@@ -604,15 +606,34 @@ export default {
           toast: true,
           position: 'top-end'
         });
-      }).catch(() => {
-        // Fallback for older browsers
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(texto).then(mostrarExito).catch(() => {
+          // Fallback para contextos no seguros
+          const el = document.createElement('textarea');
+          el.value = texto;
+          el.style.position = 'fixed';
+          el.style.opacity = '0';
+          document.body.appendChild(el);
+          el.focus();
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+          mostrarExito();
+        });
+      } else {
+        // Fallback para contextos no seguros (HTTP)
         const el = document.createElement('textarea');
         el.value = texto;
+        el.style.position = 'fixed';
+        el.style.opacity = '0';
         document.body.appendChild(el);
+        el.focus();
         el.select();
         document.execCommand('copy');
         document.body.removeChild(el);
-      });
+        mostrarExito();
+      }
     },
 
     // Método auxiliar para mostrar valores en la tabla
@@ -732,10 +753,14 @@ export default {
                 (columnaKey === 'importeFinal' && this.tipoSeleccionado === 'servicios-vigentes')) {
               rowData[formattedColumnaName] = this.formatearImporte(item[columnaKey]);
             } else if (columnaKey === 'cups') {
-              // Manejar CUPS especialmente para obtener el valor consolidado
-              const tipo = this.getTipoCups(item);
-              const valor = item[columnaKey] || '';
-              rowData[formattedColumnaName] = tipo ? `${tipo}: ${valor}` : valor;
+              // Manejar CUPS: en servicios-pendientes-pago ya viene resuelto como item.cups
+              if (this.tipoSeleccionado === 'servicios-pendientes-pago') {
+                rowData[formattedColumnaName] = item[columnaKey] || '';
+              } else {
+                const tipo = this.getTipoCups(item);
+                const valor = item[columnaKey] || '';
+                rowData[formattedColumnaName] = tipo ? `${tipo}: ${valor}` : valor;
+              }
             } else {
               rowData[formattedColumnaName] = item[columnaKey] ?? '';
             }
@@ -1611,6 +1636,18 @@ export default {
 .data-table th[data-column="correo"] {
   min-width: 220px !important;
   max-width: 320px !important;
+}
+
+.data-table td[data-column="sector"],
+.data-table th[data-column="sector"] {
+  min-width: 130px !important;
+  max-width: 200px !important;
+}
+
+.data-table td[data-column="cargo"],
+.data-table th[data-column="cargo"] {
+  min-width: 150px !important;
+  max-width: 220px !important;
 }
 
 .data-table td[data-column="telefono"],
