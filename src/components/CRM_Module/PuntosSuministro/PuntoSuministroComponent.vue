@@ -1693,6 +1693,11 @@ export default {
       
       // Esperar a que se carguen los puntos de suministro antes de desactivar el loading
       await this.fetchPuntosSuministro();
+
+      // Aplicar filtro CUPS si viene de navegación desde ficha de cliente
+      if (this.$route.query.cupsluz) {
+        this.columnFilters.cupsluz = this.$route.query.cupsluz;
+      }
       
       // Cargar información de puntos con servicios no-switching
       await this.cargarPuntosConServiciosNoSwitching();

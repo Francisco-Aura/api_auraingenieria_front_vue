@@ -146,7 +146,7 @@
                   </div>
                 </template>
                 <template v-else>
-                  <div class="cell-content" :class="{'cell-contacto': tipoSeleccionado === 'contactos-clientes'}" :title="mostrarValorCelda(fila, columna)">
+                  <div class="cell-content" :title="mostrarValorCelda(fila, columna)">
                     <span
                       v-if="columna === 'estadoBaja'"
                       :class="fila[columna] === 'SI' ? 'badge badge-baja' : 'badge badge-activo'"
@@ -169,6 +169,14 @@
                         <button class="btn-copy-cell" @click.stop="copiarAlPortapapeles(fila[columna])" title="Copiar teléfono">
                           <i class="fas fa-copy"></i>
                         </button>
+                      </div>
+                    </template>
+                    <template v-else-if="columna === 'cups' && fila[columna] && fila[columna] !== '-'">
+                      <div class="cups-informe-cell">
+                        <span v-if="getTipoCups(fila)" class="tipo-cups-badge" :class="getTipoCups(fila) === 'Gas' ? 'is-gas' : 'is-luz'">
+                          <i :class="getTipoCups(fila) === 'Gas' ? 'fas fa-fire' : 'fas fa-bolt'"></i>
+                        </span>
+                        <span class="cups-valor">{{ fila[columna] }}</span>
                       </div>
                     </template>
                     <template v-else>{{ mostrarValorCelda(fila, columna) }}</template>
@@ -273,9 +281,9 @@ export default {
         tipoContacto: 'Tipo Contacto',
         nombre: 'Nombre',
         cargo: 'Cargo',
+        sector: 'Sector',
         telefono: 'Teléfono',
         correo: 'Correo',
-        sector: 'Sector',
         estadoBaja: 'De Baja',
       }
     };
@@ -508,7 +516,7 @@ export default {
           "estadoVencimiento", "estadoPago"
         ],
         "contactos-clientes": [
-          "nombreCliente", "tipoContacto", "nombre", "cargo", "telefono", "correo", "sector", "estadoBaja"
+          "nombreCliente", "tipoContacto", "nombre", "cargo","sector", "telefono", "correo", "estadoBaja"
         ]
       };
 
@@ -516,8 +524,8 @@ export default {
         this.datosInforme = datos.map(item => {
           const fila = {};
           columnasPermitidas[this.tipoSeleccionado].forEach(key => {
-            if (key === 'cups' && this.tipoSeleccionado !== 'servicios-pendientes-pago') {
-              // Calcular identificador único para CUPS (desde cupsLuz/cupsGas del item)
+            if (key === 'cups') {
+              // Para todos los informes con CUPS, calcular el valor consolidado desde cupsLuz/cupsGas
               fila[key] = this.obtenerCupsParaMostrar(item);
             } else {
               fila[key] = item[key];
@@ -530,6 +538,9 @@ export default {
               const pagoStatus = item[`pago${i}Pagado`];
               fila[`pago${i}_pagado`] = (pagoStatus === 1 || pagoStatus === '1' || pagoStatus === true) ? 1 : 0;
             }
+            // Preservar cupsLuz y cupsGas para determinación de tipo
+            fila.cupsLuz = item.cupsLuz || null;
+            fila.cupsGas = item.cupsGas || null;
           }
           return fila;
         });
@@ -650,13 +661,7 @@ export default {
         return '-';
       }
       if (columna === 'cups') {
-        const tipo = this.getTipoCups(fila);
-        const cups = fila[columna] || '-';
-        if (tipo) {
-          const icon = tipo === 'Gas' ? '🔥' : '⚡';
-          return `${icon} ${cups}`;
-        }
-        return cups;
+        return fila[columna] || '-';
       }
       // En el informe de contactos, mostrar '-' en lugar de celda vacía
       if (this.tipoSeleccionado === 'contactos-clientes') {
@@ -684,10 +689,6 @@ export default {
       }
       if (item.cupsGas && item.cupsGas.trim() !== '') {
         return 'Gas';
-      }
-      if (item.cups && item.cups.trim() !== '') {
-        // Si viene como cups consolidado, intentar determinar tipo
-        return 'Luz'; // Default
       }
       return '';
     },
@@ -1662,18 +1663,60 @@ export default {
   max-width: 260px !important;
 }
 
-.cell-contacto {
-  max-width: none !important;
-  overflow: visible !important;
-  white-space: normal !important;
-  word-break: break-word;
-}
-
 .contacto-link-wrapper {
   display: flex;
   align-items: center;
   gap: 6px;
   width: 100%;
+  overflow: hidden;
+}
+
+.contacto-email-text,
+.contacto-phone-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Celda CUPS con icono FontAwesome */
+.cups-informe-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.cups-valor {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.tipo-cups-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.tipo-cups-badge.is-luz {
+  background: rgba(255, 235, 59, 0.2);
+  color: #fbc02d;
+}
+
+.tipo-cups-badge.is-gas {
+  background: rgba(255, 152, 0, 0.1);
+  color: #ff9800;
 }
 
 .contacto-link {

@@ -819,6 +819,17 @@ export default {
       try {
         if (tarea.id) {
           await tareasApi.actualizarTarea(tarea.id, tarea)
+
+          // En edición también permitir adjuntar nuevos archivos directos
+          if (archivos && archivos.length > 0) {
+            try {
+              await tareasApi.subirAdjuntosTarea(tarea.id, archivos)
+            } catch (e) {
+              console.error('Error subiendo adjuntos en edición:', e)
+              this.mostrarMensaje('Tarea actualizada, pero hubo un error al subir algunos adjuntos', 'warning')
+            }
+          }
+
           this.mostrarMensaje('Tarea actualizada correctamente', 'success')
         } else {
           const nueva = await tareasApi.crearTarea(tarea)

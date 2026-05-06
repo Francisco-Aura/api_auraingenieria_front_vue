@@ -81,7 +81,8 @@
               </div>
 
               <!-- Texto libre para cliente potencial -->
-              <div v-if="esPotencial" class="input-with-icon">
+              <div v-if="esPotencial" class="input-with-icon cliente-input-wrapper">
+                <i class="fas fa-arrow-right cliente-arrow"></i>
                 <input
                   type="text"
                   v-model="formulario.clientePotencialNombre"
@@ -89,7 +90,6 @@
                   placeholder="Nombre del cliente potencial..."
                   maxlength="200"
                 />
-                <small class="hint-text"><i class="fas fa-info-circle"></i> No creará registro en la BD</small>
               </div>
             </div>
           </div>
@@ -195,8 +195,8 @@
             </div>
           </div>
 
-          <!-- Quinta fila: Adjuntos (solo en creación) -->
-          <div v-if="!esEdicion" class="row-5">
+          <!-- Quinta fila: Adjuntos -->
+          <div class="row-5">
             <div class="form-group full-width">
               <label><i class="fas fa-paperclip"></i> Adjuntos</label>
               <div class="adjuntos-crear-wrapper">
@@ -221,6 +221,29 @@
                     </button>
                   </li>
                 </ul>
+                <div v-if="esEdicion" class="adjuntos-existentes-wrapper">
+                  <div class="adjuntos-existentes-header">Archivos ya adjuntados</div>
+                  <div v-if="cargandoAdjuntosExistentes" class="adjuntos-loading">
+                    <i class="fas fa-spinner fa-spin"></i> Cargando adjuntos...
+                  </div>
+                  <ul v-else-if="adjuntosExistentes.length > 0" class="adjuntos-lista-crear">
+                    <li v-for="adj in adjuntosExistentes" :key="adj.id">
+                      <span class="adjunto-nombre-existente" @click="descargarAdjuntoExistente(adj)">
+                        <i class="fas fa-file-download"></i> {{ adj.nombreArchivo }}
+                      </span>
+                      <button
+                        type="button"
+                        class="btn-remove-adjunto"
+                        :disabled="eliminandoAdjuntoId === adj.id"
+                        @click="eliminarAdjuntoExistente(adj)"
+                        title="Eliminar"
+                      >
+                        <i class="fas" :class="eliminandoAdjuntoId === adj.id ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
+                      </button>
+                    </li>
+                  </ul>
+                  <small v-else class="adjuntos-vacio">No hay adjuntos directos en esta tarea.</small>
+                </div>
               </div>
             </div>
           </div>
@@ -243,6 +266,8 @@
 </template>
 
 <script>
+import tareasApi from '@/services/tareasApi'
+
 export default {
   name: 'TareaModalCorporativo',
   props: {
@@ -289,6 +314,9 @@ export default {
       },
       esPotencial: false,
       archivosACrear: [],
+      adjuntosExistentes: [],
+      cargandoAdjuntosExistentes: false,
+      eliminandoAdjuntoId: null,
       busquedaCliente: '',
       mostrarDropdownClientes: false,
       clientesFiltrados: [],
@@ -389,6 +417,9 @@ export default {
           this.busquedaCliente = ''
           this.esPotencial = true
         }
+
+        this.archivosACrear = []
+        this.cargarAdjuntosEdicion()
       } else {
         // Modo creación: valores por defecto
         const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
@@ -433,6 +464,7 @@ export default {
         this.esPotencial = false
         this.formulario.clientePotencialNombre = null
         this.archivosACrear = []
+        this.adjuntosExistentes = []
       }
       
     },
@@ -487,6 +519,68 @@ export default {
       this.archivosACrear.push(...nuevos)
       // Limpiar el input para permitir seleccionar los mismos archivos otra vez
       event.target.value = ''
+    },
+
+    async cargarAdjuntosEdicion() {
+      if (!this.esEdicion || !this.formulario.id) {
+        this.adjuntosExistentes = []
+        return
+      }
+
+      this.cargandoAdjuntosExistentes = true
+      try {
+        this.adjuntosExistentes = await tareasApi.obtenerAdjuntosTarea(this.formulario.id)
+      } catch (error) {
+        console.error('Error cargando adjuntos de tarea en edición:', error)
+        this.adjuntosExistentes = []
+      } finally {
+        this.cargandoAdjuntosExistentes = false
+      }
+    },
+
+    async descargarAdjuntoExistente(adjunto) {
+      try {
+        await tareasApi.descargarAdjunto(adjunto.id, adjunto.nombreArchivo)
+      } catch (error) {
+        console.error('Error descargando adjunto existente:', error)
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo descargar el adjunto'
+        })
+      }
+    },
+
+    async eliminarAdjuntoExistente(adjunto) {
+      const confirmacion = await this.$swal.fire({
+        title: '¿Eliminar adjunto?',
+        text: adjunto.nombreArchivo,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Eliminar',
+        cancelButtonText: 'Cancelar'
+      })
+
+      if (!confirmacion.isConfirmed) {
+        return
+      }
+
+      this.eliminandoAdjuntoId = adjunto.id
+      try {
+        await tareasApi.eliminarAdjunto(adjunto.id)
+        this.adjuntosExistentes = this.adjuntosExistentes.filter(a => a.id !== adjunto.id)
+      } catch (error) {
+        console.error('Error eliminando adjunto existente:', error)
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo eliminar el adjunto'
+        })
+      } finally {
+        this.eliminandoAdjuntoId = null
+      }
     },
 
     seleccionarCliente(cliente) {
@@ -593,6 +687,8 @@ export default {
       this.esPotencial = false
       this.formulario.clientePotencialNombre = null
       this.archivosACrear = []
+      this.adjuntosExistentes = []
+      this.eliminandoAdjuntoId = null
       
       this.$emit('update:value', false)
       this.$emit('cerrar')
@@ -756,6 +852,34 @@ export default {
   margin-top: 4px;
   font-size: 0.75rem;
   color: #718096;
+}
+
+.adjuntos-existentes-wrapper {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #cbd5e0;
+}
+
+.adjuntos-existentes-header {
+  font-size: 0.78rem;
+  color: #4a5568;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.adjuntos-loading,
+.adjuntos-vacio {
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+.adjunto-nombre-existente {
+  cursor: pointer;
+  color: #4c51bf;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
 }
 
 .adjuntos-crear-wrapper {
