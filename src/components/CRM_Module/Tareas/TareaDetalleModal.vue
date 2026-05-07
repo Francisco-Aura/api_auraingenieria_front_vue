@@ -1,6 +1,7 @@
 <template>
-  <div v-if="value" class="modal-overlay" @click="cerrar">
-    <div class="modal-content modal-detalle" @click.stop>
+  <Teleport to="body">
+    <div v-if="value" class="modal-overlay" @click="cerrar">
+      <div class="modal-content modal-detalle" @click.stop>
       <!-- Body del modal (Sin header separado) -->
       <div class="modal-body">
           <!-- Título y Descripción ARRIBA - Ancho completo -->
@@ -26,11 +27,14 @@
               </span>
             </div>
 
-            <div class="campo-detalle" v-if="tarea.clienteRelacionadoNombre">
+            <div class="campo-detalle" v-if="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre">
               <label>Cliente</label>
               <div class="cliente-info">
                 <i class="fas fa-user"></i>
-                {{ tarea.clienteRelacionadoNombre }}
+                {{ tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre }}
+                <span v-if="tarea.clientePotencialNombre && !tarea.clienteRelacionadoNombre" class="potencial-tag" title="Cliente potencial (no registrado)">
+                  <i class="fas fa-user-clock"></i> Potencial
+                </span>
               </div>
             </div>
 
@@ -90,6 +94,23 @@
                 <div class="tiempo-info">
                   <i class="fas fa-clock"></i>
                   {{ tarea.tiempoEstimado }} minutos
+                </div>
+              </div>
+            </div>
+
+            <!-- Adjuntos directos de la tarea -->
+            <div class="campo-detalle" v-if="adjuntosDirectos.length > 0">
+              <label><i class="fas fa-paperclip"></i> Archivos adjuntos</label>
+              <div class="adjuntos-directos-lista">
+                <div
+                  v-for="adj in adjuntosDirectos"
+                  :key="adj.id"
+                  class="adjunto-directo-item"
+                  @click="descargarAdjunto(adj)"
+                  :title="'Descargar ' + adj.nombreArchivo"
+                >
+                  <i class="fas fa-file-download"></i>
+                  <span class="adj-nombre">{{ adj.nombreArchivo }}</span>
                 </div>
               </div>
             </div>
@@ -194,13 +215,30 @@
               <label class="section-label"><i class="fas fa-comments"></i> Comentarios</label>
               
               <!-- Nuevo Comentario siempre visible arriba -->
-              <div class="comentario-nuevo-compact">
+              <div class="comentario-nuevo-compact" style="position: relative;">
                 <textarea 
                   v-model="nuevoComentario"
-                  class="form-control"
+                  class="form-control textarea-autoresize"
                   rows="2"
-                  placeholder="Escribe un comentario..."
+                  placeholder="Escribe un comentario... usa @ para mencionar"
+                  @input="onComentarioInput($event)"
+                  @keydown="onComentarioKeydown($event)"
+                  ref="textareaComentario"
                 ></textarea>
+
+                <!-- Dropdown de @menciones -->
+                <div v-if="mencionDropdown.visible && mencionDropdown.usuarios.length > 0" class="mencion-dropdown" :style="mencionDropdownStyle">
+                  <div
+                    v-for="(usuario, idx) in mencionDropdown.usuarios"
+                    :key="usuario.id"
+                    class="mencion-item"
+                    :class="{ 'mencion-activa': idx === mencionDropdown.indice }"
+                    @mousedown.prevent="insertarMencion(usuario)"
+                  >
+                    <i class="fas fa-user-circle"></i>
+                    {{ usuario.nombre }}
+                  </div>
+                </div>
                 
                 <div class="comentario-tools">
                    <div class="archivos-selector-mini">
@@ -296,6 +334,9 @@
                       v-model="textoComentarioEditando"
                       class="form-control"
                       rows="3"
+                      ref="textareaComentarioEditando"
+                      @input="onComentarioEditandoInput($event)"
+                      @keydown="onComentarioEditandoKeydown($event)"
                     ></textarea>
                     <div class="comentario-edicion-actions">
                       <button class="btn-guardar-edicion" @click="guardarEdicionComentario(comentario)">
@@ -373,6 +414,7 @@
       @cerrar="mostrarAuditoria = false"
     />
   </div>
+  </Teleport>
 </template>
 
 <script>
@@ -384,6 +426,7 @@ export default {
   components: {
     TareaAuditoriaModal
   },
+  emits: ['actualizar', 'cambiarEstado', 'completarConComentario', 'completar-con-comentario', 'crearComentarioEstado', 'crear-comentario-estado', 'cerrar', 'update:value'],
   props: {
     value: {
       type: Boolean,
@@ -416,7 +459,18 @@ export default {
       subiendoArchivos: false,
       comentarioEditando: null,
       textoComentarioEditando: '',
-      adjuntoActualizando: null
+      adjuntoActualizando: null,
+      adjuntosDirectos: [],
+      mencionDropdownStyle: {},
+      mencionContexto: 'nuevo',
+      mencionDropdown: {
+        visible: false,
+        usuarios: [],
+        query: '',
+        indice: 0,
+        posicionCursor: 0
+      },
+      todosLosUsuarios: []
     }
   },
   computed: {
@@ -475,6 +529,7 @@ export default {
           // Cargar comentarios
           this.$nextTick(() => {
             this.cargarComentarios()
+            this.cargarAdjuntosDirectos()
           })
         }
       },
@@ -491,6 +546,7 @@ export default {
           if (!oldTarea || oldTarea.id !== newTarea.id) {
             this.$nextTick(() => {
               this.cargarComentarios()
+              this.cargarAdjuntosDirectos()
             })
           }
         }
@@ -500,9 +556,10 @@ export default {
     }
   },
   mounted() {
-    // Cargar comentarios cuando el componente se monta
+    // Cargar comentarios y adjuntos cuando el componente se monta
     if (this.value && this.tarea && this.tarea.id) {
       this.cargarComentarios()
+      this.cargarAdjuntosDirectos()
     }
   },
   methods: {
@@ -620,6 +677,155 @@ export default {
       this.$emit('actualizar', this.tarea)
     },
 
+    autoResizeTextarea(event) {
+      const el = event.target
+      el.style.height = 'auto'
+      el.style.height = el.scrollHeight + 'px'
+    },
+
+    onComentarioInput(event) {
+      this.autoResizeTextarea(event)
+      this.detectarMencionNuevo()
+    },
+
+    onComentarioEditandoInput(event) {
+      this.autoResizeTextarea(event)
+      this.detectarMencionEdicion()
+    },
+
+    onComentarioKeydown(event) {
+      this.mencionContexto = 'nuevo'
+      if (!this.mencionDropdown.visible) return
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        this.mencionDropdown.indice = Math.min(
+          this.mencionDropdown.indice + 1,
+          this.mencionDropdown.usuarios.length - 1
+        )
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        this.mencionDropdown.indice = Math.max(this.mencionDropdown.indice - 1, 0)
+      } else if (event.key === 'Enter' || event.key === 'Tab') {
+        if (this.mencionDropdown.usuarios.length > 0) {
+          event.preventDefault()
+          this.insertarMencion(this.mencionDropdown.usuarios[this.mencionDropdown.indice])
+        }
+      } else if (event.key === 'Escape') {
+        this.mencionDropdown.visible = false
+      }
+    },
+
+    onComentarioEditandoKeydown(event) {
+      this.mencionContexto = 'edicion'
+      this.onComentarioKeydown(event)
+    },
+
+    detectarMencionNuevo() {
+      this.mencionContexto = 'nuevo'
+      this.detectarMencion(this.nuevoComentario, this.$refs.textareaComentario)
+    },
+
+    detectarMencionEdicion() {
+      this.mencionContexto = 'edicion'
+      this.detectarMencion(this.textoComentarioEditando, this.getTextareaEdicionRef())
+    },
+
+    getTextareaEdicionRef() {
+      const ref = this.$refs.textareaComentarioEditando
+      return Array.isArray(ref) ? ref[0] : ref
+    },
+
+    detectarMencion(texto, textareaRef) {
+      const textoSeguro = texto || ''
+      const cursor = textareaRef?.selectionStart || textoSeguro.length
+      // Buscar hacia atrás desde el cursor hasta encontrar @ o espacio
+      const fragmento = textoSeguro.substring(0, cursor)
+      const match = fragmento.match(/@([\w.]*)$/)
+      if (match) {
+        const query = match[1].toLowerCase()
+        this.mencionDropdown.query = query
+        this.mencionDropdown.posicionCursor = cursor - match[0].length
+        this.mencionDropdown.indice = 0
+        // Cargar usuarios si aún no están cargados
+        if (this.todosLosUsuarios.length === 0) {
+          this.cargarUsuariosParaMencion()
+        } else {
+          this.filtrarUsuariosMencion(query)
+        }
+        this.mencionDropdown.visible = true
+        // Calcular posición fija para que el dropdown no sea recortado por overflow:hidden
+        this.$nextTick(() => {
+          const ta = textareaRef
+          if (ta) {
+            const rect = ta.getBoundingClientRect()
+            this.mencionDropdownStyle = {
+              top: `${rect.bottom + 4}px`,
+              left: `${rect.left}px`,
+              width: `${rect.width}px`
+            }
+          }
+        })
+      } else {
+        this.mencionDropdown.visible = false
+      }
+    },
+
+    async cargarAdjuntosDirectos() {
+      if (!this.tarea || !this.tarea.id) return
+      try {
+        const base = process.env.VUE_APP_API_URL || 'http://localhost:8986'
+        const res = await fetch(`${base}/api/tareas/${this.tarea.id}/adjuntos`)
+        if (res.ok) {
+          this.adjuntosDirectos = await res.json()
+        }
+      } catch (e) {
+        console.error('Error cargando adjuntos directos:', e)
+      }
+    },
+
+    async cargarUsuariosParaMencion() {
+      try {
+        const base = process.env.VUE_APP_API_URL || 'http://localhost:8986'
+        const res = await fetch(`${base}/api/usuarios`)
+        if (res.ok) {
+          this.todosLosUsuarios = await res.json()
+          this.filtrarUsuariosMencion(this.mencionDropdown.query)
+        }
+      } catch (e) {
+        console.error('Error cargando usuarios para menciones:', e)
+      }
+    },
+
+    filtrarUsuariosMencion(query) {
+      this.mencionDropdown.usuarios = this.todosLosUsuarios
+        .filter(u => u.nombre && u.nombre.toLowerCase().includes(query))
+        .slice(0, 6)
+    },
+
+    insertarMencion(usuario) {
+      const pos = this.mencionDropdown.posicionCursor
+      const esEdicion = this.mencionContexto === 'edicion'
+      const textarea = esEdicion ? this.getTextareaEdicionRef() : this.$refs.textareaComentario
+      const textoActual = esEdicion ? this.textoComentarioEditando : this.nuevoComentario
+      const cursor = textarea?.selectionStart || textoActual.length
+      const nombreSinEspacios = usuario.nombre.replace(/\s+/g, '')
+      const antes = textoActual.substring(0, pos)
+      const despues = textoActual.substring(cursor)
+
+      if (esEdicion) {
+        this.textoComentarioEditando = `${antes}@${nombreSinEspacios} ${despues}`
+      } else {
+        this.nuevoComentario = `${antes}@${nombreSinEspacios} ${despues}`
+      }
+
+      this.mencionDropdown.visible = false
+      this.$nextTick(() => {
+        const nuevaCursor = antes.length + nombreSinEspacios.length + 2
+        const ta = esEdicion ? this.getTextareaEdicionRef() : this.$refs.textareaComentario
+        if (ta) { ta.focus(); ta.setSelectionRange(nuevaCursor, nuevaCursor) }
+      })
+    },
+
     formatearFecha(fecha) {
       if (!fecha) return '-'
       return new Date(fecha).toLocaleDateString('es-ES', {
@@ -638,6 +844,7 @@ export default {
 
     getPrioridadTexto(prioridad) {
       switch (prioridad) {
+        case 0: return 'Urgente'
         case 1: return 'Alta'
         case 2: return 'Media'
         case 3: return 'Baja'
@@ -839,11 +1046,13 @@ export default {
     iniciarEdicionComentario(comentario) {
       this.comentarioEditando = comentario
       this.textoComentarioEditando = comentario.contenido
+      this.mencionDropdown.visible = false
     },
 
     cancelarEdicionComentario() {
       this.comentarioEditando = null
       this.textoComentarioEditando = ''
+      this.mencionDropdown.visible = false
     },
 
     async guardarEdicionComentario(comentario) {
@@ -861,6 +1070,7 @@ export default {
         await tareasApi.actualizarComentario(comentario.id, this.textoComentarioEditando.trim(), usuario.id)
         await this.cargarComentarios()
         this.cancelarEdicionComentario()
+        this.mencionDropdown.visible = false
         
         this.$swal.fire({
           icon: 'success',
@@ -1022,7 +1232,7 @@ export default {
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: 3000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1268,6 +1478,7 @@ export default {
   width: fit-content;
 }
 
+.prioridad-0 { background: #7b0000; color: white; }
 .prioridad-1 { background: #dc3545; color: white; }
 .prioridad-2 { background: #ffc107; color: #212529; }
 .prioridad-3 { background: #28a745; color: white; }
@@ -1281,6 +1492,18 @@ export default {
   gap: 8px;
   font-size: 0.9rem;
   color: #495057;
+}
+
+.potencial-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  background: #fff3cd;
+  color: #856404;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .fecha-info.fecha-vencida {
@@ -1870,7 +2093,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 4000;
   backdrop-filter: blur(4px);
 }
 
@@ -2770,6 +2993,73 @@ export default {
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   flex-shrink: 0;
+}
+
+.textarea-autoresize {
+  resize: none;
+  min-height: 60px;
+  overflow-y: hidden;
+  transition: height 0.1s ease;
+}
+
+.mencion-dropdown {
+  position: fixed;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  z-index: 10000;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.mencion-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #2d3748;
+  transition: background 0.1s;
+}
+
+.mencion-item:hover,
+.mencion-item.mencion-activa {
+  background: #eef2ff;
+  color: #4c51bf;
+}
+
+/* Adjuntos directos de tarea */
+.adjuntos-directos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.adjunto-directo-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #4c51bf;
+  transition: background 0.15s;
+}
+
+.adjunto-directo-item:hover {
+  background: #e0e7ff;
+}
+
+.adjunto-directo-item .adj-nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .comentario-tools {

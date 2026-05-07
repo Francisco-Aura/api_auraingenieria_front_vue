@@ -1286,6 +1286,7 @@ export default {
       }
       // Crear nuevo timer con delay de 150ms
       this.filtrosTimer = setTimeout(() => {
+        this.currentPage = 1;
         this.columnFilters[column] = value;
       }, 150);
     },
@@ -1693,6 +1694,11 @@ export default {
       
       // Esperar a que se carguen los puntos de suministro antes de desactivar el loading
       await this.fetchPuntosSuministro();
+
+      // Aplicar filtro CUPS si viene de navegación desde ficha de cliente
+      if (this.$route.query.cupsluz) {
+        this.columnFilters.cupsluz = this.$route.query.cupsluz;
+      }
       
       // Cargar información de puntos con servicios no-switching
       await this.cargarPuntosConServiciosNoSwitching();
@@ -1713,12 +1719,6 @@ export default {
   watch: {
     recordsPerPage() {
       this.currentPage = 1;
-    },
-    columnFilters: {
-      handler() {
-        this.currentPage = 1;
-      },
-      deep: true
     },
     filter() {
       this.currentPage = 1;

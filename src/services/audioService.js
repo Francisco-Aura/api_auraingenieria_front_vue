@@ -9,16 +9,7 @@ class AudioService {
 
   inicializarAudio() {
     try {
-      // Crear elemento de audio para notificación estándar
-      this.audioNotificacion = new Audio()
-      this.audioNotificacion.preload = 'auto'
-      this.audioNotificacion.volume = this.volumen
-
-      // Usar una URL de sonido online confiable o crear uno con Web Audio API
-      // Sonido de notificación (campana suave)
-      this.audioNotificacion.src = 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA=='
-
-
+      // Inicialización reservada para futuras implementaciones de audio
     } catch (error) {
       console.error('Error inicializando audio:', error)
     }

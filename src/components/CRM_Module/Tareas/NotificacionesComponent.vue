@@ -20,6 +20,8 @@
               <option value="CAMBIO_ESTADO">Cambios</option>
               <option value="VENCIMIENTO">Vencimientos</option>
               <option value="COMENTARIO">Comentarios</option>
+              <option value="COMPLETADA">Completadas</option>
+              <option value="MENCION">Menciones</option>
             </select>
           </div>
           <button 
@@ -72,7 +74,7 @@
             v-for="notificacion in notificacionesFiltradas"
             :key="notificacion.id"
             class="notificacion-item"
-            :class="{ 'no-leida': !notificacion.leida }"
+            :class="{ 'no-leida': !notificacion.leida, 'tipo-completada': notificacion.tipo === 'COMPLETADA', 'tipo-mencion': notificacion.tipo === 'MENCION' }"
             @click="handleClickNotificacion(notificacion)"
           >
             <div class="notificacion-icono">
@@ -141,7 +143,7 @@
               v-for="notificacion in todasLasNotificaciones"
               :key="notificacion.id"
               class="notificacion-item-completa"
-              :class="{ 'no-leida': !notificacion.leida }"
+              :class="{ 'no-leida': !notificacion.leida, 'tipo-completada': notificacion.tipo === 'COMPLETADA', 'tipo-mencion': notificacion.tipo === 'MENCION' }"
             >
               <div class="notificacion-icono">
                 <i 
@@ -455,6 +457,8 @@ export default {
         case 'CAMBIO_ESTADO': return 'fa-exchange-alt'
         case 'VENCIMIENTO': return 'fa-exclamation-triangle'
         case 'COMENTARIO': return 'fa-comment-dots'
+        case 'COMPLETADA': return 'fa-check-double'
+        case 'MENCION': return 'fa-at'
         default: return 'fa-bell'
       }
     },
@@ -465,6 +469,8 @@ export default {
         case 'CAMBIO_ESTADO': return '#2196F3' // Azul - cambio de estado
         case 'VENCIMIENTO': return '#FF5722' // Rojo/naranja - urgente
         case 'COMENTARIO': return '#9C27B0' // Púrpura - comentario
+        case 'COMPLETADA': return '#00897B' // Verde teal - completada
+        case 'MENCION': return '#1565C0' // Azul oscuro - mención
         default: return '#FF9800' // Naranja - general
       }
     },
@@ -757,6 +763,28 @@ export default {
   font-weight: 500;
 }
 
+.notificacion-item.tipo-completada {
+  background-color: rgba(0, 137, 123, 0.07);
+  border-left: 3px solid #00897B;
+  padding-left: calc(1rem - 3px);
+}
+
+.notificacion-item.tipo-completada.no-leida {
+  background-color: rgba(0, 137, 123, 0.15);
+  font-weight: 600;
+}
+
+.notificacion-item.tipo-mencion {
+  background-color: rgba(21, 101, 192, 0.07);
+  border-left: 3px solid #1565C0;
+  padding-left: calc(1rem - 3px);
+}
+
+.notificacion-item.tipo-mencion.no-leida {
+  background-color: rgba(21, 101, 192, 0.15);
+  font-weight: 600;
+}
+
 .notificacion-icono {
   margin-right: 0.8rem;
   margin-top: 0.2rem;
@@ -940,6 +968,28 @@ export default {
   background-color: rgba(255, 107, 53, 0.08);
   border-left: 3px solid #FF6B35;
   padding-left: calc(1rem - 3px);
+}
+
+.notificacion-item-completa.tipo-completada {
+  background-color: rgba(0, 137, 123, 0.07);
+  border-left: 3px solid #00897B;
+  padding-left: calc(1rem - 3px);
+}
+
+.notificacion-item-completa.tipo-completada.no-leida {
+  background-color: rgba(0, 137, 123, 0.15);
+  font-weight: 600;
+}
+
+.notificacion-item-completa.tipo-mencion {
+  background-color: rgba(21, 101, 192, 0.07);
+  border-left: 3px solid #1565C0;
+  padding-left: calc(1rem - 3px);
+}
+
+.notificacion-item-completa.tipo-mencion.no-leida {
+  background-color: rgba(21, 101, 192, 0.15);
+  font-weight: 600;
 }
 
 .notificacion-item-completa .notificacion-icono {

@@ -1,4 +1,5 @@
 <template>
+  <Teleport to="body">
   <div v-if="value" class="modal-overlay" @mousedown="iniciarSeleccion" @mouseup="finalizarSeleccion">
     <div class="modal-content modal-tarea" @click.stop @input.stop @mousedown.stop @mouseup.stop>
       <!-- Header del modal -->
@@ -32,7 +33,19 @@
 
             <div class="form-group cliente-field">
               <label><i class="fas fa-user-tie"></i> Dirigido a <span class="required">*</span></label>
-              <div class="input-with-icon cliente-input-wrapper">
+              
+              <!-- Toggle cliente registrado / potencial -->
+              <div class="cliente-tipo-toggle">
+                <button type="button" :class="['btn-tipo', !esPotencial ? 'active' : '']" @click="esPotencial = false; formulario.clientePotencialNombre = null">
+                  <i class="fas fa-user-check"></i> Cliente registrado
+                </button>
+                <button type="button" :class="['btn-tipo', esPotencial ? 'active' : '']" @click="esPotencial = true; formulario.clienteRelacionadoId = null; busquedaCliente = ''">
+                  <i class="fas fa-user-clock"></i> Cliente potencial
+                </button>
+              </div>
+
+              <!-- Búsqueda de cliente registrado -->
+              <div v-if="!esPotencial" class="input-with-icon cliente-input-wrapper">
                 <i class="fas fa-arrow-right cliente-arrow"></i>
                 <input 
                   type="text" 
@@ -66,6 +79,18 @@
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <!-- Texto libre para cliente potencial -->
+              <div v-if="esPotencial" class="input-with-icon cliente-input-wrapper">
+                <i class="fas fa-arrow-right cliente-arrow"></i>
+                <input
+                  type="text"
+                  v-model="formulario.clientePotencialNombre"
+                  class="form-control"
+                  placeholder="Nombre del cliente potencial..."
+                  maxlength="200"
+                />
               </div>
             </div>
           </div>
@@ -170,27 +195,85 @@
               ></textarea>
             </div>
           </div>
+
+          <!-- Quinta fila: Adjuntos -->
+          <div class="row-5">
+            <div class="form-group full-width">
+              <label><i class="fas fa-paperclip"></i> Adjuntos</label>
+              <div class="adjuntos-crear-wrapper">
+                <input
+                  type="file"
+                  ref="fileInputCrear"
+                  multiple
+                  style="display:none"
+                  @change="onArchivosCrearSelected"
+                />
+                <button type="button" class="btn-adjuntar-crear" @click="$refs.fileInputCrear.click()">
+                  <i class="fas fa-cloud-upload-alt"></i> Seleccionar archivos
+                </button>
+                <span v-if="archivosACrear.length > 0" class="adjuntos-count">
+                  {{ archivosACrear.length }} archivo{{ archivosACrear.length > 1 ? 's' : '' }} seleccionado{{ archivosACrear.length > 1 ? 's' : '' }}
+                </span>
+                <ul v-if="archivosACrear.length > 0" class="adjuntos-lista-crear">
+                  <li v-for="(f, idx) in archivosACrear" :key="idx">
+                    <i class="fas fa-file"></i> {{ f.name }}
+                    <button type="button" class="btn-remove-adjunto" @click="archivosACrear.splice(idx, 1)" title="Quitar">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </li>
+                </ul>
+                <div v-if="esEdicion" class="adjuntos-existentes-wrapper">
+                  <div class="adjuntos-existentes-header">Archivos ya adjuntados</div>
+                  <div v-if="cargandoAdjuntosExistentes" class="adjuntos-loading">
+                    <i class="fas fa-spinner fa-spin"></i> Cargando adjuntos...
+                  </div>
+                  <ul v-else-if="adjuntosExistentes.length > 0" class="adjuntos-lista-crear">
+                    <li v-for="adj in adjuntosExistentes" :key="adj.id">
+                      <span class="adjunto-nombre-existente" @click="descargarAdjuntoExistente(adj)">
+                        <i class="fas fa-file-download"></i> {{ adj.nombreArchivo }}
+                      </span>
+                      <button
+                        type="button"
+                        class="btn-remove-adjunto"
+                        :disabled="eliminandoAdjuntoId === adj.id"
+                        @click="eliminarAdjuntoExistente(adj)"
+                        title="Eliminar"
+                      >
+                        <i class="fas" :class="eliminandoAdjuntoId === adj.id ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
+                      </button>
+                    </li>
+                  </ul>
+                  <small v-else class="adjuntos-vacio">No hay adjuntos directos en esta tarea.</small>
+                </div>
+              </div>
+            </div>
+          </div>
         </form>
       </div>
 
       <!-- Footer del modal -->
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" @click="cerrar">
+        <button type="button" class="btn btn-secondary" @click="cerrar" :disabled="guardando">
           <i class="fas fa-times"></i>
           Cancelar
         </button>
-        <button type="button" class="btn btn-primary" @click="guardar">
-          <i :class="esEdicion ? 'fas fa-save' : 'fas fa-plus'"></i>
-          {{ esEdicion ? 'Guardar' : 'Crear' }}
+        <button type="button" class="btn btn-primary" @click="guardar" :disabled="guardando">
+          <i v-if="guardando" class="fas fa-spinner fa-spin"></i>
+          <i v-else :class="esEdicion ? 'fas fa-save' : 'fas fa-plus'"></i>
+          {{ guardando ? 'Guardando...' : (esEdicion ? 'Guardar' : 'Crear') }}
         </button>
       </div>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script>
+import tareasApi from '@/services/tareasApi'
+
 export default {
   name: 'TareaModalCorporativo',
+  emits: ['guardar', 'cerrar', 'update:value'],
   props: {
     value: {
       type: Boolean,
@@ -211,6 +294,10 @@ export default {
     categorias: {
       type: Array,
       default: () => []
+    },
+    guardando: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -226,12 +313,18 @@ export default {
         fechaInicio: null,
         fechaVencimiento: null,
         clienteRelacionadoId: null,
+        clientePotencialNombre: null,
         categoriaId: null,
         subcategoriaId: null,
         notificar: false,
         fijada: false,
         repetir: ''
       },
+      esPotencial: false,
+      archivosACrear: [],
+      adjuntosExistentes: [],
+      cargandoAdjuntosExistentes: false,
+      eliminandoAdjuntoId: null,
       busquedaCliente: '',
       mostrarDropdownClientes: false,
       clientesFiltrados: [],
@@ -262,14 +355,12 @@ export default {
       }
     },
     
-    tarea: {
+    'tarea.id': {
       handler() {
-
         if (this.value) {
           this.inicializarFormulario()
         }
-      },
-      deep: true
+      }
     }
   },
   mounted() {
@@ -298,12 +389,16 @@ export default {
           fechaInicio: this.tarea.fechaInicio || null,
           fechaVencimiento: this.tarea.fechaVencimiento || null,
           clienteRelacionadoId: this.tarea.clienteRelacionadoId || null,
+          clientePotencialNombre: this.tarea.clientePotencialNombre || null,
           categoriaId: this.tarea.categoriaId || null,
           subcategoriaId: this.tarea.subcategoriaId || null,
           notificar: Boolean(this.tarea.notificar),
           fijada: Boolean(this.tarea.fijada),
           repetir: this.tarea.repetir || ''
         }
+        
+        // Detectar si es cliente potencial al editar
+        this.esPotencial = !this.tarea.clienteRelacionadoId && !!this.tarea.clientePotencialNombre
         
         // Formatear fechas para los inputs
         if (this.tarea.fechaInicio) {
@@ -324,7 +419,13 @@ export default {
             id: this.tarea.clienteRelacionadoId, 
             nombre: this.tarea.clienteRelacionadoNombre 
           }]
+        } else if (this.tarea.clientePotencialNombre) {
+          this.busquedaCliente = ''
+          this.esPotencial = true
         }
+
+        this.archivosACrear = []
+        this.cargarAdjuntosEdicion()
       } else {
         // Modo creación: valores por defecto
         const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
@@ -366,13 +467,12 @@ export default {
         this.busquedaCliente = ''
         this.clientesFiltrados = []
         this.oportunidadesFiltradas = []
+        this.esPotencial = false
+        this.formulario.clientePotencialNombre = null
+        this.archivosACrear = []
+        this.adjuntosExistentes = []
       }
       
-      // Limpiar nuevo comentario
-      this.nuevoComentario = ''
-      this.fijarComentario = false
-      
-
     },
 
     async buscarClientes() {
@@ -417,6 +517,75 @@ export default {
         console.error('Error buscando clientes:', error)
         this.clientesFiltrados = []
         this.oportunidadesFiltradas = []
+      }
+    },
+
+    onArchivosCrearSelected(event) {
+      const nuevos = Array.from(event.target.files)
+      this.archivosACrear.push(...nuevos)
+      // Limpiar el input para permitir seleccionar los mismos archivos otra vez
+      event.target.value = ''
+    },
+
+    async cargarAdjuntosEdicion() {
+      if (!this.esEdicion || !this.formulario.id) {
+        this.adjuntosExistentes = []
+        return
+      }
+
+      this.cargandoAdjuntosExistentes = true
+      try {
+        this.adjuntosExistentes = await tareasApi.obtenerAdjuntosTarea(this.formulario.id)
+      } catch (error) {
+        console.error('Error cargando adjuntos de tarea en edición:', error)
+        this.adjuntosExistentes = []
+      } finally {
+        this.cargandoAdjuntosExistentes = false
+      }
+    },
+
+    async descargarAdjuntoExistente(adjunto) {
+      try {
+        await tareasApi.descargarAdjunto(adjunto.id, adjunto.nombreArchivo)
+      } catch (error) {
+        console.error('Error descargando adjunto existente:', error)
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo descargar el adjunto'
+        })
+      }
+    },
+
+    async eliminarAdjuntoExistente(adjunto) {
+      const confirmacion = await this.$swal.fire({
+        title: '¿Eliminar adjunto?',
+        text: adjunto.nombreArchivo,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Eliminar',
+        cancelButtonText: 'Cancelar'
+      })
+
+      if (!confirmacion.isConfirmed) {
+        return
+      }
+
+      this.eliminandoAdjuntoId = adjunto.id
+      try {
+        await tareasApi.eliminarAdjunto(adjunto.id)
+        this.adjuntosExistentes = this.adjuntosExistentes.filter(a => a.id !== adjunto.id)
+      } catch (error) {
+        console.error('Error eliminando adjunto existente:', error)
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo eliminar el adjunto'
+        })
+      } finally {
+        this.eliminandoAdjuntoId = null
       }
     },
 
@@ -493,7 +662,6 @@ export default {
         descripcion: this.formulario.descripcion || null,
         prioridad: parseInt(this.formulario.prioridad) !== null && !isNaN(parseInt(this.formulario.prioridad)) ? parseInt(this.formulario.prioridad) : 2,
         notificar: Boolean(this.formulario.notificar),
-        enviarCorreo: Boolean(this.formulario.enviarCorreo),
         repetir: this.formulario.repetir || null,
         fechaInicio: this.formulario.fechaInicio,
         fechaVencimiento: this.formulario.fechaVencimiento,
@@ -501,12 +669,13 @@ export default {
         usuarioAsignadoId: this.formulario.usuarioAsignadoId || null,
         usuarioCreadorId: this.formulario.usuarioCreadorId || null,
         clienteRelacionadoId: this.formulario.clienteRelacionadoId || null,
+        clientePotencialNombre: this.esPotencial ? (this.formulario.clientePotencialNombre || null) : null,
         categoriaId: this.formulario.categoriaId || null,
         subcategoriaId: this.formulario.subcategoriaId || null
       }
 
 
-      this.$emit('guardar', tareaDTO)
+      this.$emit('guardar', tareaDTO, this.archivosACrear.slice())
     },
 
     cerrar() {
@@ -517,12 +686,15 @@ export default {
       }
       
       // Limpiar formulario al cerrar
-      this.nuevoComentario = ''
-      this.fijarComentario = false
       this.busquedaCliente = ''
       this.mostrarDropdownClientes = false
       this.clientesFiltrados = []
       this.oportunidadesFiltradas = []
+      this.esPotencial = false
+      this.formulario.clientePotencialNombre = null
+      this.archivosACrear = []
+      this.adjuntosExistentes = []
+      this.eliminandoAdjuntoId = null
       
       this.$emit('update:value', false)
       this.$emit('cerrar')
@@ -560,7 +732,7 @@ export default {
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -654,6 +826,124 @@ export default {
 
 .cliente-field {
   position: relative;
+}
+
+.cliente-tipo-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.btn-tipo {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  border: 1px solid #cbd5e0;
+  background: #f7fafc;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #4a5568;
+  transition: all 0.15s;
+}
+
+.btn-tipo.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+  font-weight: 600;
+}
+
+.hint-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #718096;
+}
+
+.adjuntos-existentes-wrapper {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #cbd5e0;
+}
+
+.adjuntos-existentes-header {
+  font-size: 0.78rem;
+  color: #4a5568;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.adjuntos-loading,
+.adjuntos-vacio {
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+.adjunto-nombre-existente {
+  cursor: pointer;
+  color: #4c51bf;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.adjuntos-crear-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-adjuntar-crear {
+  align-self: flex-start;
+  padding: 6px 14px;
+  background: #f0f4ff;
+  border: 1px dashed #667eea;
+  border-radius: 6px;
+  color: #667eea;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-adjuntar-crear:hover {
+  background: #e0e7ff;
+}
+
+.adjuntos-count {
+  font-size: 0.8rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.adjuntos-lista-crear {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adjuntos-lista-crear li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #2d3748;
+  background: #f7fafc;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.btn-remove-adjunto {
+  background: none;
+  border: none;
+  color: #e53e3e;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 0.8rem;
+  margin-left: auto;
 }
 
 .options-group {

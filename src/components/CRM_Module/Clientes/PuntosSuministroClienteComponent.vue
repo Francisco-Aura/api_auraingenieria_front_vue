@@ -3,13 +3,24 @@
     <div class="modal-overlay fade-in">
     <div class="modal-content">
       <div class="modal-header">
-        <h2><i class="fas fa-bolt"></i> Puntos de Suministro</h2>
+        <h2><i class="fas fa-building"></i> Detalle del Cliente</h2>
         <div class="cliente-info">
           <span class="cliente-nombre">{{ cliente?.nombre || "Desconocido" }}</span>
         </div>
       </div>
 
       <div class="modal-body">
+
+        <!-- Barra de pestañas -->
+        <div class="tab-bar-cliente">
+          <button :class="['tab-btn-cliente', { active: activeTab === 'puntos' }]" @click="activeTab = 'puntos'">
+            <i class="fas fa-bolt"></i> Puntos de Suministro
+            <span class="tab-count">{{ puntosSuministroLocal.length }}</span>
+          </button>
+        </div>
+
+        <!-- Tab: Puntos de Suministro -->
+        <div v-if="activeTab === 'puntos'">
         <div class="search-container">
           <i class="fas fa-search search-icon"></i>
           <input
@@ -50,8 +61,14 @@
                   :title="getCupsValue(punto)"
                 >
                   <div class="cups-content">
-                    <span class="cups-value">{{ getCupsValue(punto) }}</span>
-                    <span v-if="getCupsValue(punto)" class="cups-indicator" :class="getTipoCupsClass(punto)">
+                    <button
+                      v-if="getCupsValue(punto) !== '-'"
+                      class="btn-cups-link"
+                      @click="navegarAPuntosSupministro(punto)"
+                      :title="`Ver ${getCupsValue(punto)} en Puntos de Suministro`"
+                    >{{ getCupsValue(punto) }}</button>
+                    <span v-else>-</span>
+                    <span v-if="getCupsValue(punto) !== '-'" class="cups-indicator" :class="getTipoCupsClass(punto)">
                       <i :class="getTipoCupsIcon(punto)"></i>
                     </span>
                   </div>
@@ -80,6 +97,8 @@
             <p>No hay puntos de suministro para mostrar</p>
           </div>
         </div>
+        </div><!-- /tab puntos -->
+
       </div>
 
       <div class="modal-footer">
@@ -91,7 +110,7 @@
     </div>
   </div>
 
-    <!-- Modal de Detalles -->
+    <!-- Modal de Detalles Punto de Suministro -->
     <ModalActualizarPuntoSuministro
       v-if="formularioVisible"
       :modificarPunto="modificarPunto"
@@ -99,6 +118,8 @@
       @cerrar-modal="cerrarModalActualizarPunto"
       @actualizar-punto-suministro="onPuntoSuministroActualizado"
     />
+
+    <!-- Modal detalle de tarea eliminado - ver desde edicion de cliente -->
   </div>
 </template>
 
@@ -132,6 +153,7 @@ export default {
       modoConsulta: false,
       puntosSuministroLocal: [],
       loading: false,
+      activeTab: 'puntos',
     };
   },
   computed: {
@@ -227,6 +249,15 @@ export default {
         this.loading = false;
       }
     },
+    navegarAPuntosSupministro(punto) {
+      const cups = this.getCupsValue(punto);
+      this.$emit('cerrar-modal');
+      this.$router.push({
+        path: '/dashboard/puntos-suministro',
+        query: { cupsluz: cups }
+      });
+    },
+
     async verDetallePunto(punto) {
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${punto.id}`);
@@ -782,9 +813,73 @@ export default {
 
 /* Estilos para columnas CUPS */
 .cups-cell {
-  min-width: 140px; /* Reducido de 160px a 140px */
-  max-width: 150px; /* Añadido límite máximo */
+  min-width: 140px;
+  max-width: 150px;
   text-align: center;
+}
+
+.btn-cups-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  color: #4f46e5;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s;
+}
+
+.btn-cups-link:hover {
+  color: #3730a3;
+}
+
+/* Pestañas del modal de cliente */
+.tab-bar-cliente {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 1.25rem;
+}
+
+.tab-btn-cliente {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 4px 4px 0 0;
+}
+
+.tab-btn-cliente:hover {
+  color: #4f46e5;
+  background: #f0f0ff;
+}
+
+.tab-btn-cliente.active {
+  color: #4f46e5;
+  border-bottom-color: #4f46e5;
+  font-weight: 600;
+}
+
+.tab-count {
+  background: #e0e7ff;
+  color: #4f46e5;
+  border-radius: 99px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .cups-content {

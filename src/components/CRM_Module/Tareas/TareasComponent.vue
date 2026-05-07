@@ -64,15 +64,33 @@
               </th>
               <th class="sortable" style="width: 12%">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('categoriaNombre')">
-                    <i class="fas fa-folder mr-2"></i>Categoría
-                    <i :class="getSortIcon('categoriaNombre')"></i>
+                  <div class="column-title" @click="sortBy('clienteRelacionadoNombre')">
+                    <i class="fas fa-building mr-2"></i>Cliente
+                    <i :class="getSortIcon('clienteRelacionadoNombre')"></i>
                   </div>
                   <div class="column-filter-container">
                     <input 
                       type="text" 
                       class="column-filter" 
-                      v-model="columnFilters.categoria" 
+                      v-model="columnFilters.cliente" 
+                      @input="aplicarFiltrosDebounced"
+                      placeholder="Filtrar..."
+                      @click.stop
+                    >
+                  </div>
+                </div>
+              </th>
+              <th class="sortable" style="width: 12%">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('usuarioAsignadoNombre')">
+                    <i class="fas fa-user-tie mr-2"></i>Asignado a
+                    <i :class="getSortIcon('usuarioAsignadoNombre')"></i>
+                  </div>
+                  <div class="column-filter-container">
+                    <input 
+                      type="text" 
+                      class="column-filter" 
+                      v-model="columnFilters.usuario" 
                       @input="aplicarFiltrosDebounced"
                       placeholder="Filtrar..."
                       @click.stop
@@ -118,33 +136,15 @@
               </th>
               <th class="sortable" style="width: 12%">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('clienteRelacionadoNombre')">
-                    <i class="fas fa-building mr-2"></i>Cliente
-                    <i :class="getSortIcon('clienteRelacionadoNombre')"></i>
+                  <div class="column-title" @click="sortBy('categoriaNombre')">
+                    <i class="fas fa-folder mr-2"></i>Categoría
+                    <i :class="getSortIcon('categoriaNombre')"></i>
                   </div>
                   <div class="column-filter-container">
                     <input 
                       type="text" 
                       class="column-filter" 
-                      v-model="columnFilters.cliente" 
-                      @input="aplicarFiltrosDebounced"
-                      placeholder="Filtrar..."
-                      @click.stop
-                    >
-                  </div>
-                </div>
-              </th>
-              <th class="sortable" style="width: 12%">
-                <div class="column-header">
-                  <div class="column-title" @click="sortBy('usuarioAsignadoNombre')">
-                    <i class="fas fa-user-tie mr-2"></i>Asignado a
-                    <i :class="getSortIcon('usuarioAsignadoNombre')"></i>
-                  </div>
-                  <div class="column-filter-container">
-                    <input 
-                      type="text" 
-                      class="column-filter" 
-                      v-model="columnFilters.usuario" 
+                      v-model="columnFilters.categoria" 
                       @input="aplicarFiltrosDebounced"
                       placeholder="Filtrar..."
                       @click.stop
@@ -155,7 +155,7 @@
               <th class="sortable" style="width: 12%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('fechaVencimiento')">
-                    <i class="fas fa-calendar-alt mr-2"></i>Vencimiento
+                    <i class="fas fa-calendar-alt mr-2"></i>Fecha vto.
                     <i :class="getSortIcon('fechaVencimiento')"></i>
                   </div>
                   <div class="column-filter-container">
@@ -190,8 +190,18 @@
                   {{ tarea.titulo }}
                 </span>
               </td>
-              <td class="text-truncate" :title="tarea.categoriaNombre || '-'">
-                <span v-if="tarea.categoriaNombre" class="categoria-badge">{{ tarea.categoriaNombre }}</span>
+              <td class="text-truncate" :title="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre || '-'">
+                <span v-if="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre">
+                  <i class="fas fa-user-circle"></i>
+                  {{ tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre }}
+                  <span v-if="tarea.clientePotencialNombre && !tarea.clienteRelacionadoNombre" class="potencial-badge" title="Cliente potencial (no registrado)">
+                    <i class="fas fa-user-clock"></i>
+                  </span>
+                </span>
+                <span v-else class="text-muted">-</span>
+              </td>
+              <td class="text-truncate" :title="tarea.usuarioAsignadoNombre || '-'">
+                <span v-if="tarea.usuarioAsignadoNombre">{{ tarea.usuarioAsignadoNombre }}</span>
                 <span v-else class="text-muted">-</span>
               </td>
               <td>
@@ -205,15 +215,8 @@
                   {{ getPrioridadTexto(tarea.prioridad) }}
                 </span>
               </td>
-              <td class="text-truncate" :title="tarea.clienteRelacionadoNombre || '-'">
-                <span v-if="tarea.clienteRelacionadoNombre">
-                  <i class="fas fa-user-circle"></i>
-                  {{ tarea.clienteRelacionadoNombre }}
-                </span>
-                <span v-else class="text-muted">-</span>
-              </td>
-              <td class="text-truncate" :title="tarea.usuarioAsignadoNombre || '-'">
-                <span v-if="tarea.usuarioAsignadoNombre">{{ tarea.usuarioAsignadoNombre }}</span>
+              <td class="text-truncate" :title="tarea.categoriaNombre || '-'">
+                <span v-if="tarea.categoriaNombre" class="categoria-badge">{{ tarea.categoriaNombre }}</span>
                 <span v-else class="text-muted">-</span>
               </td>
               <td :class="{ 'fecha-vencida': tarea.vencida }">
@@ -327,6 +330,7 @@
       :estados="estados"
       :usuarios="usuarios"
       :categorias="categorias"
+      :guardando="guardandoTarea"
       @guardar="handleGuardarTarea"
       @cerrar="cerrarModal"
     />
@@ -408,7 +412,10 @@ export default {
       },
 
       // Vistas
-      vistaActual: 'tabla'
+      vistaActual: 'tabla',
+
+      // Estado de guardado
+      guardandoTarea: false
     }
   },
   computed: {
@@ -702,7 +709,8 @@ export default {
           
           // Filtrar cliente
           if (this.columnFilters.cliente) {
-            if (!t.clienteRelacionadoNombre?.toLowerCase().includes(this.columnFilters.cliente.toLowerCase())) return false
+            const nombreCliente = (t.clienteRelacionadoNombre || t.clientePotencialNombre || '').toLowerCase()
+            if (!nombreCliente.includes(this.columnFilters.cliente.toLowerCase())) return false
           }
           
           // Filtrar usuario
@@ -779,7 +787,7 @@ export default {
             categoria: tarea.categoriaNombre || '-',
             estado: tarea.estadoNombre,
             prioridad: this.getPrioridadTexto(tarea.prioridad),
-            cliente: tarea.clienteRelacionadoNombre || '-',
+            cliente: tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre || '-',
             asignado: tarea.usuarioAsignadoNombre || '-',
             vencimiento: this.formatearFecha(tarea.fechaVencimiento) || '-',
             estadoFinal: tarea.estadoFinal ? 'Completada' : 'Activa'
@@ -811,13 +819,36 @@ export default {
       }
     },
     
-    async handleGuardarTarea(tarea) {
+    async handleGuardarTarea(tarea, archivos = []) {
+      this.guardandoTarea = true
       try {
         if (tarea.id) {
           await tareasApi.actualizarTarea(tarea.id, tarea)
+
+          // En edición también permitir adjuntar nuevos archivos directos
+          if (archivos && archivos.length > 0) {
+            try {
+              await tareasApi.subirAdjuntosTarea(tarea.id, archivos)
+            } catch (e) {
+              console.error('Error subiendo adjuntos en edición:', e)
+              this.mostrarMensaje('Tarea actualizada, pero hubo un error al subir algunos adjuntos', 'warning')
+            }
+          }
+
           this.mostrarMensaje('Tarea actualizada correctamente', 'success')
         } else {
           const nueva = await tareasApi.crearTarea(tarea)
+          
+          // Subir adjuntos directos si los hay
+          if (archivos && archivos.length > 0) {
+            try {
+              await tareasApi.subirAdjuntosTarea(nueva.id, archivos)
+            } catch (e) {
+              console.error('Error subiendo adjuntos:', e)
+              this.mostrarMensaje('Tarea creada, pero hubo un error al subir algunos adjuntos', 'warning')
+            }
+          }
+
           this.mostrarMensaje('Tarea creada correctamente', 'success')
 
           // Si llegaron comentarios desde el modal, crearlos
@@ -850,6 +881,8 @@ export default {
         const errData = error.response?.data;
         const detalle = errData?.message || errData?.error || errData?.mensaje || (typeof errData === 'string' ? errData : '') || error.message || '';
         this.mostrarMensaje(detalle ? `Error al guardar la tarea: ${detalle}` : 'Error al guardar la tarea', 'error')
+      } finally {
+        this.guardandoTarea = false
       }
     },
     
@@ -1547,6 +1580,15 @@ export default {
 }
 
 /* Badges */
+.potencial-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  color: #f39c12;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
 .categoria-badge {
   display: inline-block;
   padding: 4px 10px;

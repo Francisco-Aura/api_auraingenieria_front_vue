@@ -146,7 +146,7 @@
                   </div>
                 </template>
                 <template v-else>
-                  <div class="cell-content" :class="{'cell-contacto': tipoSeleccionado === 'contactos-clientes'}" :title="mostrarValorCelda(fila, columna)">
+                  <div class="cell-content" :title="mostrarValorCelda(fila, columna)">
                     <span
                       v-if="columna === 'estadoBaja'"
                       :class="fila[columna] === 'SI' ? 'badge badge-baja' : 'badge badge-activo'"
@@ -169,6 +169,14 @@
                         <button class="btn-copy-cell" @click.stop="copiarAlPortapapeles(fila[columna])" title="Copiar teléfono">
                           <i class="fas fa-copy"></i>
                         </button>
+                      </div>
+                    </template>
+                    <template v-else-if="columna === 'cups' && fila[columna] && fila[columna] !== '-'">
+                      <div class="cups-informe-cell">
+                        <span v-if="getTipoCups(fila)" class="tipo-cups-badge" :class="getTipoCups(fila) === 'Gas' ? 'is-gas' : 'is-luz'">
+                          <i :class="getTipoCups(fila) === 'Gas' ? 'fas fa-fire' : 'fas fa-bolt'"></i>
+                        </span>
+                        <span class="cups-valor">{{ fila[columna] }}</span>
                       </div>
                     </template>
                     <template v-else>{{ mostrarValorCelda(fila, columna) }}</template>
@@ -272,6 +280,8 @@ export default {
         nombreCliente: 'Nombre Cliente',
         tipoContacto: 'Tipo Contacto',
         nombre: 'Nombre',
+        cargo: 'Cargo',
+        sector: 'Sector',
         telefono: 'Teléfono',
         correo: 'Correo',
         estadoBaja: 'De Baja',
@@ -506,7 +516,7 @@ export default {
           "estadoVencimiento", "estadoPago"
         ],
         "contactos-clientes": [
-          "nombreCliente", "tipoContacto", "nombre", "telefono", "correo", "estadoBaja"
+          "nombreCliente", "tipoContacto", "nombre", "cargo","sector", "telefono", "correo", "estadoBaja"
         ]
       };
 
@@ -515,7 +525,7 @@ export default {
           const fila = {};
           columnasPermitidas[this.tipoSeleccionado].forEach(key => {
             if (key === 'cups') {
-              // Calcular identificador único para CUPS
+              // Para todos los informes con CUPS, calcular el valor consolidado desde cupsLuz/cupsGas
               fila[key] = this.obtenerCupsParaMostrar(item);
             } else {
               fila[key] = item[key];
@@ -528,6 +538,9 @@ export default {
               const pagoStatus = item[`pago${i}Pagado`];
               fila[`pago${i}_pagado`] = (pagoStatus === 1 || pagoStatus === '1' || pagoStatus === true) ? 1 : 0;
             }
+            // Preservar cupsLuz y cupsGas para determinación de tipo
+            fila.cupsLuz = item.cupsLuz || null;
+            fila.cupsGas = item.cupsGas || null;
           }
           return fila;
         });
@@ -594,7 +607,7 @@ export default {
 
     // Copiar texto al portapapeles
     copiarAlPortapapeles(texto) {
-      navigator.clipboard.writeText(texto).then(() => {
+      const mostrarExito = () => {
         this.$swal.fire({
           icon: 'success',
           title: 'Copiado',
@@ -604,15 +617,34 @@ export default {
           toast: true,
           position: 'top-end'
         });
-      }).catch(() => {
-        // Fallback for older browsers
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(texto).then(mostrarExito).catch(() => {
+          // Fallback para contextos no seguros
+          const el = document.createElement('textarea');
+          el.value = texto;
+          el.style.position = 'fixed';
+          el.style.opacity = '0';
+          document.body.appendChild(el);
+          el.focus();
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+          mostrarExito();
+        });
+      } else {
+        // Fallback para contextos no seguros (HTTP)
         const el = document.createElement('textarea');
         el.value = texto;
+        el.style.position = 'fixed';
+        el.style.opacity = '0';
         document.body.appendChild(el);
+        el.focus();
         el.select();
         document.execCommand('copy');
         document.body.removeChild(el);
-      });
+        mostrarExito();
+      }
     },
 
     // Método auxiliar para mostrar valores en la tabla
@@ -629,13 +661,7 @@ export default {
         return '-';
       }
       if (columna === 'cups') {
-        const tipo = this.getTipoCups(fila);
-        const cups = fila[columna] || '-';
-        if (tipo) {
-          const icon = tipo === 'Gas' ? '🔥' : '⚡';
-          return `${icon} ${cups}`;
-        }
-        return cups;
+        return fila[columna] || '-';
       }
       // En el informe de contactos, mostrar '-' en lugar de celda vacía
       if (this.tipoSeleccionado === 'contactos-clientes') {
@@ -663,10 +689,6 @@ export default {
       }
       if (item.cupsGas && item.cupsGas.trim() !== '') {
         return 'Gas';
-      }
-      if (item.cups && item.cups.trim() !== '') {
-        // Si viene como cups consolidado, intentar determinar tipo
-        return 'Luz'; // Default
       }
       return '';
     },
@@ -732,10 +754,14 @@ export default {
                 (columnaKey === 'importeFinal' && this.tipoSeleccionado === 'servicios-vigentes')) {
               rowData[formattedColumnaName] = this.formatearImporte(item[columnaKey]);
             } else if (columnaKey === 'cups') {
-              // Manejar CUPS especialmente para obtener el valor consolidado
-              const tipo = this.getTipoCups(item);
-              const valor = item[columnaKey] || '';
-              rowData[formattedColumnaName] = tipo ? `${tipo}: ${valor}` : valor;
+              // Manejar CUPS: en servicios-pendientes-pago ya viene resuelto como item.cups
+              if (this.tipoSeleccionado === 'servicios-pendientes-pago') {
+                rowData[formattedColumnaName] = item[columnaKey] || '';
+              } else {
+                const tipo = this.getTipoCups(item);
+                const valor = item[columnaKey] || '';
+                rowData[formattedColumnaName] = tipo ? `${tipo}: ${valor}` : valor;
+              }
             } else {
               rowData[formattedColumnaName] = item[columnaKey] ?? '';
             }
@@ -1613,6 +1639,18 @@ export default {
   max-width: 320px !important;
 }
 
+.data-table td[data-column="sector"],
+.data-table th[data-column="sector"] {
+  min-width: 130px !important;
+  max-width: 200px !important;
+}
+
+.data-table td[data-column="cargo"],
+.data-table th[data-column="cargo"] {
+  min-width: 150px !important;
+  max-width: 220px !important;
+}
+
 .data-table td[data-column="telefono"],
 .data-table th[data-column="telefono"] {
   min-width: 140px !important;
@@ -1625,18 +1663,60 @@ export default {
   max-width: 260px !important;
 }
 
-.cell-contacto {
-  max-width: none !important;
-  overflow: visible !important;
-  white-space: normal !important;
-  word-break: break-word;
-}
-
 .contacto-link-wrapper {
   display: flex;
   align-items: center;
   gap: 6px;
   width: 100%;
+  overflow: hidden;
+}
+
+.contacto-email-text,
+.contacto-phone-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Celda CUPS con icono FontAwesome */
+.cups-informe-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.cups-valor {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.tipo-cups-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.tipo-cups-badge.is-luz {
+  background: rgba(255, 235, 59, 0.2);
+  color: #fbc02d;
+}
+
+.tipo-cups-badge.is-gas {
+  background: rgba(255, 152, 0, 0.1);
+  color: #ff9800;
 }
 
 .contacto-link {

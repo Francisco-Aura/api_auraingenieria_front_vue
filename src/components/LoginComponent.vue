@@ -1,7 +1,5 @@
 <template>
-  <!-- Contenedor principal para la pantalla de inicio de sesión -->
   <div class="login-wrapper">
-    <!-- Loading Spinner -->
     <Spinner :isLoading="isLoading" />
 
     <div class="login-container">
@@ -9,7 +7,6 @@
         <img src="@/assets/logo.png" alt="Aura Ingeniería" class="logo">
         <h1>Aura Ingeniería</h1>
       </div>
-      <!-- Mensaje de error -->
       <div v-if="loginError" class="alert alert-danger">
         <i class="fas fa-exclamation-triangle alert-icon"></i>
         <div class="alert-content">
@@ -18,7 +15,6 @@
         </div>
       </div>
       
-      <!-- Formulario de inicio de sesión -->
       <form @submit.prevent="submitForm" class="login-form" novalidate>
         <div class="input-group">
           <i class="fas fa-user"></i>
@@ -56,15 +52,14 @@
 </template>
 
 <script>
-import axios from 'axios'; // Importa Axios para realizar solicitudes HTTP
-import Spinner from '@/components/SpinnerComponent.vue'; // Importa el componente Spinner
+import axios from 'axios';
+import Spinner from '@/components/SpinnerComponent.vue';
 
 export default {
   name: 'LoginComponent',
   components: {
     Spinner
   },
-  // Define el estado reactivo del componente
   data() {
     return {
       username: '',
@@ -75,7 +70,6 @@ export default {
     };
   },
   methods: {
-    // Método para manejar el envío del formulario
     validarFormulario() {
       this.errores = {};
       if (!this.username || !this.username.trim()) {
@@ -99,40 +93,26 @@ export default {
       if (!this.validarFormulario()) return;
       this.isLoading = true;
       try {
-        // Realiza una solicitud GET a la API de autenticación
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/usuarios/login`, {
           params: {
-            user: this.username,  // Envía el nombre de usuario como parámetro
-            pass: this.password // Envía la contraseña como parámetro
+            user: this.username,
+            pass: this.password
           }
         });
 
-        // Verifica si la respuesta fue exitosa
-        if (response.status === 200) { // Código HTTP 200 indica éxito
+        if (response.status === 200) {
           const userData = response.data;
-          // Guardamos los datos del usuario en localStorage
           localStorage.setItem('usuario', JSON.stringify(userData));
-          // Redirige al usuario al dashboard después del inicio de sesión exitoso
           this.$router.push('/dashboard/clientes');
         } else {
           this.loginError = true;
-          this.isLoading = false; // Desactivar loading si hay error
+          this.isLoading = false;
         }
       } catch (error) {
         this.loginError = true;
-        this.isLoading = false; // Desactivar loading en caso de error
-        // Maneja errores en la solicitud, como credenciales incorrectas o problemas del servidor
+        this.isLoading = false;
         console.error('Error en la solicitud:', error);
       }
-    },
-
-    // Método para mostrar un mensaje al hacer clic en "¿Olvidaste tu contraseña?"
-    showRecoverPasswordMessage() {
-      this.$swal.fire({
-        icon: 'info',
-        title: 'Función no disponible',
-        text: 'La funcionalidad de recuperación de contraseña aún no está implementada.'
-      })
     }
   }
 };

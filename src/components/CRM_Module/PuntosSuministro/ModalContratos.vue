@@ -1821,8 +1821,7 @@ export default {
           });
         }
       },
-      deep: true,
-      immediate: false
+      deep: true
     },
     
     // Cuando cambian los contratos, forzar actualización de la vista
@@ -1847,8 +1846,7 @@ export default {
             });
           }
         }
-      },
-      deep: true
+      }
     },
     
     // Cuando cambian las tarifas, actualizar el formulario si es necesario
@@ -1863,8 +1861,7 @@ export default {
             }
           });
         }
-      },
-      deep: true
+      }
     },
     
     tarifasLuz: {
@@ -1878,8 +1875,7 @@ export default {
             }
           });
         }
-      },
-      deep: true
+      }
     },
     
     // Sincronizar comercializadoras del prop con el data interno
@@ -1890,8 +1886,7 @@ export default {
           this.comercializadorasList = [...newVal];
         }
       },
-      immediate: true,
-      deep: true
+      immediate: true
     }
   },
   async mounted() {
