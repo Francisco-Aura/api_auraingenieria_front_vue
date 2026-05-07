@@ -1,6 +1,7 @@
 <template>
-  <div v-if="value" class="modal-overlay" @click="cerrar">
-    <div class="modal-content modal-detalle" @click.stop>
+  <Teleport to="body">
+    <div v-if="value" class="modal-overlay" @click="cerrar">
+      <div class="modal-content modal-detalle" @click.stop>
       <!-- Body del modal (Sin header separado) -->
       <div class="modal-body">
           <!-- Título y Descripción ARRIBA - Ancho completo -->
@@ -413,6 +414,7 @@
       @cerrar="mostrarAuditoria = false"
     />
   </div>
+  </Teleport>
 </template>
 
 <script>
@@ -424,6 +426,7 @@ export default {
   components: {
     TareaAuditoriaModal
   },
+  emits: ['actualizar', 'cambiarEstado', 'completarConComentario', 'completar-con-comentario', 'crearComentarioEstado', 'crear-comentario-estado', 'cerrar', 'update:value'],
   props: {
     value: {
       type: Boolean,

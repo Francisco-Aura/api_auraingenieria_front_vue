@@ -330,6 +330,7 @@
       :estados="estados"
       :usuarios="usuarios"
       :categorias="categorias"
+      :guardando="guardandoTarea"
       @guardar="handleGuardarTarea"
       @cerrar="cerrarModal"
     />
@@ -411,7 +412,10 @@ export default {
       },
 
       // Vistas
-      vistaActual: 'tabla'
+      vistaActual: 'tabla',
+
+      // Estado de guardado
+      guardandoTarea: false
     }
   },
   computed: {
@@ -816,6 +820,7 @@ export default {
     },
     
     async handleGuardarTarea(tarea, archivos = []) {
+      this.guardandoTarea = true
       try {
         if (tarea.id) {
           await tareasApi.actualizarTarea(tarea.id, tarea)
@@ -876,6 +881,8 @@ export default {
         const errData = error.response?.data;
         const detalle = errData?.message || errData?.error || errData?.mensaje || (typeof errData === 'string' ? errData : '') || error.message || '';
         this.mostrarMensaje(detalle ? `Error al guardar la tarea: ${detalle}` : 'Error al guardar la tarea', 'error')
+      } finally {
+        this.guardandoTarea = false
       }
     },
     

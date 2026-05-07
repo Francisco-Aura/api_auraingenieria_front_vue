@@ -1286,6 +1286,7 @@ export default {
       }
       // Crear nuevo timer con delay de 150ms
       this.filtrosTimer = setTimeout(() => {
+        this.currentPage = 1;
         this.columnFilters[column] = value;
       }, 150);
     },
@@ -1718,12 +1719,6 @@ export default {
   watch: {
     recordsPerPage() {
       this.currentPage = 1;
-    },
-    columnFilters: {
-      handler() {
-        this.currentPage = 1;
-      },
-      deep: true
     },
     filter() {
       this.currentPage = 1;

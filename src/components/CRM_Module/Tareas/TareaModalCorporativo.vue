@@ -1,4 +1,5 @@
 <template>
+  <Teleport to="body">
   <div v-if="value" class="modal-overlay" @mousedown="iniciarSeleccion" @mouseup="finalizarSeleccion">
     <div class="modal-content modal-tarea" @click.stop @input.stop @mousedown.stop @mouseup.stop>
       <!-- Header del modal -->
@@ -252,17 +253,19 @@
 
       <!-- Footer del modal -->
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" @click="cerrar">
+        <button type="button" class="btn btn-secondary" @click="cerrar" :disabled="guardando">
           <i class="fas fa-times"></i>
           Cancelar
         </button>
-        <button type="button" class="btn btn-primary" @click="guardar">
-          <i :class="esEdicion ? 'fas fa-save' : 'fas fa-plus'"></i>
-          {{ esEdicion ? 'Guardar' : 'Crear' }}
+        <button type="button" class="btn btn-primary" @click="guardar" :disabled="guardando">
+          <i v-if="guardando" class="fas fa-spinner fa-spin"></i>
+          <i v-else :class="esEdicion ? 'fas fa-save' : 'fas fa-plus'"></i>
+          {{ guardando ? 'Guardando...' : (esEdicion ? 'Guardar' : 'Crear') }}
         </button>
       </div>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script>
@@ -270,6 +273,7 @@ import tareasApi from '@/services/tareasApi'
 
 export default {
   name: 'TareaModalCorporativo',
+  emits: ['guardar', 'cerrar', 'update:value'],
   props: {
     value: {
       type: Boolean,
@@ -290,6 +294,10 @@ export default {
     categorias: {
       type: Array,
       default: () => []
+    },
+    guardando: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -347,14 +355,12 @@ export default {
       }
     },
     
-    tarea: {
+    'tarea.id': {
       handler() {
-
         if (this.value) {
           this.inicializarFormulario()
         }
-      },
-      deep: true
+      }
     }
   },
   mounted() {
@@ -726,7 +732,7 @@ export default {
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
