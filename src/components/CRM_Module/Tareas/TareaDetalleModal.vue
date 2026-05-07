@@ -96,6 +96,23 @@
                 </div>
               </div>
             </div>
+
+            <!-- Adjuntos directos de la tarea -->
+            <div class="campo-detalle" v-if="adjuntosDirectos.length > 0">
+              <label><i class="fas fa-paperclip"></i> Archivos adjuntos</label>
+              <div class="adjuntos-directos-lista">
+                <div
+                  v-for="adj in adjuntosDirectos"
+                  :key="adj.id"
+                  class="adjunto-directo-item"
+                  @click="descargarAdjunto(adj)"
+                  :title="'Descargar ' + adj.nombreArchivo"
+                >
+                  <i class="fas fa-file-download"></i>
+                  <span class="adj-nombre">{{ adj.nombreArchivo }}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Panel Derecho (Acciones y Comentarios) -->
@@ -209,7 +226,7 @@
                 ></textarea>
 
                 <!-- Dropdown de @menciones -->
-                <div v-if="mencionDropdown.visible && mencionDropdown.usuarios.length > 0" class="mencion-dropdown">
+                <div v-if="mencionDropdown.visible && mencionDropdown.usuarios.length > 0" class="mencion-dropdown" :style="mencionDropdownStyle">
                   <div
                     v-for="(usuario, idx) in mencionDropdown.usuarios"
                     :key="usuario.id"
@@ -316,6 +333,9 @@
                       v-model="textoComentarioEditando"
                       class="form-control"
                       rows="3"
+                      ref="textareaComentarioEditando"
+                      @input="onComentarioEditandoInput($event)"
+                      @keydown="onComentarioEditandoKeydown($event)"
                     ></textarea>
                     <div class="comentario-edicion-actions">
                       <button class="btn-guardar-edicion" @click="guardarEdicionComentario(comentario)">
@@ -437,6 +457,9 @@ export default {
       comentarioEditando: null,
       textoComentarioEditando: '',
       adjuntoActualizando: null,
+      adjuntosDirectos: [],
+      mencionDropdownStyle: {},
+      mencionContexto: 'nuevo',
       mencionDropdown: {
         visible: false,
         usuarios: [],
@@ -503,6 +526,7 @@ export default {
           // Cargar comentarios
           this.$nextTick(() => {
             this.cargarComentarios()
+            this.cargarAdjuntosDirectos()
           })
         }
       },
@@ -519,6 +543,7 @@ export default {
           if (!oldTarea || oldTarea.id !== newTarea.id) {
             this.$nextTick(() => {
               this.cargarComentarios()
+              this.cargarAdjuntosDirectos()
             })
           }
         }
@@ -528,9 +553,10 @@ export default {
     }
   },
   mounted() {
-    // Cargar comentarios cuando el componente se monta
+    // Cargar comentarios y adjuntos cuando el componente se monta
     if (this.value && this.tarea && this.tarea.id) {
       this.cargarComentarios()
+      this.cargarAdjuntosDirectos()
     }
   },
   methods: {
@@ -656,10 +682,16 @@ export default {
 
     onComentarioInput(event) {
       this.autoResizeTextarea(event)
-      this.detectarMencion()
+      this.detectarMencionNuevo()
+    },
+
+    onComentarioEditandoInput(event) {
+      this.autoResizeTextarea(event)
+      this.detectarMencionEdicion()
     },
 
     onComentarioKeydown(event) {
+      this.mencionContexto = 'nuevo'
       if (!this.mencionDropdown.visible) return
       if (event.key === 'ArrowDown') {
         event.preventDefault()
@@ -680,11 +712,31 @@ export default {
       }
     },
 
-    detectarMencion() {
-      const texto = this.nuevoComentario
-      const cursor = this.$refs.textareaComentario?.selectionStart || texto.length
+    onComentarioEditandoKeydown(event) {
+      this.mencionContexto = 'edicion'
+      this.onComentarioKeydown(event)
+    },
+
+    detectarMencionNuevo() {
+      this.mencionContexto = 'nuevo'
+      this.detectarMencion(this.nuevoComentario, this.$refs.textareaComentario)
+    },
+
+    detectarMencionEdicion() {
+      this.mencionContexto = 'edicion'
+      this.detectarMencion(this.textoComentarioEditando, this.getTextareaEdicionRef())
+    },
+
+    getTextareaEdicionRef() {
+      const ref = this.$refs.textareaComentarioEditando
+      return Array.isArray(ref) ? ref[0] : ref
+    },
+
+    detectarMencion(texto, textareaRef) {
+      const textoSeguro = texto || ''
+      const cursor = textareaRef?.selectionStart || textoSeguro.length
       // Buscar hacia atrás desde el cursor hasta encontrar @ o espacio
-      const fragmento = texto.substring(0, cursor)
+      const fragmento = textoSeguro.substring(0, cursor)
       const match = fragmento.match(/@([\w.]*)$/)
       if (match) {
         const query = match[1].toLowerCase()
@@ -698,8 +750,33 @@ export default {
           this.filtrarUsuariosMencion(query)
         }
         this.mencionDropdown.visible = true
+        // Calcular posición fija para que el dropdown no sea recortado por overflow:hidden
+        this.$nextTick(() => {
+          const ta = textareaRef
+          if (ta) {
+            const rect = ta.getBoundingClientRect()
+            this.mencionDropdownStyle = {
+              top: `${rect.bottom + 4}px`,
+              left: `${rect.left}px`,
+              width: `${rect.width}px`
+            }
+          }
+        })
       } else {
         this.mencionDropdown.visible = false
+      }
+    },
+
+    async cargarAdjuntosDirectos() {
+      if (!this.tarea || !this.tarea.id) return
+      try {
+        const base = process.env.VUE_APP_API_URL || 'http://localhost:8986'
+        const res = await fetch(`${base}/api/tareas/${this.tarea.id}/adjuntos`)
+        if (res.ok) {
+          this.adjuntosDirectos = await res.json()
+        }
+      } catch (e) {
+        console.error('Error cargando adjuntos directos:', e)
       }
     },
 
@@ -724,16 +801,24 @@ export default {
 
     insertarMencion(usuario) {
       const pos = this.mencionDropdown.posicionCursor
-      const cursor = this.$refs.textareaComentario?.selectionStart || this.nuevoComentario.length
-      const texto = this.nuevoComentario
+      const esEdicion = this.mencionContexto === 'edicion'
+      const textarea = esEdicion ? this.getTextareaEdicionRef() : this.$refs.textareaComentario
+      const textoActual = esEdicion ? this.textoComentarioEditando : this.nuevoComentario
+      const cursor = textarea?.selectionStart || textoActual.length
       const nombreSinEspacios = usuario.nombre.replace(/\s+/g, '')
-      const antes = texto.substring(0, pos)
-      const despues = texto.substring(cursor)
-      this.nuevoComentario = `${antes}@${nombreSinEspacios} ${despues}`
+      const antes = textoActual.substring(0, pos)
+      const despues = textoActual.substring(cursor)
+
+      if (esEdicion) {
+        this.textoComentarioEditando = `${antes}@${nombreSinEspacios} ${despues}`
+      } else {
+        this.nuevoComentario = `${antes}@${nombreSinEspacios} ${despues}`
+      }
+
       this.mencionDropdown.visible = false
       this.$nextTick(() => {
         const nuevaCursor = antes.length + nombreSinEspacios.length + 2
-        const ta = this.$refs.textareaComentario
+        const ta = esEdicion ? this.getTextareaEdicionRef() : this.$refs.textareaComentario
         if (ta) { ta.focus(); ta.setSelectionRange(nuevaCursor, nuevaCursor) }
       })
     },
@@ -958,11 +1043,13 @@ export default {
     iniciarEdicionComentario(comentario) {
       this.comentarioEditando = comentario
       this.textoComentarioEditando = comentario.contenido
+      this.mencionDropdown.visible = false
     },
 
     cancelarEdicionComentario() {
       this.comentarioEditando = null
       this.textoComentarioEditando = ''
+      this.mencionDropdown.visible = false
     },
 
     async guardarEdicionComentario(comentario) {
@@ -980,6 +1067,7 @@ export default {
         await tareasApi.actualizarComentario(comentario.id, this.textoComentarioEditando.trim(), usuario.id)
         await this.cargarComentarios()
         this.cancelarEdicionComentario()
+        this.mencionDropdown.visible = false
         
         this.$swal.fire({
           icon: 'success',
@@ -1141,7 +1229,7 @@ export default {
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: 3000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2002,7 +2090,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 4000;
   backdrop-filter: blur(4px);
 }
 
@@ -2912,16 +3000,13 @@ export default {
 }
 
 .mencion-dropdown {
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 0;
-  right: 0;
+  position: fixed;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-  z-index: 1000;
-  max-height: 200px;
+  z-index: 10000;
+  max-height: 220px;
   overflow-y: auto;
 }
 
@@ -2940,6 +3025,38 @@ export default {
 .mencion-item.mencion-activa {
   background: #eef2ff;
   color: #4c51bf;
+}
+
+/* Adjuntos directos de tarea */
+.adjuntos-directos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.adjunto-directo-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #4c51bf;
+  transition: background 0.15s;
+}
+
+.adjunto-directo-item:hover {
+  background: #e0e7ff;
+}
+
+.adjunto-directo-item .adj-nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .comentario-tools {

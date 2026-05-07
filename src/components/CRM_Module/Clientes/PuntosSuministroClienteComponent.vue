@@ -17,10 +17,6 @@
             <i class="fas fa-bolt"></i> Puntos de Suministro
             <span class="tab-count">{{ puntosSuministroLocal.length }}</span>
           </button>
-          <button :class="['tab-btn-cliente', { active: activeTab === 'tareas' }]" @click="cambiarATabTareas()">
-            <i class="fas fa-tasks"></i> Tareas
-            <span v-if="tareas.length > 0" class="tab-count">{{ tareas.length }}</span>
-          </button>
         </div>
 
         <!-- Tab: Puntos de Suministro -->
@@ -68,8 +64,8 @@
                     <button
                       v-if="getCupsValue(punto) !== '-'"
                       class="btn-cups-link"
-                      @click="verDetallePunto(punto)"
-                      :title="`Ver detalles de ${getCupsValue(punto)}`"
+                      @click="navegarAPuntosSupministro(punto)"
+                      :title="`Ver ${getCupsValue(punto)} en Puntos de Suministro`"
                     >{{ getCupsValue(punto) }}</button>
                     <span v-else>-</span>
                     <span v-if="getCupsValue(punto) !== '-'" class="cups-indicator" :class="getTipoCupsClass(punto)">
@@ -103,57 +99,6 @@
         </div>
         </div><!-- /tab puntos -->
 
-        <!-- Tab: Tareas -->
-        <div v-if="activeTab === 'tareas'" class="tareas-tab-content">
-          <div v-if="cargandoTareas" class="loading-tareas">
-            <i class="fas fa-spinner fa-spin"></i> Cargando tareas...
-          </div>
-          <div v-else-if="tareas.length === 0" class="empty-state">
-            <i class="fas fa-tasks fa-3x text-muted"></i>
-            <p>No hay tareas para este cliente</p>
-          </div>
-          <div v-else class="table-responsive">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Título</th>
-                  <th>Estado</th>
-                  <th>Prioridad</th>
-                  <th>Categoría</th>
-                  <th>Asignado a</th>
-                  <th>Vencimiento</th>
-                  <th class="actions-header">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="tarea in tareas" :key="tarea.id">
-                  <td class="text-truncate" :title="tarea.titulo">{{ tarea.titulo }}</td>
-                  <td class="text-center">
-                    <span class="badge-estado" :style="{ background: tarea.estadoColor || '#6366f1' }">
-                      {{ tarea.estadoNombre }}
-                    </span>
-                  </td>
-                  <td class="text-center">
-                    <span class="badge-prioridad" :style="{ background: getColorPrioridad(tarea.prioridad) }">
-                      {{ getPrioridadTexto(tarea.prioridad) }}
-                    </span>
-                  </td>
-                  <td class="text-center">{{ tarea.categoriaNombre || '-' }}</td>
-                  <td class="text-center">{{ tarea.usuarioAsignadoNombre || '-' }}</td>
-                  <td class="text-center">{{ formatDate(tarea.fechaVencimiento) }}</td>
-                  <td class="actions-cell">
-                    <div class="action-buttons">
-                      <button class="btn-icon btn-view" @click="abrirTarea(tarea)" title="Ver tarea">
-                        <i class="fas fa-eye"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div><!-- /tab tareas -->
-
       </div>
 
       <div class="modal-footer">
@@ -174,32 +119,18 @@
       @actualizar-punto-suministro="onPuntoSuministroActualizado"
     />
 
-    <!-- Modal detalle de tarea -->
-    <TareaDetalleModal
-      v-if="tareaSeleccionada"
-      :value="true"
-      :tarea="tareaSeleccionada"
-      :estados="estadosTareas"
-      @cerrar="cerrarTarea"
-      @actualizar="handleActualizarTareaCliente"
-      @cambiar-estado="handleCambiarEstadoCliente"
-      @completar-con-comentario="handleCompletarConComentarioCliente"
-      @crear-comentario-estado="handleCrearComentarioEstadoCliente"
-    />
+    <!-- Modal detalle de tarea eliminado - ver desde edicion de cliente -->
   </div>
 </template>
 
 <script>
 import ModalActualizarPuntoSuministro from '@/components/CRM_Module/PuntosSuministro/ActualizarPuntoSuministro.vue';
-import TareaDetalleModal from '@/components/CRM_Module/Tareas/TareaDetalleModal.vue';
-import tareasApi from '@/services/tareasApi.js';
 import axios from 'axios';
 
 export default {
   name: "PuntosSuministroClienteComponent",
   components: {
-    ModalActualizarPuntoSuministro,
-    TareaDetalleModal
+    ModalActualizarPuntoSuministro
   },
   emits: ['cerrar-modal'],
   props: {
@@ -223,10 +154,6 @@ export default {
       puntosSuministroLocal: [],
       loading: false,
       activeTab: 'puntos',
-      tareas: [],
-      cargandoTareas: false,
-      tareaSeleccionada: null,
-      estadosTareas: [],
     };
   },
   computed: {
@@ -322,6 +249,15 @@ export default {
         this.loading = false;
       }
     },
+    navegarAPuntosSupministro(punto) {
+      const cups = this.getCupsValue(punto);
+      this.$emit('cerrar-modal');
+      this.$router.push({
+        path: '/dashboard/puntos-suministro',
+        query: { cupsluz: cups }
+      });
+    },
+
     async verDetallePunto(punto) {
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${punto.id}`);
@@ -411,92 +347,6 @@ export default {
     formatDate(date) {
       if (!date) return '-';
       return new Date(date).toLocaleDateString('es-ES');
-    },
-
-    async cambiarATabTareas() {
-      this.activeTab = 'tareas';
-      if (this.tareas.length === 0 && !this.cargandoTareas) {
-        await this.cargarTareas();
-      }
-    },
-
-    async cargarTareas() {
-      if (!this.cliente?.idCliente) return;
-      this.cargandoTareas = true;
-      try {
-        const [tareasRes, estadosRes] = await Promise.all([
-          axios.get(`${process.env.VUE_APP_API_URL}/api/tareas/cliente/${this.cliente.idCliente}`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/tareas/estados`)
-        ]);
-        this.tareas = tareasRes.data;
-        this.estadosTareas = estadosRes.data;
-      } catch (e) {
-        console.error('Error cargando tareas del cliente:', e);
-      } finally {
-        this.cargandoTareas = false;
-      }
-    },
-
-    abrirTarea(tarea) {
-      this.tareaSeleccionada = tarea;
-    },
-
-    cerrarTarea() {
-      this.tareaSeleccionada = null;
-    },
-
-    async handleActualizarTareaCliente() {
-      await this.cargarTareas();
-    },
-
-    async handleCambiarEstadoCliente(tareaId, estadoId, motivoBloqueo = null) {
-      try {
-        await tareasApi.cambiarEstadoTarea(tareaId, estadoId, motivoBloqueo);
-        await this.cargarTareas();
-        this.cerrarTarea();
-      } catch (e) {
-        console.error('Error cambiando estado de tarea:', e);
-      }
-    },
-
-    async handleCompletarConComentarioCliente(data) {
-      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-      try {
-        await tareasApi.crearComentario({
-          tareaId: data.tareaId,
-          usuarioId: usuario.id,
-          comentario: data.comentario.contenido
-        });
-        await tareasApi.cambiarEstadoTarea(data.tareaId, data.estadoId);
-        await this.cargarTareas();
-        this.cerrarTarea();
-      } catch (e) {
-        console.error('Error completando tarea:', e);
-      }
-    },
-
-    async handleCrearComentarioEstadoCliente(data) {
-      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-      try {
-        await tareasApi.crearComentario({
-          tareaId: data.tareaId,
-          usuarioId: usuario.id,
-          comentario: data.contenido
-        });
-      } catch (e) {
-        console.error('Error creando comentario de estado:', e);
-      }
-    },
-
-    getColorPrioridad(prioridad) {
-      // prioridad es Integer: 0=Urgente, 1=Alta, 2=Media, 3=Baja
-      const mapa = { 0: '#ef4444', 1: '#f97316', 2: '#eab308', 3: '#22c55e' };
-      return mapa[prioridad] || '#94a3b8';
-    },
-
-    getPrioridadTexto(prioridad) {
-      const mapa = { 0: 'Urgente', 1: 'Alta', 2: 'Media', 3: 'Baja' };
-      return mapa[prioridad] || '-';
     },
   },
 };
@@ -1030,32 +880,6 @@ export default {
   padding: 0 6px;
   font-size: 0.75rem;
   font-weight: 700;
-}
-
-/* Tareas tab */
-.loading-tareas {
-  text-align: center;
-  padding: 3rem;
-  color: #64748b;
-  font-size: 1rem;
-}
-
-.badge-estado {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 99px;
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.badge-prioridad {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 99px;
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 600;
 }
 
 .cups-content {

@@ -420,6 +420,45 @@
                       <i class="fas fa-chevron-down select-icon"></i>
                     </div>
                   </div>
+                  <div class="form-group-compact">
+                    <label class="checkbox-label-fv" for="ejecutadoPorAuraFv">
+                      <input
+                        id="ejecutadoPorAuraFv"
+                        type="checkbox"
+                        v-model="puntoLocal.ejecutadoPorAuraFv"
+                        :disabled="modoConsulta"
+                      />
+                      Ejecutado por Aura
+                    </label>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="usuarioInstalacionFv">Usuario</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-user icon-prefix"></i>
+                      <input
+                        type="text"
+                        id="usuarioInstalacionFv"
+                        v-model="puntoLocal.usuarioInstalacionFv"
+                        class="form-control-compact"
+                        maxlength="150"
+                        :readonly="modoConsulta"
+                      />
+                    </div>
+                  </div>
+                  <div class="form-group-compact">
+                    <label for="contrasenaInstalacionFv">Contraseña</label>
+                    <div class="input-with-icon-compact">
+                      <i class="fas fa-lock icon-prefix"></i>
+                      <input
+                        type="text"
+                        id="contrasenaInstalacionFv"
+                        v-model="puntoLocal.contrasenaInstalacionFv"
+                        class="form-control-compact"
+                        maxlength="150"
+                        :readonly="modoConsulta"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Almacenamiento Energético -->
@@ -559,6 +598,9 @@ export default {
         kwInversor: "",
         kwPanelesSolares: "",
         appMonitorizacionId: null,
+        ejecutadoPorAuraFv: false,
+        usuarioInstalacionFv: '',
+        contrasenaInstalacionFv: '',
         bateriaAlmacenamiento: "",
         potenciaBateriaAlmacenamiento: "",
         backup: "",
@@ -743,6 +785,9 @@ export default {
         instalacionFV: newVal.instalacionFV || '',
         kwInversor: newVal.kwInversor || '',
         kwPanelesSolares: newVal.kwPanelesSolares || '',
+        ejecutadoPorAuraFv: newVal.ejecutadoPorAuraFv === true || newVal.ejecutadoPorAuraFv === 1,
+        usuarioInstalacionFv: newVal.usuarioInstalacionFv || '',
+        contrasenaInstalacionFv: newVal.contrasenaInstalacionFv || '',
         bateriaAlmacenamiento: newVal.bateriaAlmacenamiento || '',
         potenciaBateriaAlmacenamiento: newVal.potenciaBateriaAlmacenamiento || '',
         backup: newVal.backup || '',
@@ -854,6 +899,9 @@ export default {
         instalacionFV: this.puntoLocal.instalacionFV?.trim() || null,
         kwInversor: this.puntoLocal.kwInversor?.trim() || null,
         kwPanelesSolares: this.puntoLocal.kwPanelesSolares?.trim() || null,
+        ejecutadoPorAuraFv: this.puntoLocal.ejecutadoPorAuraFv === true,
+        usuarioInstalacionFv: this.puntoLocal.usuarioInstalacionFv?.trim() || null,
+        contrasenaInstalacionFv: this.puntoLocal.contrasenaInstalacionFv?.trim() || null,
         bateriaAlmacenamiento: this.puntoLocal.bateriaAlmacenamiento?.trim() || null,
         potenciaBateriaAlmacenamiento: this.puntoLocal.potenciaBateriaAlmacenamiento?.trim() || null,
         backup: this.puntoLocal.backup?.trim() || null,
@@ -981,6 +1029,9 @@ export default {
             instalacionFV: this.puntoLocal.instalacionFV?.trim() || null,
             kwInversor: this.puntoLocal.kwInversor?.trim() || null,
             kwPanelesSolares: this.puntoLocal.kwPanelesSolares?.trim() || null,
+            ejecutadoPorAuraFv: this.puntoLocal.ejecutadoPorAuraFv === true,
+            usuarioInstalacionFv: this.puntoLocal.usuarioInstalacionFv?.trim() || null,
+            contrasenaInstalacionFv: this.puntoLocal.contrasenaInstalacionFv?.trim() || null,
             bateriaAlmacenamiento: this.puntoLocal.bateriaAlmacenamiento?.trim() || null,
             potenciaBateriaAlmacenamiento: this.puntoLocal.potenciaBateriaAlmacenamiento?.trim() || null,
             backup: this.puntoLocal.backup?.trim() || null,
@@ -1088,6 +1139,9 @@ export default {
             instalacionFV: this.puntoLocal.instalacionFV?.trim() || null,
             kwInversor: this.puntoLocal.kwInversor?.trim() || null,
             kwPanelesSolares: this.puntoLocal.kwPanelesSolares?.trim() || null,
+            ejecutadoPorAuraFv: this.puntoLocal.ejecutadoPorAuraFv === true,
+            usuarioInstalacionFv: this.puntoLocal.usuarioInstalacionFv?.trim() || null,
+            contrasenaInstalacionFv: this.puntoLocal.contrasenaInstalacionFv?.trim() || null,
             bateriaAlmacenamiento: this.puntoLocal.bateriaAlmacenamiento?.trim() || null,
             potenciaBateriaAlmacenamiento: this.puntoLocal.potenciaBateriaAlmacenamiento?.trim() || null,
             backup: this.puntoLocal.backup?.trim() || null,
@@ -1725,6 +1779,20 @@ export default {
   font-size: 1rem;
   font-weight: 500;
   color: black;
+}
+
+.checkbox-label-fv {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.checkbox-label-fv input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #f0c808;
 }
 
 .form-control-compact {

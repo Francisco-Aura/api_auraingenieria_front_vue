@@ -1,12 +1,26 @@
 <template>
-  <div v-if="formularioVisible" class="modal-overlay">
+  <div>
+    <div v-if="formularioVisible" class="modal-overlay">
     <div class="modal-content">
       <!-- Encabezado del modal -->
       <div class="modal-header">
         <h2 class="modal-title">{{ modoActualizar ? 'Actualizar Cliente' : 'Alta de Cliente' }}</h2>
-        <button type="button" class="close-button" @click="cancelarFormulario">
-          <i class="fas fa-times"></i>
-        </button>
+        <div class="header-actions">
+          <button
+            v-if="modoActualizar && clienteLocal.id"
+            type="button"
+            class="btn-tareas-actividad"
+            @click="abrirPanelTareas"
+            title="Ver tareas y actividad del cliente"
+          >
+            <i class="fas fa-tasks"></i>
+            <span>Tareas/actividad</span>
+            <span v-if="tareas.length > 0" class="tareas-count-badge">{{ tareas.length }}</span>
+          </button>
+          <button type="button" class="close-button" @click="cancelarFormulario">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Formulario principal -->
@@ -456,13 +470,158 @@
       </form>
     </div>
   </div>
+
+  <!-- Panel Tareas/actividad del cliente -->
+  <div v-if="mostrarPanelTareas" class="tareas-panel-overlay" @click.self="cerrarPanelTareas">
+    <div class="tareas-panel">
+      <div class="tareas-panel-header">
+        <div class="tareas-panel-title">
+          <i class="fas fa-tasks"></i>
+          <span>Tareas / Actividad</span>
+          <span v-if="clienteLocal.nombre" class="tareas-panel-cliente-nombre">— {{ clienteLocal.nombre }}</span>
+        </div>
+        <button type="button" class="tareas-panel-close" @click="cerrarPanelTareas">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="tareas-panel-body">
+        <div v-if="cargandoTareas" class="tareas-loading">
+          <i class="fas fa-spinner fa-spin"></i> Cargando tareas...
+        </div>
+        <div v-else-if="tareas.length === 0" class="tareas-empty-state">
+          <i class="fas fa-clipboard-list fa-3x text-muted"></i>
+          <p>No hay tareas para este cliente</p>
+        </div>
+        <template v-else>
+          <!-- Toolbar: búsqueda + contador -->
+          <div class="tp-toolbar">
+            <div class="tp-search-wrap">
+              <i class="fas fa-search tp-search-icon"></i>
+              <input
+                type="text"
+                v-model="tareasPanelBusqueda"
+                placeholder="Buscar..."
+                class="tp-search-input"
+              />
+              <button v-if="tareasPanelBusqueda" class="tp-search-clear" @click="tareasPanelBusqueda = ''">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <span class="tp-count">{{ tareasFiltradas.length }} registro{{ tareasFiltradas.length !== 1 ? 's' : '' }}</span>
+          </div>
+
+          <!-- Tabla -->
+          <div class="tp-table-wrapper">
+            <div v-if="tareasFiltradas.length === 0" class="tareas-empty-state">
+              <i class="fas fa-search fa-2x text-muted"></i>
+              <p>Sin resultados para "{{ tareasPanelBusqueda }}"</p>
+            </div>
+            <table v-else class="tp-table">
+              <thead>
+                <tr>
+                  <th style="width:30%">Título</th>
+                  <th style="width:15%">Estado</th>
+                  <th style="width:12%">Prioridad</th>
+                  <th style="width:14%">Categoría</th>
+                  <th style="width:15%">Asignado a</th>
+                  <th style="width:10%">Fecha vto.</th>
+                  <th style="width:4%"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="tarea in tareasPaginadas" :key="tarea.id"
+                    :class="{ 'tp-row-vencida': tarea.vencida, 'tp-row-completada': tarea.estadoFinal, 'tp-row-fijada': tarea.fijada }">
+                  <td class="tp-td-truncate" :title="tarea.titulo">
+                    <span class="tp-titulo-wrap">
+                      <i v-if="tarea.fijada" class="fas fa-thumbtack tp-pin-icon"></i>
+                      {{ tarea.titulo }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="tp-estado-badge" :style="{ backgroundColor: tarea.estadoColor }">
+                      <i :class="getEstadoIcon(tarea.estadoNombre)"></i>
+                      {{ tarea.estadoNombre }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="tp-prioridad-badge" :class="`tp-prioridad-${tarea.prioridad}`">
+                      {{ getPrioridadTexto(tarea.prioridad) }}
+                    </span>
+                  </td>
+                  <td class="tp-td-truncate">
+                    <span v-if="tarea.categoriaNombre" class="tp-categoria-badge">{{ tarea.categoriaNombre }}</span>
+                    <span v-else class="text-muted">-</span>
+                  </td>
+                  <td class="tp-td-truncate">{{ tarea.usuarioAsignadoNombre || '-' }}</td>
+                  <td :class="{ 'tp-fecha-vencida': tarea.vencida }">{{ formatDate(tarea.fechaVencimiento) }}</td>
+                  <td>
+                    <button class="tp-btn-view" @click="abrirTarea(tarea)" title="Ver tarea">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Paginación -->
+          <div class="tp-pagination">
+            <div class="tp-pag-perpage">
+              <label>Registros por página:</label>
+              <select v-model="tareasPanelPorPagina" class="tp-pag-select">
+                <option :value="10">10</option>
+                <option :value="25">25</option>
+                <option :value="50">50</option>
+                <option :value="100">100</option>
+              </select>
+            </div>
+            <div class="tp-pag-info">
+              Mostrando {{ tareasPagStart }} - {{ tareasPagEnd }} de {{ tareasFiltradas.length }} registros
+            </div>
+            <div class="tp-pag-buttons">
+              <button class="tp-pag-btn" :disabled="tareasPanelPagina === 1" @click="tareasPanelPagina = 1" title="Primera página">
+                <i class="fas fa-angle-double-left"></i>
+              </button>
+              <button class="tp-pag-btn" :disabled="tareasPanelPagina === 1" @click="tareasPanelPagina--" title="Anterior">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <span class="tp-pag-label">Página {{ tareasPanelPagina }} de {{ tareasTotalPaginas || 1 }}</span>
+              <button class="tp-pag-btn" :disabled="tareasPanelPagina >= tareasTotalPaginas" @click="tareasPanelPagina++" title="Siguiente">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+              <button class="tp-pag-btn" :disabled="tareasPanelPagina >= tareasTotalPaginas" @click="tareasPanelPagina = tareasTotalPaginas" title="Última página">
+                <i class="fas fa-angle-double-right"></i>
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal detalle de tarea -->
+  <TareaDetalleModal
+    v-if="tareaSeleccionada"
+    :value="true"
+    :tarea="tareaSeleccionada"
+    :estados="estadosTareas"
+    @cerrar="cerrarTarea"
+    @actualizar="handleActualizarTarea"
+    @cambiar-estado="handleCambiarEstado"
+    @completar-con-comentario="handleCompletarConComentario"
+    @crear-comentario-estado="handleCrearComentarioEstado"
+  />
+  </div>
 </template>
 
 <script>
 import axios from 'axios';
+import TareaDetalleModal from '@/components/CRM_Module/Tareas/TareaDetalleModal.vue';
+import tareasApi from '@/services/tareasApi.js';
 
 export default {
   name: "CreaActualizaClienteComponent",
+  components: { TareaDetalleModal },
   props: {
     formularioVisible: Boolean,
     modoActualizar: Boolean,
@@ -524,13 +683,45 @@ export default {
       expandirNotas: false,
       clienteLocal: this.crearClienteVacio(),
       errores: {},
+      // Tareas/actividad
+      mostrarPanelTareas: false,
+      tareas: [],
+      cargandoTareas: false,
+      tareaSeleccionada: null,
+      estadosTareas: [],
+      tareasPanelBusqueda: '',
+      tareasPanelPagina: 1,
+      tareasPanelPorPagina: 10,
     };
   },
   computed: {
     isAdvancedUser() {
       const usuario = JSON.parse(localStorage.getItem('usuario'));
       return usuario && usuario.nivelAcceso === 1;
-    }
+    },
+    tareasFiltradas() {
+      const q = (this.tareasPanelBusqueda || '').toLowerCase().trim();
+      if (!q) return this.tareas;
+      return this.tareas.filter(t =>
+        (t.titulo || '').toLowerCase().includes(q) ||
+        (t.estadoNombre || '').toLowerCase().includes(q) ||
+        (t.categoriaNombre || '').toLowerCase().includes(q) ||
+        (t.usuarioAsignadoNombre || '').toLowerCase().includes(q)
+      );
+    },
+    tareasTotalPaginas() {
+      return Math.ceil(this.tareasFiltradas.length / this.tareasPanelPorPagina) || 1;
+    },
+    tareasPaginadas() {
+      const start = (this.tareasPanelPagina - 1) * this.tareasPanelPorPagina;
+      return this.tareasFiltradas.slice(start, start + this.tareasPanelPorPagina);
+    },
+    tareasPagStart() {
+      return this.tareasFiltradas.length === 0 ? 0 : (this.tareasPanelPagina - 1) * this.tareasPanelPorPagina + 1;
+    },
+    tareasPagEnd() {
+      return Math.min(this.tareasPanelPagina * this.tareasPanelPorPagina, this.tareasFiltradas.length);
+    },
   },
   watch: {
     formularioVisible(newVal) {
@@ -539,7 +730,17 @@ export default {
           ? { ...this.nuevoCliente }
           : this.crearClienteVacio();
         this.activeTab = 'principal';
+        // Reset tareas panel state when modal reopens
+        this.tareas = [];
+        this.tareasPanelBusqueda = '';
+        this.tareasPanelPagina = 1;
       }
+    },
+    tareasPanelBusqueda() {
+      this.tareasPanelPagina = 1;
+    },
+    tareasPanelPorPagina() {
+      this.tareasPanelPagina = 1;
     },
     nuevoCliente: {
       immediate: true,
@@ -944,7 +1145,100 @@ export default {
       if (nuevasNotas !== undefined) {
         this.clienteLocal.notas = nuevasNotas;
       }
-    }
+    },
+
+    // ── Tareas / Actividad ───────────────────────────────────────────────────
+    async abrirPanelTareas() {
+      this.mostrarPanelTareas = true;
+      if (this.tareas.length === 0 && !this.cargandoTareas) {
+        await this.cargarTareas();
+      }
+    },
+    cerrarPanelTareas() {
+      this.mostrarPanelTareas = false;
+    },
+    async cargarTareas() {
+      if (!this.clienteLocal?.id) return;
+      this.cargandoTareas = true;
+      try {
+        const [tareasRes, estadosRes] = await Promise.all([
+          axios.get(`${process.env.VUE_APP_API_URL}/api/tareas/cliente/${this.clienteLocal.id}`),
+          axios.get(`${process.env.VUE_APP_API_URL}/api/tareas/estados`)
+        ]);
+        this.tareas = tareasRes.data;
+        this.estadosTareas = estadosRes.data;
+      } catch (e) {
+        console.error('Error cargando tareas del cliente:', e);
+      } finally {
+        this.cargandoTareas = false;
+      }
+    },
+    abrirTarea(tarea) {
+      this.tareaSeleccionada = tarea;
+    },
+    cerrarTarea() {
+      this.tareaSeleccionada = null;
+    },
+    async handleActualizarTarea() {
+      await this.cargarTareas();
+    },
+    async handleCambiarEstado(tareaId, estadoId, motivoBloqueo = null) {
+      try {
+        await tareasApi.cambiarEstadoTarea(tareaId, estadoId, motivoBloqueo);
+        await this.cargarTareas();
+        this.cerrarTarea();
+      } catch (e) {
+        console.error('Error cambiando estado:', e);
+      }
+    },
+    async handleCompletarConComentario(data) {
+      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+      try {
+        await tareasApi.crearComentario({ tareaId: data.tareaId, usuarioId: usuario.id, comentario: data.comentario.contenido });
+        await tareasApi.cambiarEstadoTarea(data.tareaId, data.estadoId);
+        await this.cargarTareas();
+        this.cerrarTarea();
+      } catch (e) {
+        console.error('Error completando tarea:', e);
+      }
+    },
+    async handleCrearComentarioEstado(data) {
+      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+      try {
+        await tareasApi.crearComentario({ tareaId: data.tareaId, usuarioId: usuario.id, comentario: data.contenido });
+      } catch (e) {
+        console.error('Error creando comentario:', e);
+      }
+    },
+    getColorPrioridad(prioridad) {
+      const mapa = { 0: '#ef4444', 1: '#f97316', 2: '#eab308', 3: '#22c55e' };
+      return mapa[prioridad] || '#94a3b8';
+    },
+    getPrioridadTexto(prioridad) {
+      switch (prioridad) {
+        case 0: return 'Urgente';
+        case 1: return 'Alta';
+        case 2: return 'Media';
+        case 3: return 'Baja';
+        default: return 'Normal';
+      }
+    },
+    getEstadoIcon(estadoNombre) {
+      const estado = estadoNombre ? estadoNombre.toLowerCase() : '';
+      switch (estado) {
+        case 'pendiente': return 'far fa-clock';
+        case 'en progreso': case 'progreso': return 'far fa-play-circle';
+        case 'completada': case 'finalizada': return 'far fa-check-circle';
+        case 'cancelada': return 'far fa-times-circle';
+        case 'pausada': return 'far fa-pause-circle';
+        case 'bloqueada': return 'fas fa-lock';
+        default: return 'fas fa-circle';
+      }
+    },
+    formatDate(date) {
+      if (!date) return '-';
+      return new Date(date).toLocaleDateString('es-ES');
+    },
   },
 };
 </script>
@@ -995,6 +1289,480 @@ export default {
   font-size: 1rem;
   font-weight: 600;
 }
+
+/* Header actions group */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+  align-self: stretch;
+  margin-left: auto;
+  padding-right: 0.5rem;
+}
+
+/* Tareas/actividad button */
+.btn-tareas-actividad {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.35);
+}
+
+.btn-tareas-actividad:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.45);
+}
+
+.btn-tareas-actividad i {
+  font-size: 0.95rem;
+}
+
+.tareas-count-badge {
+  background: #fff;
+  color: #ea580c;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.05rem 0.45rem;
+  min-width: 20px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════
+   PANEL TAREAS / ACTIVIDAD  (clon de TareasComponent)
+   ═══════════════════════════════════════════════ */
+
+/* Overlay */
+.tareas-panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 2000;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.tareas-panel {
+  width: min(900px, 96vw);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.18);
+  animation: slideInPanel 0.22s ease-out;
+  overflow: hidden;
+}
+
+@keyframes slideInPanel {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+/* Header */
+.tareas-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.25rem;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.tareas-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.tareas-panel-cliente-nombre {
+  font-weight: 400;
+  opacity: 0.9;
+  font-size: 0.9rem;
+}
+
+.tareas-panel-close {
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+
+.tareas-panel-close:hover { background: rgba(255,255,255,0.3); }
+
+/* Body */
+.tareas-panel-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Loading / empty */
+.tareas-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  padding: 3rem;
+  justify-content: center;
+}
+
+.tareas-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* ── Toolbar ── */
+.tp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.tp-search-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.tp-search-icon {
+  position: absolute;
+  left: 0.7rem;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  pointer-events: none;
+}
+
+.tp-search-input {
+  width: 100%;
+  padding: 0.45rem 2rem 0.45rem 2rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #1e293b;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.tp-search-input:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249,115,22,0.12);
+}
+
+.tp-search-clear {
+  position: absolute;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+}
+
+.tp-search-clear:hover { color: #475569; }
+
+.tp-count {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+  white-space: nowrap;
+  background: #fff;
+  padding: 0.3rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* ── Table ── */
+.tp-table-wrapper {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  background: #fff;
+}
+
+.tp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9rem;
+}
+
+.tp-table th {
+  background: #f8fafc;
+  color: #374151;
+  font-weight: 600;
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tp-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+  height: 52px;
+}
+
+.tp-table tbody tr {
+  transition: background 0.1s;
+}
+
+.tp-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Row states */
+.tp-row-vencida { background: rgba(220,53,69,0.05) !important; }
+.tp-row-vencida:hover { background: rgba(220,53,69,0.1) !important; }
+.tp-row-completada { opacity: 0.6; }
+.tp-row-completada td { text-decoration: line-through; }
+.tp-row-fijada { background: rgba(255,193,7,0.08) !important; border-left: 3px solid #ffc107 !important; }
+.tp-row-fijada:hover { background: rgba(255,193,7,0.15) !important; }
+
+/* Cell helpers */
+.tp-td-truncate {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-titulo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tp-pin-icon {
+  color: #ffc107;
+  transform: rotate(-45deg);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Estado badge — exacto a TareasComponent */
+.tp-estado-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-transform: uppercase;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  letter-spacing: 0.5px;
+}
+
+.tp-estado-badge i { font-size: 0.65rem; }
+
+/* Prioridad badge — exacto a TareasComponent */
+.tp-prioridad-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 50px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  border: 2px solid transparent;
+}
+
+.tp-prioridad-0 {
+  background: #8b0000;
+  color: #fff;
+  border-color: #5c0000;
+  animation: pulse-urgente 2s infinite;
+}
+.tp-prioridad-0::before { content: '\f071'; font-family: 'Font Awesome 5 Free'; font-weight: 900; }
+
+@keyframes pulse-urgente {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139,0,0,0.4); }
+  50%       { box-shadow: 0 0 0 4px rgba(139,0,0,0); }
+}
+
+.tp-prioridad-1 { background: #dc3545; color: #fff; border-color: #bd2130; }
+.tp-prioridad-1::before { content: '\f062'; font-family: 'Font Awesome 5 Free'; font-weight: 900; }
+
+.tp-prioridad-2 { background: #fff3cd; color: #856404; border-color: #ffc107; }
+.tp-prioridad-2::before { content: '\f068'; font-family: 'Font Awesome 5 Free'; font-weight: 900; }
+
+.tp-prioridad-3 { background: #d4edda; color: #155724; border-color: #28a745; }
+.tp-prioridad-3::before { content: '\f063'; font-family: 'Font Awesome 5 Free'; font-weight: 900; }
+
+/* Categoría badge */
+.tp-categoria-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #e7f1f8;
+  color: #0c5460;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Fecha vencida */
+.tp-fecha-vencida { color: #dc3545; font-weight: 600; }
+
+/* View button */
+.tp-btn-view {
+  background: transparent;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #43a047;
+  transition: background 0.2s;
+  margin: 0 auto;
+}
+
+.tp-btn-view:hover { background: rgba(67,160,71,0.1); }
+
+/* ── Pagination ── */
+.tp-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tp-pag-perpage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.tp-pag-select {
+  width: auto;
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+
+.tp-pag-info {
+  color: #64748b;
+  font-size: 0.9rem;
+  background: #fff;
+  padding: 8px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  white-space: nowrap;
+}
+
+.tp-pag-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  padding: 8px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.tp-pag-label {
+  color: #374151;
+  font-weight: 500;
+  padding: 0 10px;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.tp-pag-btn {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #374151;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  min-width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tp-pag-btn:hover:not(:disabled) {
+  background: #fcd700;
+  color: #000;
+  border-color: #fcd700;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.tp-pag-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f5f5f5;
+}
+
+.text-muted { color: #94a3b8; }
 
 .close-button {
   align-self: stretch;
