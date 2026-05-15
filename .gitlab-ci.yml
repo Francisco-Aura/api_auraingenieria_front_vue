@@ -78,9 +78,9 @@ deploy_frontend_PRE:
 
     - chmod 600 ~/.ssh/known_hosts
 
-    ########################################
+    ######################################
     # DEPLOY
-    ########################################
+    ######################################
     - export FRONTEND_FINAL_DIR="/home/babenza/deploy/frontend"
 
     - echo "Preparando directorio remoto..."
