@@ -45,7 +45,7 @@ deploy_frontend_PRE:
     ########################################
     - echo "Verificando que NO existan IPs hardcodeadas..."
     - |
-      if grep -R "5.34." dist/; then
+      if grep -Rq "5.34." dist/; then
         echo "ERROR: Se encontraron IPs hardcodeadas en el build"
         exit 1
       else
@@ -54,7 +54,7 @@ deploy_frontend_PRE:
 
     - echo "Verificando que NO exista /api/api..."
     - |
-      if grep -R "/api/api" dist/; then
+      if grep -Rq "/api/api" dist/; then
         echo "ERROR: Encontrado /api/api en build"
         exit 1
       else
@@ -125,8 +125,7 @@ deploy_frontend_PRO:
     - main
 
   script:
-    - set -eo pipefail
-    - set -x
+    - set -eo pipefail    
 
     ########################################
     # CLEAN
