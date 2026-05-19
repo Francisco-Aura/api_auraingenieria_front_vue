@@ -95,6 +95,19 @@
             </div>
           </div>
 
+          <!-- Fila CUPS: Punto de suministro (solo cuando hay cliente registrado) -->
+          <div class="row-cups" v-if="!esPotencial && formulario.clienteRelacionadoId">
+            <div class="form-group full-width">
+              <label><i class="fas fa-bolt"></i> Punto de suministro (CUPS)</label>
+              <select v-model="formulario.cups" class="form-control">
+                <option :value="null">GENERAL</option>
+                <option v-for="ps in puntosSuministroCliente" :key="ps.cups" :value="ps.cups">
+                  {{ ps.cups }}<span v-if="ps.direccion"> — {{ ps.direccion }}</span>
+                </option>
+              </select>
+            </div>
+          </div>
+
           <!-- Segunda fila: Fechas, Prioridad, Repetir -->
           <div class="row-2">
             <div class="form-group">
@@ -324,6 +337,7 @@ export default {
         fechaVencimiento: null,
         clienteRelacionadoId: null,
         clientePotencialNombre: null,
+        cups: null,
         categoriaId: null,
         subcategoriaId: null,
         notificar: false,
@@ -340,6 +354,7 @@ export default {
       mostrarDropdownClientes: false,
       clientesFiltrados: [],
       oportunidadesFiltradas: [],
+      puntosSuministroCliente: [],
       fechaInicio: '',
       horaInicio: '09:00',
       fechaVencimiento: '',
@@ -401,6 +416,7 @@ export default {
           fechaVencimiento: this.tarea.fechaVencimiento || null,
           clienteRelacionadoId: this.tarea.clienteRelacionadoId || null,
           clientePotencialNombre: this.tarea.clientePotencialNombre || null,
+          cups: this.tarea.cups || null,
           categoriaId: this.tarea.categoriaId || null,
           subcategoriaId: this.tarea.subcategoriaId || null,
           notificar: Boolean(this.tarea.notificar),
@@ -430,9 +446,11 @@ export default {
             id: this.tarea.clienteRelacionadoId, 
             nombre: this.tarea.clienteRelacionadoNombre 
           }]
+          this.cargarPuntosSuministroCliente(this.tarea.clienteRelacionadoId)
         } else if (this.tarea.clientePotencialNombre) {
           this.busquedaCliente = ''
           this.esPotencial = true
+          this.puntosSuministroCliente = []
         }
 
         this.archivosACrear = []
@@ -478,8 +496,10 @@ export default {
         this.busquedaCliente = ''
         this.clientesFiltrados = []
         this.oportunidadesFiltradas = []
+        this.puntosSuministroCliente = []
         this.esPotencial = false
         this.formulario.clientePotencialNombre = null
+        this.formulario.cups = null
         this.archivosACrear = []
         this.adjuntosExistentes = []
       }
@@ -650,6 +670,35 @@ export default {
       this.formulario.clienteRelacionadoId = cliente.id
       this.busquedaCliente = cliente.nombre
       this.mostrarDropdownClientes = false
+      // Resetear CUPS al cambiar de cliente y cargar sus puntos de suministro
+      this.formulario.cups = null
+      this.cargarPuntosSuministroCliente(cliente.id)
+    },
+
+    async cargarPuntosSuministroCliente(clienteId) {
+      if (!clienteId) {
+        this.puntosSuministroCliente = []
+        return
+      }
+      try {
+        const base = process.env.VUE_APP_API_URL || 'http://localhost:8986'
+        const res = await fetch(`${base}/api/puntos-suministro/cliente/${clienteId}/cartera`)
+        if (res.ok) {
+          const data = await res.json()
+          // Construir lista con el CUPS luz y gas no vacíos
+          const lista = []
+          for (const ps of data) {
+            if (ps.cupsluz) lista.push({ cups: ps.cupsluz, direccion: ps.direccion || '' })
+            if (ps.cupsgas) lista.push({ cups: ps.cupsgas, direccion: ps.direccion || '' })
+          }
+          this.puntosSuministroCliente = lista
+        } else {
+          this.puntosSuministroCliente = []
+        }
+      } catch (e) {
+        console.error('Error cargando puntos de suministro del cliente:', e)
+        this.puntosSuministroCliente = []
+      }
     },
 
     seleccionarOportunidad(oportunidad) {
@@ -727,6 +776,7 @@ export default {
         usuarioCreadorId: this.formulario.usuarioCreadorId || null,
         clienteRelacionadoId: this.formulario.clienteRelacionadoId || null,
         clientePotencialNombre: this.esPotencial ? (this.formulario.clientePotencialNombre || null) : null,
+        cups: (!this.esPotencial && this.formulario.clienteRelacionadoId && this.formulario.cups) ? this.formulario.cups : null,
         categoriaId: this.formulario.categoriaId || null,
         subcategoriaId: this.formulario.subcategoriaId || null
       }
@@ -747,8 +797,10 @@ export default {
       this.mostrarDropdownClientes = false
       this.clientesFiltrados = []
       this.oportunidadesFiltradas = []
+      this.puntosSuministroCliente = []
       this.esPotencial = false
       this.formulario.clientePotencialNombre = null
+      this.formulario.cups = null
       this.archivosACrear = []
       this.adjuntosExistentes = []
       this.eliminandoAdjuntoId = null
@@ -875,6 +927,10 @@ export default {
 
 .row-3 {
   grid-template-columns: repeat(4, 1fr);
+}
+
+.row-cups {
+  display: flex;
 }
 
 .row-4, .row-5 {

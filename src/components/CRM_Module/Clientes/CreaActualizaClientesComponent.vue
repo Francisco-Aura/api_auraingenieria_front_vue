@@ -519,12 +519,13 @@
             <table v-else class="tp-table">
               <thead>
                 <tr>
-                  <th style="width:30%">Título</th>
-                  <th style="width:15%">Estado</th>
-                  <th style="width:12%">Prioridad</th>
-                  <th style="width:14%">Categoría</th>
-                  <th style="width:15%">Asignado a</th>
-                  <th style="width:10%">Fecha vto.</th>
+                  <th style="width:26%">Título</th>
+                  <th style="width:13%">Estado</th>
+                  <th style="width:10%">Prioridad</th>
+                  <th style="width:12%">Categoría</th>
+                  <th style="width:12%">Asignado a</th>
+                  <th style="width:18%">CUPS</th>
+                  <th style="width:9%">Fecha vto.</th>
                   <th style="width:4%"></th>
                 </tr>
               </thead>
@@ -553,6 +554,10 @@
                     <span v-else class="text-muted">-</span>
                   </td>
                   <td class="tp-td-truncate">{{ tarea.usuarioAsignadoNombre || '-' }}</td>
+                  <td class="tp-td-truncate" :title="tarea.cups || 'GENERAL'">
+                    <span v-if="tarea.cups" class="tp-cups-badge">{{ tarea.cups }}</span>
+                    <span v-else class="tp-cups-general">GENERAL</span>
+                  </td>
                   <td :class="{ 'tp-fecha-vencida': tarea.vencida }">{{ formatDate(tarea.fechaVencimiento) }}</td>
                   <td>
                     <button class="tp-btn-view" @click="abrirTarea(tarea)" title="Ver tarea">
@@ -1353,23 +1358,33 @@ export default {
   background: rgba(15, 23, 42, 0.45);
   z-index: 2000;
   display: flex;
-  align-items: stretch;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
 }
 
 .tareas-panel {
-  width: min(900px, 96vw);
+  width: 100%;
+  max-width: 1800px;
+  height: 90vh;
   background: #fff;
   display: flex;
   flex-direction: column;
-  box-shadow: -8px 0 32px rgba(0,0,0,0.18);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
   animation: slideInPanel 0.22s ease-out;
   overflow: hidden;
+  border-radius: 12px;
 }
 
 @keyframes slideInPanel {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
+  from { 
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to   { 
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Header */
@@ -1648,6 +1663,24 @@ export default {
   border-radius: 12px;
   font-size: 0.85rem;
   font-weight: 500;
+}
+
+/* CUPS badges */
+.tp-cups-badge {
+  display: inline-block;
+  font-family: monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1a56db;
+  background: #ebf2ff;
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+.tp-cups-general {
+  font-size: 0.82rem;
+  color: #6c757d;
+  font-style: italic;
 }
 
 /* Fecha vencida */

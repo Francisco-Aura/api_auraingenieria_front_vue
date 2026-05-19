@@ -38,6 +38,15 @@
               </div>
             </div>
 
+            <div class="campo-detalle" v-if="tarea.clienteRelacionadoId">
+              <label>Punto de suministro (CUPS)</label>
+              <div class="cups-info">
+                <i class="fas fa-bolt"></i>
+                <span v-if="tarea.cups" class="cups-value">{{ tarea.cups }}</span>
+                <span v-else class="cups-general">GENERAL</span>
+              </div>
+            </div>
+
             <div class="campo-detalle">
               <label>Asignado a</label>
               <div class="usuario-info">
@@ -1547,12 +1556,26 @@ export default {
 .cliente-info,
 .usuario-info,
 .fecha-info,
-.tiempo-info {
+.tiempo-info,
+.cups-info {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.9rem;
   color: #495057;
+}
+
+.cups-value {
+  font-family: monospace;
+  font-size: 0.88rem;
+  color: #1a56db;
+  font-weight: 600;
+}
+
+.cups-general {
+  font-size: 0.88rem;
+  color: #6c757d;
+  font-style: italic;
 }
 
 .potencial-tag {
