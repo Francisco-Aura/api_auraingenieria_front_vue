@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
   <div v-if="value" class="modal-overlay" @mousedown="iniciarSeleccion" @mouseup="finalizarSeleccion">
-    <div class="modal-content modal-tarea" @click.stop @input.stop @mousedown.stop @mouseup.stop>
+    <div class="modal-content modal-tarea" @click.stop @input.stop @mousedown.stop @mouseup.stop @dragover.prevent @drop.prevent>
       <!-- Header del modal -->
       <div class="modal-header">
         <h2 class="modal-title">{{ esEdicion ? 'Editar tarea' : 'Crear tarea' }}</h2>
@@ -200,7 +200,13 @@
           <div class="row-5">
             <div class="form-group full-width">
               <label><i class="fas fa-paperclip"></i> Adjuntos</label>
-              <div class="adjuntos-crear-wrapper">
+              <div
+                class="adjuntos-drop-zone"
+                :class="{ 'drag-activo': dragActivo }"
+                @dragover.prevent="onDragOver"
+                @dragleave="onDragLeave"
+                @drop.prevent="onDrop"
+              >
                 <input
                   type="file"
                   ref="fileInputCrear"
@@ -208,15 +214,19 @@
                   style="display:none"
                   @change="onArchivosCrearSelected"
                 />
-                <button type="button" class="btn-adjuntar-crear" @click="$refs.fileInputCrear.click()">
-                  <i class="fas fa-cloud-upload-alt"></i> Seleccionar archivos
-                </button>
-                <span v-if="archivosACrear.length > 0" class="adjuntos-count">
-                  {{ archivosACrear.length }} archivo{{ archivosACrear.length > 1 ? 's' : '' }} seleccionado{{ archivosACrear.length > 1 ? 's' : '' }}
-                </span>
+                <div class="drop-zone-hint">
+                  <i class="fas fa-cloud-upload-alt drop-zone-icon"></i>
+                  <span class="drop-zone-text">Arrastra archivos aquí o</span>
+                  <button type="button" class="btn-adjuntar-crear" @click="$refs.fileInputCrear.click()">
+                    <i class="fas fa-folder-open"></i> Seleccionar
+                  </button>
+                  <span class="drop-zone-limit">Máx. 10 MB por archivo</span>
+                </div>
                 <ul v-if="archivosACrear.length > 0" class="adjuntos-lista-crear">
                   <li v-for="(f, idx) in archivosACrear" :key="idx">
-                    <i class="fas fa-file"></i> {{ f.name }}
+                    <i class="fas fa-file"></i>
+                    <span class="adjunto-nombre">{{ f.name }}</span>
+                    <span class="adjunto-size">{{ formatFileSize(f.size) }}</span>
                     <button type="button" class="btn-remove-adjunto" @click="archivosACrear.splice(idx, 1)" title="Quitar">
                       <i class="fas fa-times"></i>
                     </button>
@@ -321,6 +331,7 @@ export default {
         repetir: ''
       },
       esPotencial: false,
+      dragActivo: false,
       archivosACrear: [],
       adjuntosExistentes: [],
       cargandoAdjuntosExistentes: false,
@@ -520,12 +531,58 @@ export default {
       }
     },
 
+    onDragOver() {
+      this.dragActivo = true
+    },
+
+    onDragLeave(event) {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        this.dragActivo = false
+      }
+    },
+
+    onDrop(event) {
+      this.dragActivo = false
+      this.procesarArchivos(Array.from(event.dataTransfer.files))
+    },
+
     onArchivosCrearSelected(event) {
-      const nuevos = Array.from(event.target.files)
-      this.archivosACrear.push(...nuevos)
-      // Limpiar el input para permitir seleccionar los mismos archivos otra vez
+      this.procesarArchivos(Array.from(event.target.files))
       event.target.value = ''
     },
+
+    procesarArchivos(files) {
+      const MAX_SIZE = 10 * 1024 * 1024
+      const nombresActuales = new Set(this.archivosACrear.map(f => f.name))
+      const rechazados = []
+
+      for (const file of files) {
+        if (file.size > MAX_SIZE) {
+          rechazados.push(`${file.name} (supera 10 MB)`)
+          continue
+        }
+        if (nombresActuales.has(file.name)) continue
+        this.archivosACrear.push(file)
+        nombresActuales.add(file.name)
+      }
+
+      if (rechazados.length > 0) {
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Archivos no permitidos',
+          text: rechazados.join(', ')
+        })
+      }
+    },
+
+    formatFileSize(bytes) {
+      if (!bytes) return '0 B'
+      const k = 1024
+      const sizes = ['B', 'KB', 'MB', 'GB']
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i]
+    },
+
 
     async cargarAdjuntosEdicion() {
       if (!this.esEdicion || !this.formulario.id) {
@@ -888,32 +945,63 @@ export default {
   flex: 1;
 }
 
-.adjuntos-crear-wrapper {
+.adjuntos-drop-zone {
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.adjuntos-drop-zone.drag-activo {
+  border-color: #667eea;
+  background: #eef2ff;
+}
+
+.drop-zone-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.drop-zone-icon {
+  font-size: 1.3rem;
+  color: #a0aec0;
+  transition: color 0.15s;
+}
+
+.drag-activo .drop-zone-icon {
+  color: #667eea;
+}
+
+.drop-zone-text {
+  font-size: 0.82rem;
+  color: #718096;
+}
+
+.drop-zone-limit {
+  font-size: 0.75rem;
+  color: #a0aec0;
+  margin-left: auto;
 }
 
 .btn-adjuntar-crear {
-  align-self: flex-start;
-  padding: 6px 14px;
+  padding: 4px 12px;
   background: #f0f4ff;
-  border: 1px dashed #667eea;
+  border: 1px solid #667eea;
   border-radius: 6px;
   color: #667eea;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   cursor: pointer;
   transition: background 0.15s;
+  white-space: nowrap;
 }
 
 .btn-adjuntar-crear:hover {
   background: #e0e7ff;
-}
-
-.adjuntos-count {
-  font-size: 0.8rem;
-  color: #4a5568;
-  font-weight: 500;
 }
 
 .adjuntos-lista-crear {
@@ -934,6 +1022,19 @@ export default {
   background: #f7fafc;
   padding: 3px 8px;
   border-radius: 4px;
+}
+
+.adjunto-nombre {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adjunto-size {
+  font-size: 0.75rem;
+  color: #718096;
+  white-space: nowrap;
 }
 
 .btn-remove-adjunto {
