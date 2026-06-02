@@ -219,7 +219,12 @@
                 @dragover.prevent="onDragOver"
                 @dragleave="onDragLeave"
                 @drop.prevent="onDrop"
+                style="position: relative;"
               >
+                <div v-if="dragActivo" class="drop-zone-overlay">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <span>Suelta los archivos aquí</span>
+                </div>
                 <input
                   type="file"
                   ref="fileInputCrear"
@@ -572,6 +577,7 @@ export default {
     },
 
     procesarArchivos(files) {
+      if (!files || files.length === 0) return
       const MAX_SIZE = 10 * 1024 * 1024
       const nombresActuales = new Set(this.archivosACrear.map(f => f.name))
       const rechazados = []
@@ -768,6 +774,7 @@ export default {
         descripcion: this.formulario.descripcion || null,
         prioridad: parseInt(this.formulario.prioridad) !== null && !isNaN(parseInt(this.formulario.prioridad)) ? parseInt(this.formulario.prioridad) : 2,
         notificar: Boolean(this.formulario.notificar),
+        fijada: Boolean(this.formulario.fijada),
         repetir: this.formulario.repetir || null,
         fechaInicio: this.formulario.fechaInicio,
         fechaVencimiento: this.formulario.fechaVencimiento,
@@ -1014,6 +1021,27 @@ export default {
 .adjuntos-drop-zone.drag-activo {
   border-color: #667eea;
   background: #eef2ff;
+}
+
+.drop-zone-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(238, 242, 255, 0.92);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #667eea;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.drop-zone-overlay i {
+  font-size: 1.8rem;
 }
 
 .drop-zone-hint {

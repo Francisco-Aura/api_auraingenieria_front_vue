@@ -1064,6 +1064,7 @@ export default {
     },
 
     procesarArchivosComentario(files) {
+      if (!files || files.length === 0) return
       const MAX_SIZE = 10 * 1024 * 1024
       const nombresActuales = new Set(this.archivosSeleccionados.map(f => f.name))
       const rechazados = []
