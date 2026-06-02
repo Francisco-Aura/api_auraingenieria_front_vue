@@ -91,14 +91,19 @@
                 :class="getEficienciaClass(metricas.eficiencia)"
               ></div>
             </div>
-            <div class="eficiencia-leyenda">
-              <span class="leyenda-item activo">
-                <span class="leyenda-dot"></span>
-                Tiempo productivo
+            <!-- Desglose de factores -->
+            <div class="eficiencia-desglose">
+              <span class="desglose-item">
+                <i class="fas fa-play-circle"></i>
+                Sin bloqueos: <strong>{{ metricas.factorBloqueos ?? 100 }}%</strong>
               </span>
-              <span class="leyenda-item bloqueado">
-                <span class="leyenda-dot"></span>
-                Tiempo bloqueado
+              <span class="desglose-item" v-if="metricas.factorPuntualidad !== null && metricas.factorPuntualidad !== undefined">
+                <i class="fas fa-calendar-check"></i>
+                Puntualidad: <strong :class="metricas.factorPuntualidad < 50 ? 'text-danger' : metricas.factorPuntualidad < 80 ? 'text-warning' : 'text-success'">{{ metricas.factorPuntualidad }}%</strong>
+              </span>
+              <span class="desglose-item desglose-vencida" v-if="metricas.factorPuntualidad !== null && metricas.factorPuntualidad < 100">
+                <i class="fas fa-exclamation-triangle"></i>
+                Tarea vencida
               </span>
             </div>
           </div>
@@ -962,28 +967,34 @@ export default {
 .eficiencia-progress.regular { background: linear-gradient(90deg, #ffc107, #fd7e14); }
 .eficiencia-progress.baja { background: linear-gradient(90deg, #dc3545, #fd7e14); }
 
-.eficiencia-leyenda {
+.eficiencia-desglose {
   display: flex;
-  gap: 20px;
+  gap: 18px;
   margin-top: 10px;
   font-size: 0.8rem;
   color: #6c757d;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
-.leyenda-item {
+.desglose-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
-.leyenda-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.desglose-item i {
+  font-size: 0.78rem;
 }
 
-.leyenda-item.activo .leyenda-dot { background: #28a745; }
-.leyenda-item.bloqueado .leyenda-dot { background: #dc3545; }
+.desglose-vencida {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.text-danger { color: #dc3545; }
+.text-warning { color: #fd7e14; }
+.text-success { color: #28a745; }
 
 /* Timeline */
 .timeline-panel {

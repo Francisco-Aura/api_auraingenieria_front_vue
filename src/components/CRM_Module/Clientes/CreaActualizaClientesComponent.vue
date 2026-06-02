@@ -2229,7 +2229,7 @@ export default {
 
 .tareas-panel {
   width: 100%;
-  max-width: 90vh;
+  max-width: 90%;
   height: 90vh;
   background: #fff;
   display: flex;

@@ -418,9 +418,41 @@ export const tareasApi = {
     }
 
     const tiempoTotalSegundos = tiempoActivoTotal + tiempoBloqueadoTotal
-    const eficiencia = tiempoTotalSegundos > 0 
-      ? Math.round((tiempoActivoTotal / tiempoTotalSegundos) * 100) 
+
+    // Factor 1: ratio de tiempo activo vs bloqueado (sin bloqueos = 100%)
+    const factorBloqueos = tiempoTotalSegundos > 0
+      ? (tiempoActivoTotal / tiempoTotalSegundos) * 100
       : 100
+
+    // Factor 2: puntualidad — penaliza el retraso respecto al vencimiento
+    let factorPuntualidad = 100
+    const ahora = new Date()
+    const fechaVenc = tarea?.fechaVencimiento ? new Date(tarea.fechaVencimiento) : null
+    const fechaInic = tarea?.fechaInicio
+      ? new Date(tarea.fechaInicio)
+      : tarea?.fechaCreacion ? new Date(tarea.fechaCreacion) : null
+    const fechaFin = tarea?.fechaFinalizacion ? new Date(tarea.fechaFinalizacion) : null
+    const esFinalizada = tarea?.estadoFinal === true
+
+    if (fechaVenc) {
+      const fechaReferencia = (esFinalizada && fechaFin) ? fechaFin : ahora
+      if (fechaReferencia > fechaVenc) {
+        const retrasoMs = fechaReferencia - fechaVenc
+        // Duración planificada mínimo 1 día para evitar penalización infinita
+        const duracionPlanMs = fechaInic
+          ? Math.max(fechaVenc - fechaInic, 24 * 60 * 60 * 1000)
+          : 24 * 60 * 60 * 1000
+        const penalizacion = Math.min(100, (retrasoMs / duracionPlanMs) * 100)
+        factorPuntualidad = Math.max(0, 100 - penalizacion)
+      }
+    }
+
+    // Eficiencia combinada:
+    // - Sin vencimiento definido: solo factor bloqueos
+    // - Con vencimiento: 35% bloqueos + 65% puntualidad
+    const eficiencia = fechaVenc
+      ? Math.round(factorBloqueos * 0.35 + factorPuntualidad * 0.65)
+      : Math.round(factorBloqueos)
 
     return {
       tiempoActivoTotal,
@@ -429,6 +461,8 @@ export const tareasApi = {
       totalBloqueos,
       bloqueos,
       eficiencia,
+      factorBloqueos: Math.round(factorBloqueos),
+      factorPuntualidad: fechaVenc ? Math.round(factorPuntualidad) : null,
       fechaCreacion: tarea?.fechaCreacion,
       fechaFinalizacion: tarea?.fechaFinalizacion
     }
