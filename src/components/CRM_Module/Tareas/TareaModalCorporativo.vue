@@ -57,8 +57,8 @@
                 />
                 
                 <!-- Dropdown de clientes -->
-                <div v-if="mostrarDropdownClientes && (clientesFiltrados.length > 0 || oportunidadesFiltradas.length > 0)" class="dropdown-clientes">
-                  <div v-if="clientesFiltrados.length > 0" class="dropdown-section">
+                <div v-if="mostrarDropdownClientes && clientesFiltrados.length > 0" class="dropdown-clientes">
+                  <div class="dropdown-section">
                     <div class="dropdown-header">CLIENTES</div>
                     <div 
                       v-for="cliente in clientesFiltrados" 
@@ -66,16 +66,6 @@
                       class="dropdown-item"
                       @click="seleccionarCliente(cliente)">
                       {{ cliente.nombre }}
-                    </div>
-                  </div>
-                  <div v-if="oportunidadesFiltradas.length > 0" class="dropdown-section">
-                    <div class="dropdown-header">OPORTUNIDADES</div>
-                    <div 
-                      v-for="oportunidad in oportunidadesFiltradas" 
-                      :key="`op-${oportunidad.id}`"
-                      class="dropdown-item"
-                      @click="seleccionarOportunidad(oportunidad)">
-                      {{ oportunidad.codigo }} - {{ oportunidad.nombre }}
                     </div>
                   </div>
                 </div>
@@ -358,7 +348,6 @@ export default {
       busquedaCliente: '',
       mostrarDropdownClientes: false,
       clientesFiltrados: [],
-      oportunidadesFiltradas: [],
       puntosSuministroCliente: [],
       fechaInicio: '',
       horaInicio: '09:00',
@@ -500,7 +489,6 @@ export default {
         // Limpiar cliente
         this.busquedaCliente = ''
         this.clientesFiltrados = []
-        this.oportunidadesFiltradas = []
         this.puntosSuministroCliente = []
         this.esPotencial = false
         this.formulario.clientePotencialNombre = null
@@ -514,7 +502,6 @@ export default {
     async buscarClientes() {
       if (this.busquedaCliente.length === 0) {
         this.clientesFiltrados = []
-        this.oportunidadesFiltradas = []
         this.mostrarDropdownClientes = false
         return
       }
@@ -538,21 +525,9 @@ export default {
           this.clientesFiltrados = []
         }
 
-        // Filtrar oportunidades localmente mientras escribes
-        const oportunidadesCompletas = [
-          { id: 1, codigo: '185', nombre: 'SOL DE LEVANTE PRODUCCIONES S.L' },
-          { id: 2, codigo: '249', nombre: 'SOL DE LEVANTE PRODUCCIONES S.L' }
-        ]
-        
-        this.oportunidadesFiltradas = oportunidadesCompletas.filter(o => 
-          o.nombre.toLowerCase().includes(this.busquedaCliente.toLowerCase()) ||
-          o.codigo.toLowerCase().includes(this.busquedaCliente.toLowerCase())
-        )
-
       } catch (error) {
         console.error('Error buscando clientes:', error)
         this.clientesFiltrados = []
-        this.oportunidadesFiltradas = []
       }
     },
 
@@ -694,8 +669,8 @@ export default {
           // Construir lista con el CUPS luz y gas no vacíos
           const lista = []
           for (const ps of data) {
-            if (ps.cupsluz) lista.push({ cups: ps.cupsluz, direccion: ps.direccion || '' })
-            if (ps.cupsgas) lista.push({ cups: ps.cupsgas, direccion: ps.direccion || '' })
+            if (ps.cupsluz?.trim()) lista.push({ cups: ps.cupsluz.trim(), direccion: ps.direccion || '' })
+            if (ps.cupsgas?.trim()) lista.push({ cups: ps.cupsgas.trim(), direccion: ps.direccion || '' })
           }
           this.puntosSuministroCliente = lista
         } else {
@@ -705,11 +680,6 @@ export default {
         console.error('Error cargando puntos de suministro del cliente:', e)
         this.puntosSuministroCliente = []
       }
-    },
-
-    seleccionarOportunidad(oportunidad) {
-      this.busquedaCliente = `${oportunidad.codigo} - ${oportunidad.nombre}`
-      this.mostrarDropdownClientes = false
     },
 
     onCategoriaChange() {
@@ -803,7 +773,6 @@ export default {
       this.busquedaCliente = ''
       this.mostrarDropdownClientes = false
       this.clientesFiltrados = []
-      this.oportunidadesFiltradas = []
       this.puntosSuministroCliente = []
       this.esPotencial = false
       this.formulario.clientePotencialNombre = null
