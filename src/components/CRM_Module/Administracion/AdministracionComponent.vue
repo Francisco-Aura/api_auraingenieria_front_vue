@@ -660,20 +660,39 @@ export default {
     },
     
     async eliminarRegistro(id) {
-      if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
-        this.loading = true;
-        try {
-          await axios.delete(`${this.tablaSeleccionada.url}/${id}`);
-          alert("Registro eliminado correctamente");
-          if (this.tablaSeleccionada) {
-            this.seleccionarTabla(this.tablaSeleccionada);
-          }
-        } catch (error) {
-          console.error("Error al eliminar registro", error);
-          alert("Error al eliminar el registro");
-        } finally {
-          this.loading = false;
+      const confirmacion = await this.$swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar registro?',
+        text: 'Esta acción no se puede deshacer.',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+      });
+
+      if (!confirmacion.isConfirmed) return;
+
+      this.loading = true;
+      try {
+        await axios.delete(`${this.tablaSeleccionada.url}/${id}`);
+        await this.$swal.fire({
+          icon: 'success',
+          title: 'Registro eliminado',
+          timer: 1400,
+          showConfirmButton: false,
+        });
+        if (this.tablaSeleccionada) {
+          this.seleccionarTabla(this.tablaSeleccionada);
         }
+      } catch (error) {
+        console.error("Error al eliminar registro", error);
+        await this.$swal.fire({
+          icon: 'error',
+          title: 'Error al eliminar',
+          text: 'No se pudo eliminar el registro.',
+        });
+      } finally {
+        this.loading = false;
       }
     },
     
@@ -748,7 +767,11 @@ export default {
         window.URL.revokeObjectURL(url);
       } catch (error) {
         console.error('Error al exportar a Excel:', error);
-        alert('Error al exportar a Excel');
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error al exportar',
+          text: 'No se pudo exportar a Excel.',
+        });
       }
     }
   },

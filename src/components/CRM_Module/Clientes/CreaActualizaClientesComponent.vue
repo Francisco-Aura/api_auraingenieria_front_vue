@@ -15,7 +15,6 @@
           >
             <i class="fas fa-tasks"></i>
             <span>Tareas/actividad</span>
-            <span v-if="tareas.length > 0" class="tareas-count-badge">{{ tareas.length }}</span>
           </button>
           <button type="button" class="close-button" @click="cancelarFormulario">
             <i class="fas fa-times"></i>
@@ -161,7 +160,7 @@
                   </div>
                 </div>                
                 <div class="form-group-compact">
-                  <label for="usuario">Usuario Asignado <span class="required">*</span></label>
+                  <label for="usuario">Usuario Asignado <span v-if="clienteLocal.id" class="required">*</span></label>
                   <div class="select-container-compact" :class="{ 'select-error': errores.idUsuario }">
                     <select 
                       id="usuario" 
@@ -169,7 +168,7 @@
                       class="form-select-compact" 
                       :disabled="!isAdvancedUser"
                       @change="errores.idUsuario = ''"
-                      required
+                      :required="!!clienteLocal.id"
                     >
                       <option value="">Seleccione...</option>
                       <option v-for="usuario in usuarios" :key="usuario.id" :value="usuario.id">
@@ -485,116 +484,500 @@
         </button>
       </div>
       <div class="tareas-panel-body">
-        <div v-if="cargandoTareas" class="tareas-loading">
-          <i class="fas fa-spinner fa-spin"></i> Cargando tareas...
+        <div class="tp-tabs">
+          <button type="button" class="tp-tab-btn tp-tab-btn-tareas" :class="{ active: tareasPanelTab === 'tareas' }" @click="tareasPanelTab = 'tareas'">
+            <span class="tp-tab-icon"><i class="fas fa-list-ul"></i></span>
+            <span class="tp-tab-label">Tareas</span>
+            <span class="tp-tab-count">{{ tareas.length }}</span>
+          </button>
+          <button type="button" class="tp-tab-btn tp-tab-btn-actividad" :class="{ active: tareasPanelTab === 'actividad' }" @click="tareasPanelTab = 'actividad'">
+            <span class="tp-tab-icon"><i class="fas fa-history"></i></span>
+            <span class="tp-tab-label">Actividad</span>
+            <span class="tp-tab-count">{{ actividadCliente.length }}</span>
+          </button>
+          <button type="button" class="tp-tab-btn tp-tab-btn-notas" :class="{ active: tareasPanelTab === 'notas' }" @click="tareasPanelTab = 'notas'">
+            <span class="tp-tab-icon"><i class="fas fa-sticky-note"></i></span>
+            <span class="tp-tab-label">Notas</span>
+            <span class="tp-tab-count">{{ notasCliente.length }}</span>
+          </button>
+          <button type="button" class="tp-tab-btn tp-tab-btn-incidencias" :class="{ active: tareasPanelTab === 'incidencias' }" @click="tareasPanelTab = 'incidencias'">
+            <span class="tp-tab-icon"><i class="fas fa-exclamation-triangle"></i></span>
+            <span class="tp-tab-label">Incidencias</span>
+            <span class="tp-tab-count">{{ incidenciasCliente.length }}</span>
+          </button>
         </div>
-        <div v-else-if="tareas.length === 0" class="tareas-empty-state">
-          <i class="fas fa-clipboard-list fa-3x text-muted"></i>
-          <p>No hay tareas para este cliente</p>
+
+        <div v-if="tareasPanelTab === 'tareas'" class="tp-tab-content tp-content-tareas">
+          <div v-if="cargandoTareas" class="tareas-loading">
+            <i class="fas fa-spinner fa-spin"></i> Cargando tareas...
+          </div>
+          <div v-else-if="tareas.length === 0" class="tareas-empty-state">
+            <i class="fas fa-clipboard-list fa-3x text-muted"></i>
+            <p>No hay tareas para este cliente</p>
+          </div>
+          <template v-else>
+            <div class="tp-toolbar">
+              <div class="tp-search-wrap">
+                <i class="fas fa-search tp-search-icon"></i>
+                <input
+                  type="text"
+                  v-model="tareasPanelBusqueda"
+                  placeholder="Buscar..."
+                  class="tp-search-input"
+                />
+                <button v-if="tareasPanelBusqueda" class="tp-search-clear" @click="tareasPanelBusqueda = ''">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              <span class="tp-count">{{ tareasFiltradas.length }} registro{{ tareasFiltradas.length !== 1 ? 's' : '' }}</span>
+            </div>
+
+            <div class="tp-table-wrapper">
+              <div v-if="tareasFiltradas.length === 0" class="tareas-empty-state">
+                <i class="fas fa-search fa-2x text-muted"></i>
+                <p>Sin resultados para "{{ tareasPanelBusqueda }}"</p>
+              </div>
+              <table v-else class="tp-table">
+                <thead>
+                  <tr>
+                    <th style="width:26%">Título</th>
+                    <th style="width:13%">Estado</th>
+                    <th style="width:10%">Prioridad</th>
+                    <th style="width:12%">Categoría</th>
+                    <th style="width:12%">Asignado a</th>
+                    <th style="width:18%">CUPS</th>
+                    <th style="width:9%">Fecha vto.</th>
+                    <th style="width:4%"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="tarea in tareasPaginadas" :key="tarea.id"
+                      :class="{ 'tp-row-vencida': tarea.vencida, 'tp-row-completada': tarea.estadoFinal, 'tp-row-fijada': tarea.fijada }">
+                    <td class="tp-td-truncate" :title="tarea.titulo">
+                      <span class="tp-titulo-wrap">
+                        <i v-if="tarea.fijada" class="fas fa-thumbtack tp-pin-icon"></i>
+                        {{ tarea.titulo }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="tp-estado-badge" :style="{ backgroundColor: tarea.estadoColor }">
+                        <i :class="getEstadoIcon(tarea.estadoNombre)"></i>
+                        {{ tarea.estadoNombre }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="tp-prioridad-badge" :class="`tp-prioridad-${tarea.prioridad}`">
+                        {{ getPrioridadTexto(tarea.prioridad) }}
+                      </span>
+                    </td>
+                    <td class="tp-td-truncate">
+                      <span v-if="tarea.categoriaNombre" class="tp-categoria-badge">{{ tarea.categoriaNombre }}</span>
+                      <span v-else class="text-muted">-</span>
+                    </td>
+                    <td class="tp-td-truncate">{{ tarea.usuarioAsignadoNombre || '-' }}</td>
+                    <td class="tp-td-truncate" :title="tarea.cups || 'GENERAL'">
+                      <span v-if="tarea.cups" class="tp-cups-badge">{{ tarea.cups }}</span>
+                      <span v-else class="tp-cups-general">GENERAL</span>
+                    </td>
+                    <td :class="{ 'tp-fecha-vencida': tarea.vencida }">{{ formatDate(tarea.fechaVencimiento) }}</td>
+                    <td>
+                      <button class="tp-btn-view" @click="abrirTarea(tarea)" title="Ver tarea">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="tp-pagination">
+              <div class="tp-pag-perpage">
+                <label>Registros por página:</label>
+                <select v-model="tareasPanelPorPagina" class="tp-pag-select">
+                  <option :value="10">10</option>
+                  <option :value="25">25</option>
+                  <option :value="50">50</option>
+                  <option :value="100">100</option>
+                </select>
+              </div>
+              <div class="tp-pag-info">
+                Mostrando {{ tareasPagStart }} - {{ tareasPagEnd }} de {{ tareasFiltradas.length }} registros
+              </div>
+              <div class="tp-pag-buttons">
+                <button class="tp-pag-btn" :disabled="tareasPanelPagina === 1" @click="tareasPanelPagina = 1" title="Primera página">
+                  <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button class="tp-pag-btn" :disabled="tareasPanelPagina === 1" @click="tareasPanelPagina--" title="Anterior">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="tp-pag-label">Página {{ tareasPanelPagina }} de {{ tareasTotalPaginas || 1 }}</span>
+                <button class="tp-pag-btn" :disabled="tareasPanelPagina >= tareasTotalPaginas" @click="tareasPanelPagina++" title="Siguiente">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="tp-pag-btn" :disabled="tareasPanelPagina >= tareasTotalPaginas" @click="tareasPanelPagina = tareasTotalPaginas" title="Última página">
+                  <i class="fas fa-angle-double-right"></i>
+                </button>
+              </div>
+            </div>
+          </template>
         </div>
-        <template v-else>
-          <!-- Toolbar: búsqueda + contador -->
+
+        <div v-else-if="tareasPanelTab === 'actividad'" class="tp-tab-content tp-content-actividad">
+          <div v-if="cargandoActividad" class="tareas-loading">
+            <i class="fas fa-spinner fa-spin"></i> Cargando actividad...
+          </div>
+          <div v-else-if="actividadCliente.length === 0" class="tareas-empty-state">
+            <i class="fas fa-stream fa-3x text-muted"></i>
+            <p>No hay actividad registrada para este cliente</p>
+          </div>
+          <template v-else>
+            <div class="tp-timeline-list">
+              <article v-for="evento in actividadPaginada" :key="evento.id" class="tp-timeline-item">
+                <div class="tp-timeline-main">
+                  <span class="tp-timeline-icon"><i class="fas fa-history"></i></span>
+                  <span class="tp-timeline-type">{{ (evento.tipoEvento || '').replaceAll('_', ' ') }}</span>
+                  <span v-if="evento.cups" class="tp-cups-badge">{{ evento.cups }}</span>
+                </div>
+                <p class="tp-timeline-desc">{{ evento.descripcion }}</p>
+                <div class="tp-timeline-date">{{ formatDateTime(evento.fechaEvento) }}</div>
+              </article>
+            </div>
+            <div class="tp-pagination tp-pagination-compact">
+              <div class="tp-pag-perpage">
+                <label>Registros por página:</label>
+                <select v-model="actividadPanelPorPagina" class="tp-pag-select">
+                  <option :value="10">10</option>
+                  <option :value="25">25</option>
+                  <option :value="50">50</option>
+                  <option :value="100">100</option>
+                </select>
+              </div>
+              <div class="tp-pag-info">
+                Mostrando {{ actividadPagStart }} - {{ actividadPagEnd }} de {{ actividadCliente.length }} registros
+              </div>
+              <div class="tp-pag-buttons">
+                <button class="tp-pag-btn" :disabled="actividadPanelPagina === 1" @click="actividadPanelPagina = 1" title="Primera página">
+                  <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button class="tp-pag-btn" :disabled="actividadPanelPagina === 1" @click="actividadPanelPagina--" title="Anterior">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="tp-pag-label">Página {{ actividadPanelPagina }} de {{ actividadTotalPaginas || 1 }}</span>
+                <button class="tp-pag-btn" :disabled="actividadPanelPagina >= actividadTotalPaginas" @click="actividadPanelPagina++" title="Siguiente">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="tp-pag-btn" :disabled="actividadPanelPagina >= actividadTotalPaginas" @click="actividadPanelPagina = actividadTotalPaginas" title="Última página">
+                  <i class="fas fa-angle-double-right"></i>
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <div v-else-if="tareasPanelTab === 'notas'" class="tp-tab-content tp-content-notas">
+          <div class="tp-notas-layout">
+            <div class="tp-notas-topbar">
+              <section class="tp-notas-card tp-notas-card-fijadas">
+                <div class="tp-notas-card-head">
+                  <div class="tp-notas-head-left">
+                    <span class="tp-section-icon"><i class="fas fa-thumbtack"></i></span>
+                    <span>Tareas fijadas</span>
+                    <span class="tp-mini-count">{{ tareasFijadas.length }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="tp-fijadas-toggle"
+                    :disabled="tareasFijadas.length === 0"
+                    @click="mostrarTareasFijadas = !mostrarTareasFijadas"
+                  >
+                    <i class="fas" :class="mostrarTareasFijadas ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                    {{ mostrarTareasFijadas ? 'Ocultar' : 'Ver' }}
+                  </button>
+                </div>
+
+                <div v-if="tareasFijadas.length === 0" class="tp-notas-empty-small tp-notas-empty-inline">
+                  No hay tareas fijadas para este cliente.
+                </div>
+                <div v-else-if="mostrarTareasFijadas" class="tp-notas-fijadas-list">
+                  <article
+                    v-for="t in tareasFijadas"
+                    :key="'fij-' + t.id"
+                    class="tp-nota-fijada-item"
+                    @click="abrirTarea(t)"
+                    title="Ver tarea"
+                  >
+                    <div class="tp-note-meta tp-note-meta-compact">
+                      <span v-if="t.cups" class="tp-cups-chip" :title="t.cups"><i class="fas fa-bolt"></i> {{ t.cups }}</span>
+                      <span class="tp-nota-estado" :style="{ color: t.estadoColor || '#888' }"><i class="fas fa-circle"></i> {{ t.estadoNombre }}</span>
+                    </div>
+                    <p class="tp-nota-fijada-title" :title="t.titulo">{{ t.titulo }}</p>
+                  </article>
+                </div>
+              </section>
+
+              <section class="tp-notas-card tp-notas-card-crear">
+                <div class="tp-notas-card-head">
+                  <div class="tp-notas-head-left">
+                    <span class="tp-section-icon"><i class="fas fa-edit"></i></span>
+                    <span>Nueva nota</span>
+                  </div>
+                </div>
+                <div class="tp-notas-create">
+                  <div class="tp-notas-row">
+                    <div class="tp-notas-field">
+                      <label>CUPS</label>
+                      <select v-model="nuevaNota.cups" class="tp-pag-select">
+                        <option value="">GENERAL</option>
+                        <option v-for="cups in cupsOpcionesNotas" :key="cups" :value="cups">{{ cups }}</option>
+                      </select>
+                    </div>
+                    <div class="tp-notas-field tp-notas-field-grow">
+                      <label>Nota</label>
+                      <textarea
+                        v-model="nuevaNota.comentario"
+                        class="tp-notas-textarea"
+                        placeholder="Escriba una nota..."
+                        maxlength="2000"
+                      ></textarea>
+                    </div>
+                    <button type="button" class="tp-btn-create-note" :disabled="creandoNota" @click="crearNotaCliente">
+                      <i class="fas" :class="creandoNota ? 'fa-spinner fa-spin' : 'fa-plus-circle'"></i>
+                      {{ creandoNota ? 'Guardando...' : 'Crear nota' }}
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <section class="tp-notas-history">
+              <div class="tp-notas-history-head">
+                <div class="tp-notas-head-left">
+                  <span class="tp-section-icon"><i class="fas fa-notes-medical"></i></span>
+                  <span>Histórico de notas</span>
+                </div>
+                <span class="tp-count">{{ notasCliente.length }} nota{{ notasCliente.length !== 1 ? 's' : '' }}</span>
+              </div>
+
+              <div v-if="cargandoNotas" class="tareas-loading">
+                <i class="fas fa-spinner fa-spin"></i> Cargando notas...
+              </div>
+              <div v-else-if="notasCliente.length === 0" class="tareas-empty-state">
+                <i class="fas fa-sticky-note fa-3x text-muted"></i>
+                <p>No hay notas para este cliente</p>
+              </div>
+              <div v-else class="tp-notas-list">
+                <article v-for="nota in notasPaginadas" :key="nota.comentarioId" class="tp-nota-item">
+                  <div class="tp-note-meta tp-note-meta-compact">
+                    <span class="tp-cups-chip" :title="nota.cups || 'GENERAL'"><i class="fas fa-bolt"></i> {{ nota.cups || 'GENERAL' }}</span>
+                    <span class="tp-meta-inline"><i class="fas fa-user-circle"></i> {{ nota.usuarioNombre || 'Sin autor' }}</span>
+                    <span class="tp-meta-inline">
+                      <i class="fas" :class="nota.editado ? 'fa-edit' : 'fa-calendar-alt'"></i>
+                      {{ nota.editado && nota.fechaEdicion ? `Editada: ${formatDateTime(nota.fechaEdicion)}` : formatDateTime(nota.fechaCreacion) }}
+                    </span>
+                    <span v-if="nota.editado" class="tp-note-edited-badge" title="Nota editada">
+                      <i class="fas fa-pencil-alt"></i> Editada
+                    </span>
+                    <div v-if="editandoNotaId !== nota.comentarioId" class="tp-note-actions">
+                      <button
+                        type="button"
+                        class="tp-note-edit-comment"
+                        :disabled="eliminandoNotaId === nota.comentarioId"
+                        @click="iniciarEdicionNota(nota)"
+                        title="Editar nota"
+                      >
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="tp-note-delete-comment"
+                        :disabled="eliminandoNotaId === nota.comentarioId"
+                        @click="eliminarNotaCliente(nota)"
+                        title="Eliminar nota"
+                      >
+                        <i class="fas" :class="eliminandoNotaId === nota.comentarioId ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <template v-if="editandoNotaId === nota.comentarioId">
+                    <div class="tp-nota-edit-grid">
+                      <div class="tp-notas-field">
+                        <label>CUPS</label>
+                        <select v-model="notaEdicion.cups" class="tp-pag-select">
+                          <option value="">GENERAL</option>
+                          <option v-for="cups in cupsOpcionesNotas" :key="cups" :value="cups">{{ cups }}</option>
+                        </select>
+                      </div>
+                      <div class="tp-notas-field tp-notas-field-grow">
+                        <label>Editar nota</label>
+                        <textarea
+                          v-model="notaEdicion.comentario"
+                          class="tp-notas-textarea"
+                          placeholder="Escriba una nota..."
+                          maxlength="2000"
+                        ></textarea>
+                      </div>
+                      <div class="tp-note-actions-edit">
+                        <button type="button" class="tp-note-action-btn tp-note-save" :disabled="guardandoNota" @click="guardarEdicionNota(nota)">
+                          <i class="fas" :class="guardandoNota ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+                          {{ guardandoNota ? 'Guardando' : 'Guardar' }}
+                        </button>
+                        <button type="button" class="tp-note-action-btn tp-note-cancel" :disabled="guardandoNota" @click="cancelarEdicionNota">
+                          <i class="fas fa-times"></i>
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  </template>
+
+                  <template v-else>
+                    <p class="tp-note-text" :class="{ 'tp-note-text-clamped': !estaNotaExpandida(nota.comentarioId) }">{{ nota.comentario }}</p>
+                    <button
+                      v-if="debeMostrarToggleNota(nota.comentario)"
+                      type="button"
+                      class="tp-note-expand-btn"
+                      @click="toggleNotaExpandida(nota.comentarioId)"
+                    >
+                      <i class="fas" :class="estaNotaExpandida(nota.comentarioId) ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                      {{ estaNotaExpandida(nota.comentarioId) ? 'Ver menos' : 'Ver completa' }}
+                    </button>
+                  </template>
+                </article>
+              </div>
+
+              <div v-if="!cargandoNotas && notasCliente.length > 0" class="tp-pagination tp-pagination-compact tp-pagination-notas">
+                <div class="tp-pag-perpage">
+                  <label>Registros por página:</label>
+                  <select v-model="notasPanelPorPagina" class="tp-pag-select">
+                    <option :value="5">5</option>
+                    <option :value="10">10</option>
+                    <option :value="25">25</option>
+                    <option :value="50">50</option>
+                  </select>
+                </div>
+                <div class="tp-pag-info">
+                  Mostrando {{ notasPagStart }} - {{ notasPagEnd }} de {{ notasCliente.length }} registros
+                </div>
+                <div class="tp-pag-buttons">
+                  <button class="tp-pag-btn" :disabled="notasPanelPagina === 1" @click="notasPanelPagina = 1" title="Primera página">
+                    <i class="fas fa-angle-double-left"></i>
+                  </button>
+                  <button class="tp-pag-btn" :disabled="notasPanelPagina === 1" @click="notasPanelPagina--" title="Anterior">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <span class="tp-pag-label">Página {{ notasPanelPagina }} de {{ notasTotalPaginas || 1 }}</span>
+                  <button class="tp-pag-btn" :disabled="notasPanelPagina >= notasTotalPaginas" @click="notasPanelPagina++" title="Siguiente">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                  <button class="tp-pag-btn" :disabled="notasPanelPagina >= notasTotalPaginas" @click="notasPanelPagina = notasTotalPaginas" title="Última página">
+                    <i class="fas fa-angle-double-right"></i>
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div v-else class="tp-tab-content tp-content-incidencias">
           <div class="tp-toolbar">
             <div class="tp-search-wrap">
               <i class="fas fa-search tp-search-icon"></i>
               <input
                 type="text"
-                v-model="tareasPanelBusqueda"
-                placeholder="Buscar..."
+                v-model="incidenciasBusqueda"
+                placeholder="Buscar incidencias..."
                 class="tp-search-input"
               />
-              <button v-if="tareasPanelBusqueda" class="tp-search-clear" @click="tareasPanelBusqueda = ''">
+              <button v-if="incidenciasBusqueda" class="tp-search-clear" @click="incidenciasBusqueda = ''">
                 <i class="fas fa-times"></i>
               </button>
             </div>
-            <span class="tp-count">{{ tareasFiltradas.length }} registro{{ tareasFiltradas.length !== 1 ? 's' : '' }}</span>
+            <span class="tp-count">{{ incidenciasFiltradas.length }} incidencia{{ incidenciasFiltradas.length !== 1 ? 's' : '' }}</span>
           </div>
 
-          <!-- Tabla -->
-          <div class="tp-table-wrapper">
-            <div v-if="tareasFiltradas.length === 0" class="tareas-empty-state">
-              <i class="fas fa-search fa-2x text-muted"></i>
-              <p>Sin resultados para "{{ tareasPanelBusqueda }}"</p>
-            </div>
-            <table v-else class="tp-table">
-              <thead>
-                <tr>
-                  <th style="width:30%">Título</th>
-                  <th style="width:15%">Estado</th>
-                  <th style="width:12%">Prioridad</th>
-                  <th style="width:14%">Categoría</th>
-                  <th style="width:15%">Asignado a</th>
-                  <th style="width:10%">Fecha vto.</th>
-                  <th style="width:4%"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="tarea in tareasPaginadas" :key="tarea.id"
-                    :class="{ 'tp-row-vencida': tarea.vencida, 'tp-row-completada': tarea.estadoFinal, 'tp-row-fijada': tarea.fijada }">
-                  <td class="tp-td-truncate" :title="tarea.titulo">
-                    <span class="tp-titulo-wrap">
-                      <i v-if="tarea.fijada" class="fas fa-thumbtack tp-pin-icon"></i>
-                      {{ tarea.titulo }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="tp-estado-badge" :style="{ backgroundColor: tarea.estadoColor }">
-                      <i :class="getEstadoIcon(tarea.estadoNombre)"></i>
-                      {{ tarea.estadoNombre }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="tp-prioridad-badge" :class="`tp-prioridad-${tarea.prioridad}`">
-                      {{ getPrioridadTexto(tarea.prioridad) }}
-                    </span>
-                  </td>
-                  <td class="tp-td-truncate">
-                    <span v-if="tarea.categoriaNombre" class="tp-categoria-badge">{{ tarea.categoriaNombre }}</span>
-                    <span v-else class="text-muted">-</span>
-                  </td>
-                  <td class="tp-td-truncate">{{ tarea.usuarioAsignadoNombre || '-' }}</td>
-                  <td :class="{ 'tp-fecha-vencida': tarea.vencida }">{{ formatDate(tarea.fechaVencimiento) }}</td>
-                  <td>
-                    <button class="tp-btn-view" @click="abrirTarea(tarea)" title="Ver tarea">
-                      <i class="fas fa-eye"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div v-if="cargandoIncidencias" class="tareas-loading">
+            <i class="fas fa-spinner fa-spin"></i> Cargando incidencias...
           </div>
-
-          <!-- Paginación -->
-          <div class="tp-pagination">
-            <div class="tp-pag-perpage">
-              <label>Registros por página:</label>
-              <select v-model="tareasPanelPorPagina" class="tp-pag-select">
-                <option :value="10">10</option>
-                <option :value="25">25</option>
-                <option :value="50">50</option>
-                <option :value="100">100</option>
-              </select>
-            </div>
-            <div class="tp-pag-info">
-              Mostrando {{ tareasPagStart }} - {{ tareasPagEnd }} de {{ tareasFiltradas.length }} registros
-            </div>
-            <div class="tp-pag-buttons">
-              <button class="tp-pag-btn" :disabled="tareasPanelPagina === 1" @click="tareasPanelPagina = 1" title="Primera página">
-                <i class="fas fa-angle-double-left"></i>
-              </button>
-              <button class="tp-pag-btn" :disabled="tareasPanelPagina === 1" @click="tareasPanelPagina--" title="Anterior">
-                <i class="fas fa-chevron-left"></i>
-              </button>
-              <span class="tp-pag-label">Página {{ tareasPanelPagina }} de {{ tareasTotalPaginas || 1 }}</span>
-              <button class="tp-pag-btn" :disabled="tareasPanelPagina >= tareasTotalPaginas" @click="tareasPanelPagina++" title="Siguiente">
-                <i class="fas fa-chevron-right"></i>
-              </button>
-              <button class="tp-pag-btn" :disabled="tareasPanelPagina >= tareasTotalPaginas" @click="tareasPanelPagina = tareasTotalPaginas" title="Última página">
-                <i class="fas fa-angle-double-right"></i>
-              </button>
-            </div>
+          <div v-else-if="incidenciasFiltradas.length === 0" class="tareas-empty-state">
+            <i class="fas fa-exclamation-circle fa-3x text-muted"></i>
+            <p>No hay incidencias para este cliente</p>
           </div>
-        </template>
+          <template v-else>
+            <div class="tp-table-wrapper">
+              <table class="tp-table">
+                <thead>
+                  <tr>
+                    <th style="width:29%">Título</th>
+                    <th style="width:16%">Estado</th>
+                    <th style="width:11%">Prioridad</th>
+                    <th style="width:18%">Categoría/Subcategoría</th>
+                    <th style="width:14%">CUPS</th>
+                    <th style="width:9%">Fecha vto.</th>
+                    <th style="width:3%"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="incidencia in incidenciasPaginadas" :key="incidencia.id" :class="{ 'tp-row-vencida': incidencia.vencida, 'tp-row-fijada': incidencia.fijada }">
+                    <td class="tp-td-truncate" :title="incidencia.titulo">{{ incidencia.titulo }}</td>
+                    <td>
+                      <span class="tp-estado-badge" :style="{ backgroundColor: incidencia.estadoColor }">
+                        <i :class="getEstadoIcon(incidencia.estadoNombre)"></i>
+                        {{ incidencia.estadoNombre }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="tp-prioridad-badge" :class="`tp-prioridad-${incidencia.prioridad}`">
+                        {{ getPrioridadTexto(incidencia.prioridad) }}
+                      </span>
+                    </td>
+                    <td class="tp-td-truncate" :title="`${incidencia.categoriaNombre || '-'} / ${incidencia.subcategoriaNombre || '-'}`">
+                      {{ incidencia.categoriaNombre || '-' }} / {{ incidencia.subcategoriaNombre || '-' }}
+                    </td>
+                    <td class="tp-td-truncate" :title="incidencia.cups || 'GENERAL'">
+                      <span v-if="incidencia.cups" class="tp-cups-badge">{{ incidencia.cups }}</span>
+                      <span v-else class="tp-cups-general">GENERAL</span>
+                    </td>
+                    <td>{{ formatDate(incidencia.fechaVencimiento) }}</td>
+                    <td>
+                      <button class="tp-btn-view" @click="abrirTarea(incidencia)" title="Ver tarea">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="tp-pagination tp-pagination-compact">
+              <div class="tp-pag-perpage">
+                <label>Registros por página:</label>
+                <select v-model="incidenciasPanelPorPagina" class="tp-pag-select">
+                  <option :value="10">10</option>
+                  <option :value="25">25</option>
+                  <option :value="50">50</option>
+                  <option :value="100">100</option>
+                </select>
+              </div>
+              <div class="tp-pag-info">
+                Mostrando {{ incidenciasPagStart }} - {{ incidenciasPagEnd }} de {{ incidenciasFiltradas.length }} registros
+              </div>
+              <div class="tp-pag-buttons">
+                <button class="tp-pag-btn" :disabled="incidenciasPanelPagina === 1" @click="incidenciasPanelPagina = 1" title="Primera página">
+                  <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button class="tp-pag-btn" :disabled="incidenciasPanelPagina === 1" @click="incidenciasPanelPagina--" title="Anterior">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="tp-pag-label">Página {{ incidenciasPanelPagina }} de {{ incidenciasTotalPaginas || 1 }}</span>
+                <button class="tp-pag-btn" :disabled="incidenciasPanelPagina >= incidenciasTotalPaginas" @click="incidenciasPanelPagina++" title="Siguiente">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="tp-pag-btn" :disabled="incidenciasPanelPagina >= incidenciasTotalPaginas" @click="incidenciasPanelPagina = incidenciasTotalPaginas" title="Última página">
+                  <i class="fas fa-angle-double-right"></i>
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
       </div>
     </div>
   </div>
@@ -611,17 +994,30 @@
     @completar-con-comentario="handleCompletarConComentario"
     @crear-comentario-estado="handleCrearComentarioEstado"
   />
+
+  <TareaModalCorporativo
+    :value="mostrarModalEditarTarea"
+    @update:value="mostrarModalEditarTarea = $event"
+    :tarea="tareaEnEdicion"
+    :estados="estadosTareas"
+    :usuarios="usuarios"
+    :categorias="categoriasTareas"
+    :guardando="guardandoTareaEdicion"
+    @guardar="handleGuardarEdicionTarea"
+    @cerrar="cerrarModalEditarTarea"
+  />
   </div>
 </template>
 
 <script>
 import axios from 'axios';
 import TareaDetalleModal from '@/components/CRM_Module/Tareas/TareaDetalleModal.vue';
+import TareaModalCorporativo from '@/components/CRM_Module/Tareas/TareaModalCorporativo.vue';
 import tareasApi from '@/services/tareasApi.js';
 
 export default {
   name: "CreaActualizaClienteComponent",
-  components: { TareaDetalleModal },
+  components: { TareaDetalleModal, TareaModalCorporativo },
   props: {
     formularioVisible: Boolean,
     modoActualizar: Boolean,
@@ -688,10 +1084,43 @@ export default {
       tareas: [],
       cargandoTareas: false,
       tareaSeleccionada: null,
+      mostrarModalEditarTarea: false,
+      tareaEnEdicion: null,
+      categoriasTareas: [],
+      guardandoTareaEdicion: false,
       estadosTareas: [],
       tareasPanelBusqueda: '',
       tareasPanelPagina: 1,
       tareasPanelPorPagina: 10,
+      actividadPanelPagina: 1,
+      actividadPanelPorPagina: 10,
+      notasPanelPagina: 1,
+      notasPanelPorPagina: 5,
+      incidenciasPanelPagina: 1,
+      incidenciasPanelPorPagina: 10,
+      tareasPanelTab: 'tareas',
+      actividadCliente: [],
+      notasCliente: [],
+      incidenciasCliente: [],
+      cargandoActividad: false,
+      cargandoNotas: false,
+      cargandoIncidencias: false,
+      cupsOpcionesNotas: [],
+      nuevaNota: {
+        cups: '',
+        comentario: '',
+      },
+      creandoNota: false,
+      editandoNotaId: null,
+      notaEdicion: {
+        cups: '',
+        comentario: '',
+      },
+      guardandoNota: false,
+      eliminandoNotaId: null,
+      notasExpandidas: {},
+      mostrarTareasFijadas: false,
+      incidenciasBusqueda: '',
     };
   },
   computed: {
@@ -722,6 +1151,59 @@ export default {
     tareasPagEnd() {
       return Math.min(this.tareasPanelPagina * this.tareasPanelPorPagina, this.tareasFiltradas.length);
     },
+    actividadTotalPaginas() {
+      return Math.ceil(this.actividadCliente.length / this.actividadPanelPorPagina) || 1;
+    },
+    actividadPaginada() {
+      const start = (this.actividadPanelPagina - 1) * this.actividadPanelPorPagina;
+      return this.actividadCliente.slice(start, start + this.actividadPanelPorPagina);
+    },
+    actividadPagStart() {
+      return this.actividadCliente.length === 0 ? 0 : (this.actividadPanelPagina - 1) * this.actividadPanelPorPagina + 1;
+    },
+    actividadPagEnd() {
+      return Math.min(this.actividadPanelPagina * this.actividadPanelPorPagina, this.actividadCliente.length);
+    },
+    notasTotalPaginas() {
+      return Math.ceil(this.notasCliente.length / this.notasPanelPorPagina) || 1;
+    },
+    notasPaginadas() {
+      const start = (this.notasPanelPagina - 1) * this.notasPanelPorPagina;
+      return this.notasCliente.slice(start, start + this.notasPanelPorPagina);
+    },
+    notasPagStart() {
+      return this.notasCliente.length === 0 ? 0 : (this.notasPanelPagina - 1) * this.notasPanelPorPagina + 1;
+    },
+    notasPagEnd() {
+      return Math.min(this.notasPanelPagina * this.notasPanelPorPagina, this.notasCliente.length);
+    },
+    incidenciasFiltradas() {
+      const q = (this.incidenciasBusqueda || '').toLowerCase().trim();
+      if (!q) return this.incidenciasCliente;
+      return this.incidenciasCliente.filter(t =>
+        (t.titulo || '').toLowerCase().includes(q) ||
+        (t.estadoNombre || '').toLowerCase().includes(q) ||
+        (t.categoriaNombre || '').toLowerCase().includes(q) ||
+        (t.subcategoriaNombre || '').toLowerCase().includes(q) ||
+        (t.cups || 'GENERAL').toLowerCase().includes(q)
+      );
+    },
+    incidenciasTotalPaginas() {
+      return Math.ceil(this.incidenciasFiltradas.length / this.incidenciasPanelPorPagina) || 1;
+    },
+    incidenciasPaginadas() {
+      const start = (this.incidenciasPanelPagina - 1) * this.incidenciasPanelPorPagina;
+      return this.incidenciasFiltradas.slice(start, start + this.incidenciasPanelPorPagina);
+    },
+    incidenciasPagStart() {
+      return this.incidenciasFiltradas.length === 0 ? 0 : (this.incidenciasPanelPagina - 1) * this.incidenciasPanelPorPagina + 1;
+    },
+    incidenciasPagEnd() {
+      return Math.min(this.incidenciasPanelPagina * this.incidenciasPanelPorPagina, this.incidenciasFiltradas.length);
+    },
+    tareasFijadas() {
+      return this.tareas.filter(t => t.fijada && t.titulo !== 'NOTAS CLIENTE');
+    },
   },
   watch: {
     formularioVisible(newVal) {
@@ -732,8 +1214,25 @@ export default {
         this.activeTab = 'principal';
         // Reset tareas panel state when modal reopens
         this.tareas = [];
+        this.actividadCliente = [];
+        this.notasCliente = [];
+        this.incidenciasCliente = [];
+        this.cupsOpcionesNotas = [];
+        this.nuevaNota = { cups: '', comentario: '' };
+        this.editandoNotaId = null;
+        this.notaEdicion = { cups: '', comentario: '' };
+        this.guardandoNota = false;
+        this.eliminandoNotaId = null;
+        this.cerrarModalEditarTarea();
+        this.notasExpandidas = {};
+        this.mostrarTareasFijadas = false;
         this.tareasPanelBusqueda = '';
+        this.incidenciasBusqueda = '';
         this.tareasPanelPagina = 1;
+        this.actividadPanelPagina = 1;
+        this.notasPanelPagina = 1;
+        this.incidenciasPanelPagina = 1;
+        this.tareasPanelTab = 'tareas';
       }
     },
     tareasPanelBusqueda() {
@@ -741,6 +1240,18 @@ export default {
     },
     tareasPanelPorPagina() {
       this.tareasPanelPagina = 1;
+    },
+    actividadPanelPorPagina() {
+      this.actividadPanelPagina = 1;
+    },
+    notasPanelPorPagina() {
+      this.notasPanelPagina = 1;
+    },
+    incidenciasBusqueda() {
+      this.incidenciasPanelPagina = 1;
+    },
+    incidenciasPanelPorPagina() {
+      this.incidenciasPanelPagina = 1;
     },
     nuevoCliente: {
       immediate: true,
@@ -827,8 +1338,12 @@ export default {
         { campo: 'iban', label: 'IBAN', tab: 'principal' },
         { campo: 'codigoSector', label: 'Sector', tab: 'principal' },
         { campo: 'codigoSubtipologia', label: 'Subtipología', tab: 'principal' },
-        { campo: 'idUsuario', label: 'Usuario Asignado', tab: 'principal' },
       ];
+
+      if (this.clienteLocal.id && !this.clienteLocal.idUsuario) {
+        this.errores.idUsuario = 'Usuario Asignado es obligatorio';
+      }
+
       let primerTabError = null;
       for (const { campo, label, tab } of campos) {
         const val = this.clienteLocal[campo];
@@ -836,6 +1351,9 @@ export default {
           this.errores[campo] = `${label} es obligatorio`;
           if (!primerTabError) primerTabError = tab;
         }
+      }
+      if (!primerTabError && this.errores.idUsuario) {
+        primerTabError = 'principal';
       }
       if (primerTabError) {
         this.activeTab = primerTabError;
@@ -895,11 +1413,19 @@ export default {
     actualizarCliente() {
       if (!this.validarFormulario()) return;
       if (!this.clienteLocal.id) {
-        console.error("El cliente no tiene un ID para actualizar.");
+        this.$swal.fire({
+          icon: 'error',
+          title: 'No se pudo actualizar',
+          text: 'El cliente no tiene un ID válido para actualizar.'
+        });
         return;
       }
       if (!this.clienteLocal.idUsuario) {
-        console.error("El cliente no tiene un usuario asignado.");
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Usuario asignado requerido',
+          text: 'Debe seleccionar un usuario asignado para actualizar el cliente.'
+        });
         return;
       }
       if (this.darDeBaja && !this.clienteLocal.fechaBaja) {
@@ -1150,12 +1676,19 @@ export default {
     // ── Tareas / Actividad ───────────────────────────────────────────────────
     async abrirPanelTareas() {
       this.mostrarPanelTareas = true;
-      if (this.tareas.length === 0 && !this.cargandoTareas) {
-        await this.cargarTareas();
-      }
+      this.tareasPanelTab = 'tareas';
+      await Promise.all([
+        this.cargarTareas(),
+        this.cargarActividadCliente(),
+        this.cargarNotasCliente(),
+        this.cargarIncidenciasCliente(),
+        this.cargarCupsClienteParaNotas(),
+      ]);
     },
     cerrarPanelTareas() {
       this.mostrarPanelTareas = false;
+      this.cerrarModalEditarTarea();
+      this.cerrarTarea();
     },
     async cargarTareas() {
       if (!this.clienteLocal?.id) return;
@@ -1167,25 +1700,112 @@ export default {
         ]);
         this.tareas = tareasRes.data;
         this.estadosTareas = estadosRes.data;
+        const totalFijadas = this.tareas.filter(t => t.fijada && t.titulo !== 'NOTAS CLIENTE').length;
+        this.mostrarTareasFijadas = totalFijadas > 0 && totalFijadas <= 3;
       } catch (e) {
         console.error('Error cargando tareas del cliente:', e);
+        this.mostrarTareasFijadas = false;
       } finally {
         this.cargandoTareas = false;
       }
     },
-    abrirTarea(tarea) {
-      this.tareaSeleccionada = tarea;
+    async abrirTarea(tarea) {
+      if (!tarea?.id) return;
+      try {
+        this.tareaSeleccionada = await tareasApi.obtenerTareaPorId(tarea.id);
+      } catch (e) {
+        console.error('Error cargando detalle de tarea:', e);
+        this.tareaSeleccionada = tarea;
+      }
     },
     cerrarTarea() {
       this.tareaSeleccionada = null;
     },
-    async handleActualizarTarea() {
-      await this.cargarTareas();
+    async handleActualizarTarea(tarea) {
+      if (!tarea?.id) {
+        await Promise.all([
+          this.cargarTareas(),
+          this.cargarNotasCliente(),
+          this.cargarIncidenciasCliente(),
+        ]);
+        return;
+      }
+
+      try {
+        if (!this.categoriasTareas.length) {
+          this.categoriasTareas = await tareasApi.obtenerCategorias();
+        }
+
+        this.tareaEnEdicion = await tareasApi.obtenerTareaPorId(tarea.id);
+        this.cerrarTarea();
+        this.mostrarModalEditarTarea = true;
+      } catch (e) {
+        console.error('Error preparando edición de tarea:', e);
+        this.$swal.fire({
+          icon: 'error',
+          title: 'No se pudo abrir la edición',
+          text: 'Error al cargar los datos de la tarea.'
+        });
+      }
+    },
+    cerrarModalEditarTarea() {
+      this.mostrarModalEditarTarea = false;
+      this.tareaEnEdicion = null;
+      this.guardandoTareaEdicion = false;
+    },
+    async handleGuardarEdicionTarea(tareaDTO, archivos = []) {
+      this.guardandoTareaEdicion = true;
+      try {
+        await tareasApi.actualizarTarea(tareaDTO.id, tareaDTO);
+
+        if (archivos && archivos.length > 0) {
+          try {
+            await tareasApi.subirAdjuntosTarea(tareaDTO.id, archivos);
+          } catch (errorAdjuntos) {
+            console.error('Error subiendo adjuntos en edición:', errorAdjuntos);
+            this.$swal.fire({
+              icon: 'warning',
+              title: 'Tarea actualizada',
+              text: 'La tarea se guardó, pero hubo un error subiendo algún adjunto.'
+            });
+          }
+        }
+
+        this.cerrarModalEditarTarea();
+
+        await Promise.all([
+          this.cargarTareas(),
+          this.cargarActividadCliente(),
+          this.cargarNotasCliente(),
+          this.cargarIncidenciasCliente(),
+        ]);
+
+        this.$swal.fire({
+          icon: 'success',
+          title: 'Tarea actualizada',
+          timer: 1400,
+          showConfirmButton: false,
+        });
+      } catch (e) {
+        console.error('Error guardando tarea desde panel cliente:', e);
+        const detalle = e?.response?.data?.message || e?.response?.data?.error || e?.message || 'No se pudo guardar la tarea.';
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error al guardar',
+          text: detalle,
+        });
+      } finally {
+        this.guardandoTareaEdicion = false;
+      }
     },
     async handleCambiarEstado(tareaId, estadoId, motivoBloqueo = null) {
       try {
         await tareasApi.cambiarEstadoTarea(tareaId, estadoId, motivoBloqueo);
-        await this.cargarTareas();
+        await Promise.all([
+          this.cargarTareas(),
+          this.cargarActividadCliente(),
+          this.cargarIncidenciasCliente(),
+        ]);
         this.cerrarTarea();
       } catch (e) {
         console.error('Error cambiando estado:', e);
@@ -1196,7 +1816,11 @@ export default {
       try {
         await tareasApi.crearComentario({ tareaId: data.tareaId, usuarioId: usuario.id, comentario: data.comentario.contenido });
         await tareasApi.cambiarEstadoTarea(data.tareaId, data.estadoId);
-        await this.cargarTareas();
+        await Promise.all([
+          this.cargarTareas(),
+          this.cargarNotasCliente(),
+          this.cargarIncidenciasCliente(),
+        ]);
         this.cerrarTarea();
       } catch (e) {
         console.error('Error completando tarea:', e);
@@ -1206,8 +1830,233 @@ export default {
       const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
       try {
         await tareasApi.crearComentario({ tareaId: data.tareaId, usuarioId: usuario.id, comentario: data.contenido });
+        await this.cargarNotasCliente();
       } catch (e) {
         console.error('Error creando comentario:', e);
+      }
+    },
+    async cargarActividadCliente() {
+      if (!this.clienteLocal?.id) return;
+      this.cargandoActividad = true;
+      try {
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        const nivelAcceso = typeof usuario?.nivelAcceso === 'number' ? usuario.nivelAcceso : 0;
+        this.actividadCliente = await tareasApi.obtenerActividadCliente(this.clienteLocal.id, nivelAcceso);
+        this.actividadPanelPagina = 1;
+      } catch (e) {
+        console.error('Error cargando actividad del cliente:', e);
+        this.actividadCliente = [];
+        this.actividadPanelPagina = 1;
+      } finally {
+        this.cargandoActividad = false;
+      }
+    },
+    async cargarNotasCliente() {
+      if (!this.clienteLocal?.id) return;
+      this.cargandoNotas = true;
+      try {
+        this.notasCliente = await tareasApi.obtenerNotasCliente(this.clienteLocal.id);
+        this.notasPanelPagina = 1;
+        this.notasExpandidas = {};
+      } catch (e) {
+        console.error('Error cargando notas del cliente:', e);
+        this.notasCliente = [];
+        this.notasPanelPagina = 1;
+        this.notasExpandidas = {};
+      } finally {
+        this.cargandoNotas = false;
+      }
+    },
+    async cargarIncidenciasCliente() {
+      if (!this.clienteLocal?.id) return;
+      this.cargandoIncidencias = true;
+      try {
+        this.incidenciasCliente = await tareasApi.obtenerIncidenciasCliente(this.clienteLocal.id);
+        this.incidenciasPanelPagina = 1;
+      } catch (e) {
+        console.error('Error cargando incidencias del cliente:', e);
+        this.incidenciasCliente = [];
+        this.incidenciasPanelPagina = 1;
+      } finally {
+        this.cargandoIncidencias = false;
+      }
+    },
+    async cargarCupsClienteParaNotas() {
+      if (!this.clienteLocal?.id) return;
+      try {
+        const data = await tareasApi.obtenerCarteraCupsCliente(this.clienteLocal.id);
+        const cupsSet = new Set();
+        (data || []).forEach(ps => {
+          const luz = (ps.cupsluz || '').trim();
+          const gas = (ps.cupsgas || '').trim();
+          if (luz) cupsSet.add(luz);
+          if (gas) cupsSet.add(gas);
+        });
+        this.cupsOpcionesNotas = Array.from(cupsSet).sort((a, b) => a.localeCompare(b));
+      } catch (e) {
+        console.error('Error cargando CUPS para notas:', e);
+        this.cupsOpcionesNotas = [];
+      }
+    },
+    async crearNotaCliente() {
+      const comentario = (this.nuevaNota.comentario || '').trim();
+      if (!comentario) {
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Comentario obligatorio',
+          text: 'Debe escribir un comentario para crear la nota.'
+        });
+        return;
+      }
+
+      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+      if (!usuario?.id || !this.clienteLocal?.id) {
+        this.$swal.fire({
+          icon: 'error',
+          title: 'No se pudo crear la nota',
+          text: 'No hay un usuario o cliente válido para registrar la nota.'
+        });
+        return;
+      }
+
+      this.creandoNota = true;
+      try {
+        await tareasApi.crearNotaCliente(this.clienteLocal.id, {
+          usuarioId: usuario.id,
+          comentario,
+          cups: this.nuevaNota.cups || null,
+        });
+
+        this.nuevaNota.comentario = '';
+        this.nuevaNota.cups = '';
+
+        await this.cargarNotasCliente();
+
+        this.$swal.fire({
+          icon: 'success',
+          title: 'Nota creada',
+          text: 'La nota se ha registrado correctamente.',
+          timer: 1800,
+          showConfirmButton: false,
+        });
+      } catch (e) {
+        console.error('Error creando nota del cliente:', e);
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error al crear la nota',
+          text: 'No se pudo guardar la nota. Inténtelo de nuevo.'
+        });
+      } finally {
+        this.creandoNota = false;
+      }
+    },
+    iniciarEdicionNota(nota) {
+      this.editandoNotaId = nota.comentarioId;
+      this.notaEdicion = {
+        cups: nota.cups || '',
+        comentario: nota.comentario || '',
+      };
+    },
+    cancelarEdicionNota() {
+      this.editandoNotaId = null;
+      this.notaEdicion = { cups: '', comentario: '' };
+      this.guardandoNota = false;
+    },
+    async guardarEdicionNota(nota) {
+      const comentario = (this.notaEdicion.comentario || '').trim();
+      if (!comentario) {
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Comentario obligatorio',
+          text: 'Debe escribir un comentario para guardar los cambios.'
+        });
+        return;
+      }
+
+      if (!this.clienteLocal?.id || !nota?.comentarioId) {
+        this.$swal.fire({
+          icon: 'error',
+          title: 'No se pudo actualizar',
+          text: 'Faltan datos para actualizar la nota.'
+        });
+        return;
+      }
+
+      this.guardandoNota = true;
+      try {
+        await tareasApi.actualizarNotaCliente(this.clienteLocal.id, nota.comentarioId, {
+          comentario,
+          cups: this.notaEdicion.cups || null,
+        });
+
+        await this.cargarNotasCliente();
+        this.cancelarEdicionNota();
+
+        this.$swal.fire({
+          icon: 'success',
+          title: 'Nota actualizada',
+          text: 'Los cambios se han guardado correctamente.',
+          timer: 1600,
+          showConfirmButton: false,
+        });
+      } catch (e) {
+        console.error('Error actualizando nota del cliente:', e);
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error al actualizar',
+          text: 'No se pudo guardar la nota. Inténtelo de nuevo.'
+        });
+      } finally {
+        this.guardandoNota = false;
+      }
+    },
+    async eliminarNotaCliente(nota) {
+      if (!this.clienteLocal?.id || !nota?.comentarioId) {
+        this.$swal.fire({
+          icon: 'error',
+          title: 'No se pudo eliminar',
+          text: 'Faltan datos para eliminar la nota.'
+        });
+        return;
+      }
+
+      const confirmacion = await this.$swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar nota?',
+        text: 'Esta acción no se puede deshacer.',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+      });
+
+      if (!confirmacion.isConfirmed) return;
+
+      this.eliminandoNotaId = nota.comentarioId;
+      try {
+        await tareasApi.eliminarNotaCliente(this.clienteLocal.id, nota.comentarioId);
+
+        if (this.editandoNotaId === nota.comentarioId) {
+          this.cancelarEdicionNota();
+        }
+
+        await this.cargarNotasCliente();
+
+        this.$swal.fire({
+          icon: 'success',
+          title: 'Nota eliminada',
+          timer: 1400,
+          showConfirmButton: false,
+        });
+      } catch (e) {
+        console.error('Error eliminando nota del cliente:', e);
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error al eliminar',
+          text: 'No se pudo eliminar la nota. Inténtelo de nuevo.'
+        });
+      } finally {
+        this.eliminandoNotaId = null;
       }
     },
     getColorPrioridad(prioridad) {
@@ -1238,6 +2087,26 @@ export default {
     formatDate(date) {
       if (!date) return '-';
       return new Date(date).toLocaleDateString('es-ES');
+    },
+    formatDateTime(date) {
+      if (!date) return '-';
+      return new Date(date).toLocaleString('es-ES', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    },
+    debeMostrarToggleNota(texto) {
+      if (!texto) return false;
+      return texto.length > 180 || texto.includes('\n');
+    },
+    estaNotaExpandida(notaId) {
+      return !!this.notasExpandidas[notaId];
+    },
+    toggleNotaExpandida(notaId) {
+      this.notasExpandidas = {
+        ...this.notasExpandidas,
+        [notaId]: !this.estaNotaExpandida(notaId),
+      };
     },
   },
 };
@@ -1353,23 +2222,33 @@ export default {
   background: rgba(15, 23, 42, 0.45);
   z-index: 2000;
   display: flex;
-  align-items: stretch;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
 }
 
 .tareas-panel {
-  width: min(900px, 96vw);
+  width: 100%;
+  max-width: 90vh;
+  height: 90vh;
   background: #fff;
   display: flex;
   flex-direction: column;
-  box-shadow: -8px 0 32px rgba(0,0,0,0.18);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.25);
   animation: slideInPanel 0.22s ease-out;
   overflow: hidden;
+  border-radius: 12px;
 }
 
 @keyframes slideInPanel {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
+  from { 
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to   { 
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Header */
@@ -1421,6 +2300,183 @@ export default {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.tp-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #dbe6f2;
+  background: linear-gradient(180deg, #f8fbff 0%, #f4f8fd 100%);
+  flex-wrap: wrap;
+}
+
+.tp-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d7e3ef;
+  background: #f8fbff;
+  color: #334155;
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.tp-tab-btn:hover {
+  background: #f2f7fd;
+  border-color: #bfd3e7;
+}
+
+.tp-tab-btn-tareas {
+  background: #edf9f7;
+  border-color: #c8e9e4;
+  color: #0f766e;
+}
+
+.tp-tab-btn-tareas:hover {
+  background: #e2f4f1;
+  border-color: #9fd6ce;
+}
+
+.tp-tab-btn-actividad {
+  background: #edf3ff;
+  border-color: #cddcfb;
+  color: #1d4ed8;
+}
+
+.tp-tab-btn-actividad:hover {
+  background: #e3ecff;
+  border-color: #adc4f7;
+}
+
+.tp-tab-btn-notas {
+  background: #f4efff;
+  border-color: #ddd1fb;
+  color: #6d28d9;
+}
+
+.tp-tab-btn-notas:hover {
+  background: #ece4ff;
+  border-color: #c8b1f8;
+}
+
+.tp-tab-btn-incidencias {
+  background: #fff6e9;
+  border-color: #f7dfbd;
+  color: #b45309;
+}
+
+.tp-tab-btn-incidencias:hover {
+  background: #ffefd8;
+  border-color: #f3cc92;
+}
+
+.tp-tab-btn.active {
+  background: #1d4ed8;
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 8px 18px rgba(29, 78, 216, 0.25);
+}
+
+.tp-tab-btn-tareas.active {
+  background: #0f766e;
+  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.25);
+}
+
+.tp-tab-btn-actividad.active {
+  background: #2563eb;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+}
+
+.tp-tab-btn-notas.active {
+  background: #7c3aed;
+  box-shadow: 0 8px 18px rgba(124, 58, 237, 0.25);
+}
+
+.tp-tab-btn-incidencias.active {
+  background: #d97706;
+  box-shadow: 0 8px 18px rgba(217, 119, 6, 0.25);
+}
+
+.tp-tab-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef5fb;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.tp-tab-btn-tareas .tp-tab-icon { color: #0f766e; background: #e8f7f5; }
+.tp-tab-btn-actividad .tp-tab-icon { color: #2563eb; background: #eaf1ff; }
+.tp-tab-btn-notas .tp-tab-icon { color: #7c3aed; background: #f3edff; }
+.tp-tab-btn-incidencias .tp-tab-icon { color: #d97706; background: #fff4e8; }
+
+.tp-tab-btn.active .tp-tab-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.tp-tab-label {
+  line-height: 1;
+}
+
+.tp-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  font-size: 0.75rem;
+  padding: 0 6px;
+}
+
+.tp-tab-btn.active .tp-tab-count {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.tp-tab-btn-tareas .tp-tab-count {
+  background: #d8f1ec;
+  color: #0f766e;
+}
+
+.tp-tab-btn-actividad .tp-tab-count {
+  background: #dbe7ff;
+  color: #1d4ed8;
+}
+
+.tp-tab-btn-notas .tp-tab-count {
+  background: #e9dcff;
+  color: #6d28d9;
+}
+
+.tp-tab-btn-incidencias .tp-tab-count {
+  background: #fde7cb;
+  color: #b45309;
+}
+
+.tp-tab-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tp-content-tareas,
+.tp-content-actividad,
+.tp-content-notas,
+.tp-content-incidencias {
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 18%);
 }
 
 /* Loading / empty */
@@ -1511,6 +2567,681 @@ export default {
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.tp-timeline-list {
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tp-timeline-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.tp-timeline-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.tp-timeline-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  background: #eaf1ff;
+  flex-shrink: 0;
+}
+
+.tp-timeline-type {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #1e40af;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-right: auto;
+}
+
+.tp-timeline-desc {
+  margin: 0;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.tp-timeline-date {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.tp-content-notas {
+  overflow: hidden;
+}
+
+.tp-notas-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  gap: 10px;
+  padding: 10px 12px 12px;
+}
+
+.tp-notas-topbar {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(360px, 1.4fr);
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.tp-notas-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.tp-notas-card-head,
+.tp-notas-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tp-notas-head-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #1f2937;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  min-width: 0;
+}
+
+.tp-mini-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+.tp-section-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+.tp-notas-card-fijadas .tp-section-icon {
+  background: #fff1e5;
+  color: #c2410c;
+}
+
+.tp-notas-card-crear .tp-section-icon {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.tp-notas-history .tp-section-icon {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.tp-fijadas-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #f4d0b4;
+  border-radius: 8px;
+  padding: 5px 9px;
+  background: #fff8f1;
+  color: #9a3412;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.tp-fijadas-toggle:hover:not(:disabled) {
+  background: #ffefdf;
+  border-color: #efb58a;
+}
+
+.tp-fijadas-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.tp-notas-empty-small {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.tp-notas-empty-inline {
+  padding: 4px 2px 6px;
+}
+
+.tp-notas-fijadas-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px;
+  max-height: 120px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+}
+
+.tp-nota-fijada-item {
+  background: linear-gradient(145deg, #fff8f1 0%, #ffffff 100%);
+  border: 1px solid #fde0c2;
+  border-left: 3px solid #ea6f38;
+  border-radius: 9px;
+  padding: 7px 9px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  min-width: 0;
+}
+
+.tp-nota-fijada-item:hover {
+  background: #fff3e4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(234, 111, 56, 0.11);
+}
+
+.tp-nota-fijada-title {
+  margin: 4px 0 0;
+  color: #1f2937;
+  font-size: 0.83rem;
+  line-height: 1.25;
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tp-nota-estado {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.tp-nota-estado i {
+  font-size: 0.52rem;
+  margin-right: 4px;
+}
+
+.tp-notas-create {
+  padding: 8px 10px;
+  border: 1px solid #e6dbff;
+  border-radius: 10px;
+  margin: 0;
+  background: linear-gradient(180deg, #faf7ff 0%, #ffffff 100%);
+  overflow-x: hidden;
+}
+
+.tp-btn-create-note {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-end;
+  gap: 8px;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.84rem;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(91, 33, 182, 0.24);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  min-height: 38px;
+}
+
+.tp-btn-create-note:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(91, 33, 182, 0.3);
+}
+
+.tp-btn-create-note:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tp-notas-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.tp-notas-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.tp-notas-field label {
+  font-size: 0.76rem;
+  color: #475569;
+  font-weight: 700;
+}
+
+.tp-notas-field-grow {
+  flex: 1;
+  min-width: 220px;
+}
+
+.tp-notas-textarea {
+  width: 100%;
+  min-height: 62px;
+  resize: vertical;
+  border: 1px solid #dbe3ec;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  color: #1e293b;
+  font-family: inherit;
+}
+
+.tp-notas-textarea:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249,115,22,0.12);
+}
+
+.tp-notas-history {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #dbe6f2;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  overflow: hidden;
+}
+
+.tp-notas-history-head {
+  margin-bottom: 0;
+  padding: 9px 10px;
+  border-bottom: 1px solid #e6edf5;
+  flex-shrink: 0;
+}
+
+.tp-notas-list {
+  flex: 1;
+  min-height: 0;
+  padding: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tp-nota-item {
+  border: 1px solid #dbe8f3;
+  border-left: 3px solid #0ea5e9;
+  border-radius: 9px;
+  background: linear-gradient(160deg, #f7fcff 0%, #ffffff 100%);
+  padding: 8px 10px;
+  position: relative;
+  min-width: 0;
+}
+
+.tp-note-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.tp-note-meta-compact {
+  margin-bottom: 4px;
+}
+
+.tp-cups-chip {
+  background: #eef9ff;
+  color: #0f5f86;
+  border: 1px solid #b6e7ff;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-family: monospace;
+  font-weight: 700;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-cups-chip i {
+  margin-right: 4px;
+  font-size: 0.7rem;
+}
+
+.tp-meta-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tp-meta-inline i {
+  color: #3b82f6;
+}
+
+.tp-note-edited-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fff4d8;
+  border: 1px solid #f6d38a;
+  color: #9a5b00;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+.tp-note-text {
+  margin: 0;
+  color: #1f2937;
+  line-height: 1.35;
+  font-size: 0.86rem;
+  white-space: pre-wrap;
+}
+
+.tp-note-text-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tp-note-expand-btn {
+  margin-top: 3px;
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tp-note-expand-btn:hover {
+  color: #1d4ed8;
+}
+
+.tp-note-actions {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  background: rgba(102, 126, 234, 0.08);
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  margin-top: 0;
+  margin-left: auto;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.tp-nota-item:hover .tp-note-actions {
+  background: rgba(102, 126, 234, 0.15);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.tp-note-edit-comment,
+.tp-note-delete-comment {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  font-size: 1rem;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  position: relative;
+}
+
+.tp-note-edit-comment:disabled,
+.tp-note-delete-comment:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.tp-note-edit-comment::before,
+.tp-note-delete-comment::before {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  z-index: -1;
+}
+
+.tp-note-edit-comment {
+  color: #3182ce;
+}
+
+.tp-note-edit-comment::before {
+  background: rgba(49, 130, 206, 0.1);
+  transform: scale(0);
+}
+
+.tp-note-edit-comment:hover {
+  color: #3182ce;
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.tp-note-edit-comment:hover::before {
+  transform: scale(1);
+}
+
+.tp-note-delete-comment {
+  color: #e53e3e;
+}
+
+.tp-note-delete-comment::before {
+  background: rgba(229, 62, 62, 0.1);
+  transform: scale(0);
+}
+
+.tp-note-delete-comment:hover {
+  color: #e53e3e;
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.tp-note-delete-comment:hover::before {
+  transform: scale(1);
+}
+
+.tp-nota-item:hover .tp-note-edit-comment,
+.tp-nota-item:hover .tp-note-delete-comment {
+  opacity: 0.8;
+}
+
+.tp-nota-edit-grid {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.tp-note-actions-edit {
+  display: flex;
+  gap: 6px;
+}
+
+.tp-note-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tp-note-action-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.tp-pagination-notas {
+  border-top: 1px solid #e6edf5;
+  border-radius: 0;
+}
+
+.tp-note-save {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.tp-note-save:hover:not(:disabled) {
+  background: #dbeafe;
+}
+
+.tp-note-cancel {
+  background: #f8fafc;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+.tp-note-cancel:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.tp-doc-pendiente {
+  margin: 10px 12px 12px;
+  padding: 8px 10px;
+  background: #fff7ed;
+  border: 1px dashed #fb923c;
+  border-radius: 8px;
+  color: #9a3412;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 1250px) {
+  .tp-notas-topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .tp-notas-fijadas-list {
+    max-height: 96px;
+  }
+}
+
+@media (max-width: 900px) {
+  .tp-tab-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .tp-notas-layout {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .tp-notas-card,
+  .tp-notas-history {
+    border-radius: 10px;
+  }
+
+  .tp-notas-card-head,
+  .tp-notas-history-head {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .tp-cups-chip {
+    max-width: 145px;
+  }
+
+  .tp-notas-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tp-notas-field-grow {
+    min-width: 100%;
+  }
+
+  .tp-btn-create-note {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tp-note-actions-edit {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .tp-note-actions {
+    width: auto;
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+
+  .tp-note-action-btn {
+    flex: 1;
+    justify-content: center;
+    min-width: 120px;
+  }
+
+  .tp-timeline-main {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 /* ── Table ── */
@@ -1650,6 +3381,24 @@ export default {
   font-weight: 500;
 }
 
+/* CUPS badges */
+.tp-cups-badge {
+  display: inline-block;
+  font-family: monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1a56db;
+  background: #ebf2ff;
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+.tp-cups-general {
+  font-size: 0.82rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
 /* Fecha vencida */
 .tp-fecha-vencida { color: #dc3545; font-weight: 600; }
 
@@ -1683,6 +3432,10 @@ export default {
   flex-shrink: 0;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.tp-pagination-compact {
+  padding: 10px 12px;
 }
 
 .tp-pag-perpage {

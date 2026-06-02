@@ -263,6 +263,42 @@ export const tareasApi = {
     return response.data
   },
 
+  async obtenerActividadCliente(clienteId, nivelAcceso = 0) {
+    const response = await api.get(`/clientes/${clienteId}/timeline/actividad`, {
+      params: { nivelAcceso }
+    })
+    return response.data
+  },
+
+  async obtenerNotasCliente(clienteId) {
+    const response = await api.get(`/clientes/${clienteId}/timeline/notas`)
+    return response.data
+  },
+
+  async crearNotaCliente(clienteId, payload) {
+    const response = await api.post(`/clientes/${clienteId}/timeline/notas`, payload)
+    return response.data
+  },
+
+  async actualizarNotaCliente(clienteId, notaId, payload) {
+    const response = await api.put(`/clientes/${clienteId}/timeline/notas/${notaId}`, payload)
+    return response.data
+  },
+
+  async eliminarNotaCliente(clienteId, notaId) {
+    await api.delete(`/clientes/${clienteId}/timeline/notas/${notaId}`)
+  },
+
+  async obtenerIncidenciasCliente(clienteId) {
+    const response = await api.get(`/clientes/${clienteId}/timeline/incidencias`)
+    return response.data
+  },
+
+  async obtenerCarteraCupsCliente(clienteId) {
+    const response = await api.get(`/puntos-suministro/cliente/${clienteId}/cartera`)
+    return response.data
+  },
+
   async obtenerEstadisticasPorUsuario(usuarioId, nivelAcceso = null) {
     try {
       let url = `/tareas/usuario/${usuarioId}/estadisticas`

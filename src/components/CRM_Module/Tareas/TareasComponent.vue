@@ -191,13 +191,18 @@
                 </span>
               </td>
               <td class="text-truncate" :title="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre || '-'">
-                <span v-if="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre">
-                  <i class="fas fa-user-circle"></i>
-                  {{ tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre }}
-                  <span v-if="tarea.clientePotencialNombre && !tarea.clienteRelacionadoNombre" class="potencial-badge" title="Cliente potencial (no registrado)">
-                    <i class="fas fa-user-clock"></i>
+                <div v-if="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre" class="cliente-cell">
+                  <span>
+                    <i class="fas fa-user-circle"></i>
+                    {{ tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre }}
+                    <span v-if="tarea.clientePotencialNombre && !tarea.clienteRelacionadoNombre" class="potencial-badge" title="Cliente potencial (no registrado)">
+                      <i class="fas fa-user-clock"></i>
+                    </span>
                   </span>
-                </span>
+                  <span v-if="tarea.cups" class="cups-badge" :title="tarea.cups">
+                    <i class="fas fa-bolt"></i> {{ tarea.cups }}
+                  </span>
+                </div>
                 <span v-else class="text-muted">-</span>
               </td>
               <td class="text-truncate" :title="tarea.usuarioAsignadoNombre || '-'">
@@ -991,20 +996,30 @@ export default {
     },
     
     async handleEliminarTarea(tareaId) {
-      if (confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
-        try {
-          await tareasApi.eliminarTarea(tareaId)
-          this.mostrarMensaje('Tarea eliminada correctamente', 'success')
-          await this.cargarTareas()
-          
-          // Actualizar estadísticas
-          if (this.$refs.estadisticas) {
-            await this.$refs.estadisticas.cargarEstadisticas()
-          }
-        } catch (error) {
-          console.error('Error eliminando tarea:', error)
-          this.mostrarMensaje('Error al eliminar la tarea', 'error')
+      const confirmacion = await this.$swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar tarea?',
+        text: 'Esta acción no se puede deshacer.',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+      })
+
+      if (!confirmacion.isConfirmed) return
+
+      try {
+        await tareasApi.eliminarTarea(tareaId)
+        this.mostrarMensaje('Tarea eliminada correctamente', 'success')
+        await this.cargarTareas()
+        
+        // Actualizar estadísticas
+        if (this.$refs.estadisticas) {
+          await this.$refs.estadisticas.cargarEstadisticas()
         }
+      } catch (error) {
+        console.error('Error eliminando tarea:', error)
+        this.mostrarMensaje('Error al eliminar la tarea', 'error')
       }
     },
     
@@ -1580,6 +1595,13 @@ export default {
 }
 
 /* Badges */
+.cliente-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .potencial-badge {
   display: inline-flex;
   align-items: center;
@@ -1587,6 +1609,22 @@ export default {
   color: #f39c12;
   font-size: 0.75rem;
   opacity: 0.85;
+}
+
+.cups-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #0369a1;
+  background: #e0f2fe;
+  border-radius: 5px;
+  padding: 1px 6px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .categoria-badge {
