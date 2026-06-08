@@ -639,7 +639,10 @@
                   <span v-if="evento.cups" class="tp-cups-badge">{{ evento.cups }}</span>
                 </div>
                 <p class="tp-timeline-desc">{{ evento.descripcion }}</p>
-                <div class="tp-timeline-date">{{ formatDateTime(evento.fechaEvento) }}</div>
+                <div class="tp-timeline-meta">
+                  <span v-if="evento.usuarioNombre" class="tp-meta-inline"><i class="fas fa-user-circle"></i> {{ evento.usuarioNombre }}</span>
+                  <span class="tp-timeline-date">{{ formatDateTime(evento.fechaEvento) }}</span>
+                </div>
               </article>
             </div>
             <div class="tp-pagination tp-pagination-compact">
@@ -740,10 +743,21 @@
                         maxlength="2000"
                       ></textarea>
                     </div>
-                    <button type="button" class="tp-btn-create-note" :disabled="creandoNota" @click="crearNotaCliente">
-                      <i class="fas" :class="creandoNota ? 'fa-spinner fa-spin' : 'fa-plus-circle'"></i>
-                      {{ creandoNota ? 'Guardando...' : 'Crear nota' }}
-                    </button>
+                    <div class="tp-nota-create-actions">
+                      <button
+                        type="button"
+                        :class="['tp-btn-pin-note', { 'pinned': nuevaNota.fijada }]"
+                        @click="nuevaNota.fijada = !nuevaNota.fijada"
+                        :title="nuevaNota.fijada ? 'La nota se creará fijada (clic para desfijar)' : 'Fijar nota al crearla'"
+                      >
+                        <i class="fas fa-thumbtack"></i>
+                        {{ nuevaNota.fijada ? 'Fijada' : 'Fijar' }}
+                      </button>
+                      <button type="button" class="tp-btn-create-note" :disabled="creandoNota" @click="crearNotaCliente">
+                        <i class="fas" :class="creandoNota ? 'fa-spinner fa-spin' : 'fa-plus-circle'"></i>
+                        {{ creandoNota ? 'Guardando...' : 'Crear nota' }}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -766,7 +780,7 @@
                 <p>No hay notas para este cliente</p>
               </div>
               <div v-else class="tp-notas-list">
-                <article v-for="nota in notasPaginadas" :key="nota.comentarioId" class="tp-nota-item">
+                <article v-for="nota in notasPaginadas" :key="nota.comentarioId" class="tp-nota-item" :class="{ 'tp-nota-fijada-highlight': nota.fijado }">
                   <div class="tp-note-meta tp-note-meta-compact">
                     <span class="tp-cups-chip" :title="nota.cups || 'GENERAL'"><i class="fas fa-bolt"></i> {{ nota.cups || 'GENERAL' }}</span>
                     <span class="tp-meta-inline"><i class="fas fa-user-circle"></i> {{ nota.usuarioNombre || 'Sin autor' }}</span>
@@ -778,6 +792,14 @@
                       <i class="fas fa-pencil-alt"></i> Editada
                     </span>
                     <div v-if="editandoNotaId !== nota.comentarioId" class="tp-note-actions">
+                      <button
+                        type="button"
+                        :class="['tp-note-pin-comment', { 'pinned': nota.fijado }]"
+                        @click="toggleFijadaNota(nota)"
+                        :title="nota.fijado ? 'Desfijar nota' : 'Fijar nota'"
+                      >
+                        <i class="fas fa-thumbtack"></i>
+                      </button>
                       <button
                         type="button"
                         class="tp-note-edit-comment"
@@ -1109,6 +1131,7 @@ export default {
       nuevaNota: {
         cups: '',
         comentario: '',
+        fijada: false,
       },
       creandoNota: false,
       editandoNotaId: null,
@@ -1925,10 +1948,12 @@ export default {
           usuarioId: usuario.id,
           comentario,
           cups: this.nuevaNota.cups || null,
+          fijado: this.nuevaNota.fijada || false,
         });
 
         this.nuevaNota.comentario = '';
         this.nuevaNota.cups = '';
+        this.nuevaNota.fijada = false;
 
         await this.cargarNotasCliente();
 
@@ -2057,6 +2082,24 @@ export default {
         });
       } finally {
         this.eliminandoNotaId = null;
+      }
+    },
+    async toggleFijadaNota(nota) {
+      if (!this.clienteLocal?.id || !nota?.comentarioId) return;
+      try {
+        const notaActualizada = await tareasApi.toggleFijadaNota(this.clienteLocal.id, nota.comentarioId);
+        // Reemplazar la nota actualizada y reasignar el array completo (fuerza reactividad)
+        const notas = this.notasCliente.map(n => n.comentarioId === nota.comentarioId ? notaActualizada : n);
+        // Reordenar: fijadas primero, luego por fecha descendente (editada o creada)
+        notas.sort((a, b) => {
+          if (a.fijado !== b.fijado) return a.fijado ? -1 : 1;
+          const fechaA = a.fechaEdicion || a.fechaCreacion || '';
+          const fechaB = b.fechaEdicion || b.fechaCreacion || '';
+          return fechaB.localeCompare(fechaA);
+        });
+        this.notasCliente = notas;
+      } catch (e) {
+        console.error('Error al cambiar estado fijado de nota:', e);
       }
     },
     getColorPrioridad(prioridad) {
@@ -2229,7 +2272,7 @@ export default {
 
 .tareas-panel {
   width: 100%;
-  max-width: 90%;
+  max-width: 90%nic;
   height: 90vh;
   background: #fff;
   display: flex;
@@ -2625,6 +2668,14 @@ export default {
   font-size: 0.78rem;
 }
 
+.tp-timeline-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
 .tp-content-notas {
   overflow: hidden;
 }
@@ -2835,6 +2886,80 @@ export default {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
+}
+
+.tp-nota-create-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: flex-end;
+}
+
+.tp-btn-pin-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 32px;
+}
+
+.tp-btn-pin-note:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.tp-btn-pin-note.pinned {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+.tp-btn-pin-note.pinned .fa-thumbtack {
+  transform: rotate(-45deg);
+}
+
+.tp-note-pin-comment {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  font-size: 1rem;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  position: relative;
+  color: #f59e0b;
+}
+
+.tp-note-pin-comment:hover {
+  color: #f59e0b;
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.tp-note-pin-comment.pinned {
+  color: #f59e0b;
+  opacity: 1;
+}
+
+.tp-note-pin-comment.pinned .fa-thumbtack {
+  transform: rotate(-45deg);
+}
+
+.tp-nota-fijada-highlight {
+  border-left: 3px solid #f97316 !important;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%) !important;
 }
 
 .tp-notas-row {

@@ -39,12 +39,10 @@ class NotificacionesService {
       webSocketFactory: () => new SockJS(`${process.env.VUE_APP_API_URL}/ws`),
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log('[Notificaciones] WebSocket STOMP conectado. Suscribiendo a /topic/notificaciones/' + this.usuarioId)
         // Suscripción al topic personal del usuario (no requiere autenticación)
         this.stompClient.subscribe(
           `/topic/notificaciones/${this.usuarioId}`,
-          (msg) => {
-            console.log('[Notificaciones] Push recibido via WebSocket:', msg.body)
+          () => {
             this._fetchYNotificar()
           }
         )

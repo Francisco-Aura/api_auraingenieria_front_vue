@@ -510,17 +510,9 @@ export default {
       this.mostrarDropdownClientes = true
 
       try {
-        const base = `${process.env.VUE_APP_API_URL || 'http://localhost:8986'}`
-        const params = new URLSearchParams({ 
-          q: this.busquedaCliente, 
-          page: '0', 
-          size: '10' 
-        })
-        
-        const responseClientes = await fetch(`${base}/api/clientes/buscar?${params.toString()}`)
-        if (responseClientes.ok) {
-          const clientes = await responseClientes.json()
-          this.clientesFiltrados = Array.isArray(clientes?.content) ? clientes.content : []
+        const data = await tareasApi.buscarClientes({ q: this.busquedaCliente, page: 0, size: 10 })
+        if (data) {
+          this.clientesFiltrados = Array.isArray(data?.content) ? data.content : []
         } else {
           this.clientesFiltrados = []
         }
@@ -662,10 +654,8 @@ export default {
         return
       }
       try {
-        const base = process.env.VUE_APP_API_URL || 'http://localhost:8986'
-        const res = await fetch(`${base}/api/puntos-suministro/cliente/${clienteId}/cartera`)
-        if (res.ok) {
-          const data = await res.json()
+        const data = await tareasApi.obtenerPuntosSuministroCliente(clienteId)
+        if (data) {
           // Construir lista con el CUPS luz y gas no vacíos
           const lista = []
           for (const ps of data) {

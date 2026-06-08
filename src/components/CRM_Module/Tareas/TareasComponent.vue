@@ -62,7 +62,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 12%">
+              <th class="sortable" style="width: 24%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('clienteRelacionadoNombre')">
                     <i class="fas fa-building mr-2"></i>Cliente
@@ -80,7 +80,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 12%">
+              <th class="sortable" style="width: 5%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('usuarioAsignadoNombre')">
                     <i class="fas fa-user-tie mr-2"></i>Asignado a
@@ -190,9 +190,9 @@
                   {{ tarea.titulo }}
                 </span>
               </td>
-              <td class="text-truncate" :title="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre || '-'">
+              <td :title="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre || '-'">
                 <div v-if="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre" class="cliente-cell">
-                  <span>
+                  <span class="cliente-nombre-truncate">
                     <i class="fas fa-user-circle"></i>
                     {{ tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre }}
                     <span v-if="tarea.clientePotencialNombre && !tarea.clienteRelacionadoNombre" class="potencial-badge" title="Cliente potencial (no registrado)">
@@ -505,10 +505,34 @@ export default {
   watch: {
     mostrarCompletadas() {
       this.aplicarFiltros()
+    },
+    '$route.query.abrirDetalle': {
+      immediate: true,
+      async handler(tareaId) {
+        if (!tareaId) return
+        // Esperar a que las tareas estén cargadas
+        if (this.tareas.length === 0) {
+          await this.inicializar()
+        }
+        const tarea = this.tareas.find(t => String(t.id) === String(tareaId))
+        if (tarea) {
+          this.tareaDetalle = { ...tarea }
+          this.mostrarModalDetalle = true
+        }
+      }
     }
   },
   async mounted() {
     await this.inicializar()
+    // Abrir detalle si viene en query params (por si el watch no lo pilló antes de cargar)
+    const tareaId = this.$route.query.abrirDetalle
+    if (tareaId && !this.mostrarModalDetalle) {
+      const tarea = this.tareas.find(t => String(t.id) === String(tareaId))
+      if (tarea) {
+        this.tareaDetalle = { ...tarea }
+        this.mostrarModalDetalle = true
+      }
+    }
   },
   methods: {
     /**
@@ -608,9 +632,9 @@ export default {
     
     async fetchUsuarios() {
       try {
-        const response = await fetch(`${process.env.VUE_APP_API_URL || 'http://localhost:8986'}/api/usuarios`)
-        if (response.ok) {
-          return await response.json()
+        const data = await tareasApi.obtenerUsuarios()
+        if (data) {
+          return data
         }
       } catch (error) {
         console.error('Error cargando usuarios:', error)
@@ -1600,6 +1624,15 @@ export default {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  overflow: hidden;
+}
+
+.cliente-nombre-truncate {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .potencial-badge {
@@ -1621,10 +1654,8 @@ export default {
   background: #e0f2fe;
   border-radius: 5px;
   padding: 1px 6px;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  width: fit-content;
 }
 
 .categoria-badge {
