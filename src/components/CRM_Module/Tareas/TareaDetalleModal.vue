@@ -441,7 +441,7 @@
 
 <script>
 import TareaAuditoriaModal from './TareaAuditoriaModal.vue'
-import { tareasApi } from '@/services/tareasApi'
+import tareasApi from '@/services/tareasApi'
 
 export default {
   name: 'TareaDetalleModal',
@@ -796,10 +796,9 @@ export default {
     async cargarAdjuntosDirectos() {
       if (!this.tarea || !this.tarea.id) return
       try {
-        const base = process.env.VUE_APP_API_URL || 'http://localhost:8986'
-        const res = await fetch(`${base}/api/tareas/${this.tarea.id}/adjuntos`)
-        if (res.ok) {
-          this.adjuntosDirectos = await res.json()
+        const data = await tareasApi.obtenerAdjuntosTarea(this.tarea.id)
+        if (data) {
+          this.adjuntosDirectos = data
         }
       } catch (e) {
         console.error('Error cargando adjuntos directos:', e)
@@ -808,10 +807,9 @@ export default {
 
     async cargarUsuariosParaMencion() {
       try {
-        const base = process.env.VUE_APP_API_URL || 'http://localhost:8986'
-        const res = await fetch(`${base}/api/usuarios`)
-        if (res.ok) {
-          this.todosLosUsuarios = await res.json()
+        const data = await tareasApi.obtenerUsuarios()
+        if (data) {
+          this.todosLosUsuarios = data
           this.filtrarUsuariosMencion(this.mencionDropdown.query)
         }
       } catch (e) {

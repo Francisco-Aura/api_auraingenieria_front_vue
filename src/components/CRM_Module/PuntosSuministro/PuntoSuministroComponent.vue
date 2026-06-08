@@ -929,7 +929,6 @@ export default {
         // VERIFICAR que esta solicitud sigue siendo la actual (evita race conditions)
         // Si el usuario hizo clic en otro punto mientras cargaba, ignoramos esta respuesta
         if (this.currentContratosRequestId !== requestId) {
-          console.log('Solicitud cancelada: el usuario seleccionó otro punto de suministro');
           return;
         }
         
@@ -958,7 +957,6 @@ export default {
         
         // VERIFICAR una vez más antes de mostrar el modal
         if (this.currentContratosRequestId !== requestId) {
-          console.log('Solicitud cancelada antes de mostrar modal');
           return;
         }
         

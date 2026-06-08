@@ -717,7 +717,6 @@ export default {
 
     // Método para normalizar valores CUPS antes del envío
     normalizarCups(cups) {
-      console.log('Normalizando CUPS:', cups, 'tipo:', typeof cups);
       
       // Manejar todos los casos problemáticos
       if (cups === null || cups === undefined) {
@@ -735,7 +734,6 @@ export default {
         return null;
       }
       
-      console.log('CUPS normalizado:', cupsStr);
       return cupsStr;
     },
 
@@ -911,10 +909,6 @@ export default {
         fechaBaja: this.puntoLocal.fechaBaja || null,
       };
       
-      console.log('=== DATOS NORMALIZADOS ANTES DEL ENVÍO ===');
-      console.log('CUPSluz normalizado:', datosAdaptados.CUPSluz);
-      console.log('CUPSgas normalizado:', datosAdaptados.CUPSgas);
-      
       this.$emit('actualizar-punto-suministro', datosAdaptados);
       this.cerrarModal();
     },
@@ -978,18 +972,9 @@ export default {
         if (isConfirmed && fechaBaja) {
           this.puntoLocal.fechaBaja = fechaBaja;
           
-          console.log('=== DEBUG confirmarBajaPunto ===');
-          console.log('puntoLocal.cupsluz:', this.puntoLocal.cupsluz);
-          console.log('puntoLocal.cupsgas:', this.puntoLocal.cupsgas);
-          console.log('puntoLocal:', this.puntoLocal);
-          
           // Normalizar CUPS antes del envío
           const cupsLuzNormalizado = this.normalizarCups(this.puntoLocal.cupsluz);
           const cupsGasNormalizado = this.normalizarCups(this.puntoLocal.cupsgas);
-          
-          console.log('=== VALIDACIÓN EN confirmarBajaPunto ===');
-          console.log('CUPS Luz original:', this.puntoLocal.cupsluz, 'normalizado:', cupsLuzNormalizado);
-          console.log('CUPS Gas original:', this.puntoLocal.cupsgas, 'normalizado:', cupsGasNormalizado);
           
           const datosAdaptados = {
             id: this.puntoLocal.id,
@@ -1040,14 +1025,6 @@ export default {
             integracionSistemasFV: this.puntoLocal.integracionSistemasFVId ? { id: this.puntoLocal.integracionSistemasFVId } : null,
             fechaBaja: fechaBaja,
           };
-          
-          console.log('=== ENVIANDO DATOS AL BACKEND ===');
-          console.log('fechaBaja:', fechaBaja);
-          console.log('puntoLocal.cupsluz:', this.puntoLocal.cupsluz);
-          console.log('puntoLocal.cupsgas:', this.puntoLocal.cupsgas);
-          console.log('CUPSluz normalizado:', datosAdaptados.CUPSluz);
-          console.log('CUPSgas normalizado:', datosAdaptados.CUPSgas);
-          console.log('datosAdaptados completo:', datosAdaptados);
           
           this.$emit('actualizar-punto-suministro', datosAdaptados);
           this.cerrarModal();
@@ -1150,10 +1127,6 @@ export default {
             integracionSistemasFV: this.puntoLocal.integracionSistemasFVId ? { id: this.puntoLocal.integracionSistemasFVId } : null,
             fechaBaja: null, // Eliminar la fecha de baja
           };
-          
-          console.log('=== REACTIVANDO PUNTO DE SUMINISTRO ===');
-          console.log('Eliminando fecha de baja');
-          console.log('datosAdaptados completo:', datosAdaptados);
           
           this.$emit('actualizar-punto-suministro', datosAdaptados);
         }

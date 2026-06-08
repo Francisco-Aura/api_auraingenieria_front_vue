@@ -1065,11 +1065,6 @@ export default {
     },
 
     async editarContratoGenerico(contrato) {
-      console.log('Datos del contrato al editar:', {
-        userFO: contrato.userFO,
-        passwordFO: contrato.passwordFO,
-        contrato: contrato
-      });
       
       // ASEGURAR que las comercializadoras estén cargadas
       await this.asegurarComercializadorasCargadas();
@@ -1093,11 +1088,6 @@ export default {
       // Asegurar que los campos de facturación online estén presentes y preserven valores nulos/vacíos
       this.nuevoContrato.userFO = contrato.userFO !== undefined ? contrato.userFO : "";
       this.nuevoContrato.passwordFO = contrato.passwordFO !== undefined ? contrato.passwordFO : "";
-      
-      console.log('Valores asignados al formulario:', {
-        userFO: this.nuevoContrato.userFO,
-        passwordFO: this.nuevoContrato.passwordFO
-      });
       
       // SINCRONIZAR con el punto de suministro actual
       this.nuevoContrato.exencionImpuestoElectricidad = this.tieneExencionImpuestoElectrico ? 1 : 0;
@@ -1453,7 +1443,6 @@ export default {
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`);
         this.comercializadorasList = response.data;
-        console.log('Comercializadoras cargadas:', this.comercializadorasList.length);
       } catch (error) {
         console.error('Error al cargar comercializadoras:', error);
         this.comercializadorasList = [];
@@ -1464,19 +1453,16 @@ export default {
     async asegurarComercializadorasCargadas() {
       // Si ya están cargadas, no hacer nada
       if (this.comercializadorasList && this.comercializadorasList.length > 0) {
-        console.log('Comercializadoras ya cargadas:', this.comercializadorasList.length);
         return;
       }
       
       // Si están en el prop, copiarlas al data interno
       if (this.comercializadoras && this.comercializadoras.length > 0) {
         this.comercializadorasList = [...this.comercializadoras];
-        console.log('Comercializadoras copiadas del prop:', this.comercializadorasList.length);
         return;
       }
       
       // Si no están ni cargadas ni en props, cargarlas
-      console.log('Cargando comercializadoras desde API...');
       await this.cargarComercializadoras();
       
       // Esperar un tick adicional para asegurar reactividad
