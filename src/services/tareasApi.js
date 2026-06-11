@@ -1,46 +1,30 @@
 import axios from 'axios'
 
-const API_BASE_URL = `${process.env.VUE_APP_API_URL}/api`
-
-// Configuración base de Axios con timeout aumentado
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 30000, // 30 segundos (aumentado de 10s)
-  headers: {
-    'Content-Type': 'application/json',
-  }
-})
-
 // Interceptor para reintentos automáticos en caso de timeout
-api.interceptors.response.use(
+axios.interceptors.response.use(
   response => response,
   async error => {
     const config = error.config
-    
-    // Si no tiene configuración de reintentos, inicializarla
+
     if (!config.__retryCount) {
       config.__retryCount = 0
     }
-    
-    // Solo reintentar en caso de timeout o error de red, máximo 2 reintentos
+
     const shouldRetry = (
       (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') &&
       config.__retryCount < 2
     )
-    
+
     if (shouldRetry) {
       config.__retryCount++
-      
-      // Backoff exponencial: 1s, 2s, 4s...
+
       const delayMs = Math.pow(2, config.__retryCount) * 1000
-      
-      console.log(`Reintentando petición (intento ${config.__retryCount}/2) después de ${delayMs}ms...`)
-      
+
       await new Promise(resolve => setTimeout(resolve, delayMs))
-      
-      return api(config)
+
+      return axios(config)
     }
-    
+
     return Promise.reject(error)
   }
 )
@@ -49,7 +33,7 @@ export const tareasApi = {
   // Configuración de módulos
   async verificarModuloActivo() {
     try {
-      const response = await api.get('/configuracion-modulos/GESTOR_TAREAS/activo')
+      const response = await axios.get('/configuracion-modulos/GESTOR_TAREAS/activo')
       return response.data.activo
     } catch (error) {
       console.error('Error verificando módulo activo:', error)
@@ -58,33 +42,33 @@ export const tareasApi = {
   },
 
   async activarModulo() {
-    const response = await api.post('/configuracion-modulos/GESTOR_TAREAS/activar')
+    const response = await axios.post('/configuracion-modulos/GESTOR_TAREAS/activar')
     return response.data
   },
 
   async desactivarModulo() {
-    const response = await api.post('/configuracion-modulos/GESTOR_TAREAS/desactivar')
+    const response = await axios.post('/configuracion-modulos/GESTOR_TAREAS/desactivar')
     return response.data
   },
 
   // Tareas
   async obtenerTareasPorUsuario(usuarioId) {
-    const response = await api.get(`/tareas/usuario/${usuarioId}`)
+    const response = await axios.get(`/tareas/usuario/${usuarioId}`)
     return response.data
   },
 
   async obtenerTodasLasTareas() {
-    const response = await api.get('/tareas')
+    const response = await axios.get('/tareas')
     return response.data
   },
 
   async obtenerTareaPorId(id) {
-    const response = await api.get(`/tareas/${id}`)
+    const response = await axios.get(`/tareas/${id}`)
     return response.data
   },
 
   async crearTarea(tarea) {
-    const response = await api.post('/tareas', tarea)
+    const response = await axios.post('/tareas', tarea)
     return response.data
   },
 
@@ -93,7 +77,7 @@ export const tareasApi = {
     for (const archivo of archivos) {
       const formData = new FormData()
       formData.append('file', archivo)
-      const response = await api.post(`/tareas/${tareaId}/adjuntos`, formData, {
+      const response = await axios.post(`/tareas/${tareaId}/adjuntos`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
       resultados.push(response.data)
@@ -102,115 +86,115 @@ export const tareasApi = {
   },
 
   async obtenerAdjuntosTarea(tareaId) {
-    const response = await api.get(`/tareas/${tareaId}/adjuntos`)
+    const response = await axios.get(`/tareas/${tareaId}/adjuntos`)
     return response.data
   },
 
   async actualizarTarea(id, tarea) {
-    const response = await api.put(`/tareas/${id}`, tarea)
+    const response = await axios.put(`/tareas/${id}`, tarea)
     return response.data
   },
 
   async cambiarEstadoTarea(tareaId, estadoId, motivoBloqueo = null) {
     if (motivoBloqueo) {
       // Usar endpoint avanzado con motivo
-      const response = await api.patch(`/tareas/${tareaId}/estado`, {
+      const response = await axios.patch(`/tareas/${tareaId}/estado`, {
         estadoId: estadoId,
         motivoBloqueo: motivoBloqueo
       })
       return response.data
     } else {
       // Usar endpoint simple
-      const response = await api.patch(`/tareas/${tareaId}/estado/${estadoId}`)
+      const response = await axios.patch(`/tareas/${tareaId}/estado/${estadoId}`)
       return response.data
     }
   },
 
   async eliminarTarea(id) {
-    await api.delete(`/tareas/${id}`)
+    await axios.delete(`/tareas/${id}`)
   },
 
   async toggleFijada(id, fijada) {
-    await api.patch(`/tareas/${id}/fijada`, { fijada })
+    await axios.patch(`/tareas/${id}/fijada`, { fijada })
   },
 
   async contarTareasActivasPorUsuario(usuarioId) {
-    const response = await api.get(`/tareas/usuario/${usuarioId}/count`)
+    const response = await axios.get(`/tareas/usuario/${usuarioId}/count`)
     return response.data.count
   },
 
   async obtenerTareasVencidas() {
-    const response = await api.get('/tareas/vencidas')
+    const response = await axios.get('/tareas/vencidas')
     return response.data
   },
 
   async obtenerTareasPorVencer(dias = 7) {
-    const response = await api.get(`/tareas/por-vencer?dias=${dias}`)
+    const response = await axios.get(`/tareas/por-vencer?dias=${dias}`)
     return response.data
   },
 
   // Estados de tareas
   async obtenerEstados() {
-    const response = await api.get('/tareas/estados')
+    const response = await axios.get('/tareas/estados')
     return response.data
   },
 
   async obtenerEstadosNoFinales() {
-    const response = await api.get('/tareas/estados/no-finales')
+    const response = await axios.get('/tareas/estados/no-finales')
     return response.data
   },
 
   // Notificaciones
   async obtenerNotificacionesPorUsuario(usuarioId) {
-    const response = await api.get(`/notificaciones-tareas/usuario/${usuarioId}`)
+    const response = await axios.get(`/notificaciones-tareas/usuario/${usuarioId}`)
     return response.data
   },
 
   async obtenerNotificacionesNoLeidas(usuarioId) {
-    const response = await api.get(`/notificaciones-tareas/usuario/${usuarioId}/no-leidas`)
+    const response = await axios.get(`/notificaciones-tareas/usuario/${usuarioId}/no-leidas`)
     return response.data
   },
 
   async contarNotificacionesNoLeidas(usuarioId) {
-    const response = await api.get(`/notificaciones-tareas/usuario/${usuarioId}/count-no-leidas`)
+    const response = await axios.get(`/notificaciones-tareas/usuario/${usuarioId}/count-no-leidas`)
     return response.data.count
   },
 
   async marcarNotificacionComoLeida(notificacionId) {
-    const response = await api.patch(`/notificaciones-tareas/${notificacionId}/marcar-leida`)
+    const response = await axios.patch(`/notificaciones-tareas/${notificacionId}/marcar-leida`)
     return response.data
   },
 
   async marcarTodasNotificacionesComoLeidas(usuarioId) {
-    await api.patch(`/notificaciones-tareas/usuario/${usuarioId}/marcar-todas-leidas`)
+    await axios.patch(`/notificaciones-tareas/usuario/${usuarioId}/marcar-todas-leidas`)
   },
 
   async eliminarNotificacion(id) {
-    await api.delete(`/notificaciones-tareas/${id}`)
+    await axios.delete(`/notificaciones-tareas/${id}`)
   },
 
   // Comentarios
   async obtenerComentariosPorTarea(tareaId) {
-    const response = await api.get(`/comentarios-tareas/tarea/${tareaId}`)
+    const response = await axios.get(`/comentarios-tareas/tarea/${tareaId}`)
     return response.data
   },
 
   async crearComentario(comentario) {
-    const response = await api.post('/comentarios-tareas', comentario)
+    const response = await axios.post('/comentarios-tareas', comentario)
     return response.data
   },
 
   async actualizarComentario(id, comentario, usuarioId) {
-    const response = await api.put(`/comentarios-tareas/${id}`, { comentario, usuarioId })
+    const response = await axios.put(`/comentarios-tareas/${id}`, { comentario, usuarioId })
     return response.data
   },
 
   async eliminarComentario(id, usuarioId) {
-    await api.delete(`/comentarios-tareas/${id}`, { params: { usuarioId } })
+    await axios.delete(`/comentarios-tareas/${id}`, { params: { usuarioId } })
   },
 
   async toggleFijadoComentario(id) {
-    const response = await api.patch(`/comentarios-tareas/${id}/fijado`)
+    const response = await axios.patch(`/comentarios-tareas/${id}/fijado`)
     return response.data
   },
 
@@ -218,7 +202,7 @@ export const tareasApi = {
     const formData = new FormData()
     formData.append('file', file)
     
-    const response = await api.post(`/comentarios-tareas/${comentarioId}/adjuntos`, formData, {
+    const response = await axios.post(`/comentarios-tareas/${comentarioId}/adjuntos`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -227,7 +211,7 @@ export const tareasApi = {
   },
 
   async descargarAdjunto(adjuntoId, nombreArchivo) {
-    const response = await api.get(`/comentarios-tareas/adjuntos/${adjuntoId}`, {
+    const response = await axios.get(`/comentarios-tareas/adjuntos/${adjuntoId}`, {
       responseType: 'blob'
     })
     
@@ -243,14 +227,14 @@ export const tareasApi = {
   },
 
   async eliminarAdjunto(adjuntoId) {
-    await api.delete(`/comentarios-tareas/adjuntos/${adjuntoId}`)
+    await axios.delete(`/comentarios-tareas/adjuntos/${adjuntoId}`)
   },
 
   async actualizarAdjunto(adjuntoId, file) {
     const formData = new FormData()
     formData.append('file', file)
     
-    const response = await api.put(`/comentarios-tareas/adjuntos/${adjuntoId}`, formData, {
+    const response = await axios.put(`/comentarios-tareas/adjuntos/${adjuntoId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -259,7 +243,53 @@ export const tareasApi = {
   },
 
   async obtenerTareasPorCliente(clienteId) {
-    const response = await api.get(`/tareas/cliente/${clienteId}`)
+    const response = await axios.get(`/tareas/cliente/${clienteId}`)
+    return response.data
+  },
+
+  async obtenerActividadCliente(clienteId, nivelAcceso = 0) {
+    const response = await axios.get(`/clientes/${clienteId}/timeline/actividad`, {
+      params: { nivelAcceso }
+    })
+    return response.data
+  },
+
+  async obtenerNotasCliente(clienteId) {
+    const response = await axios.get(`/clientes/${clienteId}/timeline/notas`)
+    return response.data
+  },
+
+  async crearNotaCliente(clienteId, payload) {
+    const response = await axios.post(`/clientes/${clienteId}/timeline/notas`, payload)
+    return response.data
+  },
+
+  async actualizarNotaCliente(clienteId, notaId, payload) {
+    const response = await axios.put(`/clientes/${clienteId}/timeline/notas/${notaId}`, payload)
+    return response.data
+  },
+
+  async eliminarNotaCliente(clienteId, notaId) {
+    await axios.delete(`/clientes/${clienteId}/timeline/notas/${notaId}`)
+  },
+
+  async toggleFijadaNota(clienteId, notaId) {
+    const response = await axios.patch(`/clientes/${clienteId}/timeline/notas/${notaId}/fijado`)
+    return response.data
+  },
+
+  async obtenerTareasVencenHoy() {
+    const response = await axios.get('/tareas/vencen-hoy')
+    return response.data
+  },
+
+  async obtenerIncidenciasCliente(clienteId) {
+    const response = await axios.get(`/clientes/${clienteId}/timeline/incidencias`)
+    return response.data
+  },
+
+  async obtenerCarteraCupsCliente(clienteId) {
+    const response = await axios.get(`/puntos-suministro/cliente/${clienteId}/cartera`)
     return response.data
   },
 
@@ -269,7 +299,7 @@ export const tareasApi = {
       if (nivelAcceso !== null) {
         url += `?nivelAcceso=${nivelAcceso}`
       }
-      const response = await api.get(url)
+      const response = await axios.get(url)
       return response.data
     } catch (error) {
       console.error('Error en obtenerEstadisticasPorUsuario:', error)
@@ -279,29 +309,29 @@ export const tareasApi = {
 
   // Categorías y subcategorías
   async obtenerCategorias() {
-    const response = await api.get('/tareas/categorias')
+    const response = await axios.get('/tareas/categorias')
     return response.data
   },
 
   async obtenerCategoria(id) {
-    const response = await api.get(`/tareas/categorias/${id}`)
+    const response = await axios.get(`/tareas/categorias/${id}`)
     return response.data
   },
 
   async obtenerSubcategoriasPorCategoria(categoriaId) {
-    const response = await api.get(`/tareas/categorias/${categoriaId}/subcategorias`)
+    const response = await axios.get(`/tareas/categorias/${categoriaId}/subcategorias`)
     return response.data
   },
 
   async obtenerTodasSubcategorias() {
-    const response = await api.get('/tareas/categorias/subcategorias')
+    const response = await axios.get('/tareas/categorias/subcategorias')
     return response.data
   },
 
   // Auditoría e Historial
   async obtenerHistorialTarea(tareaId) {
     try {
-      const response = await api.get(`/tareas/${tareaId}/historial`)
+      const response = await axios.get(`/tareas/${tareaId}/historial`)
       return response.data
     } catch (error) {
       console.error('Error obteniendo historial:', error)
@@ -326,6 +356,16 @@ export const tareasApi = {
       console.error('Error obteniendo métricas:', error)
       throw error
     }
+  },
+  async obtenerUsuarios() {
+    const response = await axios.get('/usuarios')
+    return response.data
+  },
+
+  // Clientes
+  async buscarClientes(params) {
+    const response = await axios.get('/clientes/buscar', { params })
+    return response.data
   },
 
   // Calcular métricas desde el historial
@@ -382,9 +422,41 @@ export const tareasApi = {
     }
 
     const tiempoTotalSegundos = tiempoActivoTotal + tiempoBloqueadoTotal
-    const eficiencia = tiempoTotalSegundos > 0 
-      ? Math.round((tiempoActivoTotal / tiempoTotalSegundos) * 100) 
+
+    // Factor 1: ratio de tiempo activo vs bloqueado (sin bloqueos = 100%)
+    const factorBloqueos = tiempoTotalSegundos > 0
+      ? (tiempoActivoTotal / tiempoTotalSegundos) * 100
       : 100
+
+    // Factor 2: puntualidad — penaliza el retraso respecto al vencimiento
+    let factorPuntualidad = 100
+    const ahora = new Date()
+    const fechaVenc = tarea?.fechaVencimiento ? new Date(tarea.fechaVencimiento) : null
+    const fechaInic = tarea?.fechaInicio
+      ? new Date(tarea.fechaInicio)
+      : tarea?.fechaCreacion ? new Date(tarea.fechaCreacion) : null
+    const fechaFin = tarea?.fechaFinalizacion ? new Date(tarea.fechaFinalizacion) : null
+    const esFinalizada = tarea?.estadoFinal === true
+
+    if (fechaVenc) {
+      const fechaReferencia = (esFinalizada && fechaFin) ? fechaFin : ahora
+      if (fechaReferencia > fechaVenc) {
+        const retrasoMs = fechaReferencia - fechaVenc
+        // Duración planificada mínimo 1 día para evitar penalización infinita
+        const duracionPlanMs = fechaInic
+          ? Math.max(fechaVenc - fechaInic, 24 * 60 * 60 * 1000)
+          : 24 * 60 * 60 * 1000
+        const penalizacion = Math.min(100, (retrasoMs / duracionPlanMs) * 100)
+        factorPuntualidad = Math.max(0, 100 - penalizacion)
+      }
+    }
+
+    // Eficiencia combinada:
+    // - Sin vencimiento definido: solo factor bloqueos
+    // - Con vencimiento: 35% bloqueos + 65% puntualidad
+    const eficiencia = fechaVenc
+      ? Math.round(factorBloqueos * 0.35 + factorPuntualidad * 0.65)
+      : Math.round(factorBloqueos)
 
     return {
       tiempoActivoTotal,
@@ -393,10 +465,13 @@ export const tareasApi = {
       totalBloqueos,
       bloqueos,
       eficiencia,
+      factorBloqueos: Math.round(factorBloqueos),
+      factorPuntualidad: fechaVenc ? Math.round(factorPuntualidad) : null,
       fechaCreacion: tarea?.fechaCreacion,
       fechaFinalizacion: tarea?.fechaFinalizacion
     }
   }
+  
 }
 
 export default tareasApi

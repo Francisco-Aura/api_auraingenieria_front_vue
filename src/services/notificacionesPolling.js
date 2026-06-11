@@ -1,15 +1,21 @@
+import { Client } from '@stomp/stompjs'
+import SockJS from 'sockjs-client'
 import { tareasApi } from '@/services/tareasApi'
 
-class NotificacionesPolling {
+/**
+ * Servicio de notificaciones en tiempo real via WebSocket/STOMP.
+ * Mantiene la misma API pública que el antiguo servicio de polling:
+ *   - onNotificacionesActualizadas(callback)
+ *   - iniciar(usuarioId)
+ *   - detener()
+ */
+class NotificacionesService {
   constructor() {
-    this.intervaloId = null
-    this.intervaloMs = 10000 // Cada 10 segundos (aumentado de 5s para reducir carga)
-    this.callbacks = [] // Array de callbacks para actualizar componentes
+    this.stompClient = null
+    this.callbacks = []
     this.usuarioId = null
     this.activo = false
-    this.enProgreso = false // Flag para evitar llamadas concurrentes
-    this.erroresConsecutivos = 0 // Contador de errores
-    this.maxErrores = 3 // Máximo de errores antes de aumentar intervalo
+    this._fallbackIntervalId = null
   }
 
   // Registrar un callback para cuando hay nuevas notificaciones
@@ -17,100 +23,81 @@ class NotificacionesPolling {
     this.callbacks.push(callback)
   }
 
-  // Iniciar el polling
+  // Iniciar la conexión WebSocket y cargar las notificaciones iniciales
   iniciar(usuarioId) {
-    if (this.activo) {
-      console.log('Polling de notificaciones ya está activo')
-      return
-    }
-
-    if (!usuarioId) {
-      console.error('Se requiere usuarioId para iniciar polling')
-      return
-    }
+    if (this.activo) return
+    if (!usuarioId) return
 
     this.usuarioId = usuarioId
     this.activo = true
-    this.erroresConsecutivos = 0
 
+    // Carga inicial: obtener notificaciones no leídas actuales via HTTP
+    this._fetchYNotificar()
 
+    // Conexión STOMP sobre SockJS para recibir nuevas notificaciones en tiempo real
+    this.stompClient = new Client({
+      webSocketFactory: () => new SockJS(`${process.env.VUE_APP_API_URL}/ws`),
+      reconnectDelay: 5000,
+      onConnect: () => {
+        // Suscripción al topic personal del usuario (no requiere autenticación)
+        this.stompClient.subscribe(
+          `/topic/notificaciones/${this.usuarioId}`,
+          () => {
+            this._fetchYNotificar()
+          }
+        )
+      },
+      onStompError: (frame) => {
+        console.error('[Notificaciones] Error STOMP:', frame.headers['message'], frame)
+      },
+      onWebSocketError: (error) => {
+        console.warn('[Notificaciones] Error WebSocket (el servidor puede no tener WS activo, usando fallback polling):', error)
+        this._activarFallbackPolling()
+      },
+      onDisconnect: () => {
+        console.warn('[Notificaciones] WebSocket desconectado')
+      }
+    })
 
-    // Hacer la primera llamada inmediatamente
-    this.verificarNotificaciones()
-
-    // Después, establecer el intervalo
-    this.intervaloId = setInterval(() => {
-      this.verificarNotificaciones()
-    }, this.intervaloMs)
+    this.stompClient.activate()
   }
 
-  // Detener el polling
+  // Detener la conexión WebSocket y limpiar estado
   detener() {
-    if (this.intervaloId) {
-      clearInterval(this.intervaloId)
-      this.intervaloId = null
-      this.activo = false
-      this.enProgreso = false
-      this.erroresConsecutivos = 0
+    if (this.stompClient) {
+      this.stompClient.deactivate()
+      this.stompClient = null
+    }
+    this._pararFallbackPolling()
+    this.activo = false
+    this.callbacks = []
+  }
 
+  // Fallback polling cuando el servidor no tiene WebSocket activo
+  _activarFallbackPolling() {
+    if (this._fallbackIntervalId) return
+    console.warn('[Notificaciones] Activando fallback polling cada 15s')
+    this._fallbackIntervalId = setInterval(() => this._fetchYNotificar(), 15000)
+  }
+
+  _pararFallbackPolling() {
+    if (this._fallbackIntervalId) {
+      clearInterval(this._fallbackIntervalId)
+      this._fallbackIntervalId = null
     }
   }
 
-  // Verificar nuevas notificaciones
-  async verificarNotificaciones() {
-    // Evitar llamadas concurrentes
-    if (this.enProgreso) {
-      console.log('Ya hay una verificación en progreso, saltando...')
-      return
-    }
-
+  // Obtener la lista actualizada de notificaciones no leídas y notificar a los callbacks
+  async _fetchYNotificar() {
     try {
       if (!this.usuarioId) return
-
-      this.enProgreso = true
-
       const notificaciones = await tareasApi.obtenerNotificacionesNoLeidas(this.usuarioId)
-      
-      // Si fue exitoso, resetear contador de errores
-      this.erroresConsecutivos = 0
-      
-      // Si el intervalo se había aumentado por errores, restaurarlo
-      if (this.intervaloMs > 10000) {
-        this.cambiarIntervalo(10000)
-      }
-      
-      // Llamar a todos los callbacks registrados
-      this.callbacks.forEach(callback => {
-        callback(notificaciones)
-      })
-
-    } catch (error) {
-      this.erroresConsecutivos++
-      
-      console.error(`Error verificando notificaciones (${this.erroresConsecutivos}/${this.maxErrores}):`, error.message)
-      
-      // Si hay muchos errores consecutivos, aumentar el intervalo para reducir carga
-      if (this.erroresConsecutivos >= this.maxErrores && this.intervaloMs < 30000) {
-        console.warn('Demasiados errores consecutivos, aumentando intervalo de polling a 30 segundos')
-        this.cambiarIntervalo(30000)
-      }
-    } finally {
-      this.enProgreso = false
-    }
-  }
-
-  // Cambiar intervalo de polling
-  cambiarIntervalo(ms) {
-    const cambio = this.intervaloMs !== ms
-    this.intervaloMs = ms
-    
-    if (this.activo && cambio) {
-
-      this.detener()
-      this.iniciar(this.usuarioId)
+      this.callbacks.forEach(cb => cb(notificaciones))
+    } catch (e) {
+      console.error('Error al obtener notificaciones no leídas:', e)
     }
   }
 }
 
-// Crear una instancia global
-export const notificacionesPolling = new NotificacionesPolling()
+export const notificacionesPolling = new NotificacionesService()
+export default notificacionesPolling

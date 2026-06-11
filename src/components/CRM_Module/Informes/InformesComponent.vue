@@ -36,7 +36,7 @@
             </div>
           </div>
 
-          <div class="card informe-card" v-if="nivelAcceso !== 4" @click="mostrarInforme('servicios-pendientes-pago')">
+          <div class="card informe-card" v-if="nivelAcceso === 1" @click="mostrarInforme('servicios-pendientes-pago')">
             <div class="informe-icon">
               <i class="fas fa-money-bill-wave"></i>
             </div>
@@ -62,7 +62,7 @@
             </div>
           </div>
 
-          <div class="card informe-card" v-if="nivelAcceso !== 4" @click="mostrarInforme('servicios-vigentes')">
+          <div class="card informe-card" v-if="nivelAcceso === 1" @click="mostrarInforme('servicios-vigentes')">
             <div class="informe-icon">
               <i class="fas fa-cogs"></i>
             </div>

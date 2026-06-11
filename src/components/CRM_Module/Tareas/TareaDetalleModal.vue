@@ -38,6 +38,15 @@
               </div>
             </div>
 
+            <div class="campo-detalle" v-if="tarea.clienteRelacionadoId">
+              <label>Punto de suministro (CUPS)</label>
+              <div class="cups-info">
+                <i class="fas fa-bolt"></i>
+                <span v-if="tarea.cups" class="cups-value">{{ tarea.cups }}</span>
+                <span v-else class="cups-general">GENERAL</span>
+              </div>
+            </div>
+
             <div class="campo-detalle">
               <label>Asignado a</label>
               <div class="usuario-info">
@@ -215,12 +224,23 @@
               <label class="section-label"><i class="fas fa-comments"></i> Comentarios</label>
               
               <!-- Nuevo Comentario siempre visible arriba -->
-              <div class="comentario-nuevo-compact" style="position: relative;">
+              <div
+                class="comentario-nuevo-compact"
+                style="position: relative;"
+                @dragover.prevent="onDragOverComentario"
+                @dragleave="onDragLeaveComentario"
+                @drop.prevent="onDropComentario"
+                :class="{ 'drag-activo-comentario': dragActivoComentario }"
+              >
+                <div v-if="dragActivoComentario" class="drag-overlay-comentario">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <span>Suelta para adjuntar</span>
+                </div>
                 <textarea 
                   v-model="nuevoComentario"
                   class="form-control textarea-autoresize"
                   rows="2"
-                  placeholder="Escribe un comentario... usa @ para mencionar"
+                  placeholder="Escribe un comentario... usa @ para mencionar o arrastra archivos aquí"
                   @input="onComentarioInput($event)"
                   @keydown="onComentarioKeydown($event)"
                   ref="textareaComentario"
@@ -267,7 +287,9 @@
                 <!-- Preview Archivos -->
                 <div v-if="archivosSeleccionados.length > 0" class="mini-files-preview">
                     <div v-for="(archivo, index) in archivosSeleccionados" :key="index" class="mini-file-tag">
+                      <i class="fas fa-file" style="font-size:0.7rem"></i>
                       <span>{{ archivo.name }}</span>
+                      <span class="adjunto-size-mini">{{ formatFileSizeComentario(archivo.size) }}</span>
                       <span class="remove-file" @click="quitarArchivo(index)">&times;</span>
                     </div>
                 </div>
@@ -419,7 +441,7 @@
 
 <script>
 import TareaAuditoriaModal from './TareaAuditoriaModal.vue'
-import { tareasApi } from '@/services/tareasApi'
+import tareasApi from '@/services/tareasApi'
 
 export default {
   name: 'TareaDetalleModal',
@@ -456,6 +478,7 @@ export default {
       nuevoComentario: '',
       guardandoComentario: false,
       archivosSeleccionados: [],
+      dragActivoComentario: false,
       subiendoArchivos: false,
       comentarioEditando: null,
       textoComentarioEditando: '',
@@ -773,10 +796,9 @@ export default {
     async cargarAdjuntosDirectos() {
       if (!this.tarea || !this.tarea.id) return
       try {
-        const base = process.env.VUE_APP_API_URL || 'http://localhost:8986'
-        const res = await fetch(`${base}/api/tareas/${this.tarea.id}/adjuntos`)
-        if (res.ok) {
-          this.adjuntosDirectos = await res.json()
+        const data = await tareasApi.obtenerAdjuntosTarea(this.tarea.id)
+        if (data) {
+          this.adjuntosDirectos = data
         }
       } catch (e) {
         console.error('Error cargando adjuntos directos:', e)
@@ -785,10 +807,9 @@ export default {
 
     async cargarUsuariosParaMencion() {
       try {
-        const base = process.env.VUE_APP_API_URL || 'http://localhost:8986'
-        const res = await fetch(`${base}/api/usuarios`)
-        if (res.ok) {
-          this.todosLosUsuarios = await res.json()
+        const data = await tareasApi.obtenerUsuarios()
+        if (data) {
+          this.todosLosUsuarios = data
           this.filtrarUsuariosMencion(this.mencionDropdown.query)
         }
       } catch (e) {
@@ -1020,9 +1041,57 @@ export default {
       }
     },
 
+    onDragOverComentario() {
+      this.dragActivoComentario = true
+    },
+
+    onDragLeaveComentario(event) {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        this.dragActivoComentario = false
+      }
+    },
+
+    onDropComentario(event) {
+      this.dragActivoComentario = false
+      this.procesarArchivosComentario(Array.from(event.dataTransfer.files))
+    },
+
     onFilesSelected(event) {
-      const files = Array.from(event.target.files)
-      this.archivosSeleccionados = [...this.archivosSeleccionados, ...files]
+      this.procesarArchivosComentario(Array.from(event.target.files))
+      event.target.value = ''
+    },
+
+    procesarArchivosComentario(files) {
+      if (!files || files.length === 0) return
+      const MAX_SIZE = 10 * 1024 * 1024
+      const nombresActuales = new Set(this.archivosSeleccionados.map(f => f.name))
+      const rechazados = []
+
+      for (const file of files) {
+        if (file.size > MAX_SIZE) {
+          rechazados.push(`${file.name} (supera 10 MB)`)
+          continue
+        }
+        if (nombresActuales.has(file.name)) continue
+        this.archivosSeleccionados.push(file)
+        nombresActuales.add(file.name)
+      }
+
+      if (rechazados.length > 0) {
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Archivos no permitidos',
+          text: rechazados.join(', ')
+        })
+      }
+    },
+
+    formatFileSizeComentario(bytes) {
+      if (!bytes) return '0 B'
+      const k = 1024
+      const sizes = ['B', 'KB', 'MB']
+      const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), 2)
+      return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i]
     },
 
     quitarArchivo(index) {
@@ -1486,12 +1555,26 @@ export default {
 .cliente-info,
 .usuario-info,
 .fecha-info,
-.tiempo-info {
+.tiempo-info,
+.cups-info {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.9rem;
   color: #495057;
+}
+
+.cups-value {
+  font-family: monospace;
+  font-size: 0.88rem;
+  color: #1a56db;
+  font-weight: 600;
+}
+
+.cups-general {
+  font-size: 0.88rem;
+  color: #6c757d;
+  font-style: italic;
 }
 
 .potencial-tag {
@@ -3091,6 +3174,37 @@ export default {
 }
 .btn-send-mini:disabled { background: #cbd5e0; }
 
+.comentario-nuevo-compact {
+  transition: outline 0.15s, background 0.15s;
+}
+
+.drag-activo-comentario {
+  outline: 2px dashed #667eea;
+  border-radius: 8px;
+  background: #eef2ff;
+}
+
+.drag-overlay-comentario {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(238, 242, 255, 0.92);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #667eea;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.drag-overlay-comentario i {
+  font-size: 1.6rem;
+}
+
 .mini-files-preview {
   display: flex;
   flex-wrap: wrap;
@@ -3105,6 +3219,10 @@ export default {
   display: flex;
   gap: 5px;
   align-items: center;
+}
+.adjunto-size-mini {
+  color: #718096;
+  font-size: 0.7rem;
 }
 .remove-file { cursor: pointer; color: red; font-weight: bold; }
 

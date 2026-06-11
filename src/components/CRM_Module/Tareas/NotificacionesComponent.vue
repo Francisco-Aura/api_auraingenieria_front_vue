@@ -2,9 +2,10 @@
   <div class="notificaciones-container">
     <!-- Indicador de notificaciones -->
     <div class="notificaciones-trigger" @click="toggleMenu">
-      <button class="btn-icon notification-btn">
+      <button class="btn-icon notification-btn" :class="{ 'campana-urgente': tareasVenciendoHoyLista.length > 0 }">
         <i class="fas fa-bell"></i>
         <span v-if="contadorNoLeidas > 0" class="notification-badge">{{ contadorNoLeidas }}</span>
+        <span v-if="tareasVenciendoHoyLista.length > 0" class="vencimiento-badge-urgente" :title="`${tareasVenciendoHoyLista.length} tarea(s) vence(n) hoy`">!</span>
       </button>
     </div>
 
@@ -59,6 +60,25 @@
       </div>
 
       <div class="notificaciones-contenido">
+        <!-- Banner vencimientos hoy -->
+        <div v-if="tareasVenciendoHoyLista.length > 0" class="vencimiento-hoy-banner">
+          <div class="vencimiento-banner-header" @click="verDetalleBanner = !verDetalleBanner">
+            <span><i class="fas fa-exclamation-triangle"></i> {{ tareasVenciendoHoyLista.length }} tarea{{ tareasVenciendoHoyLista.length !== 1 ? 's' : '' }} vence{{ tareasVenciendoHoyLista.length !== 1 ? 'n' : '' }} hoy</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <i class="fas" :class="verDetalleBanner ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+              <button
+                class="vencimiento-banner-dismiss"
+                @click.stop="tareasVenciendoHoyLista = []"
+                title="Descartar aviso"
+              ><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+          <ul v-if="verDetalleBanner" class="vencimiento-tareas-lista">
+            <li v-for="tarea in tareasVenciendoHoyLista" :key="tarea.id" @click="irATarea(tarea.id)">
+              <i class="fas fa-clock"></i> {{ tarea.titulo }}
+            </li>
+          </ul>
+        </div>
         <div v-if="cargando && notificaciones.length === 0" class="cargando">
           <div class="spinner-small"></div>
           <p>Cargando notificaciones...</p>
@@ -98,6 +118,14 @@
             </div>
 
             <div class="notificacion-acciones">
+              <button 
+                v-if="!notificacion.leida"
+                class="btn-icon"
+                @click.stop="marcarComoLeida(notificacion.id)"
+                title="Marcar como leída"
+              >
+                <i class="fas fa-check"></i>
+              </button>
               <button 
                 class="btn-icon"
                 @click.stop="eliminarNotificacion(notificacion.id)"
@@ -209,6 +237,7 @@ export default {
     return {
       menuAbierto: false,
       modalTodasNotificaciones: false,
+      vencimientosIntervalId: null,
       notificaciones: [],
       notificacionesFiltradas: [],
       todasLasNotificaciones: [],
@@ -219,6 +248,10 @@ export default {
       sonidosActivados: true,
       mostrarSoloNoLeidas: true,
       
+      // Vencimientos hoy
+      tareasVenciendoHoyLista: [],
+      verDetalleBanner: false,
+      
       // Snackbar
       snackbar: {
         show: false,
@@ -227,8 +260,13 @@ export default {
       }
     }
   },
+  computed: {
+  },
   mounted() {
     this.inicializar()
+    this.cargarTareasVenciendoHoy()
+    // Refrescar vencimientos cada 5 minutos
+    this.vencimientosIntervalId = setInterval(() => this.cargarTareasVenciendoHoy(), 300000)
     
     // Cerrar menú al hacer clic fuera
     document.addEventListener('click', this.handleClickOutside)
@@ -236,6 +274,7 @@ export default {
   beforeUnmount() {
     // Detener polling si se desmonta
     notificacionesPolling.detener()
+    if (this.vencimientosIntervalId) clearInterval(this.vencimientosIntervalId)
     document.removeEventListener('click', this.handleClickOutside)
   },
   methods: {
@@ -272,8 +311,9 @@ export default {
             if (notificaciones.length > notificacionesAnteriores && this.sonidosActivados) {
               audioService.reproducirNotificacion()
             }
-            
 
+            // Refrescar vencimientos de hoy al recibir push
+            this.cargarTareasVenciendoHoy()
           })
           
           // Cargar notificaciones iniciales
@@ -301,6 +341,19 @@ export default {
       if (this.sonidosActivados) {
         audioService.reproducirNotificacion()
       }
+    },
+    
+    async cargarTareasVenciendoHoy() {
+      try {
+        this.tareasVenciendoHoyLista = await tareasApi.obtenerTareasVencenHoy()
+      } catch (e) {
+        console.error('Error cargando tareas vencen hoy:', e)
+      }
+    },
+
+    irATarea(tareaId) {
+      this.$router.push({ path: '/dashboard/tareas', query: { destacar: tareaId, abrirDetalle: tareaId } })
+      this.menuAbierto = false
     },
     
     handleClickOutside(event) {
@@ -578,6 +631,107 @@ export default {
   0% { transform: scale(1); }
   50% { transform: scale(1.15); }
   100% { transform: scale(1); }
+}
+
+@keyframes pulse-urgente {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+  50% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.campana-urgente {
+  animation: pulse-urgente 1.5s infinite !important;
+  color: #ef4444 !important;
+}
+
+.vencimiento-badge-urgente {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+.vencimiento-hoy-banner {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  margin: 6px 8px;
+  overflow: hidden;
+}
+
+.vencimiento-banner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: #dc2626;
+  font-weight: 700;
+  font-size: 0.82rem;
+  gap: 8px;
+}
+
+.vencimiento-banner-header:hover {
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.vencimiento-banner-dismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #dc2626;
+  opacity: 0.6;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.vencimiento-banner-dismiss:hover {
+  opacity: 1;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.vencimiento-tareas-lista {
+  list-style: none;
+  padding: 0 12px 8px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.vencimiento-tareas-lista li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #991b1b;
+  padding: 3px 6px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vencimiento-tareas-lista li:hover {
+  background: rgba(220, 38, 38, 0.08);
 }
 
 /* Menú de notificaciones */

@@ -62,7 +62,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 12%">
+              <th class="sortable" style="width: 24%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('clienteRelacionadoNombre')">
                     <i class="fas fa-building mr-2"></i>Cliente
@@ -80,7 +80,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 12%">
+              <th class="sortable" style="width: 5%">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('usuarioAsignadoNombre')">
                     <i class="fas fa-user-tie mr-2"></i>Asignado a
@@ -190,14 +190,19 @@
                   {{ tarea.titulo }}
                 </span>
               </td>
-              <td class="text-truncate" :title="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre || '-'">
-                <span v-if="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre">
-                  <i class="fas fa-user-circle"></i>
-                  {{ tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre }}
-                  <span v-if="tarea.clientePotencialNombre && !tarea.clienteRelacionadoNombre" class="potencial-badge" title="Cliente potencial (no registrado)">
-                    <i class="fas fa-user-clock"></i>
+              <td :title="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre || '-'">
+                <div v-if="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre" class="cliente-cell">
+                  <span class="cliente-nombre-truncate">
+                    <i class="fas fa-user-circle"></i>
+                    {{ tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre }}
+                    <span v-if="tarea.clientePotencialNombre && !tarea.clienteRelacionadoNombre" class="potencial-badge" title="Cliente potencial (no registrado)">
+                      <i class="fas fa-user-clock"></i>
+                    </span>
                   </span>
-                </span>
+                  <span v-if="tarea.cups" class="cups-badge" :title="tarea.cups">
+                    <i class="fas fa-bolt"></i> {{ tarea.cups }}
+                  </span>
+                </div>
                 <span v-else class="text-muted">-</span>
               </td>
               <td class="text-truncate" :title="tarea.usuarioAsignadoNombre || '-'">
@@ -500,10 +505,34 @@ export default {
   watch: {
     mostrarCompletadas() {
       this.aplicarFiltros()
+    },
+    '$route.query.abrirDetalle': {
+      immediate: true,
+      async handler(tareaId) {
+        if (!tareaId) return
+        // Esperar a que las tareas estén cargadas
+        if (this.tareas.length === 0) {
+          await this.inicializar()
+        }
+        const tarea = this.tareas.find(t => String(t.id) === String(tareaId))
+        if (tarea) {
+          this.tareaDetalle = { ...tarea }
+          this.mostrarModalDetalle = true
+        }
+      }
     }
   },
   async mounted() {
     await this.inicializar()
+    // Abrir detalle si viene en query params (por si el watch no lo pilló antes de cargar)
+    const tareaId = this.$route.query.abrirDetalle
+    if (tareaId && !this.mostrarModalDetalle) {
+      const tarea = this.tareas.find(t => String(t.id) === String(tareaId))
+      if (tarea) {
+        this.tareaDetalle = { ...tarea }
+        this.mostrarModalDetalle = true
+      }
+    }
   },
   methods: {
     /**
@@ -603,9 +632,9 @@ export default {
     
     async fetchUsuarios() {
       try {
-        const response = await fetch(`${process.env.VUE_APP_API_URL || 'http://localhost:8986'}/api/usuarios`)
-        if (response.ok) {
-          return await response.json()
+        const data = await tareasApi.obtenerUsuarios()
+        if (data) {
+          return data
         }
       } catch (error) {
         console.error('Error cargando usuarios:', error)
@@ -991,20 +1020,30 @@ export default {
     },
     
     async handleEliminarTarea(tareaId) {
-      if (confirm('¿Estás seguro de que deseas eliminar esta tarea?')) {
-        try {
-          await tareasApi.eliminarTarea(tareaId)
-          this.mostrarMensaje('Tarea eliminada correctamente', 'success')
-          await this.cargarTareas()
-          
-          // Actualizar estadísticas
-          if (this.$refs.estadisticas) {
-            await this.$refs.estadisticas.cargarEstadisticas()
-          }
-        } catch (error) {
-          console.error('Error eliminando tarea:', error)
-          this.mostrarMensaje('Error al eliminar la tarea', 'error')
+      const confirmacion = await this.$swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar tarea?',
+        text: 'Esta acción no se puede deshacer.',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+      })
+
+      if (!confirmacion.isConfirmed) return
+
+      try {
+        await tareasApi.eliminarTarea(tareaId)
+        this.mostrarMensaje('Tarea eliminada correctamente', 'success')
+        await this.cargarTareas()
+        
+        // Actualizar estadísticas
+        if (this.$refs.estadisticas) {
+          await this.$refs.estadisticas.cargarEstadisticas()
         }
+      } catch (error) {
+        console.error('Error eliminando tarea:', error)
+        this.mostrarMensaje('Error al eliminar la tarea', 'error')
       }
     },
     
@@ -1580,6 +1619,22 @@ export default {
 }
 
 /* Badges */
+.cliente-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cliente-nombre-truncate {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
 .potencial-badge {
   display: inline-flex;
   align-items: center;
@@ -1587,6 +1642,20 @@ export default {
   color: #f39c12;
   font-size: 0.75rem;
   opacity: 0.85;
+}
+
+.cups-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #0369a1;
+  background: #e0f2fe;
+  border-radius: 5px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  width: fit-content;
 }
 
 .categoria-badge {

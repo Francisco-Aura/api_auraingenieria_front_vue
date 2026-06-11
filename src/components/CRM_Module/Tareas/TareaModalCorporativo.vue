@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
   <div v-if="value" class="modal-overlay" @mousedown="iniciarSeleccion" @mouseup="finalizarSeleccion">
-    <div class="modal-content modal-tarea" @click.stop @input.stop @mousedown.stop @mouseup.stop>
+    <div class="modal-content modal-tarea" @click.stop @input.stop @mousedown.stop @mouseup.stop @dragover.prevent @drop.prevent>
       <!-- Header del modal -->
       <div class="modal-header">
         <h2 class="modal-title">{{ esEdicion ? 'Editar tarea' : 'Crear tarea' }}</h2>
@@ -57,8 +57,8 @@
                 />
                 
                 <!-- Dropdown de clientes -->
-                <div v-if="mostrarDropdownClientes && (clientesFiltrados.length > 0 || oportunidadesFiltradas.length > 0)" class="dropdown-clientes">
-                  <div v-if="clientesFiltrados.length > 0" class="dropdown-section">
+                <div v-if="mostrarDropdownClientes && clientesFiltrados.length > 0" class="dropdown-clientes">
+                  <div class="dropdown-section">
                     <div class="dropdown-header">CLIENTES</div>
                     <div 
                       v-for="cliente in clientesFiltrados" 
@@ -66,16 +66,6 @@
                       class="dropdown-item"
                       @click="seleccionarCliente(cliente)">
                       {{ cliente.nombre }}
-                    </div>
-                  </div>
-                  <div v-if="oportunidadesFiltradas.length > 0" class="dropdown-section">
-                    <div class="dropdown-header">OPORTUNIDADES</div>
-                    <div 
-                      v-for="oportunidad in oportunidadesFiltradas" 
-                      :key="`op-${oportunidad.id}`"
-                      class="dropdown-item"
-                      @click="seleccionarOportunidad(oportunidad)">
-                      {{ oportunidad.codigo }} - {{ oportunidad.nombre }}
                     </div>
                   </div>
                 </div>
@@ -92,6 +82,19 @@
                   maxlength="200"
                 />
               </div>
+            </div>
+          </div>
+
+          <!-- Fila CUPS: Punto de suministro (solo cuando hay cliente registrado) -->
+          <div class="row-cups" v-if="!esPotencial && formulario.clienteRelacionadoId">
+            <div class="form-group full-width">
+              <label><i class="fas fa-bolt"></i> Punto de suministro (CUPS)</label>
+              <select v-model="formulario.cups" class="form-control">
+                <option :value="null">GENERAL</option>
+                <option v-for="ps in puntosSuministroCliente" :key="ps.cups" :value="ps.cups">
+                  {{ ps.cups }}<span v-if="ps.direccion"> — {{ ps.direccion }}</span>
+                </option>
+              </select>
             </div>
           </div>
 
@@ -200,7 +203,18 @@
           <div class="row-5">
             <div class="form-group full-width">
               <label><i class="fas fa-paperclip"></i> Adjuntos</label>
-              <div class="adjuntos-crear-wrapper">
+              <div
+                class="adjuntos-drop-zone"
+                :class="{ 'drag-activo': dragActivo }"
+                @dragover.prevent="onDragOver"
+                @dragleave="onDragLeave"
+                @drop.prevent="onDrop"
+                style="position: relative;"
+              >
+                <div v-if="dragActivo" class="drop-zone-overlay">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <span>Suelta los archivos aquí</span>
+                </div>
                 <input
                   type="file"
                   ref="fileInputCrear"
@@ -208,15 +222,19 @@
                   style="display:none"
                   @change="onArchivosCrearSelected"
                 />
-                <button type="button" class="btn-adjuntar-crear" @click="$refs.fileInputCrear.click()">
-                  <i class="fas fa-cloud-upload-alt"></i> Seleccionar archivos
-                </button>
-                <span v-if="archivosACrear.length > 0" class="adjuntos-count">
-                  {{ archivosACrear.length }} archivo{{ archivosACrear.length > 1 ? 's' : '' }} seleccionado{{ archivosACrear.length > 1 ? 's' : '' }}
-                </span>
+                <div class="drop-zone-hint">
+                  <i class="fas fa-cloud-upload-alt drop-zone-icon"></i>
+                  <span class="drop-zone-text">Arrastra archivos aquí o</span>
+                  <button type="button" class="btn-adjuntar-crear" @click="$refs.fileInputCrear.click()">
+                    <i class="fas fa-folder-open"></i> Seleccionar
+                  </button>
+                  <span class="drop-zone-limit">Máx. 10 MB por archivo</span>
+                </div>
                 <ul v-if="archivosACrear.length > 0" class="adjuntos-lista-crear">
                   <li v-for="(f, idx) in archivosACrear" :key="idx">
-                    <i class="fas fa-file"></i> {{ f.name }}
+                    <i class="fas fa-file"></i>
+                    <span class="adjunto-nombre">{{ f.name }}</span>
+                    <span class="adjunto-size">{{ formatFileSize(f.size) }}</span>
                     <button type="button" class="btn-remove-adjunto" @click="archivosACrear.splice(idx, 1)" title="Quitar">
                       <i class="fas fa-times"></i>
                     </button>
@@ -314,6 +332,7 @@ export default {
         fechaVencimiento: null,
         clienteRelacionadoId: null,
         clientePotencialNombre: null,
+        cups: null,
         categoriaId: null,
         subcategoriaId: null,
         notificar: false,
@@ -321,6 +340,7 @@ export default {
         repetir: ''
       },
       esPotencial: false,
+      dragActivo: false,
       archivosACrear: [],
       adjuntosExistentes: [],
       cargandoAdjuntosExistentes: false,
@@ -328,7 +348,7 @@ export default {
       busquedaCliente: '',
       mostrarDropdownClientes: false,
       clientesFiltrados: [],
-      oportunidadesFiltradas: [],
+      puntosSuministroCliente: [],
       fechaInicio: '',
       horaInicio: '09:00',
       fechaVencimiento: '',
@@ -390,6 +410,7 @@ export default {
           fechaVencimiento: this.tarea.fechaVencimiento || null,
           clienteRelacionadoId: this.tarea.clienteRelacionadoId || null,
           clientePotencialNombre: this.tarea.clientePotencialNombre || null,
+          cups: this.tarea.cups || null,
           categoriaId: this.tarea.categoriaId || null,
           subcategoriaId: this.tarea.subcategoriaId || null,
           notificar: Boolean(this.tarea.notificar),
@@ -419,9 +440,11 @@ export default {
             id: this.tarea.clienteRelacionadoId, 
             nombre: this.tarea.clienteRelacionadoNombre 
           }]
+          this.cargarPuntosSuministroCliente(this.tarea.clienteRelacionadoId)
         } else if (this.tarea.clientePotencialNombre) {
           this.busquedaCliente = ''
           this.esPotencial = true
+          this.puntosSuministroCliente = []
         }
 
         this.archivosACrear = []
@@ -466,9 +489,10 @@ export default {
         // Limpiar cliente
         this.busquedaCliente = ''
         this.clientesFiltrados = []
-        this.oportunidadesFiltradas = []
+        this.puntosSuministroCliente = []
         this.esPotencial = false
         this.formulario.clientePotencialNombre = null
+        this.formulario.cups = null
         this.archivosACrear = []
         this.adjuntosExistentes = []
       }
@@ -478,7 +502,6 @@ export default {
     async buscarClientes() {
       if (this.busquedaCliente.length === 0) {
         this.clientesFiltrados = []
-        this.oportunidadesFiltradas = []
         this.mostrarDropdownClientes = false
         return
       }
@@ -487,45 +510,72 @@ export default {
       this.mostrarDropdownClientes = true
 
       try {
-        const base = `${process.env.VUE_APP_API_URL || 'http://localhost:8986'}`
-        const params = new URLSearchParams({ 
-          q: this.busquedaCliente, 
-          page: '0', 
-          size: '10' 
-        })
-        
-        const responseClientes = await fetch(`${base}/api/clientes/buscar?${params.toString()}`)
-        if (responseClientes.ok) {
-          const clientes = await responseClientes.json()
-          this.clientesFiltrados = Array.isArray(clientes?.content) ? clientes.content : []
+        const data = await tareasApi.buscarClientes({ q: this.busquedaCliente, page: 0, size: 10 })
+        if (data) {
+          this.clientesFiltrados = Array.isArray(data?.content) ? data.content : []
         } else {
           this.clientesFiltrados = []
         }
 
-        // Filtrar oportunidades localmente mientras escribes
-        const oportunidadesCompletas = [
-          { id: 1, codigo: '185', nombre: 'SOL DE LEVANTE PRODUCCIONES S.L' },
-          { id: 2, codigo: '249', nombre: 'SOL DE LEVANTE PRODUCCIONES S.L' }
-        ]
-        
-        this.oportunidadesFiltradas = oportunidadesCompletas.filter(o => 
-          o.nombre.toLowerCase().includes(this.busquedaCliente.toLowerCase()) ||
-          o.codigo.toLowerCase().includes(this.busquedaCliente.toLowerCase())
-        )
-
       } catch (error) {
         console.error('Error buscando clientes:', error)
         this.clientesFiltrados = []
-        this.oportunidadesFiltradas = []
       }
     },
 
+    onDragOver() {
+      this.dragActivo = true
+    },
+
+    onDragLeave(event) {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        this.dragActivo = false
+      }
+    },
+
+    onDrop(event) {
+      this.dragActivo = false
+      this.procesarArchivos(Array.from(event.dataTransfer.files))
+    },
+
     onArchivosCrearSelected(event) {
-      const nuevos = Array.from(event.target.files)
-      this.archivosACrear.push(...nuevos)
-      // Limpiar el input para permitir seleccionar los mismos archivos otra vez
+      this.procesarArchivos(Array.from(event.target.files))
       event.target.value = ''
     },
+
+    procesarArchivos(files) {
+      if (!files || files.length === 0) return
+      const MAX_SIZE = 10 * 1024 * 1024
+      const nombresActuales = new Set(this.archivosACrear.map(f => f.name))
+      const rechazados = []
+
+      for (const file of files) {
+        if (file.size > MAX_SIZE) {
+          rechazados.push(`${file.name} (supera 10 MB)`)
+          continue
+        }
+        if (nombresActuales.has(file.name)) continue
+        this.archivosACrear.push(file)
+        nombresActuales.add(file.name)
+      }
+
+      if (rechazados.length > 0) {
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Archivos no permitidos',
+          text: rechazados.join(', ')
+        })
+      }
+    },
+
+    formatFileSize(bytes) {
+      if (!bytes) return '0 B'
+      const k = 1024
+      const sizes = ['B', 'KB', 'MB', 'GB']
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i]
+    },
+
 
     async cargarAdjuntosEdicion() {
       if (!this.esEdicion || !this.formulario.id) {
@@ -593,11 +643,33 @@ export default {
       this.formulario.clienteRelacionadoId = cliente.id
       this.busquedaCliente = cliente.nombre
       this.mostrarDropdownClientes = false
+      // Resetear CUPS al cambiar de cliente y cargar sus puntos de suministro
+      this.formulario.cups = null
+      this.cargarPuntosSuministroCliente(cliente.id)
     },
 
-    seleccionarOportunidad(oportunidad) {
-      this.busquedaCliente = `${oportunidad.codigo} - ${oportunidad.nombre}`
-      this.mostrarDropdownClientes = false
+    async cargarPuntosSuministroCliente(clienteId) {
+      if (!clienteId) {
+        this.puntosSuministroCliente = []
+        return
+      }
+      try {
+        const data = await tareasApi.obtenerPuntosSuministroCliente(clienteId)
+        if (data) {
+          // Construir lista con el CUPS luz y gas no vacíos
+          const lista = []
+          for (const ps of data) {
+            if (ps.cupsluz?.trim()) lista.push({ cups: ps.cupsluz.trim(), direccion: ps.direccion || '' })
+            if (ps.cupsgas?.trim()) lista.push({ cups: ps.cupsgas.trim(), direccion: ps.direccion || '' })
+          }
+          this.puntosSuministroCliente = lista
+        } else {
+          this.puntosSuministroCliente = []
+        }
+      } catch (e) {
+        console.error('Error cargando puntos de suministro del cliente:', e)
+        this.puntosSuministroCliente = []
+      }
     },
 
     onCategoriaChange() {
@@ -662,6 +734,7 @@ export default {
         descripcion: this.formulario.descripcion || null,
         prioridad: parseInt(this.formulario.prioridad) !== null && !isNaN(parseInt(this.formulario.prioridad)) ? parseInt(this.formulario.prioridad) : 2,
         notificar: Boolean(this.formulario.notificar),
+        fijada: Boolean(this.formulario.fijada),
         repetir: this.formulario.repetir || null,
         fechaInicio: this.formulario.fechaInicio,
         fechaVencimiento: this.formulario.fechaVencimiento,
@@ -670,6 +743,7 @@ export default {
         usuarioCreadorId: this.formulario.usuarioCreadorId || null,
         clienteRelacionadoId: this.formulario.clienteRelacionadoId || null,
         clientePotencialNombre: this.esPotencial ? (this.formulario.clientePotencialNombre || null) : null,
+        cups: (!this.esPotencial && this.formulario.clienteRelacionadoId && this.formulario.cups) ? this.formulario.cups : null,
         categoriaId: this.formulario.categoriaId || null,
         subcategoriaId: this.formulario.subcategoriaId || null
       }
@@ -689,9 +763,10 @@ export default {
       this.busquedaCliente = ''
       this.mostrarDropdownClientes = false
       this.clientesFiltrados = []
-      this.oportunidadesFiltradas = []
+      this.puntosSuministroCliente = []
       this.esPotencial = false
       this.formulario.clientePotencialNombre = null
+      this.formulario.cups = null
       this.archivosACrear = []
       this.adjuntosExistentes = []
       this.eliminandoAdjuntoId = null
@@ -820,6 +895,10 @@ export default {
   grid-template-columns: repeat(4, 1fr);
 }
 
+.row-cups {
+  display: flex;
+}
+
 .row-4, .row-5 {
   display: flex;
 }
@@ -888,32 +967,84 @@ export default {
   flex: 1;
 }
 
-.adjuntos-crear-wrapper {
+.adjuntos-drop-zone {
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.adjuntos-drop-zone.drag-activo {
+  border-color: #667eea;
+  background: #eef2ff;
+}
+
+.drop-zone-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(238, 242, 255, 0.92);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #667eea;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.drop-zone-overlay i {
+  font-size: 1.8rem;
+}
+
+.drop-zone-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.drop-zone-icon {
+  font-size: 1.3rem;
+  color: #a0aec0;
+  transition: color 0.15s;
+}
+
+.drag-activo .drop-zone-icon {
+  color: #667eea;
+}
+
+.drop-zone-text {
+  font-size: 0.82rem;
+  color: #718096;
+}
+
+.drop-zone-limit {
+  font-size: 0.75rem;
+  color: #a0aec0;
+  margin-left: auto;
 }
 
 .btn-adjuntar-crear {
-  align-self: flex-start;
-  padding: 6px 14px;
+  padding: 4px 12px;
   background: #f0f4ff;
-  border: 1px dashed #667eea;
+  border: 1px solid #667eea;
   border-radius: 6px;
   color: #667eea;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   cursor: pointer;
   transition: background 0.15s;
+  white-space: nowrap;
 }
 
 .btn-adjuntar-crear:hover {
   background: #e0e7ff;
-}
-
-.adjuntos-count {
-  font-size: 0.8rem;
-  color: #4a5568;
-  font-weight: 500;
 }
 
 .adjuntos-lista-crear {
@@ -934,6 +1065,19 @@ export default {
   background: #f7fafc;
   padding: 3px 8px;
   border-radius: 4px;
+}
+
+.adjunto-nombre {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adjunto-size {
+  font-size: 0.75rem;
+  color: #718096;
+  white-space: nowrap;
 }
 
 .btn-remove-adjunto {
