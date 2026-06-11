@@ -654,7 +654,7 @@ export default {
         return
       }
       try {
-        const data = await tareasApi.obtenerPuntosSuministroCliente(clienteId)
+        const data = await tareasApi.obtenerCarteraCupsCliente(clienteId)
         if (data) {
           // Construir lista con el CUPS luz y gas no vacíos
           const lista = []
