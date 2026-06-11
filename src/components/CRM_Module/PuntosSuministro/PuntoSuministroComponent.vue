@@ -263,7 +263,7 @@
                   <button class="btn-icon btn-view" @click="abrirModalContratos(suministro.id,suministro.idCliente)" title="Ver contratos">
                     <i class="fas fa-file-contract"></i>
                   </button>
-                  <button class="btn-icon btn-add" v-if="nivelAcceso !== 4" @click="abrirModalServicios(suministro.id,suministro.idCliente)" title="Ver servicios">
+                  <button class="btn-icon btn-add" v-if="nivelAcceso === 1" @click="abrirModalServicios(suministro.id,suministro.idCliente)" title="Ver servicios">
                     <i class="fas fa-tools"></i>
                   </button>
                   <button class="btn-icon btn-delete" v-if="nivelAcceso === 1" @click="eliminarPuntoSuministro(suministro)" title="Eliminar punto de suministro">
