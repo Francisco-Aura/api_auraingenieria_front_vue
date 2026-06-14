@@ -278,8 +278,8 @@ export const tareasApi = {
     return response.data
   },
 
-  async obtenerTareasVencenHoy() {
-    const response = await axios.get('/tareas/vencen-hoy')
+  async obtenerTareasVencenHoy(usuarioId, nivelAcceso) {
+    const response = await axios.get('/tareas/vencen-hoy', { params: { usuarioId, nivelAcceso } })
     return response.data
   },
 
