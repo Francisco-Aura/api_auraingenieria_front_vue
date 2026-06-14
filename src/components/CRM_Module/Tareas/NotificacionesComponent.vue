@@ -345,7 +345,9 @@ export default {
     
     async cargarTareasVenciendoHoy() {
       try {
-        this.tareasVenciendoHoyLista = await tareasApi.obtenerTareasVencenHoy()
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+        if (!usuario.id) return
+        this.tareasVenciendoHoyLista = await tareasApi.obtenerTareasVencenHoy(parseInt(usuario.id), parseInt(usuario.nivelAcceso))
       } catch (e) {
         console.error('Error cargando tareas vencen hoy:', e)
       }
