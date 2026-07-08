@@ -1041,7 +1041,7 @@ export default {
         let response;
         
         if (this.modoEdicion && this.servicioEditandoId) {
-          response = await axios.put(
+          response = await axios.put(`
             /servicios/${this.servicioEditandoId}`,
             servicioPayload
           );
@@ -1151,7 +1151,7 @@ export default {
                 // Fusionar cuotas existentes con el nuevo plan
                 const pagosPayload = await this.fusionarCuotasConNuevoPlan(servicioId, pagosGenerados);
                 
-                await axios.put(
+                await axios.put(`
                   /servicios-pagos/servicio/${this.servicioEditandoId}`, 
                   pagosPayload
                 );
@@ -1193,7 +1193,7 @@ export default {
                 // SIN CAMBIO DE MODALIDAD: Solo actualizar importes preservando todo lo demás
                 const pagosPayload = this.crearPayloadPagosPreservando(servicioId);
                 
-                await axios.put(
+                await axios.put(`
                   /servicios-pagos/servicio/${this.servicioEditandoId}`, 
                   pagosPayload
                 );
@@ -1712,7 +1712,7 @@ export default {
         
         // Intentar actualizar la cuota individual primero
         try {
-          await axios.put(/servicios-pagos/cuota/${cuota.id}`, cuota);
+          await axios.put(`/servicios-pagos/cuota/${cuota.id}`, cuota);
           cuota.editado = false;
           this.$swal.fire({ icon: 'success', title: 'Cuota actualizada', timer: 1200, showConfirmButton: false });
           
@@ -1746,7 +1746,7 @@ export default {
           pagosActuales[cuota.pagadoField] = cuota.pagado;
           
           // Enviar la actualización completa
-          await axios.put(/servicios-pagos/servicio/${servicioIdParaActualizar}`, pagosActuales);
+          await axios.put(`/servicios-pagos/servicio/${servicioIdParaActualizar}`, pagosActuales);
           
           cuota.editado = false;
           this.$swal.fire({ icon: 'success', title: 'Cuota actualizada', timer: 1200, showConfirmButton: false });

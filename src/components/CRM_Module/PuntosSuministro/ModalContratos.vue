@@ -1210,7 +1210,7 @@ export default {
           }
 
           if (this.modoEdicion && this.contratoEditandoId) {
-            response = await axios.put(
+            response = await axios.put(`
               /contratos/${this.contratoEditandoId}`,
               formData,
               { headers: { 'Content-Type': 'multipart/form-data' } }
@@ -1226,7 +1226,7 @@ export default {
         // Si no hay archivo, enviamos como JSON directamente
         else {
           if (this.modoEdicion && this.contratoEditandoId) {
-            response = await axios.put(
+            response = await axios.put(`
               /contratos/${this.contratoEditandoId}`,
               this.nuevoContrato,
               { headers: { 'Content-Type': 'application/json' } }
@@ -1496,7 +1496,7 @@ export default {
           });
 
           // Realizar la eliminación
-          await axios.delete(/contratos/${contrato.id}`);
+          await axios.delete(`/contratos/${contrato.id}`);
           
           // Mostrar mensaje de éxito
           await this.$swal.fire({
@@ -1898,7 +1898,7 @@ export default {
         
         if (needsGasTarifas) {
           promises.push(
-            axios.get(/tarifas-gas`)
+            axios.get(`/tarifas-gas`)
               .then(response => {
                 this.$emit('update:tarifasGas', response.data);
                 return response.data;
@@ -1912,7 +1912,7 @@ export default {
         
         if (needsLuzTarifas) {
           promises.push(
-            axios.get(/tarifas-luz`)
+            axios.get(`/tarifas-luz`)
               .then(response => {
                 this.$emit('update:tarifasLuz', response.data);
                 return response.data;

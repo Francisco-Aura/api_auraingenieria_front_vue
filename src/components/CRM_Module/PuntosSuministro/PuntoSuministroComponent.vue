@@ -919,11 +919,11 @@ export default {
       try {
         // Cargar TODOS los datos necesarios ANTES de mostrar el modal
         const [responseCliente, responsePuntoSuministro, tarifasGasResponse, tarifasLuzResponse, responseContratos] = await Promise.all([
-          axios.get(/clientes/${idCliente}`),
-          axios.get(/puntos-suministro/${idPuntoSuministro}`),
-          axios.get(/tarifas-gas`),
-          axios.get(/tarifas-luz`),
-          axios.get(/contratos/punto-suministro/${idPuntoSuministro}`)
+          axios.get(`/clientes/${idCliente}`),
+          axios.get(`/puntos-suministro/${idPuntoSuministro}`),
+          axios.get(`/tarifas-gas`),
+          axios.get(`/tarifas-luz`),
+          axios.get(`/contratos/punto-suministro/${idPuntoSuministro}`)
         ]);
         
         // VERIFICAR que esta solicitud sigue siendo la actual (evita race conditions)
@@ -1673,11 +1673,11 @@ export default {
     try {
       // Cargar datos de configuración en paralelo
       const [comercializadoras, tarifasGas, tarifasLuz, gestoras, productos] = await Promise.all([
-        axios.get(/comercializadoras`),
-        axios.get(/tarifas-gas`),
-        axios.get(/tarifas-luz`),
-        axios.get(/gestoras`),
-        axios.get(/productos`),
+        axios.get(`/comercializadoras`),
+        axios.get(`/tarifas-gas`),
+        axios.get(`/tarifas-luz`),
+        axios.get(`/gestoras`),
+        axios.get(`/productos`),
       ]);
       
       this.comercializadoras = comercializadoras.data;

@@ -1568,7 +1568,7 @@ export default {
           nombreComercial: this.clienteLocal.grupoEmpresarial,
           fechaBaja: null
         };
-        await axios.put(/clientes/${clienteParaEnviar.id}`, clienteParaEnviar);
+        await axios.put(`/clientes/${clienteParaEnviar.id}`, clienteParaEnviar);
         this.clienteLocal.fechaBaja = null;
 
         // Paso 2: obtener PS dados de baja de este cliente
@@ -1630,7 +1630,7 @@ export default {
         // Paso 4: reactivar cada PS seleccionado
         await Promise.all(
           idsSeleccionados.map(psId =>
-            axios.put(/puntos-suministro/${psId}/reactivar`)
+            axios.put(`/puntos-suministro/${psId}/reactivar`)
           )
         );
 
@@ -1718,8 +1718,8 @@ export default {
       this.cargandoTareas = true;
       try {
         const [tareasRes, estadosRes] = await Promise.all([
-          axios.get(/tareas/cliente/${this.clienteLocal.id}`),
-          axios.get(/tareas/estados`)
+          axios.get(`/tareas/cliente/${this.clienteLocal.id}`),
+          axios.get(`/tareas/estados`)
         ]);
         this.tareas = tareasRes.data;
         this.estadosTareas = estadosRes.data;

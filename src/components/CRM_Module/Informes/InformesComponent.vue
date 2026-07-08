@@ -411,7 +411,7 @@ export default {
     async marcarSiguientePago(fila) {
       this.isSavingBulk = true;
       try {
-        await axios.put(/informes/servicios-pendientes-pago/marcar-siguiente-pago/${fila.idServicio}`);
+        await axios.put(`/informes/servicios-pendientes-pago/marcar-siguiente-pago/${fila.idServicio}`);
         
         Swal.fire({
           icon: 'success',
