@@ -411,7 +411,7 @@ export default {
     async marcarSiguientePago(fila) {
       this.isSavingBulk = true;
       try {
-        await axios.put(`${process.env.VUE_APP_API_URL}/api/informes/servicios-pendientes-pago/marcar-siguiente-pago/${fila.idServicio}`);
+        await axios.put(`/api/informes/servicios-pendientes-pago/marcar-siguiente-pago/${fila.idServicio}`);
         
         Swal.fire({
           icon: 'success',
@@ -443,7 +443,7 @@ export default {
       this.tipoSeleccionado = tipo;
       this.loading = true;
       try {
-        const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/api/informes/${tipo}`);
+        const respuesta = await axios.get(`/api/informes/${tipo}`);
         this.procesarDatosParaTabla(respuesta.data);
         this.tituloInforme = this.formatearTitulo(tipo);
         this.mostrarTabla = true;
@@ -468,7 +468,7 @@ export default {
       if (!this.tipoSeleccionado) return;
       this.loading = true;
       try {
-        const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/api/informes/${this.tipoSeleccionado}`);
+        const respuesta = await axios.get(`/api/informes/${this.tipoSeleccionado}`);
         this.procesarDatosParaTabla(respuesta.data);
         // Resetear estado de paginación
         this.currentPage = 1;

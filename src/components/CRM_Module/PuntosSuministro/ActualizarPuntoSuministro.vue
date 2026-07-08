@@ -636,12 +636,12 @@ export default {
   async created() {
     try {
       const [distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes, appMonitorizacionRes, integracionSistemasFVRes] = await Promise.all([
-        axios.get(`${process.env.VUE_APP_API_URL}/api/distribuidoras`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/tipos-contador`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/tipos-comunicacion`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/propiedades`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/app-monitorizacion`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`)
+        axios.get(`/api/distribuidoras`),
+        axios.get(`/api/tipos-contador`),
+        axios.get(`/api/tipos-comunicacion`),
+        axios.get(`/api/propiedades`),
+        axios.get(`/api/app-monitorizacion`),
+        axios.get(`/api/integracion-sistemas-fv`)
       ]);
 
       this.distribuidoras = distribuidorasRes.data;
@@ -740,10 +740,10 @@ export default {
     async loadMasterData() {
       try {
         const [distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes] = await Promise.all([
-          axios.get(`${process.env.VUE_APP_API_URL}/api/distribuidoras`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/tipos-contador`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/tipos-comunicacion`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/propiedades`)
+          axios.get(`/api/distribuidoras`),
+          axios.get(`/api/tipos-contador`),
+          axios.get(`/api/tipos-comunicacion`),
+          axios.get(`/api/propiedades`)
         ]);
         this.distribuidoras = distribuidorasRes.data;
         this.tiposContador = tiposContadorRes.data;

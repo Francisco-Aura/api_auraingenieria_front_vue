@@ -14,9 +14,6 @@ deploy_frontend_PRE:
   only:
     - release
 
-  variables:
-    VUE_APP_API_URL: ""
-
   script:
     - set -eo pipefail
     - set -x
@@ -24,10 +21,6 @@ deploy_frontend_PRE:
     - echo "Limpiando entorno anterior..."
     - rm -rf node_modules package-lock.json dist
     - npm cache clean --force
-
-    - echo "Configurando variables de entorno para PRE..."
-    - echo "VUE_APP_API_URL=${VUE_APP_API_URL}" > .env
-    - cat .env
 
     - echo "Instalando dependencias..."
     - npm install --legacy-peer-deps
@@ -70,9 +63,6 @@ deploy_frontend_PRO:
   only:
     - main
 
-  variables:
-    VUE_APP_API_URL: ""
-
   script:
     - set -eo pipefail
     - set -x
@@ -80,10 +70,6 @@ deploy_frontend_PRO:
     - echo "Limpiando entorno anterior..."
     - rm -rf node_modules package-lock.json dist
     - npm cache clean --force
-
-    - echo "Configurando variables de entorno para PRO..."
-    - echo "VUE_APP_API_URL=${VUE_APP_API_URL}" > .env
-    - cat .env
 
     - echo "Instalando dependencias..."
     - npm install --legacy-peer-deps

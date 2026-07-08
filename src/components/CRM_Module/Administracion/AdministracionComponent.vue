@@ -326,27 +326,27 @@ export default {
   data() {
     return {
       tablas: [
-        { nombre: "Comercializadoras", url: `${process.env.VUE_APP_API_URL}/api/comercializadoras`, icono: "fas fa-building" },
-        { nombre: "Gestoras", url: `${process.env.VUE_APP_API_URL}/api/gestoras`, icono: "fas fa-briefcase" },
-        { nombre: "Métodos de Pago", url: `${process.env.VUE_APP_API_URL}/api/metodos-pago`, icono: "fas fa-credit-card" },
-        { nombre: "Niveles de Acceso", url: `${process.env.VUE_APP_API_URL}/api/niveles-acceso`, icono: "fas fa-user-shield" },
-        { nombre: "Pago Plazos", url: `${process.env.VUE_APP_API_URL}/api/pagos-plazos`, icono: "fas fa-calendar-check" },
-        { nombre: "Productos", url: `${process.env.VUE_APP_API_URL}/api/productos`, icono: "fas fa-box-open" },
-        { nombre: "Sectores", url: `${process.env.VUE_APP_API_URL}/api/sectores`, icono: "fas fa-industry" },
-        { nombre: "Subtipologías", url: `${process.env.VUE_APP_API_URL}/api/subtipologias`, icono: "fas fa-tags" },
-        { nombre: "Tarifas Gas", url: `${process.env.VUE_APP_API_URL}/api/tarifas-gas`, icono: "fas fa-fire" },
-        { nombre: "Tarifas Luz", url: `${process.env.VUE_APP_API_URL}/api/tarifas-luz`, icono: "fas fa-bolt" },        { nombre: "Usuarios", url: `${process.env.VUE_APP_API_URL}/api/usuarios`, icono: "fas fa-users" },
-        { nombre: "Distribuidoras", url: `${process.env.VUE_APP_API_URL}/api/distribuidoras`, icono: "fas fa-truck-moving" },
-        { nombre: "Tipos de Contador", url: `${process.env.VUE_APP_API_URL}/api/tipos-contador`, icono: "fas fa-tachometer-alt" },
-        { nombre: "Tipos de Comunicación", url: `${process.env.VUE_APP_API_URL}/api/tipos-comunicacion`, icono: "fas fa-wifi" },
-        { nombre: "Propiedades", url: `${process.env.VUE_APP_API_URL}/api/propiedades`, icono: "fas fa-building" },
-        { nombre: "APP Monitorización", url: `${process.env.VUE_APP_API_URL}/api/app-monitorizacion`, icono: "fas fa-chart-line" },
-        { nombre: "Integración Sistemas FV", url: `${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`, icono: "fas fa-solar-panel" },
+        { nombre: "Comercializadoras", url: `/api/comercializadoras`, icono: "fas fa-building" },
+        { nombre: "Gestoras", url: `/api/gestoras`, icono: "fas fa-briefcase" },
+        { nombre: "Métodos de Pago", url: `/api/metodos-pago`, icono: "fas fa-credit-card" },
+        { nombre: "Niveles de Acceso", url: `/api/niveles-acceso`, icono: "fas fa-user-shield" },
+        { nombre: "Pago Plazos", url: `/api/pagos-plazos`, icono: "fas fa-calendar-check" },
+        { nombre: "Productos", url: `/api/productos`, icono: "fas fa-box-open" },
+        { nombre: "Sectores", url: `/api/sectores`, icono: "fas fa-industry" },
+        { nombre: "Subtipologías", url: `/api/subtipologias`, icono: "fas fa-tags" },
+        { nombre: "Tarifas Gas", url: `/api/tarifas-gas`, icono: "fas fa-fire" },
+        { nombre: "Tarifas Luz", url: `/api/tarifas-luz`, icono: "fas fa-bolt" },        { nombre: "Usuarios", url: `/api/usuarios`, icono: "fas fa-users" },
+        { nombre: "Distribuidoras", url: `/api/distribuidoras`, icono: "fas fa-truck-moving" },
+        { nombre: "Tipos de Contador", url: `/api/tipos-contador`, icono: "fas fa-tachometer-alt" },
+        { nombre: "Tipos de Comunicación", url: `/api/tipos-comunicacion`, icono: "fas fa-wifi" },
+        { nombre: "Propiedades", url: `/api/propiedades`, icono: "fas fa-building" },
+        { nombre: "APP Monitorización", url: `/api/app-monitorizacion`, icono: "fas fa-chart-line" },
+        { nombre: "Integración Sistemas FV", url: `/api/integracion-sistemas-fv`, icono: "fas fa-solar-panel" },
         // Tablas del Módulo de Tareas
-        { nombre: "Tareas - Categorías", url: `${process.env.VUE_APP_API_URL}/api/tarea-categorias`, icono: "fas fa-folder" },
-        { nombre: "Tareas - Subcategorías", url: `${process.env.VUE_APP_API_URL}/api/tarea-subcategorias`, icono: "fas fa-folder-open" },
+        { nombre: "Tareas - Categorías", url: `/api/tarea-categorias`, icono: "fas fa-folder" },
+        { nombre: "Tareas - Subcategorías", url: `/api/tarea-subcategorias`, icono: "fas fa-folder-open" },
         // Clientes
-        { nombre: "Cargos de Contacto", url: `${process.env.VUE_APP_API_URL}/api/cargos-contacto`, icono: "fas fa-id-badge" }
+        { nombre: "Cargos de Contacto", url: `/api/cargos-contacto`, icono: "fas fa-id-badge" }
       ],
       tablaSeleccionada: null,
       datos: [],
@@ -572,7 +572,7 @@ export default {
     // Cargar categorías disponibles para el selector
     async cargarCategoriasDisponibles() {
       try {
-        const resp = await axios.get(`${process.env.VUE_APP_API_URL}/api/tarea-categorias`);
+        const resp = await axios.get(`/api/tarea-categorias`);
         this.categoriasDisponibles = resp.data.filter(c => c.activo !== false);
       } catch (error) {
         console.error('Error al cargar categorías:', error);

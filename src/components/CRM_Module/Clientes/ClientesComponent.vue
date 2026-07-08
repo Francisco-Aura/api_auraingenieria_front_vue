@@ -520,7 +520,7 @@ export default {
     async fetchClientes() {
       try {
         this.loading = true;
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`);
+        const response = await axios.get(`/api/clientes/cartera`);
         this.clientes = response.data;
         // Eliminada la alerta de éxito, solo loading
       } catch (error) {
@@ -539,7 +539,7 @@ export default {
     async fetchPuntosSuministro(idCliente) {
       try {
         this.loading = true;
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${idCliente}/cartera`);
+        const response = await axios.get(`/api/puntos-suministro/cliente/${idCliente}/cartera`);
         this.puntosSuministro = response.data;
       } catch (error) {
         this.$swal.fire({
@@ -651,7 +651,7 @@ export default {
     async cargarDatosCliente(idCliente) {
       try {
         this.loading = true;
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`);
+        const response = await axios.get(`/api/clientes/${idCliente}`);
         this.nuevoCliente = response.data;
         this.modoActualizar = true;
         this.formularioVisible = true;
@@ -673,7 +673,7 @@ export default {
         return;
       }
       try {
-        await axios.put(`${process.env.VUE_APP_API_URL}/api/clientes/${clienteActualizado.id}`, clienteActualizado);
+        await axios.put(`/api/clientes/${clienteActualizado.id}`, clienteActualizado);
         this.$swal.fire({
           icon: 'success',
           title: 'Éxito',
@@ -702,7 +702,7 @@ export default {
     async crearCliente(clienteRecibido) {
       try {
         if (this.modoActualizar) return; // Evita llamadas erróneas en modo actualización
-        await axios.post(`${process.env.VUE_APP_API_URL}/api/clientes`, clienteRecibido);
+        await axios.post(`/api/clientes`, clienteRecibido);
         this.$swal.fire({
           icon: 'success',
           title: 'Éxito',
@@ -743,7 +743,7 @@ export default {
     // Maneja la creación o actualización de un punto de suministro (ahora centralizado)
     async handleUpdateOrCreate(datosAdaptados) {
       try {
-        await axios.post(`${process.env.VUE_APP_API_URL}/api/puntos-suministro`, datosAdaptados);
+        await axios.post(`/api/puntos-suministro`, datosAdaptados);
         await this.$swal.fire({
           icon: 'success',
           title: '¡Éxito!',
@@ -891,13 +891,13 @@ export default {
     
     try {
       const [clientes, usuarios, sectores, subtipologias, cargosContacto, appMonitorizacion, integracionSistemasFV] = await Promise.all([
-        axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/cartera`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/usuarios`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/sectores`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/subtipologias`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/cargos-contacto`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/app-monitorizacion`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`),
+        axios.get(`/api/clientes/cartera`),
+        axios.get(`/api/usuarios`),
+        axios.get(`/api/sectores`),
+        axios.get(`/api/subtipologias`),
+        axios.get(`/api/cargos-contacto`),
+        axios.get(`/api/app-monitorizacion`),
+        axios.get(`/api/integracion-sistemas-fv`),
       ]);
       this.clientes = clientes.data;
       this.usuarios = usuarios.data;
