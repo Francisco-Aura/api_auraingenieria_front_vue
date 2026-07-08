@@ -38,9 +38,6 @@ deploy_frontend_PRE:
     - echo "Construyendo aplicación..."
     - npm run build
 
-    - echo "Verificando rutas API..."
-    - grep -R "/api/" dist/ || echo "No se encontraron rutas /api"
-
     - chmod -R 755 dist
 
     - apt-get update -y
@@ -99,9 +96,6 @@ deploy_frontend_PRO:
 
     - echo "Construyendo aplicación..."
     - npm run build
-
-    - echo "Verificando rutas API..."
-    - grep -R "/api/" dist/ || echo "No se encontraron rutas /api"
 
     - chmod -R 755 dist
 
