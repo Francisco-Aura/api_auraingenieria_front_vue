@@ -824,7 +824,7 @@ export default {
       
       // Cargar datos completos del servicio desde el backend
       try {
-        const response = await axios.get(`/api/servicios/${this.servicioVigente.id}`);
+        const response = await axios.get(/servicios/${this.servicioVigente.id}`);
         const servicioCompleto = response.data;
         
         this.nuevoServicio = { 
@@ -888,7 +888,7 @@ export default {
       
       // Cargar datos completos del servicio desde el backend
       try {
-        const response = await axios.get(`/api/servicios/${servicio.id}`);
+        const response = await axios.get(/servicios/${servicio.id}`);
         const servicioCompleto = response.data;
         
         this.nuevoServicio = {
@@ -1042,12 +1042,12 @@ export default {
         
         if (this.modoEdicion && this.servicioEditandoId) {
           response = await axios.put(
-            `/api/servicios/${this.servicioEditandoId}`,
+            /servicios/${this.servicioEditandoId}`,
             servicioPayload
           );
         } else {
           response = await axios.post(
-            `/api/servicios`,
+            /servicios`,
             servicioPayload
           );
         }
@@ -1137,7 +1137,7 @@ export default {
                 
                 let pagosGenerados;
                 try {
-                  const generarPlanResp = await axios.post(`/api/servicios-pagos/generar-plan`, {
+                  const generarPlanResp = await axios.post(/servicios-pagos/generar-plan`, {
                     idPagoPlazos: this.nuevoServicio.idPagoPlazos,
                     importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
                     fechaInicio: this.nuevoServicio.fechaInicioServicio
@@ -1152,7 +1152,7 @@ export default {
                 const pagosPayload = await this.fusionarCuotasConNuevoPlan(servicioId, pagosGenerados);
                 
                 await axios.put(
-                  `/api/servicios-pagos/servicio/${this.servicioEditandoId}`, 
+                  /servicios-pagos/servicio/${this.servicioEditandoId}`, 
                   pagosPayload
                 );
               } else if (cambioModalidad && !this.pagosExistentes) {
@@ -1160,7 +1160,7 @@ export default {
                 
                 let pagosGenerados;
                 try {
-                  const generarPlanResp = await axios.post(`/api/servicios-pagos/generar-plan`, {
+                  const generarPlanResp = await axios.post(/servicios-pagos/generar-plan`, {
                     idPagoPlazos: this.nuevoServicio.idPagoPlazos,
                     importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
                     fechaInicio: this.nuevoServicio.fechaInicioServicio
@@ -1187,14 +1187,14 @@ export default {
                     ...pagosGenerados
                   };
 
-                  await axios.post(`/api/servicios-pagos`, pagosPayload);
+                  await axios.post(/servicios-pagos`, pagosPayload);
                 }
               } else {
                 // SIN CAMBIO DE MODALIDAD: Solo actualizar importes preservando todo lo demás
                 const pagosPayload = this.crearPayloadPagosPreservando(servicioId);
                 
                 await axios.put(
-                  `/api/servicios-pagos/servicio/${this.servicioEditandoId}`, 
+                  /servicios-pagos/servicio/${this.servicioEditandoId}`, 
                   pagosPayload
                 );
               }
@@ -1203,7 +1203,7 @@ export default {
             // MODO CREACIÓN: Generar nuevo plan de pagos
             let pagosGenerados;
             try {
-              const generarPlanResp = await axios.post(`/api/servicios-pagos/generar-plan`, {
+              const generarPlanResp = await axios.post(/servicios-pagos/generar-plan`, {
                 idPagoPlazos: this.nuevoServicio.idPagoPlazos,
                 importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
                 fechaInicio: this.nuevoServicio.fechaInicioServicio
@@ -1264,7 +1264,7 @@ export default {
                 decimosegundoPagoPagado: pagosGenerados.decimosegundoPagoPagado || false
               };
 
-              await axios.post(`/api/servicios-pagos`, pagosPayload);
+              await axios.post(/servicios-pagos`, pagosPayload);
             }
           }
         }
@@ -1463,7 +1463,7 @@ export default {
 
     async cargarComercializadoras() {
       try {
-        const response = await axios.get(`/api/comercializadoras`);
+        const response = await axios.get(/comercializadoras`);
         this.comercializadorasList = response.data;
       } catch (error) {
         console.error('Error al cargar comercializadoras:', error);
@@ -1477,7 +1477,7 @@ export default {
         // Verificar si el servicio tiene pagos asociados
         let tienePagos = false;
         try {
-          const responsePagos = await axios.get(`/api/servicios-pagos/servicio/${servicio.id}`);
+          const responsePagos = await axios.get(/servicios-pagos/servicio/${servicio.id}`);
           tienePagos = responsePagos.data && responsePagos.data.id;
         } catch (error) {
           // Si no hay pagos, continuar con la eliminación normal
@@ -1515,11 +1515,11 @@ export default {
           try {
             // Si tiene pagos, eliminarlos primero
             if (tienePagos) {
-              await axios.delete(`/api/servicios-pagos/servicio/${servicio.id}`);
+              await axios.delete(/servicios-pagos/servicio/${servicio.id}`);
             }
 
             // Luego eliminar el servicio
-            await axios.delete(`/api/servicios/${servicio.id}`);
+            await axios.delete(/servicios/${servicio.id}`);
             
             // Mostrar mensaje de éxito
             await this.$swal.fire({
@@ -1543,7 +1543,7 @@ export default {
               
               // Intentar eliminación forzada desde el backend
               try {
-                await axios.delete(`/api/servicios/${servicio.id}/force`);
+                await axios.delete(/servicios/${servicio.id}/force`);
                 
                 await this.$swal.fire({
                   title: 'Eliminado',
@@ -1589,7 +1589,7 @@ export default {
     async cargarPuntosSuministro() {
       try {
         const clienteId = typeof this.cliente === 'object' ? this.cliente.id : this.cliente;
-        const response = await axios.get(`/api/puntos-suministro/cliente/${clienteId}`);
+        const response = await axios.get(/puntos-suministro/cliente/${clienteId}`);
         this.puntosSuministro = response.data;
       } catch (error) {
         console.error('Error al cargar puntos de suministro:', error);
@@ -1598,7 +1598,7 @@ export default {
 
     async cargarModalidadesPago() {
       try {
-        const resp = await axios.get(`/api/pagos-plazos`);
+        const resp = await axios.get(/pagos-plazos`);
         this.modalidadesPago = resp.data;
       } catch (e) {
         console.error('Error al cargar modalidades de pago:', e);
@@ -1624,7 +1624,7 @@ export default {
         
         // Intentar cargar desde el endpoint de cuotas primero
         try {
-          const resp = await axios.get(`/api/servicios-pagos/servicio/${servicioId}/cuotas`);
+          const resp = await axios.get(/servicios-pagos/servicio/${servicioId}/cuotas`);
           this.cuotas = resp.data.map(c => ({ ...c, editado: false }));
           return;
         } catch (cuotasError) {
@@ -1632,7 +1632,7 @@ export default {
         }
         
         // Si no hay endpoint de cuotas, cargar desde servicios-pagos y convertir
-        const respPagos = await axios.get(`/api/servicios-pagos/servicio/${servicioId}`);
+        const respPagos = await axios.get(/servicios-pagos/servicio/${servicioId}`);
         const pagos = respPagos.data;
         
         // Verificar que los datos de pagos corresponden al servicio correcto
@@ -1712,7 +1712,7 @@ export default {
         
         // Intentar actualizar la cuota individual primero
         try {
-          await axios.put(`/api/servicios-pagos/cuota/${cuota.id}`, cuota);
+          await axios.put(/servicios-pagos/cuota/${cuota.id}`, cuota);
           cuota.editado = false;
           this.$swal.fire({ icon: 'success', title: 'Cuota actualizada', timer: 1200, showConfirmButton: false });
           
@@ -1732,7 +1732,7 @@ export default {
           const servicioIdParaActualizar = cuota.servicioId || servicioIdActual;
           
           // Cargar los datos de pagos actuales del servicio específico
-          const respPagos = await axios.get(`/api/servicios-pagos/servicio/${servicioIdParaActualizar}`);
+          const respPagos = await axios.get(/servicios-pagos/servicio/${servicioIdParaActualizar}`);
           const pagosActuales = respPagos.data;
           
           // Verificar que estamos actualizando el servicio correcto
@@ -1746,7 +1746,7 @@ export default {
           pagosActuales[cuota.pagadoField] = cuota.pagado;
           
           // Enviar la actualización completa
-          await axios.put(`/api/servicios-pagos/servicio/${servicioIdParaActualizar}`, pagosActuales);
+          await axios.put(/servicios-pagos/servicio/${servicioIdParaActualizar}`, pagosActuales);
           
           cuota.editado = false;
           this.$swal.fire({ icon: 'success', title: 'Cuota actualizada', timer: 1200, showConfirmButton: false });
@@ -1772,7 +1772,7 @@ export default {
     async cargarDatosPagosServicio(servicioId) {
       if (!servicioId) return;
       try {
-        const response = await axios.get(`/api/servicios-pagos/servicio/${servicioId}`);
+        const response = await axios.get(/servicios-pagos/servicio/${servicioId}`);
         const pagos = response.data;
         if (pagos) {
           this.nuevoServicio.idPagoPlazos = Number(pagos.pagoPlazos?.id) || null;

@@ -636,12 +636,12 @@ export default {
   async created() {
     try {
       const [distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes, appMonitorizacionRes, integracionSistemasFVRes] = await Promise.all([
-        axios.get(`/api/distribuidoras`),
-        axios.get(`/api/tipos-contador`),
-        axios.get(`/api/tipos-comunicacion`),
-        axios.get(`/api/propiedades`),
-        axios.get(`/api/app-monitorizacion`),
-        axios.get(`/api/integracion-sistemas-fv`)
+        axios.get(/distribuidoras`),
+        axios.get(/tipos-contador`),
+        axios.get(/tipos-comunicacion`),
+        axios.get(/propiedades`),
+        axios.get(/app-monitorizacion`),
+        axios.get(/integracion-sistemas-fv`)
       ]);
 
       this.distribuidoras = distribuidorasRes.data;
@@ -740,10 +740,10 @@ export default {
     async loadMasterData() {
       try {
         const [distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes] = await Promise.all([
-          axios.get(`/api/distribuidoras`),
-          axios.get(`/api/tipos-contador`),
-          axios.get(`/api/tipos-comunicacion`),
-          axios.get(`/api/propiedades`)
+          axios.get(/distribuidoras`),
+          axios.get(/tipos-contador`),
+          axios.get(/tipos-comunicacion`),
+          axios.get(/propiedades`)
         ]);
         this.distribuidoras = distribuidorasRes.data;
         this.tiposContador = tiposContadorRes.data;

@@ -326,27 +326,27 @@ export default {
   data() {
     return {
       tablas: [
-        { nombre: "Comercializadoras", url: `/api/comercializadoras`, icono: "fas fa-building" },
-        { nombre: "Gestoras", url: `/api/gestoras`, icono: "fas fa-briefcase" },
-        { nombre: "Métodos de Pago", url: `/api/metodos-pago`, icono: "fas fa-credit-card" },
-        { nombre: "Niveles de Acceso", url: `/api/niveles-acceso`, icono: "fas fa-user-shield" },
-        { nombre: "Pago Plazos", url: `/api/pagos-plazos`, icono: "fas fa-calendar-check" },
-        { nombre: "Productos", url: `/api/productos`, icono: "fas fa-box-open" },
-        { nombre: "Sectores", url: `/api/sectores`, icono: "fas fa-industry" },
-        { nombre: "Subtipologías", url: `/api/subtipologias`, icono: "fas fa-tags" },
-        { nombre: "Tarifas Gas", url: `/api/tarifas-gas`, icono: "fas fa-fire" },
-        { nombre: "Tarifas Luz", url: `/api/tarifas-luz`, icono: "fas fa-bolt" },        { nombre: "Usuarios", url: `/api/usuarios`, icono: "fas fa-users" },
-        { nombre: "Distribuidoras", url: `/api/distribuidoras`, icono: "fas fa-truck-moving" },
-        { nombre: "Tipos de Contador", url: `/api/tipos-contador`, icono: "fas fa-tachometer-alt" },
-        { nombre: "Tipos de Comunicación", url: `/api/tipos-comunicacion`, icono: "fas fa-wifi" },
-        { nombre: "Propiedades", url: `/api/propiedades`, icono: "fas fa-building" },
-        { nombre: "APP Monitorización", url: `/api/app-monitorizacion`, icono: "fas fa-chart-line" },
-        { nombre: "Integración Sistemas FV", url: `/api/integracion-sistemas-fv`, icono: "fas fa-solar-panel" },
+        { nombre: "Comercializadoras", url: /comercializadoras`, icono: "fas fa-building" },
+        { nombre: "Gestoras", url: /gestoras`, icono: "fas fa-briefcase" },
+        { nombre: "Métodos de Pago", url: /metodos-pago`, icono: "fas fa-credit-card" },
+        { nombre: "Niveles de Acceso", url: /niveles-acceso`, icono: "fas fa-user-shield" },
+        { nombre: "Pago Plazos", url: /pagos-plazos`, icono: "fas fa-calendar-check" },
+        { nombre: "Productos", url: /productos`, icono: "fas fa-box-open" },
+        { nombre: "Sectores", url: /sectores`, icono: "fas fa-industry" },
+        { nombre: "Subtipologías", url: /subtipologias`, icono: "fas fa-tags" },
+        { nombre: "Tarifas Gas", url: /tarifas-gas`, icono: "fas fa-fire" },
+        { nombre: "Tarifas Luz", url: /tarifas-luz`, icono: "fas fa-bolt" },        { nombre: "Usuarios", url: /usuarios`, icono: "fas fa-users" },
+        { nombre: "Distribuidoras", url: /distribuidoras`, icono: "fas fa-truck-moving" },
+        { nombre: "Tipos de Contador", url: /tipos-contador`, icono: "fas fa-tachometer-alt" },
+        { nombre: "Tipos de Comunicación", url: /tipos-comunicacion`, icono: "fas fa-wifi" },
+        { nombre: "Propiedades", url: /propiedades`, icono: "fas fa-building" },
+        { nombre: "APP Monitorización", url: /app-monitorizacion`, icono: "fas fa-chart-line" },
+        { nombre: "Integración Sistemas FV", url: /integracion-sistemas-fv`, icono: "fas fa-solar-panel" },
         // Tablas del Módulo de Tareas
-        { nombre: "Tareas - Categorías", url: `/api/tarea-categorias`, icono: "fas fa-folder" },
-        { nombre: "Tareas - Subcategorías", url: `/api/tarea-subcategorias`, icono: "fas fa-folder-open" },
+        { nombre: "Tareas - Categorías", url: /tarea-categorias`, icono: "fas fa-folder" },
+        { nombre: "Tareas - Subcategorías", url: /tarea-subcategorias`, icono: "fas fa-folder-open" },
         // Clientes
-        { nombre: "Cargos de Contacto", url: `/api/cargos-contacto`, icono: "fas fa-id-badge" }
+        { nombre: "Cargos de Contacto", url: /cargos-contacto`, icono: "fas fa-id-badge" }
       ],
       tablaSeleccionada: null,
       datos: [],
@@ -572,7 +572,7 @@ export default {
     // Cargar categorías disponibles para el selector
     async cargarCategoriasDisponibles() {
       try {
-        const resp = await axios.get(`/api/tarea-categorias`);
+        const resp = await axios.get(/tarea-categorias`);
         this.categoriasDisponibles = resp.data.filter(c => c.activo !== false);
       } catch (error) {
         console.error('Error al cargar categorías:', error);
