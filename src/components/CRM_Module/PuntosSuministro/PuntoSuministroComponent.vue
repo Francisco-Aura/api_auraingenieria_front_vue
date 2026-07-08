@@ -746,7 +746,7 @@ export default {
     // Carga todos los puntos de suministro desde la API
     async fetchPuntosSuministro() {
       try {
-        const response = await axios.get(/puntos-suministro/all`);
+        const response = await axios.get(`/puntos-suministro/all`);
         
         this.puntosSuministro = response.data.map(punto => {
           const newPunto = { ...punto };
@@ -793,7 +793,7 @@ export default {
       }
       try {
         // Cargar datos detallados del punto de suministro
-        const response = await axios.get(/puntos-suministro/${ps.id}`);
+        const response = await axios.get(`/puntos-suministro/${ps.id}`);
         
         // Intentar cargar las potencias desde el endpoint de cartera
         let puntoConPotencias = { ...response.data };
@@ -801,7 +801,7 @@ export default {
         // Si tenemos idCliente, intentar cargar desde cartera
         if (ps.idCliente) {
           try {
-            const responseCartera = await axios.get(/puntos-suministro/cliente/${ps.idCliente}/cartera`);
+            const responseCartera = await axios.get(`/puntos-suministro/cliente/${ps.idCliente}/cartera`);
             const puntoCartera = responseCartera.data.find(punto => punto.id === ps.id);
             
             if (puntoCartera) {
@@ -1165,22 +1165,22 @@ export default {
         
         // Esperar a que productos y gestoras estén cargados
         if (!this.productos.length) {
-          const productosResp = await axios.get(/productos`);
+          const productosResp = await axios.get(`/productos`);
           this.productos = productosResp.data;
         }
         if (!this.gestoras.length) {
-          const gestorasResp = await axios.get(/gestoras`);
+          const gestorasResp = await axios.get(`/gestoras`);
           this.gestoras = gestorasResp.data;
         }
         
         // Cargar datos básicos del cliente primero
-        const responseCliente = await axios.get(/clientes/${idCliente}`);
+        const responseCliente = await axios.get(`/clientes/${idCliente}`);
         this.modalCliente = responseCliente.data;
         this.modalCliente.id = idCliente;
         this.modalPuntoSuministro = idPuntoSuministro;
         
         // Ahora cargar servicios (la parte más lenta)
-        const response = await axios.get(/servicios/punto-suministro/${idPuntoSuministro}`);
+        const response = await axios.get(`/servicios/punto-suministro/${idPuntoSuministro}`);
         
         // Cargar datos de pagos para cada servicio
         const serviciosConPagos = await this.cargarDatosDePagosParaServicios(response.data);
@@ -1205,7 +1205,7 @@ export default {
       const promesasPagos = servicios.map(async (servicio) => {
         try {
           // Intentar cargar los datos de pagos para este servicio
-          const responsePagos = await axios.get(/servicios-pagos/servicio/${servicio.id}`);
+          const responsePagos = await axios.get(`/servicios-pagos/servicio/${servicio.id}`);
           
           // Crear una copia del servicio con los datos de pagos
           return {
@@ -1237,7 +1237,7 @@ export default {
         // Activar loading durante la recarga
         this.cargandoServicios = true;
         
-        const response = await axios.get(/servicios/punto-suministro/${this.modalPuntoSuministro}`);
+        const response = await axios.get(`/servicios/punto-suministro/${this.modalPuntoSuministro}`);
         
         // Cargar datos de pagos para cada servicio
         const serviciosConPagos = await this.cargarDatosDePagosParaServicios(response.data);
@@ -1427,7 +1427,7 @@ export default {
     async calcularTarifaActual(suministro) {
       try {
         // Hacer una consulta específica para obtener la tarifa del contrato vigente
-        const response = await axios.get(/contratos/punto-suministro/${suministro.id}`);
+        const response = await axios.get(`/contratos/punto-suministro/${suministro.id}`);
         const contratos = response.data;
         
         if (!contratos || contratos.length === 0) {
@@ -1490,7 +1490,7 @@ export default {
       }
       try {
         // Cargar datos detallados del punto de suministro
-        const response = await axios.get(/puntos-suministro/${ps.id}`);
+        const response = await axios.get(`/puntos-suministro/${ps.id}`);
         
         // Combinar datos del endpoint con las potencias del punto original (igual que en PuntosSuministroClienteComponent)
         this.modificarPunto = { 

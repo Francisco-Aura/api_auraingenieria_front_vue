@@ -93,7 +93,7 @@ export default {
       if (!this.validarFormulario()) return;
       this.isLoading = true;
       try {
-        const response = await axios.get(/usuarios/login`, {
+        const response = await axios.get(`/usuarios/login`, {
           params: {
             user: this.username,
             pass: this.password

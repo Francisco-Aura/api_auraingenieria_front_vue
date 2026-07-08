@@ -520,7 +520,7 @@ export default {
     async fetchClientes() {
       try {
         this.loading = true;
-        const response = await axios.get(/clientes/cartera`);
+        const response = await axios.get(`/clientes/cartera`);
         this.clientes = response.data;
         // Eliminada la alerta de éxito, solo loading
       } catch (error) {
@@ -539,7 +539,7 @@ export default {
     async fetchPuntosSuministro(idCliente) {
       try {
         this.loading = true;
-        const response = await axios.get(/puntos-suministro/cliente/${idCliente}/cartera`);
+        const response = await axios.get(`/puntos-suministro/cliente/${idCliente}/cartera`);
         this.puntosSuministro = response.data;
       } catch (error) {
         this.$swal.fire({
@@ -651,7 +651,7 @@ export default {
     async cargarDatosCliente(idCliente) {
       try {
         this.loading = true;
-        const response = await axios.get(/clientes/${idCliente}`);
+        const response = await axios.get(`/clientes/${idCliente}`);
         this.nuevoCliente = response.data;
         this.modoActualizar = true;
         this.formularioVisible = true;

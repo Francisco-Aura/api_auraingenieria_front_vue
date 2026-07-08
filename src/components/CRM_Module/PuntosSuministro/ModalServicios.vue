@@ -824,7 +824,7 @@ export default {
       
       // Cargar datos completos del servicio desde el backend
       try {
-        const response = await axios.get(/servicios/${this.servicioVigente.id}`);
+        const response = await axios.get(`/servicios/${this.servicioVigente.id}`);
         const servicioCompleto = response.data;
         
         this.nuevoServicio = { 
@@ -888,7 +888,7 @@ export default {
       
       // Cargar datos completos del servicio desde el backend
       try {
-        const response = await axios.get(/servicios/${servicio.id}`);
+        const response = await axios.get(`/servicios/${servicio.id}`);
         const servicioCompleto = response.data;
         
         this.nuevoServicio = {
@@ -1463,7 +1463,7 @@ export default {
 
     async cargarComercializadoras() {
       try {
-        const response = await axios.get(/comercializadoras`);
+        const response = await axios.get(`/comercializadoras`);
         this.comercializadorasList = response.data;
       } catch (error) {
         console.error('Error al cargar comercializadoras:', error);
@@ -1477,7 +1477,7 @@ export default {
         // Verificar si el servicio tiene pagos asociados
         let tienePagos = false;
         try {
-          const responsePagos = await axios.get(/servicios-pagos/servicio/${servicio.id}`);
+          const responsePagos = await axios.get(`/servicios-pagos/servicio/${servicio.id}`);
           tienePagos = responsePagos.data && responsePagos.data.id;
         } catch (error) {
           // Si no hay pagos, continuar con la eliminación normal
@@ -1589,7 +1589,7 @@ export default {
     async cargarPuntosSuministro() {
       try {
         const clienteId = typeof this.cliente === 'object' ? this.cliente.id : this.cliente;
-        const response = await axios.get(/puntos-suministro/cliente/${clienteId}`);
+        const response = await axios.get(`/puntos-suministro/cliente/${clienteId}`);
         this.puntosSuministro = response.data;
       } catch (error) {
         console.error('Error al cargar puntos de suministro:', error);
@@ -1598,7 +1598,7 @@ export default {
 
     async cargarModalidadesPago() {
       try {
-        const resp = await axios.get(/pagos-plazos`);
+        const resp = await axios.get(`/pagos-plazos`);
         this.modalidadesPago = resp.data;
       } catch (e) {
         console.error('Error al cargar modalidades de pago:', e);
@@ -1624,7 +1624,7 @@ export default {
         
         // Intentar cargar desde el endpoint de cuotas primero
         try {
-          const resp = await axios.get(/servicios-pagos/servicio/${servicioId}/cuotas`);
+          const resp = await axios.get(`/servicios-pagos/servicio/${servicioId}/cuotas`);
           this.cuotas = resp.data.map(c => ({ ...c, editado: false }));
           return;
         } catch (cuotasError) {
@@ -1632,7 +1632,7 @@ export default {
         }
         
         // Si no hay endpoint de cuotas, cargar desde servicios-pagos y convertir
-        const respPagos = await axios.get(/servicios-pagos/servicio/${servicioId}`);
+        const respPagos = await axios.get(`/servicios-pagos/servicio/${servicioId}`);
         const pagos = respPagos.data;
         
         // Verificar que los datos de pagos corresponden al servicio correcto
@@ -1732,7 +1732,7 @@ export default {
           const servicioIdParaActualizar = cuota.servicioId || servicioIdActual;
           
           // Cargar los datos de pagos actuales del servicio específico
-          const respPagos = await axios.get(/servicios-pagos/servicio/${servicioIdParaActualizar}`);
+          const respPagos = await axios.get(`/servicios-pagos/servicio/${servicioIdParaActualizar}`);
           const pagosActuales = respPagos.data;
           
           // Verificar que estamos actualizando el servicio correcto
@@ -1772,7 +1772,7 @@ export default {
     async cargarDatosPagosServicio(servicioId) {
       if (!servicioId) return;
       try {
-        const response = await axios.get(/servicios-pagos/servicio/${servicioId}`);
+        const response = await axios.get(`/servicios-pagos/servicio/${servicioId}`);
         const pagos = response.data;
         if (pagos) {
           this.nuevoServicio.idPagoPlazos = Number(pagos.pagoPlazos?.id) || null;

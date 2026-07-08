@@ -443,7 +443,7 @@ export default {
       this.tipoSeleccionado = tipo;
       this.loading = true;
       try {
-        const respuesta = await axios.get(/informes/${tipo}`);
+        const respuesta = await axios.get(`/informes/${tipo}`);
         this.procesarDatosParaTabla(respuesta.data);
         this.tituloInforme = this.formatearTitulo(tipo);
         this.mostrarTabla = true;
@@ -468,7 +468,7 @@ export default {
       if (!this.tipoSeleccionado) return;
       this.loading = true;
       try {
-        const respuesta = await axios.get(/informes/${this.tipoSeleccionado}`);
+        const respuesta = await axios.get(`/informes/${this.tipoSeleccionado}`);
         this.procesarDatosParaTabla(respuesta.data);
         // Resetear estado de paginación
         this.currentPage = 1;

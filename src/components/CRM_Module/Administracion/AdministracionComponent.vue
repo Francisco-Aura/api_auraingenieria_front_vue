@@ -572,7 +572,7 @@ export default {
     // Cargar categorías disponibles para el selector
     async cargarCategoriasDisponibles() {
       try {
-        const resp = await axios.get(/tarea-categorias`);
+        const resp = await axios.get(`/tarea-categorias`);
         this.categoriasDisponibles = resp.data.filter(c => c.activo !== false);
       } catch (error) {
         console.error('Error al cargar categorías:', error);

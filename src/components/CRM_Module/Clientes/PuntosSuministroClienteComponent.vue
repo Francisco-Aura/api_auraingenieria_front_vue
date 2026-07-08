@@ -216,7 +216,7 @@ export default {
       if (!this.cliente || !this.cliente.idCliente) return;
       this.loading = true;
       try {
-        const response = await axios.get(/puntos-suministro/cliente/${this.cliente.idCliente}/cartera`);
+        const response = await axios.get(`/puntos-suministro/cliente/${this.cliente.idCliente}/cartera`);
         this.puntosSuministroLocal = response.data.map(punto => {
           const newPunto = { ...punto };
           // Normalizar nombres de propiedades si es necesario
@@ -260,7 +260,7 @@ export default {
 
     async verDetallePunto(punto) {
       try {
-        const response = await axios.get(/puntos-suministro/${punto.id}`);
+        const response = await axios.get(`/puntos-suministro/${punto.id}`);
         // Combinar datos del endpoint con las potencias del punto original
         this.modificarPunto = { 
           ...response.data,

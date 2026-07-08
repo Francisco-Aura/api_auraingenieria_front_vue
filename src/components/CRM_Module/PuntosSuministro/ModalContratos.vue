@@ -1441,7 +1441,7 @@ export default {
 
     async cargarComercializadoras() {
       try {
-        const response = await axios.get(/comercializadoras`);
+        const response = await axios.get(`/comercializadoras`);
         this.comercializadorasList = response.data;
       } catch (error) {
         console.error('Error al cargar comercializadoras:', error);
