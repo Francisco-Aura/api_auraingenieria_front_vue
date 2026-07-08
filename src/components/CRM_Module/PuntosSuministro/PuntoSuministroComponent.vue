@@ -746,7 +746,7 @@ export default {
     // Carga todos los puntos de suministro desde la API
     async fetchPuntosSuministro() {
       try {
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/all`);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/puntos-suministro/all`);
         
         this.puntosSuministro = response.data.map(punto => {
           const newPunto = { ...punto };
@@ -793,7 +793,7 @@ export default {
       }
       try {
         // Cargar datos detallados del punto de suministro
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/puntos-suministro/${ps.id}`);
         
         // Intentar cargar las potencias desde el endpoint de cartera
         let puntoConPotencias = { ...response.data };
@@ -801,7 +801,7 @@ export default {
         // Si tenemos idCliente, intentar cargar desde cartera
         if (ps.idCliente) {
           try {
-            const responseCartera = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${ps.idCliente}/cartera`);
+            const responseCartera = await axios.get(`${process.env.VUE_APP_API_URL}/puntos-suministro/cliente/${ps.idCliente}/cartera`);
             const puntoCartera = responseCartera.data.find(punto => punto.id === ps.id);
             
             if (puntoCartera) {
@@ -874,7 +874,7 @@ export default {
     // Actualiza un punto de suministro en la API
     async handleUpdate(datosAdaptados) {
       try {
-        await axios.post(`${process.env.VUE_APP_API_URL}/api/puntos-suministro`, datosAdaptados);
+        await axios.post(`${process.env.VUE_APP_API_URL}/puntos-suministro`, datosAdaptados);
         const esReactivacion = datosAdaptados.fechaBaja === null && this.modificarPunto.fechaBaja;
         await this.$swal.fire({
           icon: 'success',
@@ -919,11 +919,11 @@ export default {
       try {
         // Cargar TODOS los datos necesarios ANTES de mostrar el modal
         const [responseCliente, responsePuntoSuministro, tarifasGasResponse, tarifasLuzResponse, responseContratos] = await Promise.all([
-          axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${idPuntoSuministro}`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-luz`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${idPuntoSuministro}`)
+          axios.get(`${process.env.VUE_APP_API_URL}/clientes/${idCliente}`),
+          axios.get(`${process.env.VUE_APP_API_URL}/puntos-suministro/${idPuntoSuministro}`),
+          axios.get(`${process.env.VUE_APP_API_URL}/tarifas-gas`),
+          axios.get(`${process.env.VUE_APP_API_URL}/tarifas-luz`),
+          axios.get(`${process.env.VUE_APP_API_URL}/contratos/punto-suministro/${idPuntoSuministro}`)
         ]);
         
         // VERIFICAR que esta solicitud sigue siendo la actual (evita race conditions)
@@ -1028,7 +1028,7 @@ export default {
           });
 
           // Realizar la eliminación
-          await axios.delete(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${puntoSuministro.id}`);
+          await axios.delete(`${process.env.VUE_APP_API_URL}/puntos-suministro/${puntoSuministro.id}`);
           
           // Mostrar mensaje de éxito
           await this.$swal.fire({
@@ -1125,7 +1125,7 @@ export default {
         
         // Recargar contratos del punto de suministro actual
         const responseContratos = await axios.get(
-          `${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${this.modalPuntoSuministro.id}`
+          `${process.env.VUE_APP_API_URL}/contratos/punto-suministro/${this.modalPuntoSuministro.id}`
         );
         this.contratos = responseContratos.data;
 
@@ -1165,22 +1165,22 @@ export default {
         
         // Esperar a que productos y gestoras estén cargados
         if (!this.productos.length) {
-          const productosResp = await axios.get(`${process.env.VUE_APP_API_URL}/api/productos`);
+          const productosResp = await axios.get(`${process.env.VUE_APP_API_URL}/productos`);
           this.productos = productosResp.data;
         }
         if (!this.gestoras.length) {
-          const gestorasResp = await axios.get(`${process.env.VUE_APP_API_URL}/api/gestoras`);
+          const gestorasResp = await axios.get(`${process.env.VUE_APP_API_URL}/gestoras`);
           this.gestoras = gestorasResp.data;
         }
         
         // Cargar datos básicos del cliente primero
-        const responseCliente = await axios.get(`${process.env.VUE_APP_API_URL}/api/clientes/${idCliente}`);
+        const responseCliente = await axios.get(`${process.env.VUE_APP_API_URL}/clientes/${idCliente}`);
         this.modalCliente = responseCliente.data;
         this.modalCliente.id = idCliente;
         this.modalPuntoSuministro = idPuntoSuministro;
         
         // Ahora cargar servicios (la parte más lenta)
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios/punto-suministro/${idPuntoSuministro}`);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/servicios/punto-suministro/${idPuntoSuministro}`);
         
         // Cargar datos de pagos para cada servicio
         const serviciosConPagos = await this.cargarDatosDePagosParaServicios(response.data);
@@ -1205,7 +1205,7 @@ export default {
       const promesasPagos = servicios.map(async (servicio) => {
         try {
           // Intentar cargar los datos de pagos para este servicio
-          const responsePagos = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios-pagos/servicio/${servicio.id}`);
+          const responsePagos = await axios.get(`${process.env.VUE_APP_API_URL}/servicios-pagos/servicio/${servicio.id}`);
           
           // Crear una copia del servicio con los datos de pagos
           return {
@@ -1237,7 +1237,7 @@ export default {
         // Activar loading durante la recarga
         this.cargandoServicios = true;
         
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/servicios/punto-suministro/${this.modalPuntoSuministro}`);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/servicios/punto-suministro/${this.modalPuntoSuministro}`);
         
         // Cargar datos de pagos para cada servicio
         const serviciosConPagos = await this.cargarDatosDePagosParaServicios(response.data);
@@ -1427,7 +1427,7 @@ export default {
     async calcularTarifaActual(suministro) {
       try {
         // Hacer una consulta específica para obtener la tarifa del contrato vigente
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/contratos/punto-suministro/${suministro.id}`);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/contratos/punto-suministro/${suministro.id}`);
         const contratos = response.data;
         
         if (!contratos || contratos.length === 0) {
@@ -1490,7 +1490,7 @@ export default {
       }
       try {
         // Cargar datos detallados del punto de suministro
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${ps.id}`);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/puntos-suministro/${ps.id}`);
         
         // Combinar datos del endpoint con las potencias del punto original (igual que en PuntosSuministroClienteComponent)
         this.modificarPunto = { 
@@ -1636,7 +1636,7 @@ export default {
 
         // Llamar al endpoint eficiente — devuelve solo los IDs de puntos afectados
         const response = await axios.get(
-          `${process.env.VUE_APP_API_URL}/api/servicios/puntos-con-servicio-activo`,
+          `${process.env.VUE_APP_API_URL}/servicios/puntos-con-servicio-activo`,
           { params: { idProductos: idsNoSwitching }, paramsSerializer: params => {
               return Object.entries(params)
                 .flatMap(([k, v]) => Array.isArray(v) ? v.map(i => `${k}=${i}`) : [`${k}=${v}`])
@@ -1673,11 +1673,11 @@ export default {
     try {
       // Cargar datos de configuración en paralelo
       const [comercializadoras, tarifasGas, tarifasLuz, gestoras, productos] = await Promise.all([
-        axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-luz`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/gestoras`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/productos`),
+        axios.get(`${process.env.VUE_APP_API_URL}/comercializadoras`),
+        axios.get(`${process.env.VUE_APP_API_URL}/tarifas-gas`),
+        axios.get(`${process.env.VUE_APP_API_URL}/tarifas-luz`),
+        axios.get(`${process.env.VUE_APP_API_URL}/gestoras`),
+        axios.get(`${process.env.VUE_APP_API_URL}/productos`),
       ]);
       
       this.comercializadoras = comercializadoras.data;

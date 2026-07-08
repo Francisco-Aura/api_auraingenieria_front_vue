@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from './plugins/fontawesome';
 // Importar SweetAlert2 (se cargará en un chunk separado)
 import Swal from 'sweetalert2';
 
-axios.defaults.baseURL = `${process.env.VUE_APP_API_URL}/api`
+axios.defaults.baseURL = "/api"
 
 // Interceptor global para añadir X-Aura-Usuario-Nombre en TODAS las peticiones
 axios.interceptors.request.use(config => {

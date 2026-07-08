@@ -636,12 +636,12 @@ export default {
   async created() {
     try {
       const [distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes, appMonitorizacionRes, integracionSistemasFVRes] = await Promise.all([
-        axios.get(`${process.env.VUE_APP_API_URL}/api/distribuidoras`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/tipos-contador`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/tipos-comunicacion`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/propiedades`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/app-monitorizacion`),
-        axios.get(`${process.env.VUE_APP_API_URL}/api/integracion-sistemas-fv`)
+        axios.get(`${process.env.VUE_APP_API_URL}/distribuidoras`),
+        axios.get(`${process.env.VUE_APP_API_URL}/tipos-contador`),
+        axios.get(`${process.env.VUE_APP_API_URL}/tipos-comunicacion`),
+        axios.get(`${process.env.VUE_APP_API_URL}/propiedades`),
+        axios.get(`${process.env.VUE_APP_API_URL}/app-monitorizacion`),
+        axios.get(`${process.env.VUE_APP_API_URL}/integracion-sistemas-fv`)
       ]);
 
       this.distribuidoras = distribuidorasRes.data;
@@ -740,10 +740,10 @@ export default {
     async loadMasterData() {
       try {
         const [distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes] = await Promise.all([
-          axios.get(`${process.env.VUE_APP_API_URL}/api/distribuidoras`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/tipos-contador`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/tipos-comunicacion`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/propiedades`)
+          axios.get(`${process.env.VUE_APP_API_URL}/distribuidoras`),
+          axios.get(`${process.env.VUE_APP_API_URL}/tipos-contador`),
+          axios.get(`${process.env.VUE_APP_API_URL}/tipos-comunicacion`),
+          axios.get(`${process.env.VUE_APP_API_URL}/propiedades`)
         ]);
         this.distribuidoras = distribuidorasRes.data;
         this.tiposContador = tiposContadorRes.data;

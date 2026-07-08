@@ -1568,7 +1568,7 @@ export default {
           nombreComercial: this.clienteLocal.grupoEmpresarial,
           fechaBaja: null
         };
-        await axios.put(`${process.env.VUE_APP_API_URL}/api/clientes/${clienteParaEnviar.id}`, clienteParaEnviar);
+        await axios.put(`${process.env.VUE_APP_API_URL}/clientes/${clienteParaEnviar.id}`, clienteParaEnviar);
         this.clienteLocal.fechaBaja = null;
 
         // Paso 2: obtener PS dados de baja de este cliente
@@ -1579,7 +1579,7 @@ export default {
         }
 
         const { data: psDadosDeBaja } = await axios.get(
-          `${process.env.VUE_APP_API_URL}/api/puntos-suministro/cliente/${clienteId}/dados-de-baja`
+          `${process.env.VUE_APP_API_URL}/puntos-suministro/cliente/${clienteId}/dados-de-baja`
         );
 
         if (!psDadosDeBaja || psDadosDeBaja.length === 0) {
@@ -1630,7 +1630,7 @@ export default {
         // Paso 4: reactivar cada PS seleccionado
         await Promise.all(
           idsSeleccionados.map(psId =>
-            axios.put(`${process.env.VUE_APP_API_URL}/api/puntos-suministro/${psId}/reactivar`)
+            axios.put(`${process.env.VUE_APP_API_URL}/puntos-suministro/${psId}/reactivar`)
           )
         );
 
@@ -1718,8 +1718,8 @@ export default {
       this.cargandoTareas = true;
       try {
         const [tareasRes, estadosRes] = await Promise.all([
-          axios.get(`${process.env.VUE_APP_API_URL}/api/tareas/cliente/${this.clienteLocal.id}`),
-          axios.get(`${process.env.VUE_APP_API_URL}/api/tareas/estados`)
+          axios.get(`${process.env.VUE_APP_API_URL}/tareas/cliente/${this.clienteLocal.id}`),
+          axios.get(`${process.env.VUE_APP_API_URL}/tareas/estados`)
         ]);
         this.tareas = tareasRes.data;
         this.estadosTareas = estadosRes.data;

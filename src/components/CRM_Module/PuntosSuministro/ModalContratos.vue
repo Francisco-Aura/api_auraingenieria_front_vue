@@ -1211,13 +1211,13 @@ export default {
 
           if (this.modoEdicion && this.contratoEditandoId) {
             response = await axios.put(
-              `${process.env.VUE_APP_API_URL}/api/contratos/${this.contratoEditandoId}`,
+              `${process.env.VUE_APP_API_URL}/contratos/${this.contratoEditandoId}`,
               formData,
               { headers: { 'Content-Type': 'multipart/form-data' } }
             );
           } else {
             response = await axios.post(
-              `${process.env.VUE_APP_API_URL}/api/contratos`,
+              `${process.env.VUE_APP_API_URL}/contratos`,
               formData,
               { headers: { 'Content-Type': 'multipart/form-data' } }
             );
@@ -1227,13 +1227,13 @@ export default {
         else {
           if (this.modoEdicion && this.contratoEditandoId) {
             response = await axios.put(
-              `${process.env.VUE_APP_API_URL}/api/contratos/${this.contratoEditandoId}`,
+              `${process.env.VUE_APP_API_URL}/contratos/${this.contratoEditandoId}`,
               this.nuevoContrato,
               { headers: { 'Content-Type': 'application/json' } }
             );
           } else {
             response = await axios.post(
-              `${process.env.VUE_APP_API_URL}/api/contratos`,
+              `${process.env.VUE_APP_API_URL}/contratos`,
               this.nuevoContrato,
               { headers: { 'Content-Type': 'application/json' } }
             );
@@ -1301,7 +1301,7 @@ export default {
 
       try {
         const response = await axios.get(
-          `${process.env.VUE_APP_API_URL}/api/contratos/${contrato.id}/pdf`,
+          `${process.env.VUE_APP_API_URL}/contratos/${contrato.id}/pdf`,
           { responseType: 'blob' }
         );
 
@@ -1441,7 +1441,7 @@ export default {
 
     async cargarComercializadoras() {
       try {
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/api/comercializadoras`);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/comercializadoras`);
         this.comercializadorasList = response.data;
       } catch (error) {
         console.error('Error al cargar comercializadoras:', error);
@@ -1496,7 +1496,7 @@ export default {
           });
 
           // Realizar la eliminación
-          await axios.delete(`${process.env.VUE_APP_API_URL}/api/contratos/${contrato.id}`);
+          await axios.delete(`${process.env.VUE_APP_API_URL}/contratos/${contrato.id}`);
           
           // Mostrar mensaje de éxito
           await this.$swal.fire({
@@ -1898,7 +1898,7 @@ export default {
         
         if (needsGasTarifas) {
           promises.push(
-            axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-gas`)
+            axios.get(`${process.env.VUE_APP_API_URL}/tarifas-gas`)
               .then(response => {
                 this.$emit('update:tarifasGas', response.data);
                 return response.data;
@@ -1912,7 +1912,7 @@ export default {
         
         if (needsLuzTarifas) {
           promises.push(
-            axios.get(`${process.env.VUE_APP_API_URL}/api/tarifas-luz`)
+            axios.get(`${process.env.VUE_APP_API_URL}/tarifas-luz`)
               .then(response => {
                 this.$emit('update:tarifasLuz', response.data);
                 return response.data;
