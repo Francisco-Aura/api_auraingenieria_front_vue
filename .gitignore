@@ -1,25 +1,61 @@
+# ==============================
+# Sistema operativo
+# ==============================
 .DS_Store
-node_modules
-/dist
-#No subimos cambios de public, para diferenciar en la pestaña el entorno donde estamos
-/public
+Thumbs.db
 
+# ==============================
+# Dependencias
+# ==============================
+node_modules/
 
-# local env files
+# ==============================
+# Build
+# ==============================
+dist/
+coverage/
+
+# ==============================
+# Variables de entorno
+# ==============================
 .env.local
 .env.*.local
 
-# Log files
+# ==============================
+# Logs
+# ==============================
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Editor directories and files
-.idea
-.vscode
+# ==============================
+# Cache
+# ==============================
+.cache/
+.temp/
+.tmp/
+.eslintcache
+
+# ==============================
+# IDEs
+# ==============================
+.idea/
+.vscode/
+
+# ==============================
+# Visual Studio
+# ==============================
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
+
+# ==============================
+# Archivos temporales
+# ==============================
 *.sw?
+*.swp
+*.swo
+*~
