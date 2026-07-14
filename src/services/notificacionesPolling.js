@@ -36,7 +36,7 @@ class NotificacionesService {
 
     // Conexión STOMP sobre SockJS para recibir nuevas notificaciones en tiempo real
     this.stompClient = new Client({
-      webSocketFactory: () => new SockJS(`${process.env.VUE_APP_API_URL}/ws`),
+      webSocketFactory: () => new SockJS('/ws'),
       reconnectDelay: 5000,
       onConnect: () => {
         // Suscripción al topic personal del usuario (no requiere autenticación)
