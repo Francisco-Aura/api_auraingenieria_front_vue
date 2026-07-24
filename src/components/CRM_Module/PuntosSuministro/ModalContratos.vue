@@ -420,6 +420,24 @@
                 </div>
               </div>
 
+              <!-- Sección de Comentario de Renovación -->
+              <div class="form-section-modern">
+                <div class="section-header-modern">
+                  <i class="fas fa-sync-alt"></i>
+                  <h3>Comentario de Renovación</h3>
+                </div>
+                <div class="form-group-modern">
+                  <textarea 
+                    id="comentarioRenovacion" 
+                    v-model="nuevoContrato.comentarioRenovacion" 
+                    class="form-control-modern textarea-modern" 
+                    rows="4"
+                    maxlength="10000"
+                    placeholder="Notas sobre la renovación de este contrato..."
+                  ></textarea>
+                </div>
+              </div>
+
               <!-- Sección de Documento PDF -->
               <div class="form-section-modern">
                 <div class="section-header-modern">
@@ -815,14 +833,12 @@ export default {
         observaciones: "",
         userFO: "",
         passwordFO: "",
+        comentarioRenovacion: "",
       },
-      selectedFile: null,
-      mostrarModalDetalleContrato: false,
-      contratoDetalle: null,
-      clienteDetalle: null,
       comercializadorasList: [],
       nivelAcceso: null,
       errores: {},
+      contratoOriginalIdRenovar: null,
     };
   },
 
@@ -1029,6 +1045,7 @@ export default {
       this.modoEdicion = false;
       this.modoRenovacion = true;
       this.contratoEditandoId = null;
+      this.contratoOriginalIdRenovar = this.contratoVigente.id;
       
       // Usar $nextTick para asegurar que el DOM está listo
       await this.$nextTick();
@@ -1163,6 +1180,7 @@ export default {
       this.modoEdicion = false;
       this.modoRenovacion = false;
       this.contratoEditandoId = null;
+      this.contratoOriginalIdRenovar = null;
       this.selectedFile = null;
     },
 
@@ -1215,6 +1233,12 @@ export default {
               formData,
               { headers: { 'Content-Type': 'multipart/form-data' } }
             );
+          } else if (this.modoRenovacion && this.contratoOriginalIdRenovar) {
+            response = await axios.post(
+              `${process.env.VUE_APP_API_URL}/contratos/renovar/${this.contratoOriginalIdRenovar}`,
+              this.nuevoContrato,
+              { headers: { 'Content-Type': 'application/json' } }
+            );
           } else {
             response = await axios.post(
               `${process.env.VUE_APP_API_URL}/contratos`,
@@ -1228,6 +1252,12 @@ export default {
           if (this.modoEdicion && this.contratoEditandoId) {
             response = await axios.put(
               `${process.env.VUE_APP_API_URL}/contratos/${this.contratoEditandoId}`,
+              this.nuevoContrato,
+              { headers: { 'Content-Type': 'application/json' } }
+            );
+          } else if (this.modoRenovacion && this.contratoOriginalIdRenovar) {
+            response = await axios.post(
+              `${process.env.VUE_APP_API_URL}/contratos/renovar/${this.contratoOriginalIdRenovar}`,
               this.nuevoContrato,
               { headers: { 'Content-Type': 'application/json' } }
             );

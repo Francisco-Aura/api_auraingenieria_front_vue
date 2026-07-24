@@ -1698,6 +1698,20 @@ export default {
         this.columnFilters.cupsluz = this.$route.query.cupsluz;
       }
       
+      // Detectar si hay una renovación pendiente desde Informes
+      const pendingRenovacion = sessionStorage.getItem('pendingRenovacion');
+      if (pendingRenovacion) {
+        sessionStorage.removeItem('pendingRenovacion');
+        try {
+          const renovData = JSON.parse(pendingRenovacion);
+          if (renovData.idPuntoSuministro && renovData.idCliente) {
+            await this.abrirModalContratos(renovData.idPuntoSuministro, renovData.idCliente);
+          }
+        } catch (e) {
+          console.warn('Error al procesar renovación pendiente', e);
+        }
+      }
+      
       // Cargar información de puntos con servicios no-switching
       await this.cargarPuntosConServiciosNoSwitching();
       

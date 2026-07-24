@@ -145,6 +145,24 @@
                     </button>
                   </div>
                 </template>
+                <template v-else-if="tipoSeleccionado === 'contratos-pendientes-renovacion' && columna === 'acciones'">
+                  <div class="action-buttons-informe">
+                    <button
+                      class="btn-icon btn-renovar"
+                      @click="iniciarRenovacion(fila)"
+                      title="Renovar contrato"
+                    >
+                      <i class="fas fa-sync-alt"></i> Renovar
+                    </button>
+                    <button
+                      class="btn-icon btn-comentario"
+                      @click="abrirModalComentario(fila)"
+                      :title="fila.comentarioRenovacion ? fila.comentarioRenovacion : 'Sin comentario'"
+                    >
+                      <i class="fas fa-comment-alt" :class="{ 'has-comment': fila.comentarioRenovacion }"></i> Comentario
+                    </button>
+                  </div>
+                </template>
                 <template v-else>
                   <div class="cell-content" :title="mostrarValorCelda(fila, columna)">
                     <span
@@ -234,6 +252,31 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal Comentario de Renovación -->
+  <div v-if="mostrarModalComentario" class="modal-overlay" @click.self="mostrarModalComentario = false">
+    <div class="modal-comentario-renovacion">
+      <div class="modal-header">
+        <h3><i class="fas fa-comment-alt"></i> Comentario de Renovación</h3>
+        <button class="close-button" @click="mostrarModalComentario = false"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <textarea
+          v-model="comentarioRenovacionEditar"
+          class="form-control textarea-comentario"
+          rows="6"
+          maxlength="10000"
+          placeholder="Escriba el comentario de renovación..."
+        ></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" @click="mostrarModalComentario = false">Cancelar</button>
+        <button class="btn btn-primary" @click="guardarComentarioRenovacion" :disabled="guardandoComentario">
+          <i class="fas fa-save"></i> {{ guardandoComentario ? 'Guardando...' : 'Aceptar' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -263,6 +306,11 @@ export default {
       recordsPerPageValue: 10,
       currentPage: 1,
       isSavingBulk: false,
+      // Modal comentario renovación
+      mostrarModalComentario: false,
+      comentarioRenovacionEditar: '',
+      contratoComentarioId: null,
+      guardandoComentario: false,
       // Mapeo de etiquetas para encabezados en español
       etiquetasColumnas: {
         codigoContrato: 'Código Contrato',
@@ -285,6 +333,7 @@ export default {
         telefono: 'Teléfono',
         correo: 'Correo',
         estadoBaja: 'De Baja',
+        acciones: 'Acciones',
       }
     };
   },
@@ -443,7 +492,16 @@ export default {
       this.tipoSeleccionado = tipo;
       this.loading = true;
       try {
-        const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${tipo}`);
+        let respuesta;
+        if (tipo === 'contratos-pendientes-renovacion') {
+          const usuario = JSON.parse(localStorage.getItem('usuario'));
+          respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${tipo}`, {
+            params: { nivelAcceso: usuario?.nivelAcceso },
+            headers: { 'X-Aura-Usuario-Nombre': usuario?.nombre }
+          });
+        } else {
+          respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${tipo}`);
+        }
         this.procesarDatosParaTabla(respuesta.data);
         this.tituloInforme = this.formatearTitulo(tipo);
         this.mostrarTabla = true;
@@ -468,7 +526,16 @@ export default {
       if (!this.tipoSeleccionado) return;
       this.loading = true;
       try {
-        const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${this.tipoSeleccionado}`);
+        let respuesta;
+        if (this.tipoSeleccionado === 'contratos-pendientes-renovacion') {
+          const usuario = JSON.parse(localStorage.getItem('usuario'));
+          respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${this.tipoSeleccionado}`, {
+            params: { nivelAcceso: usuario?.nivelAcceso },
+            headers: { 'X-Aura-Usuario-Nombre': usuario?.nombre }
+          });
+        } else {
+          respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${this.tipoSeleccionado}`);
+        }
         this.procesarDatosParaTabla(respuesta.data);
         // Resetear estado de paginación
         this.currentPage = 1;
@@ -492,7 +559,8 @@ export default {
         "contratos-pendientes-renovacion": [
           "codigoContrato", // identificador
           "fechaInicio", "fechaFin", "cliente", "cupsLuz", "cupsGas", "cups",
-          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual", "consumoAnual"
+          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual", "consumoAnual",
+          "acciones" // columna especial de acciones
         ],
         "puntos-suministro-sin-contrato": [
           "idPS", // identificador
@@ -527,10 +595,20 @@ export default {
             if (key === 'cups') {
               // Para todos los informes con CUPS, calcular el valor consolidado desde cupsLuz/cupsGas
               fila[key] = this.obtenerCupsParaMostrar(item);
+            } else if (key === 'acciones') {
+              // columna virtual, no copiar del item
+              fila[key] = null;
             } else {
               fila[key] = item[key];
             }
           });
+          // Preservar campos extra necesarios para acciones en contratos pendientes
+          if (this.tipoSeleccionado === 'contratos-pendientes-renovacion') {
+            fila.codigoContrato = item.codigoContrato;
+            fila.idPuntoSuministro = item.idPuntoSuministro;
+            fila.idCliente = item.idCliente;
+            fila.comentarioRenovacion = item.comentarioRenovacion;
+          }
           if (this.tipoSeleccionado === 'servicios-pendientes-pago') {
             // Mapear los estados de pago solo hasta el número de cuotas real
             const numCuotas = item.numeroCuotas || 12;
@@ -853,10 +931,52 @@ export default {
         })
       }
     },
+    // Iniciar flujo de renovación desde informes
+    iniciarRenovacion(fila) {
+      sessionStorage.setItem('pendingRenovacion', JSON.stringify({
+        idPuntoSuministro: fila.idPuntoSuministro,
+        idCliente: fila.idCliente,
+        idContrato: fila.codigoContrato
+      }));
+      this.$router.push('/dashboard/puntos-suministro');
+    },
+
+    // Abrir modal de comentario de renovación
+    abrirModalComentario(fila) {
+      this.contratoComentarioId = fila.codigoContrato;
+      this.comentarioRenovacionEditar = fila.comentarioRenovacion || '';
+      this.mostrarModalComentario = true;
+    },
+
+    // Guardar comentario de renovación
+    async guardarComentarioRenovacion() {
+      if (this.contratoComentarioId == null) return;
+      this.guardandoComentario = true;
+      try {
+        await axios.patch(
+          `${process.env.VUE_APP_API_URL}/contratos/${this.contratoComentarioId}/comentario-renovacion`,
+          { comentarioRenovacion: this.comentarioRenovacionEditar }
+        );
+        this.mostrarModalComentario = false;
+        // Actualizar el comentario en la tabla sin recargar todo
+        const fila = this.datosInforme.find(f => f.codigoContrato === this.contratoComentarioId);
+        if (fila) fila.comentarioRenovacion = this.comentarioRenovacionEditar;
+        Swal.fire({
+          icon: 'success',
+          title: 'Comentario guardado',
+          timer: 1200,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+      } catch (error) {
+        console.error('Error al guardar comentario de renovación', error);
+        Swal.fire('Error', 'No se pudo guardar el comentario', 'error');
+      } finally {
+        this.guardandoComentario = false;
+      }
+    },
   },
-  
-  // Cargar nivel de acceso al crear el componente
-  created() {
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     if (usuario) {
       this.nivelAcceso = usuario.nivelAcceso;
@@ -1845,6 +1965,106 @@ export default {
 .icono-billete-verde {
   color: #217346 !important;
   font-size: 1.4rem;
+}
+
+/* Botones de acción en contratos pendientes de renovación */
+.action-buttons-informe {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-renovar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  background-color: #28a745;
+  color: white;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-renovar:hover {
+  background-color: #218838;
+}
+
+.btn-comentario {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: none;
+  background-color: #6c757d;
+  color: white;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-comentario:hover {
+  background-color: #5a6268;
+}
+
+.btn-comentario .has-comment {
+  color: #ffc107;
+}
+
+/* Modal comentario renovación */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-comentario-renovacion {
+  background: var(--surface-color, #fff);
+  border-radius: 10px;
+  width: 520px;
+  max-width: 95vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+
+.modal-comentario-renovacion .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-comentario-renovacion .modal-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.modal-comentario-renovacion .modal-body {
+  padding: 20px;
+}
+
+.textarea-comentario {
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
+.modal-comentario-renovacion .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid #e0e0e0;
 }
 
 /* RE-ADJUSTADO Ajuste específico para la columna de pagos */

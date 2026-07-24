@@ -744,6 +744,12 @@
                       ></textarea>
                     </div>
                     <div class="tp-nota-create-actions">
+                      <label class="tp-btn-attach-file" :class="{ 'has-file': nuevaNota.archivo }" title="Adjuntar archivo a la nota">
+                        <i class="fas fa-paperclip"></i>
+                        <span v-if="nuevaNota.archivo" class="tp-attach-filename">{{ nuevaNota.archivo.name }}</span>
+                        <span v-else>Adjuntar</span>
+                        <input type="file" style="display:none" @change="seleccionarArchivoNuevaNota($event)" accept="*/*">
+                      </label>
                       <button
                         type="button"
                         :class="['tp-btn-pin-note', { 'pinned': nuevaNota.fijada }]"
@@ -791,7 +797,19 @@
                     <span v-if="nota.editado" class="tp-note-edited-badge" title="Nota editada">
                       <i class="fas fa-pencil-alt"></i> Editada
                     </span>
+                    <span v-if="nota.nombreArchivo" class="tp-note-file-badge" :title="nota.nombreArchivo">
+                      <i class="fas fa-paperclip"></i> {{ nota.nombreArchivo }}
+                    </span>
                     <div v-if="editandoNotaId !== nota.comentarioId" class="tp-note-actions">
+                      <button
+                        v-if="nota.nombreArchivo"
+                        type="button"
+                        class="tp-note-download-comment"
+                        @click="descargarArchivoNota(nota)"
+                        title="Descargar archivo adjunto"
+                      >
+                        <i class="fas fa-download"></i>
+                      </button>
                       <button
                         type="button"
                         :class="['tp-note-pin-comment', { 'pinned': nota.fijado }]"
@@ -840,6 +858,11 @@
                         ></textarea>
                       </div>
                       <div class="tp-note-actions-edit">
+                        <label class="tp-btn-attach-file tp-btn-attach-small" :class="{ 'has-file': notaEdicion.archivo }" title="Adjuntar/cambiar archivo">
+                          <i class="fas fa-paperclip"></i>
+                          <span v-if="notaEdicion.archivo">{{ notaEdicion.archivo.name }}</span>
+                          <input type="file" style="display:none" @change="seleccionarArchivoEdicionNota($event)" accept="*/*">
+                        </label>
                         <button type="button" class="tp-note-action-btn tp-note-save" :disabled="guardandoNota" @click="guardarEdicionNota(nota)">
                           <i class="fas" :class="guardandoNota ? 'fa-spinner fa-spin' : 'fa-check'"></i>
                           {{ guardandoNota ? 'Guardando' : 'Guardar' }}
@@ -1132,12 +1155,14 @@ export default {
         cups: '',
         comentario: '',
         fijada: false,
+        archivo: null,
       },
       creandoNota: false,
       editandoNotaId: null,
       notaEdicion: {
         cups: '',
         comentario: '',
+        archivo: null,
       },
       guardandoNota: false,
       eliminandoNotaId: null,
@@ -1949,11 +1974,12 @@ export default {
           comentario,
           cups: this.nuevaNota.cups || null,
           fijado: this.nuevaNota.fijada || false,
-        });
+        }, this.nuevaNota.archivo || null);
 
         this.nuevaNota.comentario = '';
         this.nuevaNota.cups = '';
         this.nuevaNota.fijada = false;
+        this.nuevaNota.archivo = null;
 
         await this.cargarNotasCliente();
 
@@ -1980,11 +2006,12 @@ export default {
       this.notaEdicion = {
         cups: nota.cups || '',
         comentario: nota.comentario || '',
+        archivo: null,
       };
     },
     cancelarEdicionNota() {
       this.editandoNotaId = null;
-      this.notaEdicion = { cups: '', comentario: '' };
+      this.notaEdicion = { cups: '', comentario: '', archivo: null };
       this.guardandoNota = false;
     },
     async guardarEdicionNota(nota) {
@@ -2012,7 +2039,7 @@ export default {
         await tareasApi.actualizarNotaCliente(this.clienteLocal.id, nota.comentarioId, {
           comentario,
           cups: this.notaEdicion.cups || null,
-        });
+        }, this.notaEdicion.archivo || null);
 
         await this.cargarNotasCliente();
         this.cancelarEdicionNota();
@@ -2036,7 +2063,30 @@ export default {
       }
     },
     async eliminarNotaCliente(nota) {
-      if (!this.clienteLocal?.id || !nota?.comentarioId) {
+    seleccionarArchivoNuevaNota(event) {
+      this.nuevaNota.archivo = event.target.files[0] || null;
+    },
+    seleccionarArchivoEdicionNota(event) {
+      this.notaEdicion.archivo = event.target.files[0] || null;
+    },
+    async descargarArchivoNota(nota) {
+      try {
+        const response = await tareasApi.descargarArchivoNota(this.clienteLocal.id, nota.comentarioId);
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        const contentDisposition = response.headers['content-disposition'] || '';
+        const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/);
+        link.download = filenameMatch ? filenameMatch[1] : nota.nombreArchivo || 'archivo';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error('Error descargando archivo de nota:', e);
+        this.$swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo descargar el archivo.' });
+      }
+    },      if (!this.clienteLocal?.id || !nota?.comentarioId) {
         this.$swal.fire({
           icon: 'error',
           title: 'No se pudo eliminar',

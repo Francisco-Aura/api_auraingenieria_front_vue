@@ -259,14 +259,39 @@ export const tareasApi = {
     return response.data
   },
 
-  async crearNotaCliente(clienteId, payload) {
+  async crearNotaCliente(clienteId, payload, archivo) {
+    if (archivo) {
+      const formData = new FormData();
+      formData.append('datos', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+      formData.append('archivo', archivo);
+      const response = await axios.post(`/clientes/${clienteId}/timeline/notas`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    }
     const response = await axios.post(`/clientes/${clienteId}/timeline/notas`, payload)
     return response.data
   },
 
-  async actualizarNotaCliente(clienteId, notaId, payload) {
+  async actualizarNotaCliente(clienteId, notaId, payload, archivo) {
+    if (archivo) {
+      const formData = new FormData();
+      formData.append('datos', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+      formData.append('archivo', archivo);
+      const response = await axios.put(`/clientes/${clienteId}/timeline/notas/${notaId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    }
     const response = await axios.put(`/clientes/${clienteId}/timeline/notas/${notaId}`, payload)
     return response.data
+  },
+
+  async descargarArchivoNota(clienteId, notaId) {
+    const response = await axios.get(`/clientes/${clienteId}/timeline/notas/${notaId}/descargar`, {
+      responseType: 'blob'
+    });
+    return response;
   },
 
   async eliminarNotaCliente(clienteId, notaId) {
