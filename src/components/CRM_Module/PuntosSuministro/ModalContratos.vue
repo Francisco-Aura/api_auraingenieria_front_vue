@@ -1399,6 +1399,7 @@ export default {
         denunciaContrato: 0,
         fechaDenunciaContrato: "",
         observaciones: "",
+        comentarioRenovacion: "",
         userFO: "",
         passwordFO: "",
       };
@@ -1416,6 +1417,7 @@ export default {
       this.modoEdicion = false;
       this.modoRenovacion = false;
       this.contratoEditandoId = null;
+      this.contratoOriginalIdRenovar = null;
       this.selectedFile = null;
       this.mostrarModalDetalleContrato = false;
       this.contratoDetalle = null;

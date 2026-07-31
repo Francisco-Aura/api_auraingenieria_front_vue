@@ -111,11 +111,11 @@
             <tr>
               <th v-for="columna in encabezados" :key="columna" class="sortable" :data-column="columna">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy(columna)">
+                  <div class="column-title" @click="columna !== 'acciones' && sortBy(columna)" :style="columna === 'acciones' ? 'cursor:default' : ''">
                     <span class="column-text">{{ formatearColumna(columna) }}</span>
-                    <i :class="getSortIcon(columna)"></i>
+                    <i v-if="columna !== 'acciones'" :class="getSortIcon(columna)"></i>
                   </div>
-                  <div v-if="columna !== 'pagos'" class="column-filter-container">
+                  <div v-if="columna !== 'pagos' && columna !== 'acciones'" class="column-filter-container">
                     <input 
                       type="text" 
                       class="column-filter" 
@@ -822,8 +822,8 @@ export default {
           const rowData = {};
           // Mapear las columnas según los encabezados actuales
           (this.encabezados || []).forEach(columnaKey => {
-            // Excluir la columna pagos de la exportación
-            if (columnaKey === 'pagos') {
+            // Excluir columnas no exportables
+            if (columnaKey === 'pagos' || columnaKey === 'acciones') {
               return;
             }
             
@@ -977,6 +977,7 @@ export default {
       }
     },
   },
+  mounted() {
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     if (usuario) {
       this.nivelAcceso = usuario.nivelAcceso;

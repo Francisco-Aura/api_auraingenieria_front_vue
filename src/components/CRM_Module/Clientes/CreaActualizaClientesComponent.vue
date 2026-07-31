@@ -1266,9 +1266,9 @@ export default {
         this.notasCliente = [];
         this.incidenciasCliente = [];
         this.cupsOpcionesNotas = [];
-        this.nuevaNota = { cups: '', comentario: '' };
+        this.nuevaNota = { cups: '', comentario: '', fijada: false, archivo: null };
         this.editandoNotaId = null;
-        this.notaEdicion = { cups: '', comentario: '' };
+        this.notaEdicion = { cups: '', comentario: '', archivo: null };
         this.guardandoNota = false;
         this.eliminandoNotaId = null;
         this.cerrarModalEditarTarea();
@@ -2063,30 +2063,7 @@ export default {
       }
     },
     async eliminarNotaCliente(nota) {
-    seleccionarArchivoNuevaNota(event) {
-      this.nuevaNota.archivo = event.target.files[0] || null;
-    },
-    seleccionarArchivoEdicionNota(event) {
-      this.notaEdicion.archivo = event.target.files[0] || null;
-    },
-    async descargarArchivoNota(nota) {
-      try {
-        const response = await tareasApi.descargarArchivoNota(this.clienteLocal.id, nota.comentarioId);
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        const contentDisposition = response.headers['content-disposition'] || '';
-        const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/);
-        link.download = filenameMatch ? filenameMatch[1] : nota.nombreArchivo || 'archivo';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } catch (e) {
-        console.error('Error descargando archivo de nota:', e);
-        this.$swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo descargar el archivo.' });
-      }
-    },      if (!this.clienteLocal?.id || !nota?.comentarioId) {
+      if (!this.clienteLocal?.id || !nota?.comentarioId) {
         this.$swal.fire({
           icon: 'error',
           title: 'No se pudo eliminar',
@@ -2132,6 +2109,30 @@ export default {
         });
       } finally {
         this.eliminandoNotaId = null;
+      }
+    },
+    seleccionarArchivoNuevaNota(event) {
+      this.nuevaNota.archivo = event.target.files[0] || null;
+    },
+    seleccionarArchivoEdicionNota(event) {
+      this.notaEdicion.archivo = event.target.files[0] || null;
+    },
+    async descargarArchivoNota(nota) {
+      try {
+        const response = await tareasApi.descargarArchivoNota(this.clienteLocal.id, nota.comentarioId);
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        const contentDisposition = response.headers['content-disposition'] || '';
+        const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/);
+        link.download = filenameMatch ? filenameMatch[1] : nota.nombreArchivo || 'archivo';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error('Error descargando archivo de nota:', e);
+        this.$swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo descargar el archivo.' });
       }
     },
     async toggleFijadaNota(nota) {
