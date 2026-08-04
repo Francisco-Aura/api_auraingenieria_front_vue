@@ -107,26 +107,50 @@
               </div>
             </div>
 
-            <!-- Adjuntos directos de la tarea -->
-            <div class="campo-detalle" v-if="adjuntosDirectos.length > 0">
-              <label><i class="fas fa-paperclip"></i> Archivos adjuntos</label>
-              <div class="adjuntos-directos-lista">
-                <div
-                  v-for="adj in adjuntosDirectos"
-                  :key="adj.id"
-                  class="adjunto-directo-item"
-                  @click="descargarAdjunto(adj)"
-                  :title="'Descargar ' + adj.nombreArchivo"
-                >
-                  <i class="fas fa-file-download"></i>
-                  <span class="adj-nombre">{{ adj.nombreArchivo }}</span>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- Panel Derecho (Acciones y Comentarios) -->
           <div class="right-panel">
+            <div class="adjuntos-panel-right">
+              <div class="adjuntos-panel-header">
+                <label class="section-label"><i class="fas fa-paperclip"></i> Adjuntos de la tarea</label>
+                <span class="adjuntos-total" v-if="adjuntosDirectos.length > 0">{{ adjuntosDirectos.length }}</span>
+              </div>
+
+              <div v-if="adjuntosDirectos.length === 0" class="adjuntos-empty">
+                Sin archivos adjuntos
+              </div>
+
+              <div
+                v-else
+                ref="adjuntosLista"
+                class="adjuntos-panel-lista"
+                :class="{ 'adjuntos-colapsados': !adjuntosExpandidos }"
+              >
+                <button
+                  v-for="adj in adjuntosDirectos"
+                  :key="adj.id"
+                  type="button"
+                  class="adjunto-chip"
+                  :disabled="adjuntoDescargandoId === adj.id"
+                  @click="descargarAdjunto(adj)"
+                  :title="adj.nombreArchivo || 'archivo'"
+                >
+                  <i v-if="adjuntoDescargandoId !== adj.id" :class="getIconoAdjunto(adj.nombreArchivo)"></i>
+                  <i v-else class="fas fa-spinner fa-spin"></i>
+                  <span class="adj-nombre">{{ adj.nombreArchivo }}</span>
+                </button>
+              </div>
+
+              <div v-if="adjuntosDirectos.length > adjuntosVisiblesColapsado" class="adjuntos-panel-footer">
+                <button type="button" class="btn-adjuntos-toggle" @click="toggleAdjuntosPanel">
+                  <i :class="adjuntosExpandidos ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+                  {{ adjuntosExpandidos ? 'Ver menos' : `Ver todos (+${adjuntosRestantes})` }}
+                </button>
+                <span class="adjuntos-counter">Mostrando {{ adjuntosMostrando }} de {{ adjuntosDirectos.length }}</span>
+              </div>
+            </div>
+
             <div class="acciones-bar">
               <!-- Actions Row: Status Badge, Change Status Selector, Buttons -->
               <div class="acciones-row-horizontal">
@@ -407,7 +431,6 @@
             </div>
           </div>
         </div>
-        </div>
 
         <!-- Footer del modal -->
         <div class="modal-footer">
@@ -425,6 +448,7 @@
             Editar tarea
           </button>
         </div>
+      </div>
       </div>
     </div>
 
@@ -484,6 +508,10 @@ export default {
       textoComentarioEditando: '',
       adjuntoActualizando: null,
       adjuntosDirectos: [],
+      adjuntosExpandidos: false,
+      adjuntosVisiblesColapsado: 4,
+      onResizeAdjuntos: null,
+      adjuntoDescargandoId: null,
       mencionDropdownStyle: {},
       mencionContexto: 'nuevo',
       mencionDropdown: {
@@ -535,6 +563,15 @@ export default {
       }
       // Siempre requerir comentario para cualquier cambio de estado
       return this.comentarioCambioEstado.trim().length > 0
+    },
+    adjuntosMostrando() {
+      if (!Array.isArray(this.adjuntosDirectos)) return 0
+      if (this.adjuntosExpandidos) return this.adjuntosDirectos.length
+      return Math.min(this.adjuntosVisiblesColapsado, this.adjuntosDirectos.length)
+    },
+    adjuntosRestantes() {
+      if (!Array.isArray(this.adjuntosDirectos)) return 0
+      return Math.max(this.adjuntosDirectos.length - this.adjuntosVisiblesColapsado, 0)
     }
   },
   watch: {
@@ -549,10 +586,12 @@ export default {
           this.esEstadoBloqueado = false
           this.nuevoComentario = ''
           this.archivosSeleccionados = []
+          this.adjuntosExpandidos = false
           // Cargar comentarios
           this.$nextTick(() => {
             this.cargarComentarios()
             this.cargarAdjuntosDirectos()
+            this.recalcularAdjuntosVisiblesColapsado()
           })
         }
       },
@@ -564,18 +603,26 @@ export default {
         if (newTarea && newTarea.id && this.value) {
           // Resetear el selector al abrir nueva tarea
           this.estadoSeleccionado = null
+          this.adjuntosExpandidos = false
           
           // Si la tarea cambió (no solo se actualizó), recargar comentarios
           if (!oldTarea || oldTarea.id !== newTarea.id) {
             this.$nextTick(() => {
               this.cargarComentarios()
               this.cargarAdjuntosDirectos()
+              this.recalcularAdjuntosVisiblesColapsado()
             })
           }
         }
       },
       immediate: true,
       deep: false
+    },
+
+    adjuntosDirectos() {
+      this.$nextTick(() => {
+        this.recalcularAdjuntosVisiblesColapsado()
+      })
     }
   },
   mounted() {
@@ -584,8 +631,66 @@ export default {
       this.cargarComentarios()
       this.cargarAdjuntosDirectos()
     }
+
+    this.onResizeAdjuntos = () => {
+      this.recalcularAdjuntosVisiblesColapsado()
+    }
+    window.addEventListener('resize', this.onResizeAdjuntos)
+  },
+  beforeUnmount() {
+    if (this.onResizeAdjuntos) {
+      window.removeEventListener('resize', this.onResizeAdjuntos)
+      this.onResizeAdjuntos = null
+    }
   },
   methods: {
+    toggleAdjuntosPanel() {
+      this.adjuntosExpandidos = !this.adjuntosExpandidos
+      this.$nextTick(() => {
+        this.recalcularAdjuntosVisiblesColapsado()
+      })
+    },
+
+    recalcularAdjuntosVisiblesColapsado() {
+      const lista = this.$refs.adjuntosLista
+      if (!lista || !Array.isArray(this.adjuntosDirectos) || this.adjuntosDirectos.length === 0) {
+        this.adjuntosVisiblesColapsado = 4
+        return
+      }
+
+      const chips = lista.querySelectorAll('.adjunto-chip')
+      if (!chips || chips.length === 0) {
+        this.adjuntosVisiblesColapsado = 4
+        return
+      }
+
+      const primeraFilaTop = chips[0].offsetTop
+      let visiblesPrimeraFila = 0
+
+      for (let i = 0; i < chips.length; i += 1) {
+        if (chips[i].offsetTop !== primeraFilaTop) break
+        visiblesPrimeraFila += 1
+      }
+
+      this.adjuntosVisiblesColapsado = Math.max(visiblesPrimeraFila, 1)
+    },
+
+    getIconoAdjunto(nombreArchivo) {
+      const nombre = (nombreArchivo || '').toLowerCase()
+      if (nombre.match(/\.(png|jpg|jpeg|gif|webp|svg)$/)) return 'fas fa-file-image'
+      if (nombre.endsWith('.pdf')) return 'fas fa-file-pdf'
+      if (nombre.match(/\.(doc|docx|odt)$/)) return 'fas fa-file-word'
+      if (nombre.match(/\.(xls|xlsx|csv)$/)) return 'fas fa-file-excel'
+      if (nombre.match(/\.(zip|rar|7z)$/)) return 'fas fa-file-archive'
+      return 'fas fa-file-download'
+    },
+
+    formatearTamanoAdjunto(adjunto) {
+      const bytes = adjunto?.tamanoBytes ?? adjunto?.size ?? adjunto?.tamano ?? null
+      if (!bytes || Number.isNaN(Number(bytes))) return ''
+      return this.formatFileSizeComentario(Number(bytes))
+    },
+
     onEstadoChange() {
       const estado = this.estados.find(e => e.id === this.estadoSeleccionado)
       // Usar campo estadoBloqueo en vez de detectar por nombre
@@ -797,11 +902,18 @@ export default {
       if (!this.tarea || !this.tarea.id) return
       try {
         const data = await tareasApi.obtenerAdjuntosTarea(this.tarea.id)
-        if (data) {
-          this.adjuntosDirectos = data
+        if (Array.isArray(data)) {
+          this.adjuntosDirectos = [...data].sort((a, b) => {
+            const aId = Number(a?.id || 0)
+            const bId = Number(b?.id || 0)
+            return bId - aId
+          })
+        } else {
+          this.adjuntosDirectos = []
         }
       } catch (e) {
         console.error('Error cargando adjuntos directos:', e)
+        this.adjuntosDirectos = []
       }
     },
 
@@ -975,6 +1087,7 @@ export default {
     },
 
     async descargarAdjunto(adjunto) {
+      this.adjuntoDescargandoId = adjunto?.id || null
       try {
         await tareasApi.descargarAdjunto(adjunto.id, adjunto.nombreArchivo)
       } catch (error) {
@@ -984,6 +1097,8 @@ export default {
           title: 'Error',
           text: 'Error al descargar el archivo'
         })
+      } finally {
+        this.adjuntoDescargandoId = null
       }
     },
 
@@ -1425,7 +1540,8 @@ export default {
 
 /* Body del modal */
 .modal-body {
-  flex: 1;
+  flex: 1 1 0;
+  height: 100%;
   padding: 8px 12px 0 12px;
   overflow: hidden; /* Importante: hidden para delegar scroll a hijos */
   display: flex;
@@ -1458,7 +1574,7 @@ export default {
 }
 
 .titulo-valor {
-  font-size: 1rem;
+  font-size: 0.93rem;
   font-weight: 700;
   color: #2d3748;
   word-wrap: break-word;
@@ -1472,22 +1588,23 @@ export default {
 
 .descripcion-completa {
   background: #f8f9fa;
-  padding: 4px 8px;
+  padding: 3px 7px;
   border-radius: 4px;
   border-left: 3px solid #667eea;
   white-space: pre-wrap;
   word-wrap: break-word;
-  max-height: 70px;
+  max-height: 52px;
   overflow-y: auto;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   line-height: 1.2;
 }
 
 .detalle-grid {
   display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 10px;
-  flex: 1;
+  grid-template-columns: 175px 1fr;
+  gap: 8px;
+  flex: 1 1 0;
+  height: 100%;
   overflow: hidden;
   min-height: 0;
 }
@@ -1496,7 +1613,7 @@ export default {
 .info-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -1508,11 +1625,11 @@ export default {
 }
 
 .campo-detalle label {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: #495057;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 }
 
 .valor-campo {
@@ -1540,9 +1657,9 @@ export default {
 
 .prioridad-badge {
   display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.72rem;
   font-weight: 500;
   width: fit-content;
 }
@@ -1559,8 +1676,8 @@ export default {
 .cups-info {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
+  gap: 5px;
+  font-size: 0.83rem;
   color: #495057;
 }
 
@@ -2079,7 +2196,7 @@ export default {
   align-items: center;
   flex-shrink: 0;
   gap: 12px;
-  margin-top: auto;
+  margin-top: 0;
 }
 
 .footer-info {
@@ -2142,6 +2259,14 @@ export default {
   .detalle-grid {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .adjuntos-panel-lista {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .adjunto-chip .adj-nombre {
+    max-width: 100px;
   }
   
   .campos-row {
@@ -2403,25 +2528,142 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  height: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 
+.adjuntos-panel-right {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 5px 7px;
+  flex-shrink: 0;
+}
+
+.adjuntos-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+
+.adjuntos-panel-header .section-label {
+  margin-bottom: 0;
+}
+
+.adjuntos-total {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adjuntos-empty {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-style: italic;
+  padding: 6px 4px;
+}
+
+.adjuntos-panel-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.adjuntos-panel-lista.adjuntos-colapsados {
+  max-height: 26px;
+}
+
+.adjunto-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #dbe4ef;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 6px;
+  padding: 3px 7px;
+  font-size: 0.74rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  min-width: 0;
+  max-width: 180px;
+}
+
+.adjunto-chip:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.adjunto-chip:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.adjunto-chip .adj-nombre {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adjuntos-panel-footer {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.btn-adjuntos-toggle {
+  border: 1px solid #dbe4ef;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-adjuntos-toggle:hover {
+  background: #f1f5f9;
+}
+
+.adjuntos-counter {
+  color: #64748b;
+  font-size: 0.73rem;
+}
+
 .acciones-bar {
-  padding: 8px;
+  padding: 5px 8px;
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 
 /* Fila horizontal con todos los controles */
 .acciones-row-horizontal {
   display: flex;
-  gap: 12px;
+  gap: 6px;
   align-items: center;
   width: 100%;
   flex-wrap: wrap; /* Para pantallas pequeñas */
@@ -2435,18 +2677,18 @@ export default {
 
 
 .estado-badge-compact {
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.85rem;
+  padding: 3px 10px;
+  border-radius: 16px;
+  font-size: 0.77rem;
   font-weight: 700;
   color: white;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   white-space: nowrap;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
 }
 
@@ -2459,12 +2701,12 @@ export default {
 }
 
 .select-cambiar-estado {
-  padding: 6px 14px;
-  padding-left: 36px;
-  height: 34px;
-  font-size: 0.85rem;
+  padding: 4px 12px;
+  padding-left: 32px;
+  height: 28px;
+  font-size: 0.8rem;
   width: auto;
-  min-width: 150px;
+  min-width: 130px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   background: white;
@@ -2534,21 +2776,21 @@ export default {
 
 /* Botones de acciones compactos */
 .btn-action-compact {
-  padding: 0 16px;
-  height: 34px;
-  border-radius: 8px;
+  padding: 0 12px;
+  height: 28px;
+  border-radius: 6px;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 5px;
   color: white;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   position: relative;
   overflow: hidden;
 }
@@ -2653,11 +2895,12 @@ export default {
 .comentarios-section-right {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1 1 0;
+  height: 100%;
   overflow: hidden; /* Important for scroll */
   border-top: 1px solid #e9ecef;
   padding-top: 4px;
-  min-height: 0; /* Critical for flex scroll */
+  min-height: 0;
   margin-top: 0;
 }
 
@@ -2671,14 +2914,15 @@ export default {
 }
 
 .comentarios-lista-compact {
-  flex: 1;
+  flex: 1 1 0;
+  height: 100%;
   overflow-y: auto;
   padding: 5px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  background: #fff;
-  min-height: 0; /* Critical for scroll */
+  background: transparent;
+  min-height: 0;
 }
 
 .comentarios-vacio {
@@ -3243,4 +3487,11 @@ export default {
   padding: 2px 0;
 }
 .adjunto-item-compact:hover { text-decoration: underline; }
+</style>
+
+<!-- SweetAlert2 se renderiza en body, fuera del scope del componente -->
+<style>
+.swal2-container {
+  z-index: 99999 !important;
+}
 </style>

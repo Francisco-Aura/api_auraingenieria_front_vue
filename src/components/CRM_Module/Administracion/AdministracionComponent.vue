@@ -841,7 +841,7 @@ export default {
   height: 50px;
   border-radius: 12px;
   background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-  color: white;
+  color: black;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -967,7 +967,7 @@ export default {
   height: 36px;
   border-radius: 8px;
   background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-  color: white;
+  color: black;
   display: flex;
   align-items: center;
   justify-content: center;

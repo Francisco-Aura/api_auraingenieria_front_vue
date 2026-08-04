@@ -401,40 +401,40 @@
                 </div>
               </div>
               
-              <!-- Sección de Observaciones -->
-              <div class="form-section-modern">
+              <!-- Sección compartida de Observaciones y Comentario de Renovación -->
+              <div class="form-section-modern section-observaciones-compartidas">
                 <div class="section-header-modern">
                   <i class="fas fa-comment-alt"></i>
-                  <h3>Observaciones</h3>
+                  <h3>Observaciones y Renovación</h3>
                 </div>
-                
-                <div class="form-group-modern">
-                  <textarea 
-                    id="observaciones" 
-                    v-model="nuevoContrato.observaciones" 
-                    class="form-control-modern textarea-modern" 
-                    rows="100"
-                    maxlength="10000"
-                    placeholder="Añada aquí cualquier observación relevante sobre el contrato..."
-                  ></textarea>
-                </div>
-              </div>
 
-              <!-- Sección de Comentario de Renovación -->
-              <div class="form-section-modern">
-                <div class="section-header-modern">
-                  <i class="fas fa-sync-alt"></i>
-                  <h3>Comentario de Renovación</h3>
-                </div>
-                <div class="form-group-modern">
-                  <textarea 
-                    id="comentarioRenovacion" 
-                    v-model="nuevoContrato.comentarioRenovacion" 
-                    class="form-control-modern textarea-modern" 
-                    rows="4"
-                    maxlength="10000"
-                    placeholder="Notas sobre la renovación de este contrato..."
-                  ></textarea>
+                <div class="observaciones-compartidas">
+                  <div class="campo-compartido campo-observaciones">
+                    <label for="observaciones">Observaciones Generales</label>
+                    <textarea 
+                      id="observaciones" 
+                      v-model="nuevoContrato.observaciones" 
+                      class="form-control-modern textarea-modern textarea-observaciones-compartida" 
+                      rows="1"
+                      maxlength="10000"
+                      placeholder="Añada aquí cualquier observación relevante sobre el contrato..."
+                    ></textarea>
+                  </div>
+
+                  <div class="campo-compartido campo-renovacion">
+                    <label for="comentarioRenovacion">
+                      <i class="fas fa-sync-alt"></i>
+                      Comentario de Renovación
+                    </label>
+                    <textarea
+                      id="comentarioRenovacion"
+                      v-model="nuevoContrato.comentarioRenovacion"
+                      class="form-control-modern textarea-modern textarea-comentario-renovacion"
+                      rows="1"
+                      maxlength="10000"
+                      placeholder="Notas breves sobre la renovación..."
+                    ></textarea>
+                  </div>
                 </div>
               </div>
 
@@ -572,7 +572,7 @@
     </div>
 
     <!-- MODAL DETALLE CONTRATO - FUERA DEL MODAL PRINCIPAL -->
-    <div v-if="mostrarModalDetalleContrato" class="modal-overlay detalle-contrato-modal">
+    <div v-if="mostrarModalDetalleContrato" class="modal-overlay detalle-contrato-modal" @click.self="cerrarModalDetalleContrato">
       <div class="modal-content detalle-contrato-content">
         <div class="modal-header">
           <h2><i class="fas fa-file-contract"></i> Detalle del Contrato</h2>
@@ -839,6 +839,10 @@ export default {
       nivelAcceso: null,
       errores: {},
       contratoOriginalIdRenovar: null,
+      selectedFile: null,
+      mostrarModalDetalleContrato: false,
+      contratoDetalle: null,
+      clienteDetalle: null,
     };
   },
 
@@ -991,6 +995,7 @@ export default {
 
     // Nuevos métodos para manejar la nueva interfaz
     crearNuevoContrato() {
+      this.cerrarModalDetalleContrato();
       this.mostrandoFormulario = true;
       this.modoEdicion = false;
       this.modoRenovacion = false;
@@ -1001,6 +1006,7 @@ export default {
 
     async modificarContratoActual() {
       if (!this.contratoVigente) return;
+      this.cerrarModalDetalleContrato();
       
       // ASEGURAR que las comercializadoras estén cargadas
       await this.asegurarComercializadorasCargadas();
@@ -1037,6 +1043,7 @@ export default {
 
     async renovarContratoActual() {
       if (!this.contratoVigente) return;
+      this.cerrarModalDetalleContrato();
       
       // ASEGURAR que las comercializadoras estén cargadas
       await this.asegurarComercializadorasCargadas();
@@ -1082,6 +1089,7 @@ export default {
     },
 
     async editarContratoGenerico(contrato) {
+      this.cerrarModalDetalleContrato();
       
       // ASEGURAR que las comercializadoras estén cargadas
       await this.asegurarComercializadorasCargadas();
@@ -1132,6 +1140,7 @@ export default {
     },
 
     async renovarContratoGenerico(contrato) {
+      this.cerrarModalDetalleContrato();
       // ASEGURAR que las comercializadoras estén cargadas
       await this.asegurarComercializadorasCargadas();
       
@@ -1353,12 +1362,24 @@ export default {
     },
 
     verDetalleContrato(contrato) {
-      // Crear copia profunda para evitar mutaciones
-      // Esto previene que cambios en el modal de detalle afecten a otros contratos
-      this.contratoDetalle = JSON.parse(JSON.stringify(contrato));
-      this.clienteDetalle = contrato.cliente 
-        ? JSON.parse(JSON.stringify(contrato.cliente)) 
-        : this.cliente;
+      try {
+        this.contratoDetalle = typeof structuredClone === 'function'
+          ? structuredClone(contrato)
+          : JSON.parse(JSON.stringify(contrato));
+      } catch (e) {
+        this.contratoDetalle = { ...contrato };
+      }
+
+      const clienteFuente = contrato?.cliente || this.cliente || null;
+      try {
+        this.clienteDetalle = clienteFuente
+          ? (typeof structuredClone === 'function' ? structuredClone(clienteFuente) : JSON.parse(JSON.stringify(clienteFuente)))
+          : null;
+      } catch (e) {
+        this.clienteDetalle = clienteFuente ? { ...clienteFuente } : null;
+      }
+
+      this.mostrandoFormulario = false;
       this.mostrarModalDetalleContrato = true;
     },
 
@@ -2516,6 +2537,55 @@ export default {
   overflow-y: auto;
 }
 
+.section-observaciones-compartidas {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-bottom: 0.7rem;
+}
+
+.observaciones-compartidas {
+  display: grid;
+  grid-template-rows: minmax(0, 1.65fr) minmax(0, 1fr);
+  gap: 0.55rem;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.campo-compartido {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.campo-compartido label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.2rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.campo-compartido .textarea-modern {
+  flex: 1 1 auto;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none;
+  resize: vertical;
+  padding-top: 0.45rem;
+  line-height: 1.34;
+}
+
+.textarea-observaciones-compartida {
+  font-size: 0.84rem;
+}
+
+.textarea-comentario-renovacion {
+  font-size: 0.82rem;
+}
+
 /* Selectores compactos */
 .form-select-modern {
   width: 100%;
@@ -3404,6 +3474,15 @@ export default {
   .form-grid-modern {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .section-observaciones-compartidas {
+    grid-column: 1 / -1;
+    min-height: 260px;
+  }
+
+  .observaciones-compartidas {
+    grid-template-rows: minmax(110px, 1.5fr) minmax(85px, 1fr);
+  }
   
   .feature-cards {
     grid-template-columns: 1fr;
@@ -3432,6 +3511,15 @@ export default {
 @media (max-width: 768px) {
   .form-grid-modern {
     grid-template-columns: 1fr;
+  }
+
+  .section-observaciones-compartidas {
+    grid-column: auto;
+    min-height: 220px;
+  }
+
+  .observaciones-compartidas {
+    grid-template-rows: minmax(100px, 1.4fr) minmax(80px, 1fr);
   }
   
   .contract-header {

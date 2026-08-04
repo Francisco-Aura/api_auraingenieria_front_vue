@@ -1800,20 +1800,8 @@ export default {
   width: 2.8rem;
   height: 2.8rem;
   border-radius: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
-  background: var(--primary-color);
-  color: white;
-}
-
-.stat-icon {
-  width: 2.8rem;
-  height: 2.8rem;
-  border-radius: 0.7rem;
   background-color: var(--primary-light);
-  color: white;
+  color: black;
   display: flex;
   align-items: center;
   justify-content: center;

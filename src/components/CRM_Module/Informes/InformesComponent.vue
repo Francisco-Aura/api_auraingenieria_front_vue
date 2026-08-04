@@ -131,7 +131,7 @@
           </thead>
           <tbody>
             <tr v-for="(fila, index) in paginatedData" :key="index">
-              <td v-for="columna in encabezados" :key="columna" class="table-cell" :data-column="columna">
+              <td v-for="columna in encabezados" :key="columna" :class="['table-cell', columna === 'acciones' ? 'table-cell-acciones' : '']" :data-column="columna">
                 <template v-if="tipoSeleccionado === 'servicios-pendientes-pago' && columna === 'pagos'">
                   <div class="pagos-simple-display">
                     <button 
@@ -148,18 +148,20 @@
                 <template v-else-if="tipoSeleccionado === 'contratos-pendientes-renovacion' && columna === 'acciones'">
                   <div class="action-buttons-informe">
                     <button
-                      class="btn-icon btn-renovar"
+                      class="btn-accion-informe btn-renovar"
                       @click="iniciarRenovacion(fila)"
                       title="Renovar contrato"
+                      aria-label="Renovar contrato"
                     >
-                      <i class="fas fa-sync-alt"></i> Renovar
+                      <i class="fas fa-sync-alt"></i>
                     </button>
                     <button
-                      class="btn-icon btn-comentario"
+                      class="btn-accion-informe btn-comentario"
                       @click="abrirModalComentario(fila)"
-                      :title="fila.comentarioRenovacion ? fila.comentarioRenovacion : 'Sin comentario'"
+                      :title="fila.comentarioRenovacion ? `Comentario: ${fila.comentarioRenovacion}` : 'Sin comentario'"
+                      aria-label="Ver o editar comentario"
                     >
-                      <i class="fas fa-comment-alt" :class="{ 'has-comment': fila.comentarioRenovacion }"></i> Comentario
+                      <i class="fas fa-comment-alt" :class="{ 'has-comment': fila.comentarioRenovacion }"></i>
                     </button>
                   </div>
                 </template>
@@ -321,8 +323,8 @@ export default {
         contrato: 'Contrato',
         tarifaLuz: 'Tarifa Luz',
         tarifaGas: 'Tarifa Gas',
-        comercializadoraActual: 'Comercializadora Actual',
-        consumoAnual: 'Consumo Anual (kWh)',
+        comercializadoraActual: 'Com. Actual',
+        consumoAnual: 'Consumo kWh',
         importeCuotaPendiente: 'Importe Cuota Pendiente',
         importeFinal: 'Importe Final',
         nombreCliente: 'Nombre Cliente',
@@ -1035,7 +1037,7 @@ export default {
   height: 2.8rem;
   border-radius: 0.7rem;
   background-color: var(--primary-light);
-  color: white;
+  color: black;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1114,7 +1116,7 @@ export default {
   height: 50px;
   border-radius: 12px;
   background-color: var(--primary-light);
-  color: white;
+  color: black;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1492,23 +1494,25 @@ export default {
   background-color: var(--surface-color);
   color: var(--text-primary);
   font-weight: 600;
-  padding: 12px 10px;
+  padding: 8px 6px;
   text-align: left;
   border-bottom: 2px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 10;
-  min-width: 120px;
+  min-width: 90px;
   word-break: break-word;
   white-space: normal;
-  line-height: 1.3;
+  line-height: 1.25;
+  font-size: 0.94rem;
 }
 
 .data-table td {
-  padding: 12px 15px;
+  padding: 7px 8px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
-  height: 52px; /* Altura fija para las filas */
+  height: 40px; /* Altura fija para las filas */
+  font-size: 0.95rem;
 }
 
 .text-truncate {
@@ -1707,10 +1711,10 @@ export default {
 
 /* Ajuste general: reducir max-width de otras celdas para optimizar espacio */
 .table-cell {
-  min-width: 80px;
-  max-width: 140px;
-  height: 40px;
-  padding: 8px 10px;
+  min-width: 66px;
+  max-width: 112px;
+  height: 36px;
+  padding: 6px 7px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
   cursor: default;
@@ -1722,12 +1726,12 @@ export default {
 
 .cell-content {
   width: 100%;
-  max-width: 140px;
+  max-width: 112px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
-  padding-right: 20px;
+  padding-right: 6px;
 }
 
 /* Estilos específicos para la columna CUPS */
@@ -1737,11 +1741,11 @@ export default {
 .data-table td[data-column="cups"],
 .data-table td[data-column="cupsLuz"],
 .data-table td[data-column="cupsGas"] {
-  min-width: 200px !important;
-  max-width: 250px !important;
+  min-width: 230px !important;
+  max-width: 280px !important;
   white-space: nowrap !important;
   overflow: visible !important;
-  text-overflow: ellipsis !important;
+  text-overflow: clip !important;
 }
 
 .data-table td[data-column="cups"] .cell-content,
@@ -1749,8 +1753,45 @@ export default {
 .data-table td[data-column="cupsGas"] .cell-content {
   max-width: none !important;
   overflow: visible !important;
-  text-overflow: ellipsis !important;
+  text-overflow: clip !important;
   white-space: nowrap !important;
+}
+
+/* Compactación de columnas secundarias sin tocar CUPS */
+.data-table th[data-column="fechaInicio"],
+.data-table td[data-column="fechaInicio"],
+.data-table th[data-column="fechaFin"],
+.data-table td[data-column="fechaFin"] {
+  min-width: 94px !important;
+  max-width: 102px !important;
+}
+
+.data-table th[data-column="tarifaLuz"],
+.data-table td[data-column="tarifaLuz"],
+.data-table th[data-column="tarifaGas"],
+.data-table td[data-column="tarifaGas"] {
+  min-width: 88px !important;
+  max-width: 96px !important;
+}
+
+.data-table th[data-column="consumoAnual"],
+.data-table td[data-column="consumoAnual"] {
+  min-width: 106px !important;
+  max-width: 116px !important;
+}
+
+.data-table th[data-column="comercializadoraActual"],
+.data-table td[data-column="comercializadoraActual"] {
+  min-width: 116px !important;
+  max-width: 130px !important;
+}
+
+.data-table th[data-column="cliente"],
+.data-table td[data-column="cliente"],
+.data-table th[data-column="contrato"],
+.data-table td[data-column="contrato"] {
+  min-width: 106px !important;
+  max-width: 118px !important;
 }
 
 /* ── Estilos específicos para informe Contactos Clientes ── */
@@ -1807,15 +1848,15 @@ export default {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .cups-valor {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.875rem;
+  font-size: 0.82rem;
   font-weight: 600;
 }
 
@@ -1826,7 +1867,7 @@ export default {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   flex-shrink: 0;
 }
 
@@ -1968,104 +2009,223 @@ export default {
   font-size: 1.4rem;
 }
 
+/* Celda especial para columna acciones: sin restricciones de ancho */
+.table-cell-acciones {
+  overflow: visible !important;
+  white-space: nowrap !important;
+  min-width: 78px !important;
+  max-width: 78px !important;
+  width: 78px !important;
+}
+
 /* Botones de acción en contratos pendientes de renovación */
 .action-buttons-informe {
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.btn-accion-informe {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 8px;
 }
 
 .btn-renovar {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: none;
-  background-color: #28a745;
-  color: white;
-  font-size: 0.78rem;
+  justify-content: center;
+  gap: 0;
+  border: 1px solid #0e9f6e;
+  background: linear-gradient(135deg, #18b77f 0%, #119765 100%);
+  color: #ffffff !important;
+  font-size: 0.74rem;
+  font-weight: 700;
   cursor: pointer;
-  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(17, 151, 101, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
 .btn-renovar:hover {
-  background-color: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(17, 151, 101, 0.3);
+  filter: brightness(1.02);
 }
 
 .btn-comentario {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: none;
-  background-color: #6c757d;
-  color: white;
-  font-size: 0.78rem;
+  justify-content: center;
+  gap: 0;
+  border: 1px solid #3e5068;
+  background: linear-gradient(135deg, #4e647f 0%, #3c4e65 100%);
+  color: #ffffff !important;
+  font-size: 0.74rem;
+  font-weight: 700;
   cursor: pointer;
-  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(60, 78, 101, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
 .btn-comentario:hover {
-  background-color: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(60, 78, 101, 0.3);
+  filter: brightness(1.03);
 }
 
 .btn-comentario .has-comment {
-  color: #ffc107;
+  color: #ffd447;
+}
+
+.btn-renovar:focus-visible,
+.btn-comentario:focus-visible {
+  outline: 2px solid rgba(15, 23, 42, 0.35);
+  outline-offset: 2px;
 }
 
 /* Modal comentario renovación */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(11, 18, 32, 0.48);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
+  padding: 16px;
 }
 
 .modal-comentario-renovacion {
-  background: var(--surface-color, #fff);
-  border-radius: 10px;
-  width: 520px;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e6eaf2;
+  width: min(680px, 96vw);
   max-width: 95vw;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.25);
+  overflow: hidden;
 }
 
 .modal-comentario-renovacion .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f1f4f9;
+  background: linear-gradient(135deg, #f3f7ff 0%, #ecf2ff 100%);
+  color: #1f2a44;
 }
 
 .modal-comentario-renovacion .modal-header h3 {
   margin: 0;
-  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.modal-comentario-renovacion .close-button {
+  border: none;
+  background: #ffffff;
+  color: #2b3a52;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px #d4dceb;
+  transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.modal-comentario-renovacion .close-button:hover {
+  transform: scale(1.05);
+  background: #eef3ff;
+  color: #0f172a;
 }
 
 .modal-comentario-renovacion .modal-body {
-  padding: 20px;
+  padding: 18px;
 }
 
 .textarea-comentario {
   width: 100%;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 10px;
-  font-size: 0.9rem;
+  min-height: 160px;
+  border: 1px solid #cdd7e6;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: #26364f;
+  background: #fbfdff;
   resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.textarea-comentario:focus {
+  outline: none;
+  border-color: #77a4f8;
+  box-shadow: 0 0 0 3px rgba(119, 164, 248, 0.2);
 }
 
 .modal-comentario-renovacion .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 14px 20px;
-  border-top: 1px solid #e0e0e0;
+  padding: 14px 18px;
+  border-top: 1px solid #eef2f8;
+  background: #f9fbff;
+}
+
+.modal-comentario-renovacion .btn-secondary {
+  background: #344960;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  padding: 10px 18px;
+}
+
+.modal-comentario-renovacion .btn-secondary:hover {
+  background: #2b3d52;
+}
+
+.modal-comentario-renovacion .btn-primary {
+  border-radius: 10px;
+  font-weight: 700;
+  padding: 10px 18px;
+}
+
+@media (max-width: 768px) {
+  .table-cell-acciones {
+    min-width: 70px !important;
+    max-width: 70px !important;
+    width: 70px !important;
+  }
+
+  .btn-accion-informe {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+  }
+
+  .btn-renovar,
+  .btn-comentario {
+    font-size: 0.66rem;
+  }
+
+  .modal-comentario-renovacion {
+    width: 100%;
+    border-radius: 12px;
+  }
 }
 
 /* RE-ADJUSTADO Ajuste específico para la columna de pagos */

@@ -1033,7 +1033,7 @@ export default {
   height: 2.8rem;
   border-radius: 0.7rem;
   background-color: var(--primary-light);
-  color: white;
+  color: black;
   display: flex;
   align-items: center;
   justify-content: center;

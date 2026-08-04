@@ -74,12 +74,15 @@ export const tareasApi = {
 
   async subirAdjuntosTarea(tareaId, archivos) {
     const resultados = []
-    for (const archivo of archivos) {
+    const lista = Array.isArray(archivos) ? archivos : []
+    for (const archivo of lista) {
+      if (!(archivo instanceof Blob)) {
+        console.warn('Adjunto omitido por formato inválido:', archivo)
+        continue
+      }
       const formData = new FormData()
       formData.append('file', archivo)
-      const response = await axios.post(`/tareas/${tareaId}/adjuntos`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      const response = await axios.post(`/tareas/${tareaId}/adjuntos`, formData)
       resultados.push(response.data)
     }
     return resultados
@@ -199,14 +202,13 @@ export const tareasApi = {
   },
 
   async subirAdjuntoComentario(comentarioId, file) {
+    if (!(file instanceof Blob)) {
+      throw new Error('Archivo inválido para adjunto de comentario')
+    }
     const formData = new FormData()
     formData.append('file', file)
     
-    const response = await axios.post(`/comentarios-tareas/${comentarioId}/adjuntos`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    const response = await axios.post(`/comentarios-tareas/${comentarioId}/adjuntos`, formData)
     return response.data
   },
 
@@ -231,14 +233,13 @@ export const tareasApi = {
   },
 
   async actualizarAdjunto(adjuntoId, file) {
+    if (!(file instanceof Blob)) {
+      throw new Error('Archivo inválido para actualización de adjunto')
+    }
     const formData = new FormData()
     formData.append('file', file)
     
-    const response = await axios.put(`/comentarios-tareas/adjuntos/${adjuntoId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    const response = await axios.put(`/comentarios-tareas/adjuntos/${adjuntoId}`, formData)
     return response.data
   },
 

@@ -5,6 +5,29 @@ module.exports = defineConfig({
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0'
+    },
+    // Mover el WebSocket de HMR de webpack a /webpack-dev-server
+    // para que /ws quede libre para el proxy de la app (SockJS STOMP)
+    webSocketServer: {
+      options: {
+        path: '/webpack-dev-server'
+      }
+    },
+    client: {
+      webSocketURL: {
+        pathname: '/webpack-dev-server'
+      }
+    },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8986',
+        changeOrigin: true
+      },
+      '/ws': {
+        target: 'http://localhost:8986',
+        changeOrigin: true,
+        ws: true
+      }
     }
   },
   configureWebpack: {
