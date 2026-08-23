@@ -1,7 +1,5 @@
 <template>
   <div class="informes-container fade-in">
-    <!-- Loading spinner -->
-    <Spinner :isLoading="loading" />
     
     <!-- Panel de tipos de informes -->
     <div class="card info-panel">
@@ -10,7 +8,7 @@
       </div>
       <div class="panel-content">
         <div class="informe-opciones">
-          <div class="card informe-card" @click="mostrarInforme('contratos-pendientes-renovacion')">
+          <div class="card informe-card" :class="{ 'informe-card--activo': esInformeActivo('contratos-pendientes-renovacion') }" @click="toggleInforme('contratos-pendientes-renovacion')">
             <div class="informe-icon">
               <i class="fas fa-file-contract"></i>
             </div>
@@ -18,12 +16,12 @@
               <h3>Contratos Pendientes de Renovación</h3>
               <p>Listado de contratos que están próximos a su fecha de vencimiento</p>
             </div>
-            <div class="informe-action">
+            <div class="informe-action" :class="{ 'informe-action--activo': esInformeActivo('contratos-pendientes-renovacion') }" :title="esInformeActivo('contratos-pendientes-renovacion') ? 'Contraer informe' : 'Expandir informe'">
               <i class="fas fa-chevron-right"></i>
             </div>
           </div>
           
-          <div class="card informe-card" @click="mostrarInforme('puntos-suministro-sin-contrato')">
+          <div class="card informe-card" :class="{ 'informe-card--activo': esInformeActivo('puntos-suministro-sin-contrato') }" @click="toggleInforme('puntos-suministro-sin-contrato')">
             <div class="informe-icon">
               <i class="fas fa-bolt"></i>
             </div>
@@ -31,12 +29,12 @@
               <h3>Puntos de Suministro sin Contrato</h3>
               <p>Puntos de suministro que no tienen contratos asociados actualmente</p>
             </div>
-            <div class="informe-action">
+            <div class="informe-action" :class="{ 'informe-action--activo': esInformeActivo('puntos-suministro-sin-contrato') }" :title="esInformeActivo('puntos-suministro-sin-contrato') ? 'Contraer informe' : 'Expandir informe'">
               <i class="fas fa-chevron-right"></i>
             </div>
           </div>
 
-          <div class="card informe-card" v-if="nivelAcceso === 1" @click="mostrarInforme('servicios-pendientes-pago')">
+          <div class="card informe-card" v-if="nivelAcceso === 1" :class="{ 'informe-card--activo': esInformeActivo('servicios-pendientes-pago') }" @click="toggleInforme('servicios-pendientes-pago')">
             <div class="informe-icon">
               <i class="fas fa-money-bill-wave"></i>
             </div>
@@ -44,12 +42,12 @@
               <h3>Servicios Pendientes de Pago</h3>
               <p>Listado de servicios que están pendientes de pago</p>
             </div>
-            <div class="informe-action">
+            <div class="informe-action" :class="{ 'informe-action--activo': esInformeActivo('servicios-pendientes-pago') }" :title="esInformeActivo('servicios-pendientes-pago') ? 'Contraer informe' : 'Expandir informe'">
               <i class="fas fa-chevron-right"></i>
             </div>
           </div>
 
-          <div class="card informe-card" @click="mostrarInforme('contratos-vigentes')">
+          <div class="card informe-card" :class="{ 'informe-card--activo': esInformeActivo('contratos-vigentes') }" @click="toggleInforme('contratos-vigentes')">
             <div class="informe-icon">
               <i class="fas fa-file-contract"></i>
             </div>
@@ -57,12 +55,25 @@
               <h3>Contratos Vigentes</h3>
               <p>Listado de todos los contratos que están actualmente vigentes</p>
             </div>
-            <div class="informe-action">
+            <div class="informe-action" :class="{ 'informe-action--activo': esInformeActivo('contratos-vigentes') }" :title="esInformeActivo('contratos-vigentes') ? 'Contraer informe' : 'Expandir informe'">
               <i class="fas fa-chevron-right"></i>
             </div>
           </div>
 
-          <div class="card informe-card" v-if="nivelAcceso === 1" @click="mostrarInforme('servicios-vigentes')">
+          <div class="card informe-card" :class="{ 'informe-card--activo': esInformeActivo('contratos-historico') }" @click="toggleInforme('contratos-historico')">
+            <div class="informe-icon">
+              <i class="fas fa-history"></i>
+            </div>
+            <div class="informe-info">
+              <h3>Histórico de Contratos</h3>
+              <p>Histórico completo de contratos: vigentes, vencidos y renovados</p>
+            </div>
+            <div class="informe-action" :class="{ 'informe-action--activo': esInformeActivo('contratos-historico') }" :title="esInformeActivo('contratos-historico') ? 'Contraer informe' : 'Expandir informe'">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </div>
+
+          <div class="card informe-card" v-if="nivelAcceso === 1" :class="{ 'informe-card--activo': esInformeActivo('servicios-vigentes') }" @click="toggleInforme('servicios-vigentes')">
             <div class="informe-icon">
               <i class="fas fa-cogs"></i>
             </div>
@@ -70,12 +81,12 @@
               <h3>Servicios Vigentes</h3>
               <p>Listado de servicios vigentes y pendientes de pago</p>
             </div>
-            <div class="informe-action">
+            <div class="informe-action" :class="{ 'informe-action--activo': esInformeActivo('servicios-vigentes') }" :title="esInformeActivo('servicios-vigentes') ? 'Contraer informe' : 'Expandir informe'">
               <i class="fas fa-chevron-right"></i>
             </div>
           </div>
 
-          <div class="card informe-card" @click="mostrarInforme('contactos-clientes')">
+          <div class="card informe-card" :class="{ 'informe-card--activo': esInformeActivo('contactos-clientes') }" @click="toggleInforme('contactos-clientes')">
             <div class="informe-icon">
               <i class="fas fa-address-book"></i>
             </div>
@@ -83,7 +94,7 @@
               <h3>Contactos de Clientes</h3>
               <p>Directorio de teléfonos y correos de todos los clientes y sus contactos</p>
             </div>
-            <div class="informe-action">
+            <div class="informe-action" :class="{ 'informe-action--activo': esInformeActivo('contactos-clientes') }" :title="esInformeActivo('contactos-clientes') ? 'Contraer informe' : 'Expandir informe'">
               <i class="fas fa-chevron-right"></i>
             </div>
           </div>
@@ -103,6 +114,9 @@
           <button class="btn btn-export btn-excel" @click="exportarExcel" title="Excel">
             <i class="fas fa-file-excel"></i> Excel
           </button>
+          <button class="btn btn-collapse-tabla" @click="mostrarTabla = false" title="Contraer tabla">
+            <i class="fas fa-chevron-up"></i>
+          </button>
         </div>
       </div>
       <div class="table-responsive">
@@ -111,11 +125,11 @@
             <tr>
               <th v-for="columna in encabezados" :key="columna" class="sortable" :data-column="columna">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy(columna)">
+                  <div class="column-title" :class="{ 'column-title--sin-orden': columna === 'acciones' }" @click="columna !== 'acciones' && sortBy(columna)">
                     <span class="column-text">{{ formatearColumna(columna) }}</span>
-                    <i :class="getSortIcon(columna)"></i>
+                    <i v-if="columna !== 'acciones'" :class="getSortIcon(columna)"></i>
                   </div>
-                  <div v-if="columna !== 'pagos'" class="column-filter-container">
+                  <div v-if="columna !== 'pagos' && columna !== 'acciones'" class="column-filter-container">
                     <input 
                       type="text" 
                       class="column-filter" 
@@ -130,18 +144,42 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(fila, index) in paginatedData" :key="index">
-              <td v-for="columna in encabezados" :key="columna" class="table-cell" :data-column="columna">
+            <template v-if="loading">
+              <tr v-for="n in 8" :key="'skeleton-' + n" class="skeleton-row">
+                <td v-for="columna in encabezados" :key="columna"><div class="skeleton-line skeleton-line--md"></div></td>
+              </tr>
+            </template>
+            <tr v-for="(fila, index) in paginatedData" v-show="!loading" :key="index">
+              <td v-for="columna in encabezados" :key="columna" :class="['table-cell', columna === 'acciones' ? 'table-cell-acciones' : '']" :data-column="columna">
                 <template v-if="tipoSeleccionado === 'servicios-pendientes-pago' && columna === 'pagos'">
                   <div class="pagos-simple-display">
                     <button 
-                      class="btn btn-sm btn-mark-paid"
+                      class="btn btn-sm btn-mark-paid btn-icono-desnudo"
                       @click="confirmarMarcoPagado(fila)"
                       :disabled="false"
                       title="Marcar siguiente pago como pagado"
-                      style="background: none; border: none; box-shadow: none; padding: 0; width: auto; height: auto; min-width: unset; min-height: unset;"
                     >
                       <i class="fas fa-money-bill-wave icono-billete-verde"></i>
+                    </button>
+                  </div>
+                </template>
+                <template v-else-if="tipoSeleccionado === 'contratos-pendientes-renovacion' && columna === 'acciones'">
+                  <div class="action-buttons-informe">
+                    <button
+                      class="btn-accion-informe btn-renovar"
+                      @click="iniciarRenovacion(fila)"
+                      title="Renovar contrato"
+                      aria-label="Renovar contrato"
+                    >
+                      <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button
+                      class="btn-accion-informe btn-comentario"
+                      @click="abrirModalComentario(fila)"
+                      :title="fila.comentarioRenovacion ? `Comentario: ${fila.comentarioRenovacion}` : 'Sin comentario'"
+                      aria-label="Ver o editar comentario"
+                    >
+                      <i class="fas fa-comment-alt" :class="{ 'has-comment': fila.comentarioRenovacion }"></i>
                     </button>
                   </div>
                 </template>
@@ -234,18 +272,39 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal Comentario de Renovación -->
+  <div v-if="mostrarModalComentario" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="comentario-renovacion-title" @click.self="mostrarModalComentario = false">
+    <div class="modal-comentario-renovacion">
+      <div class="modal-header">
+        <h3 id="comentario-renovacion-title"><i class="fas fa-comment-alt"></i> Comentario de Renovación</h3>
+        <button class="close-button" @click="mostrarModalComentario = false"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <textarea
+          v-model="comentarioRenovacionEditar"
+          class="form-control textarea-comentario"
+          rows="6"
+          maxlength="10000"
+          placeholder="Escriba el comentario de renovación..."
+        ></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" @click="mostrarModalComentario = false">Cancelar</button>
+        <button class="btn btn-primary" @click="guardarComentarioRenovacion" :disabled="guardandoComentario">
+          <i class="fas fa-save"></i> {{ guardandoComentario ? 'Guardando...' : 'Aceptar' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import ExcelJS from 'exceljs';
-import Spinner from '@/components/SpinnerComponent.vue';
 
 export default {
-  components: {
-    Spinner
-  },
   data() {
     return {
       loading: false,
@@ -263,6 +322,11 @@ export default {
       recordsPerPageValue: 10,
       currentPage: 1,
       isSavingBulk: false,
+      // Modal comentario renovación
+      mostrarModalComentario: false,
+      comentarioRenovacionEditar: '',
+      contratoComentarioId: null,
+      guardandoComentario: false,
       // Mapeo de etiquetas para encabezados en español
       etiquetasColumnas: {
         codigoContrato: 'Código Contrato',
@@ -273,8 +337,10 @@ export default {
         contrato: 'Contrato',
         tarifaLuz: 'Tarifa Luz',
         tarifaGas: 'Tarifa Gas',
-        comercializadoraActual: 'Comercializadora Actual',
-        consumoAnual: 'Consumo Anual (kWh)',
+        tarifa: 'Tarifa',
+        estado: 'Estado',
+        comercializadoraActual: 'Com. Actual',
+        consumoAnual: 'Consumo kWh',
         importeCuotaPendiente: 'Importe Cuota Pendiente',
         importeFinal: 'Importe Final',
         nombreCliente: 'Nombre Cliente',
@@ -285,6 +351,7 @@ export default {
         telefono: 'Teléfono',
         correo: 'Correo',
         estadoBaja: 'De Baja',
+        acciones: 'Acciones',
       }
     };
   },
@@ -369,13 +436,13 @@ export default {
       const result = await Swal.fire({
         title: '¿Marcar como pagado?',
         html: `
-          <div style="text-align: left; margin: 10px 0;">
+          <div class="swal-marcar-pagado-info">
             <p><strong>Cliente:</strong> ${fila.cliente}</p>
             <p><strong>Gestora:</strong> ${fila.gestora}</p>
             <p><strong>Pago #${siguientePago}:</strong> ${this.formatearImporte(importePago)}</p>
             <p><strong>Fecha de pago:</strong> ${this.formatearFecha(fechaPago)}</p>
           </div>
-          <p style="margin-top: 15px;">¿Está seguro que desea marcar este pago como pagado?</p>
+          <p class="swal-marcar-pagado-confirmacion">¿Está seguro que desea marcar este pago como pagado?</p>
         `,
         icon: 'question',
         showCancelButton: true,
@@ -385,6 +452,7 @@ export default {
         cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
         reverseButtons: true,
         customClass: {
+          popup: 'swal-marcar-pagado',
           confirmButton: 'btn-confirm-payment',
           cancelButton: 'btn-cancel-payment'
         }
@@ -439,11 +507,32 @@ export default {
     },
 
     // Método para mostrar el informe directamente en pantalla
+    esInformeActivo(tipo) {
+      return this.tipoSeleccionado === tipo && this.mostrarTabla;
+    },
+
+    toggleInforme(tipo) {
+      if (this.tipoSeleccionado === tipo) {
+        this.mostrarTabla = !this.mostrarTabla;
+        return;
+      }
+      this.mostrarInforme(tipo);
+    },
+
     async mostrarInforme(tipo) {
       this.tipoSeleccionado = tipo;
       this.loading = true;
       try {
-        const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${tipo}`);
+        let respuesta;
+        if (tipo === 'contratos-pendientes-renovacion') {
+          const usuario = JSON.parse(localStorage.getItem('usuario'));
+          respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${tipo}`, {
+            params: { nivelAcceso: usuario?.nivelAcceso },
+            headers: { 'X-Aura-Usuario-Nombre': usuario?.nombre }
+          });
+        } else {
+          respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${tipo}`);
+        }
         this.procesarDatosParaTabla(respuesta.data);
         this.tituloInforme = this.formatearTitulo(tipo);
         this.mostrarTabla = true;
@@ -468,7 +557,16 @@ export default {
       if (!this.tipoSeleccionado) return;
       this.loading = true;
       try {
-        const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${this.tipoSeleccionado}`);
+        let respuesta;
+        if (this.tipoSeleccionado === 'contratos-pendientes-renovacion') {
+          const usuario = JSON.parse(localStorage.getItem('usuario'));
+          respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${this.tipoSeleccionado}`, {
+            params: { nivelAcceso: usuario?.nivelAcceso },
+            headers: { 'X-Aura-Usuario-Nombre': usuario?.nombre }
+          });
+        } else {
+          respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${this.tipoSeleccionado}`);
+        }
         this.procesarDatosParaTabla(respuesta.data);
         // Resetear estado de paginación
         this.currentPage = 1;
@@ -492,7 +590,8 @@ export default {
         "contratos-pendientes-renovacion": [
           "codigoContrato", // identificador
           "fechaInicio", "fechaFin", "cliente", "cupsLuz", "cupsGas", "cups",
-          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual", "consumoAnual"
+          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual", "consumoAnual",
+          "acciones" // columna especial de acciones
         ],
         "puntos-suministro-sin-contrato": [
           "idPS", // identificador
@@ -509,10 +608,15 @@ export default {
           "fechaInicio", "fechaFin", "cliente", "cupsLuz", "cupsGas", "cups",
           "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual", "consumoAnual"
         ],
+        "contratos-historico": [
+          "codigoContrato", // identificador
+          "fechaInicio", "fechaFin", "cliente", "cupsLuz", "cupsGas", "cups",
+          "contrato", "tarifaLuz", "tarifaGas", "comercializadoraActual", "consumoAnual", "estado"
+        ],
         "servicios-vigentes": [
           "idServicio", // identificador
           "cliente", "servicio", "fechaInicioServicio", "fechaFinServicio", 
-          "gestora", "producto", "comercializadora", "importeFinal",
+          "gestora", "producto", "comercializadora", "cups", "tarifa", "importeFinal",
           "estadoVencimiento", "estadoPago"
         ],
         "contactos-clientes": [
@@ -525,12 +629,28 @@ export default {
           const fila = {};
           columnasPermitidas[this.tipoSeleccionado].forEach(key => {
             if (key === 'cups') {
-              // Para todos los informes con CUPS, calcular el valor consolidado desde cupsLuz/cupsGas
-              fila[key] = this.obtenerCupsParaMostrar(item);
+              // servicios-pendientes-pago y servicios-vigentes ya traen el CUPS consolidado
+              // desde el backend (no exponen cupsLuz/cupsGas por separado)
+              if (this.tipoSeleccionado === 'servicios-pendientes-pago' || this.tipoSeleccionado === 'servicios-vigentes') {
+                fila[key] = item.cups || '';
+              } else {
+                // Para el resto de informes, calcular el valor consolidado desde cupsLuz/cupsGas
+                fila[key] = this.obtenerCupsParaMostrar(item);
+              }
+            } else if (key === 'acciones') {
+              // columna virtual, no copiar del item
+              fila[key] = null;
             } else {
               fila[key] = item[key];
             }
           });
+          // Preservar campos extra necesarios para acciones en contratos pendientes
+          if (this.tipoSeleccionado === 'contratos-pendientes-renovacion') {
+            fila.codigoContrato = item.codigoContrato;
+            fila.idPuntoSuministro = item.idPuntoSuministro;
+            fila.idCliente = item.idCliente;
+            fila.comentarioRenovacion = (item.comentarioRenovacion || '').trim() || null;
+          }
           if (this.tipoSeleccionado === 'servicios-pendientes-pago') {
             // Mapear los estados de pago solo hasta el número de cuotas real
             const numCuotas = item.numeroCuotas || 12;
@@ -740,22 +860,26 @@ export default {
         }
 
         // Usar los datos filtrados (incluyendo ordenamiento y filtros)
+        const columnasImporte = new Set();
         const data = this.filteredData.map(item => {
           const rowData = {};
           // Mapear las columnas según los encabezados actuales
           (this.encabezados || []).forEach(columnaKey => {
-            // Excluir la columna pagos de la exportación
-            if (columnaKey === 'pagos') {
+            // Excluir columnas no exportables
+            if (columnaKey === 'pagos' || columnaKey === 'acciones') {
               return;
             }
             
             const formattedColumnaName = this.formatearColumna(columnaKey);
             if ((columnaKey === 'importeCuotaPendiente' && this.tipoSeleccionado === 'servicios-pendientes-pago') ||
                 (columnaKey === 'importeFinal' && this.tipoSeleccionado === 'servicios-vigentes')) {
-              rowData[formattedColumnaName] = this.formatearImporte(item[columnaKey]);
+              // Exportar como número real (no texto) para que Excel lo trate como celda numérica
+              columnasImporte.add(formattedColumnaName);
+              const numero = parseFloat(item[columnaKey]);
+              rowData[formattedColumnaName] = isNaN(numero) ? null : numero;
             } else if (columnaKey === 'cups') {
-              // Manejar CUPS: en servicios-pendientes-pago ya viene resuelto como item.cups
-              if (this.tipoSeleccionado === 'servicios-pendientes-pago') {
+              // Manejar CUPS: en servicios-pendientes-pago/servicios-vigentes ya viene resuelto como item.cups
+              if (this.tipoSeleccionado === 'servicios-pendientes-pago' || this.tipoSeleccionado === 'servicios-vigentes') {
                 rowData[formattedColumnaName] = item[columnaKey] || '';
               } else {
                 const tipo = this.getTipoCups(item);
@@ -797,11 +921,19 @@ export default {
             ancho = Math.min(25, col.length / 1.5);
           }
           
-          return {
+          const columna = {
             header: col,
             key: col,
             width: ancho
           };
+
+          // Las columnas de importe se exportan como número con formato de moneda,
+          // no como texto, para que Excel permita operar con ellas (sumar, ordenar...)
+          if (columnasImporte.has(col)) {
+            columna.style = { numFmt: '#,##0.00 "€"' };
+          }
+
+          return columna;
         });
 
         // Añadir datos
@@ -853,10 +985,55 @@ export default {
         })
       }
     },
+    // Iniciar flujo de renovación desde informes
+    iniciarRenovacion(fila) {
+      sessionStorage.setItem('pendingRenovacion', JSON.stringify({
+        idPuntoSuministro: fila.idPuntoSuministro,
+        idCliente: fila.idCliente,
+        idContrato: fila.codigoContrato
+      }));
+      this.$router.push('/dashboard/puntos-suministro');
+    },
+
+    // Abrir modal de comentario de renovación
+    abrirModalComentario(fila) {
+      this.contratoComentarioId = fila.codigoContrato;
+      this.comentarioRenovacionEditar = fila.comentarioRenovacion || '';
+      this.mostrarModalComentario = true;
+    },
+
+    // Guardar comentario de renovación
+    async guardarComentarioRenovacion() {
+      if (this.contratoComentarioId == null) return;
+      // Trim para evitar que espacios o saltos de línea cuenten como comentario
+      const comentarioLimpio = (this.comentarioRenovacionEditar || '').trim();
+      this.guardandoComentario = true;
+      try {
+        await axios.patch(
+          `${process.env.VUE_APP_API_URL}/contratos/${this.contratoComentarioId}/comentario-renovacion`,
+          { comentarioRenovacion: comentarioLimpio || null }
+        );
+        this.mostrarModalComentario = false;
+        // Actualizar el comentario en la tabla sin recargar todo
+        const fila = this.datosInforme.find(f => f.codigoContrato === this.contratoComentarioId);
+        if (fila) fila.comentarioRenovacion = comentarioLimpio || null;
+        Swal.fire({
+          icon: 'success',
+          title: 'Comentario guardado',
+          timer: 1200,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+      } catch (error) {
+        console.error('Error al guardar comentario de renovación', error);
+        Swal.fire('Error', 'No se pudo guardar el comentario', 'error');
+      } finally {
+        this.guardandoComentario = false;
+      }
+    },
   },
-  
-  // Cargar nivel de acceso al crear el componente
-  created() {
+  mounted() {
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     if (usuario) {
       this.nivelAcceso = usuario.nivelAcceso;
@@ -865,1119 +1042,4 @@ export default {
 };
 </script>
 
-<style scoped>
-/* Estilos existentes mantenidos... */
-.informes-container {
-  display: grid;
-  grid-template-rows: auto auto auto 1fr;
-  gap: 20px;
-  padding: 20px;
-  max-width: 90%;
-  margin: 0 auto;
-}
-
-:root {
-  --primary-color-rgb: 255, 193, 7; /* Definir el RGB para el color primario amarillo */
-}
-
-/* Panel de estadísticas */
-.stats-panel {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 1rem;
-}
-
-.stats-container {
-  display: flex;
-  gap: 1rem;
-}
-
-.stat-card {
-  background-color: var(--surface-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--card-shadow);
-  padding: 0.8rem 1rem;
-  display: flex;
-  align-items: center;
-  transition: all 0.3s ease;
-  min-width: 200px;
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-}
-
-.stat-icon {
-  width: 2.8rem;
-  height: 2.8rem;
-  border-radius: 0.7rem;
-  background-color: var(--primary-light);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  margin-right: 0.8rem;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-top: 0.2rem;
-}
-
-/* Panel de informes */
-.info-panel {
-  padding: 0;
-  overflow: hidden;
-}
-
-.panel-header {
-  background-color: var(--primary-color);
-  color: white;
-  padding: 0.8rem 1rem;
-  border-top-left-radius: var(--border-radius);
-  border-top-right-radius: var(--border-radius);
-}
-
-.panel-header h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-}
-
-.panel-header h2 i {
-  margin-right: 10px;
-}
-
-.panel-content {
-  padding: 20px;
-}
-
-.informe-opciones {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 20px;
-}
-
-.informe-card {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.informe-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-}
-
-.informe-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
-  background-color: var(--primary-light);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
-  margin-right: 16px;
-  flex-shrink: 0;
-}
-
-.informe-info {
-  flex: 1;
-}
-
-.informe-info h3 {
-  margin: 0 0 5px 0;
-  font-size: 1.1rem;
-  color: var(--text-primary);
-}
-
-.informe-info p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
-
-.informe-action {
-  color: var(--primary-color);
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Panel de la tabla */
-.table-panel {
-  background: white;
-  border-radius: 0.7rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-
-.table-header {
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.table-header h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-}
-
-.table-header h2 i {
-  margin-right: 10px;
-}
-
-.table-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.table-actions .btn {
-  background: transparent;
-  border-color: var(--border-color);
-  color: var(--text-primary);
-  padding: 6px 10px;
-  font-size: 0.9rem;
-}
-
-.table-actions .btn:hover {
-  background-color: var(--hover-color);
-}
-
-/* Modal de selección */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-container {
-  background-color: white;
-  border-radius: var(--border-radius);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-  width: 600px;
-  max-width: 90%;
-  overflow: hidden;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: var(--primary-color);
-  color: white;
-  padding: 16px 20px;
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
-.modal-close {
-  background: transparent;
-  border: none;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.modal-close:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.modal-body {
-  padding: 20px;
-  overflow-y: auto;
-  max-height: 60vh;
-}
-
-.option-selector {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.option-card {
-  background-color: var(--background-color);
-  border-radius: var(--border-radius);
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.option-card:hover {
-  background-color: var(--primary-light);
-  color: white;
-}
-
-.option-icon {
-  font-size: 2rem;
-  margin-bottom: 12px;
-  color: var(--primary-color);
-}
-
-.option-card:hover .option-icon {
-  color: white;
-}
-
-.option-info h4 {
-  margin: 0 0 8px 0;
-  font-size: 1rem;
-}
-
-.option-info p {
-  margin: 0;
-  font-size: 0.8rem;
-  opacity: 0.8;
-}
-
-/* Responsive adjustments */
-@media (max-width: 992px) {
-  .stats-container {
-    flex-direction: column;
-  }
-  
-  .stats-panel {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .option-selector {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .informe-opciones {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 600px) {
-  .modal-container {
-    max-width: 98vw;
-    width: 98vw;
-    max-height: 98vh;
-  }
-  .modal-body {
-    max-height: 70vh;
-  }
-}
-
-.table-responsive {
-  overflow-x: auto;
-  width: 100%;
-}
-
-/* Estilos para los filtros y ordenamiento */
-.column-header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.column-title {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  padding: 2px 0;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-  gap: 4px;
-  font-size: 0.95rem;
-  min-height: 20px;
-}
-
-.column-text {
-  margin-right: 0;
-  word-break: break-word;
-  white-space: normal;
-  line-height: 1.2;
-}
-
-.column-title:hover {
-  background-color: var(--hover-color);
-}
-
-.column-filter-container {
-  position: relative;
-  min-width: 60px;
-}
-
-.column-filter {
-  width: 100%;
-  padding: 4px 6px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 0.85rem;
-  background-color: white;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  min-width: 55px;
-}
-
-.column-filter:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
-}
-
-.column-filter::placeholder {
-  color: var(--text-secondary);
-  opacity: 0.7;
-}
-
-/* Estilos para la paginación mejorados */
-.pagination-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  background-color: var(--surface-color);
-  border-top: 1px solid var(--border-color);
-}
-
-.records-per-page {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.records-per-page label {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.records-per-page select {
-  padding: 6px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: white;
-  font-size: 0.9rem;
-}
-
-.pagination-info {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  background-color: white;
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.pagination-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: white;
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.page-info {
-  color: var(--text-primary);
-  font-weight: 500;
-  padding: 0 10px;
-}
-
-.btn-outline {
-  background: white;
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-  min-width: 40px;
-}
-
-.btn-outline:hover:not(:disabled) {
-  background-color: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.btn-outline:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: #f5f5f5;
-}
-
-/* Estilos para la tabla */
-.data-table {
-  width: 100%;
-  min-width: auto;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-bottom: 0;
-}
-
-.data-table th {
-  background-color: var(--surface-color);
-  color: var(--text-primary);
-  font-weight: 600;
-  padding: 12px 10px;
-  text-align: left;
-  border-bottom: 2px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  min-width: 120px;
-  word-break: break-word;
-  white-space: normal;
-  line-height: 1.3;
-}
-
-.data-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
-  height: 52px; /* Altura fija para las filas */
-}
-
-.text-truncate {
-  max-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sortable {
-  cursor: pointer;
-  user-select: none;
-}
-
-.sortable:hover {
-  background-color: var(--hover-color);
-}
-
-/* Estilos Generales de Botones - Actualizados */
-.btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
-  padding: 10px 20px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  font-size: 0.95rem !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  border: none !important;
-  cursor: pointer !important;
-  letter-spacing: 0.3px !important;
-}
-
-.btn i {
-  font-size: 1.1em !important;
-}
-
-/* Botón Refresh/Actualizar */
-.btn-refresh {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1) !important;
-}
-
-.btn-refresh:hover:not(:disabled) {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.15) !important;
-}
-
-.btn-refresh:disabled {
-  opacity: 0.6 !important;
-  cursor: not-allowed !important;
-  transform: none !important;
-  box-shadow: none !important;
-  background: #9ca3af !important;
-}
-
-/* Botón Excel */
-.btn-excel {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1) !important;
-}
-
-.btn-excel:hover {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15) !important;
-}
-
-/* Botón Primary (Crear, Guardar, etc) */
-.btn-primary {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
-}
-
-.btn-primary i {
-  font-size: 1.1em !important;
-}
-
-/* Botón Create (Alias para Primary) */
-.btn-create {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
-}
-
-.btn-create:hover {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
-}
-
-.btn-create i {
-  font-size: 1.1em !important;
-}
-
-.btn-export {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  padding: 10px 20px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  transition: all 0.3s ease !important;
-  border: none !important;
-  cursor: pointer !important;
-}
-
-.btn-export i {
-  font-size: 1.2em !important;
-}
-
-/* Estilos para las celdas de la tabla */
-.table-cell {
-  position: relative;
-  min-width: 100px;
-  max-width: 180px;
-  height: 40px;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
-  cursor: default;
-  transition: background-color 0.2s ease;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cell-content {
-  width: 100%;
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: normal;
-  word-wrap: break-word;
-  display: block;
-  line-height: 1.4;
-  padding-right: 20px;
-}
-
-/* Indicador visual de celda editable */
-.table-cell:hover {
-  background-color: var(--hover-color);
-}
-
-/* Ajustes para la tabla responsiva */
-.table-responsive {
-  overflow-x: auto;
-  background-color: white;
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
-}
-
-/* Estilos para los controles de filtro */
-.table-controls {
-  padding: 15px 20px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.filters-container {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-/* Permitir wrap en los nombres de las columnas */
-.data-table th .column-title {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  word-break: break-word;
-  word-wrap: break-word;
-  white-space: normal;
-  line-height: 1.3;
-  min-height: 24px;
-  flex-wrap: wrap;
-  max-width: 100%;
-}
-
-.data-table th .column-title i {
-  flex-shrink: 0;
-}
-
-/* Ajuste general: reducir max-width de otras celdas para optimizar espacio */
-.table-cell {
-  min-width: 80px;
-  max-width: 140px;
-  height: 40px;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
-  cursor: default;
-  transition: background-color 0.2s ease;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cell-content {
-  width: 100%;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: block;
-  padding-right: 20px;
-}
-
-/* Estilos específicos para la columna CUPS */
-.data-table th[data-column="cups"],
-.data-table th[data-column="cupsLuz"],
-.data-table th[data-column="cupsGas"],
-.data-table td[data-column="cups"],
-.data-table td[data-column="cupsLuz"],
-.data-table td[data-column="cupsGas"] {
-  min-width: 200px !important;
-  max-width: 250px !important;
-  white-space: nowrap !important;
-  overflow: visible !important;
-  text-overflow: ellipsis !important;
-}
-
-.data-table td[data-column="cups"] .cell-content,
-.data-table td[data-column="cupsLuz"] .cell-content,
-.data-table td[data-column="cupsGas"] .cell-content {
-  max-width: none !important;
-  overflow: visible !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-/* ── Estilos específicos para informe Contactos Clientes ── */
-.data-table td[data-column="correo"],
-.data-table th[data-column="correo"] {
-  min-width: 220px !important;
-  max-width: 320px !important;
-}
-
-.data-table td[data-column="sector"],
-.data-table th[data-column="sector"] {
-  min-width: 130px !important;
-  max-width: 200px !important;
-}
-
-.data-table td[data-column="cargo"],
-.data-table th[data-column="cargo"] {
-  min-width: 150px !important;
-  max-width: 220px !important;
-}
-
-.data-table td[data-column="telefono"],
-.data-table th[data-column="telefono"] {
-  min-width: 140px !important;
-  max-width: 180px !important;
-}
-
-.data-table td[data-column="nombreCliente"],
-.data-table th[data-column="nombreCliente"] {
-  min-width: 180px !important;
-  max-width: 260px !important;
-}
-
-.contacto-link-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  overflow: hidden;
-}
-
-.contacto-email-text,
-.contacto-phone-text {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-/* Celda CUPS con icono FontAwesome */
-.cups-informe-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.cups-valor {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.tipo-cups-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  font-size: 0.7rem;
-  flex-shrink: 0;
-}
-
-.tipo-cups-badge.is-luz {
-  background: rgba(255, 235, 59, 0.2);
-  color: #fbc02d;
-}
-
-.tipo-cups-badge.is-gas {
-  background: rgba(255, 152, 0, 0.1);
-  color: #ff9800;
-}
-
-.contacto-link {
-  color: #2563eb;
-  text-decoration: none;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  transition: color 0.2s;
-  user-select: text;
-  -webkit-user-select: text;
-}
-
-.contacto-link:hover {
-  color: #1d4ed8;
-  text-decoration: underline;
-}
-
-.contacto-link i {
-  font-size: 0.8em;
-  opacity: 0.7;
-  flex-shrink: 0;
-}
-
-.contacto-email {
-  color: #2563eb;
-}
-
-.contacto-email-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: #374151;
-  font-weight: 500;
-  user-select: text;
-  -webkit-user-select: text;
-}
-
-.contacto-email-text i {
-  font-size: 0.8em;
-  opacity: 0.5;
-  color: #2563eb;
-  flex-shrink: 0;
-}
-
-.contacto-phone {
-  color: #059669;
-}
-
-.contacto-phone:hover {
-  color: #047857;
-}
-
-.contacto-phone-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: #374151;
-  font-weight: 500;
-  user-select: text;
-  -webkit-user-select: text;
-}
-
-.contacto-phone-text i {
-  font-size: 0.8em;
-  opacity: 0.5;
-  color: #059669;
-  flex-shrink: 0;
-}
-
-.btn-copy-cell {
-  background: none;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  color: #94a3b8;
-  cursor: pointer;
-  padding: 2px 5px;
-  font-size: 0.75em;
-  flex-shrink: 0;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-}
-
-.btn-copy-cell:hover {
-  color: #2563eb;
-  border-color: #2563eb;
-  background: #eff6ff;
-}
-
-/* NUEVOS ESTILOS PARA EL GESTOR DE PAGOS INNOVADOR */
-.pagos-simple-display {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  width: 100%;
-  padding: 8px;
-}
-
-.btn-mark-paid {
-  background: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  width: auto !important;
-  height: auto !important;
-  min-width: unset !important;
-  min-height: unset !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-mark-paid:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.icono-billete-verde {
-  color: #217346 !important;
-  font-size: 1.4rem;
-}
-
-/* RE-ADJUSTADO Ajuste específico para la columna de pagos */
-.data-table th[data-column="pagos"],
-.data-table td[data-column="pagos"] {
-  min-width: 100px;
-  max-width: 120px;
-  position: relative;
-}
-
-.data-table td[data-column="pagos"] {
-  overflow: hidden !important; /* Volver a ocultar, ya no hay panel */
-  text-align: center; /* Centrar el contenido */
-  vertical-align: middle;
-  padding: 12px 8px;
-}
-
-/* Mejora visual para estados de hover en la tabla */
-.data-table tbody tr:hover {
-  background-color: rgba(var(--primary-color-rgb), 0.05); /* Color primario con transparencia */
-}
-
-/* Botón Toggle Baja (Mostrar/Ocultar dados de baja) */
-.btn-toggle-baja {
-  background: #f3f4f6 !important;
-  color: #4b5563 !important;
-  border: 1px solid #e5e7eb !important;
-  font-weight: 600 !important;
-  padding: 10px 20px !important;
-  border-radius: 8px !important;
-  transition: all 0.3s ease !important;
-}
-
-.btn-toggle-baja:hover {
-  background: #e5e7eb !important;
-  color: #1f2937 !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Estado Activo (Rojo) para Toggle Baja */
-.btn-toggle-baja.active {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-  color: white !important;
-  border-color: transparent !important;
-  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1) !important;
-}
-
-.btn-toggle-baja.active:hover {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
-  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15) !important;
-}
-
-/* Botón Primary (Crear, Guardar, etc) */
-.btn-primary {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1);
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15);
-}
-
-.btn-icon {
-  background: transparent;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  padding: 0;
-  margin: 0;
-}
-
-.btn-icon i {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.btn-icon.btn-edit {
-  color: #2196f3;
-}
-
-.btn-icon.btn-edit:hover {
-  background-color: rgba(33, 150, 243, 0.1);
-}
-
-.btn-icon.btn-view {
-  color: #43a047;
-}
-
-.btn-icon.btn-view:hover {
-  background-color: rgba(67, 160, 71, 0.1);
-}
-
-.btn-icon.btn-delete {
-  color: #dc3545;
-}
-
-.btn-icon.btn-delete:hover {
-  background-color: rgba(220, 53, 69, 0.1);
-}
-
-/* Badges estado baja */
-.badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.badge-baja {
-  background-color: rgba(220, 53, 69, 0.12);
-  color: #b91c1c;
-  border: 1px solid rgba(220, 53, 69, 0.3);
-}
-
-.badge-activo {
-  background-color: rgba(34, 197, 94, 0.12);
-  color: #15803d;
-  border: 1px solid rgba(34, 197, 94, 0.3);
-}
-</style>
+<style scoped src="./InformesComponent.css"></style>

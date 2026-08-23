@@ -1,0 +1,114 @@
+/*
+ * Tokens globales (fuente única de verdad para valores repetidos en el proyecto).
+ *
+ * Este archivo es ADITIVO: solo declara variables CSS nuevas, con nombres que no
+ * colisionan con los ya existentes en App.vue (--primary-color, --spacing-*, etc.)
+ * ni en assets/styles.css. No sustituye ningún valor existente todavía — los
+ * componentes actuales siguen usando sus valores literales tal cual, así que este
+ * archivo no cambia nada visualmente por sí solo.
+ *
+ * Los valores de abajo están tomados de los que realmente se repiten en el
+ * proyecto (colores hex/rgb y espaciados en px usados en 6+ archivos distintos,
+ * según auditoría). Sirven como base para ir migrando progresivamente cada
+ * componente a `var(--token)` en lugar de repetir el literal, verificando
+ * visualmente cada migración antes de eliminar el valor duplicado del componente.
+ *
+ * Siguiente paso (requiere verificación visual, no incluido en este cambio):
+ * sustituir en cada componente el valor literal por `var(--token)` correspondiente,
+ * uno a uno, y comprobar que el resultado visual no cambia.
+ */
+
+:root {
+  /* Color de marca (hoy escrito de al menos 4 formas distintas: rgb(), rgba(),
+     #fcd700 y #FCD700, en 14+ archivos) */
+  --color-brand-yellow: rgb(252, 215, 0);
+  --color-brand-yellow-hex: #fcd700;
+  /* Forma "r, g, b" (sin rgb()) para poder componer rgba(var(--x), alpha).
+     Antes vivía duplicada dentro de un :root scoped en InformesComponent.css
+     (nunca se aplicaba: Vue no permite scoping real de :root) con un valor
+     distinto (255, 193, 7) que además no coincidía con el amarillo de marca
+     real. Al mover la variable aquí (global, sí se aplica) se usa el valor
+     de marca correcto. */
+  --color-brand-yellow-rgb: 252, 215, 0;
+
+  /* Colores de estado repetidos en 6-12 archivos distintos */
+  --color-danger: #dc3545;
+  --color-danger-alt: #e74c3c;
+  --color-success: #28a745;
+  --color-success-rgb: 40, 167, 69;
+  --color-secondary-gray: #6c757d;
+  --color-orange: #f97316;
+  --color-text-dark: #2c3e50;
+
+  /* Naranja de identidad de notificaciones (campana/badge), antes hardcodeado
+     por separado de --color-orange en NotificacionesComponent.css. */
+  --color-notification-orange: #ff6b35;
+  --color-notification-orange-rgb: 255, 107, 53;
+  --color-notification-orange-light: #ff8c42;
+
+  /* Acento indigo compartido por los modales de Tareas (auditoria, detalle,
+     corporativo), antes hardcodeado por separado en cada archivo. */
+  --color-accent-indigo: #667eea;
+  --color-accent-indigo-rgb: 102, 126, 234;
+  --color-accent-indigo-dark: #764ba2;
+  --color-accent-indigo-tint: rgba(238, 242, 255, 0.92);
+
+  /* Trío fijo de colores de iconos de acción, repetido igual en 6 tablas */
+  --color-action-view: #2196f3;
+  --color-action-edit: #43a047;
+  --color-action-delete: #dc3545;
+  --hover-color: rgba(252, 215, 0, 0.05);
+
+  /* Espaciado: valores en px usados de forma consistente en la mayoría de
+     componentes (20/21, 19/21, 18/21... según auditoría), en paralelo a las
+     variables --spacing-* en rem que ya existen en App.vue pero que los
+     componentes no usan. */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+
+  /* Escala unica de radio de esquina para toda la app.
+     Sustituye la mezcla previa de 4px/6px/8px/0.2rem/0.3rem/0.4rem/0.7rem. */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-full: 50%;
+
+  /* Sombra de card/panel unica (antes convivian var(--card-shadow) de App.css
+     y "0 2px 8px rgba(0,0,0,0.1)" hardcodeada en varias pantallas). */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.05), 0 10px 24px rgba(0, 0, 0, 0.09);
+
+  /* Anillo de foco unico (antes 0.1/0.15/0.22 de alpha y 2px/3px/4px de spread). */
+  --focus-ring: 0 0 0 3px rgba(252, 215, 0, 0.25);
+
+  /* Texto secundario/muted con mas contraste sobre blanco que los valores
+     anteriores (#7f8c8d / #95a5a6), que rondaban el limite de WCAG AA. */
+  --color-text-secondary: #5b6b79;
+  --color-text-muted: #8592a0;
+
+  /* Escala de z-index para overlays/modales (antes: numeros magicos sueltos
+     -1000/2000/3000/3500/9999/10000/99999- decididos a ojo en cada archivo,
+     sin ninguna relacion declarada entre ellos). El orden relativo de abajo
+     es el que ya existia en la app y se conserva tal cual; solo se nombra. */
+  --z-sticky: 10;
+  --z-overlay: 1000;
+  --z-snackbar: 1100;
+  --z-overlay-nested: 2000;
+  --z-overlay-elevated: 3000;
+  --z-overlay-top: 3500;
+  --z-overlay-confirm: 4000;
+  --z-toast: 9999;
+  --z-overlay-max: 10000;
+  --z-spinner: 99999;
+  /* SweetAlert2 debe quedar SIEMPRE por encima de cualquier modal/spinner propio
+     de la app (se abre desde dentro de un modal para confirmar acciones). Antes
+     esto se resolvia con 3 escalas distintas y en conflicto entre si, filtradas
+     a :root via :global() desde un CSS "scoped" (ActualizarPuntoSuministro.css:
+     19999/20000/20001/30000/30001) y un CSS global suelto (TareaDetalleModal.
+     global.css: 99999) — ver styles/swal-dialogs.css para la version unica. */
+  --z-swal: 999999;
+}

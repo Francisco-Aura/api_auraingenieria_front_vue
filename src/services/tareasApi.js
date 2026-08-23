@@ -10,7 +10,11 @@ axios.interceptors.response.use(
       config.__retryCount = 0
     }
 
+    const metodo = (config.method || 'get').toLowerCase()
+    const esIdempotente = metodo === 'get' || metodo === 'head'
+
     const shouldRetry = (
+      esIdempotente &&
       (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') &&
       config.__retryCount < 2
     )
@@ -74,12 +78,15 @@ export const tareasApi = {
 
   async subirAdjuntosTarea(tareaId, archivos) {
     const resultados = []
-    for (const archivo of archivos) {
+    const lista = Array.isArray(archivos) ? archivos : []
+    for (const archivo of lista) {
+      if (!(archivo instanceof Blob)) {
+        console.warn('Adjunto omitido por formato inválido:', archivo)
+        continue
+      }
       const formData = new FormData()
       formData.append('file', archivo)
-      const response = await axios.post(`/tareas/${tareaId}/adjuntos`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      const response = await axios.post(`/tareas/${tareaId}/adjuntos`, formData)
       resultados.push(response.data)
     }
     return resultados
@@ -199,14 +206,13 @@ export const tareasApi = {
   },
 
   async subirAdjuntoComentario(comentarioId, file) {
+    if (!(file instanceof Blob)) {
+      throw new Error('Archivo inválido para adjunto de comentario')
+    }
     const formData = new FormData()
     formData.append('file', file)
     
-    const response = await axios.post(`/comentarios-tareas/${comentarioId}/adjuntos`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    const response = await axios.post(`/comentarios-tareas/${comentarioId}/adjuntos`, formData)
     return response.data
   },
 
@@ -231,14 +237,13 @@ export const tareasApi = {
   },
 
   async actualizarAdjunto(adjuntoId, file) {
+    if (!(file instanceof Blob)) {
+      throw new Error('Archivo inválido para actualización de adjunto')
+    }
     const formData = new FormData()
     formData.append('file', file)
     
-    const response = await axios.put(`/comentarios-tareas/adjuntos/${adjuntoId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    const response = await axios.put(`/comentarios-tareas/adjuntos/${adjuntoId}`, formData)
     return response.data
   },
 
@@ -259,18 +264,62 @@ export const tareasApi = {
     return response.data
   },
 
-  async crearNotaCliente(clienteId, payload) {
+  async crearNotaCliente(clienteId, payload, archivos) {
+    const lista = Array.isArray(archivos) ? archivos.filter(a => a instanceof Blob || a instanceof File) : [];
+    if (lista.length > 0) {
+      const formData = new FormData();
+      formData.append('datos', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+      lista.forEach(archivo => formData.append('archivos', archivo));
+      const response = await axios.post(`/clientes/${clienteId}/timeline/notas`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    }
     const response = await axios.post(`/clientes/${clienteId}/timeline/notas`, payload)
     return response.data
   },
 
-  async actualizarNotaCliente(clienteId, notaId, payload) {
+  async actualizarNotaCliente(clienteId, notaId, payload, archivos) {
+    const lista = Array.isArray(archivos) ? archivos.filter(a => a instanceof Blob || a instanceof File) : [];
+    if (lista.length > 0) {
+      const formData = new FormData();
+      formData.append('datos', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+      lista.forEach(archivo => formData.append('archivos', archivo));
+      const response = await axios.put(`/clientes/${clienteId}/timeline/notas/${notaId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    }
     const response = await axios.put(`/clientes/${clienteId}/timeline/notas/${notaId}`, payload)
     return response.data
   },
 
+  async descargarArchivoNota(clienteId, notaId) {
+    const response = await axios.get(`/clientes/${clienteId}/timeline/notas/${notaId}/descargar`, {
+      responseType: 'blob'
+    });
+    return response;
+  },
+
   async eliminarNotaCliente(clienteId, notaId) {
     await axios.delete(`/clientes/${clienteId}/timeline/notas/${notaId}`)
+  },
+
+  async eliminarArchivoNotaCliente(clienteId, notaId) {
+    const response = await axios.delete(`/clientes/${clienteId}/timeline/notas/${notaId}/archivo`)
+    return response.data
+  },
+
+  async descargarAdjuntoNota(clienteId, notaId, adjuntoId) {
+    const response = await axios.get(`/clientes/${clienteId}/timeline/notas/${notaId}/adjuntos/${adjuntoId}/descargar`, {
+      responseType: 'blob'
+    });
+    return response;
+  },
+
+  async eliminarAdjuntoNotaCliente(clienteId, notaId, adjuntoId) {
+    const response = await axios.delete(`/clientes/${clienteId}/timeline/notas/${notaId}/adjuntos/${adjuntoId}`)
+    return response.data
   },
 
   async toggleFijadaNota(clienteId, notaId) {

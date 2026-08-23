@@ -1,0 +1,40 @@
+/*
+ * Controles de paginación compartidos por las tablas de Clientes, Tareas,
+ * Informes y Puntos de Suministro. Antes cada componente definía su propia
+ * copia (idéntica o casi) de `.pagination-controls`/`.pagination-info`/
+ * `.pagination-buttons`; se consolidan aquí para que las 4 pantallas usen
+ * el mismo aspecto visual.
+ *
+ * Nota de unificación: Puntos de Suministro tenía una versión simplificada
+ * de `.pagination-buttons` (sin fondo/padding/sombra). Al pasar a este
+ * archivo compartido, esa pantalla adopta el mismo estilo "tarjeta blanca"
+ * que ya usan Clientes/Tareas/Informes, quedando visualmente consistente
+ * en toda la aplicación.
+ */
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background-color: var(--surface-color);
+  border-top: 1px solid var(--border-color);
+}
+
+.pagination-info {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  background-color: white;
+  padding: 8px 15px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: white;
+  padding: 8px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}

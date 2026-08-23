@@ -1,29 +1,16 @@
 <template>
-  <div v-if="visible" class="modal-overlay">
-    <!-- Loading spinner -->
-    <Spinner :isLoading="cargando || cargandoDatos" />
-    
+  <div v-if="visible" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="servicios-modal-title">
     <div class="modal-content">
       <!-- Encabezado del modal -->
       <div class="modal-header">
-        <h1 class="modal-title">Gestión de Servicios</h1>
-        <button type="button" @click="cerrarModal" class="close-button" aria-label="Cerrar">
+        <h1 id="servicios-modal-title" class="modal-title">Gestión de Servicios</h1>
+        <button type="button" @click="cerrarModal" class="close-button" aria-label="Cerrar gestión de servicios">
           <i class="fas fa-times"></i>
         </button>
       </div>
 
       <!-- Contenido principal sin pestañas -->
-      <div v-if="cargando || cargandoDatos" class="modal-loading">
-        <div class="loading-spinner">
-          <div class="spinner"></div>
-          <p>{{ cargando ? 'Cargando servicios...' : 'Cargando datos del servicio...' }}</p>
-        </div>
-      </div>
-      
-      <div v-else-if="!cargando && !cargandoDatos" class="main-content-container">
-        <!-- Debug info (invisible pero ejecuta el computed) -->
-        <span style="display: none;">{{ debugEstadoCarga }}</span>
-        
+      <div v-if="!cargando && !cargandoDatos" class="main-content-container">
         <!-- Vista principal: Histórico de servicios con formulario de edición/creación cuando sea necesario -->
         <div v-if="!mostrandoFormulario" class="main-content">
           <!-- Banner del cliente -->
@@ -105,10 +92,10 @@
                       </div>
                     </td>
                     <td class="action-buttons">
-                      <button @click="editarServicioGenerico(servicio)" class="btn-icon btn-edit" title="Editar servicio">
+                      <button @click="editarServicioGenerico(servicio)" class="btn-icon btn-edit" title="Editar servicio" aria-label="Editar servicio">
                         <i class="fas fa-edit"></i>
                       </button>
-                      <button @click="renovarServicioGenerico(servicio)" class="btn-icon btn-renew" title="Renovar servicio">
+                      <button @click="renovarServicioGenerico(servicio)" class="btn-icon btn-renew" title="Renovar servicio" aria-label="Renovar servicio">
                         <i class="fas fa-sync-alt"></i>
                       </button>
                       <button @click="verDetalleServicio(servicio)" class="btn-icon btn-view" title="Ver Detalle">
@@ -400,12 +387,30 @@
                 <button type="button" @click="cancelarFormulario" class="btn-modern btn-secondary">
                   <i class="fas fa-times"></i> Cancelar
                 </button>
-                <button type="submit" class="btn-modern btn-primary">
+                <button type="submit" class="btn-modern btn-primary" :disabled="guardando" :aria-busy="guardando">
                   <i class="fas fa-save"></i> {{ textoBotonGuardar }}
                 </button>
               </div>
             </div>
           </form>
+        </div>
+      </div>
+      <div v-else class="main-content-container main-content-skeleton">
+        <div class="client-banner">
+          <div class="client-info">
+            <div class="skeleton-line skeleton-line--lg"></div>
+          </div>
+        </div>
+        <div class="contracts-history">
+          <div class="history-table-container">
+            <table class="history-table">
+              <tbody>
+                <tr v-for="n in 4" :key="'skeleton-' + n" class="skeleton-row">
+                  <td v-for="col in 10" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -415,7 +420,7 @@
       <div class="modal-content detalle-contrato-content">
         <div class="modal-header">
           <h2><i class="fas fa-clipboard-list"></i> Detalle del Servicio</h2>
-          <button type="button" @click="cerrarModalDetalleServicio" class="close-button" aria-label="Cerrar">
+          <button type="button" @click="cerrarModalDetalleServicio" class="close-button" aria-label="Cerrar detalle del servicio">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -512,7 +517,7 @@
       <div class="modal-content detalle-contrato-content">
         <div class="modal-header">
           <h2><i class="fas fa-euro-sign"></i> Gestión de Pagos - Servicio #{{ servicioGestionPagos?.id }}</h2>
-          <button type="button" @click="cerrarModalGestionPagos" class="close-button" aria-label="Cerrar">
+          <button type="button" @click="cerrarModalGestionPagos" class="close-button" aria-label="Cerrar gestión de pagos">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -566,6 +571,7 @@
                   </label>
                   <button type="button" class="btn-guardar-compact" :disabled="!cuota.editado" @click="guardarCuota(cuota)" title="Guardar cambios">
                     <i class="fas fa-save"></i>
+                    <span>Guardar</span>
                   </button>
                 </div>
               </div>
@@ -582,13 +588,10 @@
 
 <script>
 import axios from "axios";
-import Spinner from "@/components/SpinnerComponent.vue";
 
 export default {
   name: "ModalServicios",
-  components: {
-    Spinner
-  },
+  components: {},
   emits: ['cerrar-modal', 'servicio-creado', 'servicio-actualizado', 'servicio-renovado', 'recargar-servicios'],
   props: {
     visible: {
@@ -653,6 +656,7 @@ export default {
       modoRenovacion: false,
       servicioEditandoId: null,
       cargandoDatos: false,
+      guardando: false,
       nuevoServicio: {
         idCliente: "",
         idPuntoSuministro: "",
@@ -962,6 +966,12 @@ export default {
     },
 
     async guardarServicio() {
+      if (this.guardando) {
+        return;
+      }
+
+      let bloqueoAdquirido = false;
+
       // Validar campos obligatorios con indicadores visuales
       if (!this.validarServicio()) {
         await this.$swal.fire({
@@ -1007,6 +1017,21 @@ export default {
           return;
         }
 
+        // Confirmar ANTES de persistir nada si el cambio de modalidad de pago
+        // perdería cuotas ya pagadas. Si el usuario cancela, no se ejecuta ninguna petición.
+        const confirmacionPagos = await this.confirmarCambioModalidadPagoSiAplica();
+        if (!confirmacionPagos.proceder) {
+          return;
+        }
+
+        // Dos envios pueden coincidir mientras se espera la confirmacion.
+        // Solo el primero que llegue a la mutacion adquiere el bloqueo.
+        if (this.guardando) {
+          return;
+        }
+        this.guardando = true;
+        bloqueoAdquirido = true;
+
         this.$swal.fire({
           title: 'Guardando servicio...',
           text: 'Por favor, espere mientras se procesa la información.',
@@ -1038,30 +1063,14 @@ export default {
             id: typeof this.cliente === 'object' ? this.cliente.id : this.cliente
           }
         };
-        let response;
-        
-        if (this.modoEdicion && this.servicioEditandoId) {
-          response = await axios.put(
-            `${process.env.VUE_APP_API_URL}/servicios/${this.servicioEditandoId}`,
-            servicioPayload
-          );
-        } else {
-          response = await axios.post(
-            `${process.env.VUE_APP_API_URL}/servicios`,
-            servicioPayload
-          );
-        }
+        let pagosPayload = null;
+        const servicioId = this.modoEdicion ? this.servicioEditandoId : null;
         
         // Si hay datos de pagos, manejarlos según el modo
         if (this.nuevoServicio.idPagoPlazos && 
             (this.nuevoServicio.importe > 0 || this.nuevoServicio.importeFinal > 0)) {
           
           // Validar que tenemos un ID de servicio válido
-          const servicioId = this.modoEdicion ? this.servicioEditandoId : response.data.id;
-          if (!servicioId) {
-            throw new Error('No se pudo obtener el ID del servicio para asociar los pagos');
-          }
-
           if (this.modoEdicion) {
             // MODO EDICIÓN: Lógica inteligente para manejar cambios en pagos
             const pagosCambiaron = this.verificarCambiosEnPagos();
@@ -1070,71 +1079,9 @@ export default {
             if (pagosCambiaron) {
 
               if (cambioModalidad && this.pagosExistentes) {
-                // CAMBIO DE MODALIDAD: Verificar si se perderían datos
-                const resultadoVerificacion = await this.verificarPerdidaDatos();
-                
-                if (resultadoVerificacion.sePierdenDatos) {
-                  // Crear HTML detallado para el modal de confirmación
-                  const cuotasHtml = resultadoVerificacion.detalleCuotasPerdidas.map(cuota => 
-                    `<li>Cuota ${cuota.numero}: ${cuota.importe.toFixed(2)}€ ${cuota.fecha ? `(Pagada: ${cuota.fecha})` : ''}</li>`
-                  ).join('');
-                  
-                  // Mostrar modal de confirmación con información detallada
-                  const resultado = await this.$swal.fire({
-                    title: '⚠️ Advertencia: Pérdida de Datos de Pagos',
-                    html: `
-                      <div style="text-align: left; padding: 20px; max-height: 400px; overflow-y: auto;">
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                          <h4 style="margin: 0 0 10px 0; color: #495057;">📊 Resumen del cambio:</h4>
-                          <p style="margin: 5px 0;"><strong>Cuotas actuales:</strong> ${resultadoVerificacion.cuotasActuales}</p>
-                          <p style="margin: 5px 0;"><strong>Nuevas cuotas:</strong> ${resultadoVerificacion.nuevasCuotas}</p>
-                          <p style="margin: 5px 0;"><strong>Cuotas ya pagadas:</strong> ${resultadoVerificacion.cuotasPagadas}</p>
-                        </div>
-                        
-                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 15px;">
-                          <h4 style="margin: 0 0 10px 0; color: #856404;">⚠️ Datos que se perderán:</h4>
-                          <p style="margin: 5px 0; color: #856404;"><strong>${resultadoVerificacion.cuotasQueSePerderan} cuotas pagadas</strong></p>
-                          <p style="margin: 5px 0; color: #856404;"><strong>Importe total: ${resultadoVerificacion.importePerdido.toFixed(2)}€</strong></p>
-                          
-                          <details style="margin-top: 10px;">
-                            <summary style="cursor: pointer; font-weight: bold; color: #856404;">Ver detalle de cuotas que se perderán</summary>
-                            <ul style="margin: 10px 0; padding-left: 20px; color: #856404;">
-                              ${cuotasHtml}
-                            </ul>
-                          </details>
-                        </div>
-                        
-                        <div style="background: #f8d7da; padding: 15px; border-radius: 8px; border-left: 4px solid #dc3545;">
-                          <p style="margin: 0; color: #721c24; font-weight: bold;">
-                            ⚠️ Esta acción no se puede deshacer. Los datos de las cuotas pagadas que excedan el nuevo número de cuotas se eliminarán permanentemente.
-                          </p>
-                        </div>
-                        
-                        <p style="margin-top: 15px; font-weight: bold;">¿Estás seguro de que quieres continuar con este cambio?</p>
-                      </div>
-                    `,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#e74c3c',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Sí, continuar y perder datos',
-                    cancelButtonText: 'Cancelar operación',
-                    width: '600px'
-                  });
-                  
-                  if (!resultado.isConfirmed) {
-                    // Usuario canceló, restaurar modalidad anterior
-                    this.nuevoServicio.idPagoPlazos = this.pagosExistentes.pagoPlazos?.id;
-                    this.$swal.fire({
-                      title: 'Operación cancelada', 
-                      text: 'No se han realizado cambios en los pagos. Se mantiene la modalidad original.', 
-                      icon: 'info',
-                      confirmButtonColor: '#fcd700'
-                    });
-                    return; // Salir sin hacer cambios
-                  }
-                }
-                
+                // La confirmación de posible pérdida de cuotas pagadas ya se
+                // resolvió en confirmarCambioModalidadPagoSiAplica(), antes de
+                // persistir el servicio. Aquí solo se genera el nuevo plan.
                 let pagosGenerados;
                 try {
                   const generarPlanResp = await axios.post(`${process.env.VUE_APP_API_URL}/servicios-pagos/generar-plan`, {
@@ -1149,12 +1096,7 @@ export default {
                 }
 
                 // Fusionar cuotas existentes con el nuevo plan
-                const pagosPayload = await this.fusionarCuotasConNuevoPlan(servicioId, pagosGenerados);
-                
-                await axios.put(
-                  `${process.env.VUE_APP_API_URL}/servicios-pagos/servicio/${this.servicioEditandoId}`, 
-                  pagosPayload
-                );
+                pagosPayload = await this.fusionarCuotasConNuevoPlan(servicioId, pagosGenerados);
               } else if (cambioModalidad && !this.pagosExistentes) {
                 // CASO ESPECIAL: Servicio sin pagos previos pero ahora con modalidad de pago
                 
@@ -1172,7 +1114,7 @@ export default {
                 }
 
                 if (pagosGenerados) {
-                  const pagosPayload = {
+                  pagosPayload = {
                     id: null, // Nuevo registro
                     pagoPlazos: {
                       id: Number(this.nuevoServicio.idPagoPlazos)
@@ -1187,16 +1129,10 @@ export default {
                     ...pagosGenerados
                   };
 
-                  await axios.post(`${process.env.VUE_APP_API_URL}/servicios-pagos`, pagosPayload);
                 }
               } else {
                 // SIN CAMBIO DE MODALIDAD: Solo actualizar importes preservando todo lo demás
-                const pagosPayload = this.crearPayloadPagosPreservando(servicioId);
-                
-                await axios.put(
-                  `${process.env.VUE_APP_API_URL}/servicios-pagos/servicio/${this.servicioEditandoId}`, 
-                  pagosPayload
-                );
+                pagosPayload = this.crearPayloadPagosPreservando(servicioId);
               }
             } 
           } else {
@@ -1211,10 +1147,11 @@ export default {
               pagosGenerados = generarPlanResp.data;
             } catch (errorGenerarPlan) {
               console.error("Error al generar el plan de pagos:", errorGenerarPlan);
+              throw new Error('No se pudo generar el nuevo plan de pagos');
             }
 
             if (pagosGenerados && this.nuevoServicio.idPagoPlazos) {
-              const pagosPayload = {
+              pagosPayload = {
                 id: null, // Nuevo registro
                 pagoPlazos: {
                   id: Number(this.nuevoServicio.idPagoPlazos)
@@ -1264,12 +1201,22 @@ export default {
                 decimosegundoPagoPagado: pagosGenerados.decimosegundoPagoPagado || false
               };
 
-              await axios.post(`${process.env.VUE_APP_API_URL}/servicios-pagos`, pagosPayload);
             }
           }
         }
         
         // Mostrar mensaje de éxito con información adicional si se preservaron pagos
+        // El backend vincula los pagos al servicio persistido. Evitamos enviar
+        // un ID provisional durante el alta y mantenemos una sola mutacion.
+        if (pagosPayload) {
+          delete pagosPayload.servicio;
+        }
+
+        const response = await axios.post(
+          `${process.env.VUE_APP_API_URL}/servicios/guardar-con-pagos`,
+          { servicio: servicioPayload, pagos: pagosPayload }
+        );
+
         let mensajeExito = this.modoEdicion 
           ? 'El servicio ha sido actualizado correctamente.' 
           : (this.modoRenovacion ? 'El servicio ha sido renovado correctamente.' : 'El nuevo servicio ha sido creado correctamente.');
@@ -1313,6 +1260,10 @@ export default {
           confirmButtonColor: 'rgba(252, 215, 0)',
           confirmButtonText: 'Aceptar'
         });
+      } finally {
+        if (bloqueoAdquirido) {
+          this.guardando = false;
+        }
       }
     },
 
@@ -1859,6 +1810,87 @@ export default {
       return false;
     },
 
+    // Confirma ANTES de persistir nada si el cambio de modalidad de pago perdería
+    // cuotas ya pagadas. Debe llamarse antes de cualquier petición de guardado.
+    async confirmarCambioModalidadPagoSiAplica() {
+      if (!this.modoEdicion) return { proceder: true };
+
+      const hayDatosDePago = this.nuevoServicio.idPagoPlazos &&
+        (this.nuevoServicio.importe > 0 || this.nuevoServicio.importeFinal > 0);
+      if (!hayDatosDePago) return { proceder: true };
+
+      const pagosCambiaron = this.verificarCambiosEnPagos();
+      const cambioModalidad = this.cambioModalidadPago();
+      if (!(pagosCambiaron && cambioModalidad && this.pagosExistentes)) {
+        return { proceder: true };
+      }
+
+      const resultadoVerificacion = await this.verificarPerdidaDatos();
+      if (!resultadoVerificacion.sePierdenDatos) {
+        return { proceder: true };
+      }
+
+      const cuotasHtml = resultadoVerificacion.detalleCuotasPerdidas.map(cuota =>
+        `<li>Cuota ${cuota.numero}: ${cuota.importe.toFixed(2)}€ ${cuota.fecha ? `(Pagada: ${cuota.fecha})` : ''}</li>`
+      ).join('');
+
+      const resultado = await this.$swal.fire({
+        title: '⚠️ Advertencia: Pérdida de Datos de Pagos',
+        html: `
+          <div class="swal-perdida-cuotas-contenedor">
+            <div class="swal-perdida-cuotas-resumen">
+              <h4>📊 Resumen del cambio:</h4>
+              <p><strong>Cuotas actuales:</strong> ${resultadoVerificacion.cuotasActuales}</p>
+              <p><strong>Nuevas cuotas:</strong> ${resultadoVerificacion.nuevasCuotas}</p>
+              <p><strong>Cuotas ya pagadas:</strong> ${resultadoVerificacion.cuotasPagadas}</p>
+            </div>
+            
+            <div class="swal-perdida-cuotas-detalle">
+              <h4>⚠️ Datos que se perderán:</h4>
+              <p><strong>${resultadoVerificacion.cuotasQueSePerderan} cuotas pagadas</strong></p>
+              <p><strong>Importe total: ${resultadoVerificacion.importePerdido.toFixed(2)}€</strong></p>
+              
+              <details>
+                <summary>Ver detalle de cuotas que se perderán</summary>
+                <ul>
+                  ${cuotasHtml}
+                </ul>
+              </details>
+            </div>
+            
+            <div class="swal-perdida-cuotas-irreversible">
+              <p>
+                ⚠️ Esta acción no se puede deshacer. Los datos de las cuotas pagadas que excedan el nuevo número de cuotas se eliminarán permanentemente.
+              </p>
+            </div>
+            
+            <p class="swal-perdida-cuotas-pregunta">¿Estás seguro de que quieres continuar con este cambio?</p>
+          </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e74c3c',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, continuar y perder datos',
+        cancelButtonText: 'Cancelar operación',
+        width: '600px'
+      });
+
+      if (!resultado.isConfirmed) {
+        // Usuario canceló: restaurar modalidad anterior y no persistir nada todavía
+        this.nuevoServicio.idPagoPlazos = this.pagosExistentes.pagoPlazos?.id;
+        this.$swal.fire({
+          title: 'Operación cancelada',
+          text: 'No se han realizado cambios en los pagos. Se mantiene la modalidad original.',
+          icon: 'info',
+          confirmButtonColor: '#fcd700'
+        });
+        return { proceder: false };
+      }
+
+      return { proceder: true };
+    },
+
     // Método para contar cuotas pagadas en los datos existentes
     contarCuotasPagadas() {
       if (!this.pagosExistentes) return 0;
@@ -2238,30 +2270,30 @@ export default {
       this.$swal.fire({
         title: '💡 Información sobre cambio de cuotas',
         html: `
-          <div style="text-align: left; padding: 20px;">
+          <div class="swal-recalculo-cuotas-contenedor">
             <h4>¿Qué sucede cuando cambias el número de cuotas?</h4>
             
-            <div style="margin: 15px 0; padding: 15px; background: #e7f5e7; border-radius: 8px;">
-              <h5 style="color: #28a745; margin-top: 0;">✅ Si aumentas las cuotas:</h5>
-              <ul style="margin: 5px 0; padding-left: 20px;">
+            <div class="swal-recalculo-cuotas-bloque swal-recalculo-cuotas-bloque--aumento">
+              <h5>✅ Si aumentas las cuotas:</h5>
+              <ul>
                 <li>Se preservan todas las cuotas ya pagadas</li>
                 <li>Se crean nuevas cuotas con importes recalculados</li>
                 <li>No se pierde ningún dato</li>
               </ul>
             </div>
             
-            <div style="margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 8px;">
-              <h5 style="color: #856404; margin-top: 0;">⚠️ Si reduces las cuotas:</h5>
-              <ul style="margin: 5px 0; padding-left: 20px;">
+            <div class="swal-recalculo-cuotas-bloque swal-recalculo-cuotas-bloque--reduccion">
+              <h5>⚠️ Si reduces las cuotas:</h5>
+              <ul>
                 <li>Se preservan las cuotas pagadas que quepan en el nuevo número</li>
                 <li>Las cuotas pagadas que excedan el nuevo límite se eliminarán</li>
                 <li>Te pediremos confirmación antes de eliminar datos</li>
               </ul>
             </div>
             
-            <div style="margin: 15px 0; padding: 15px; background: #d1ecf1; border-radius: 8px;">
-              <h5 style="color: #0c5460; margin-top: 0;">🔢 Recálculo de importes:</h5>
-              <ul style="margin: 5px 0; padding-left: 20px;">
+            <div class="swal-recalculo-cuotas-bloque swal-recalculo-cuotas-bloque--info">
+              <h5>🔢 Recálculo de importes:</h5>
+              <ul>
                 <li>Las cuotas ya pagadas mantienen su importe original</li>
                 <li>Las cuotas pendientes se recalculan con el nuevo importe total</li>
                 <li>Se distribuye equitativamente entre las cuotas restantes</li>
@@ -2275,6 +2307,12 @@ export default {
         width: '600px'
       });
     },
+
+    calcularImporteFinal() {
+      const imp = parseFloat(this.nuevoServicio.importe) || 0;
+      const desc = parseFloat(this.nuevoServicio.descuento) || 0;
+      return (imp - desc).toFixed(2);
+    }
   },
 
   computed: {
@@ -2351,27 +2389,6 @@ export default {
       
       // Redondear a 2 decimales
       return Math.round(importePagado * 100) / 100;
-    },
-
-    calcularImporteFinal() {
-      const imp = parseFloat(this.nuevoServicio.importe) || 0;
-      const desc = parseFloat(this.nuevoServicio.descuento) || 0;
-      return (imp - desc).toFixed(2);
-    },
-
-    debugEstadoCarga() {
-      const info = {
-        cargandoDatos: this.cargandoDatos,
-        mostrandoFormulario: this.mostrandoFormulario,
-        visible: this.visible,
-        tieneServicios: this.servicios?.length || 0,
-        tieneHistoricos: this.serviciosHistoricos?.length || 0,
-        comercializadorasProp: this.comercializadoras?.length || 0,
-        comercializadorasList: this.comercializadorasList?.length || 0,
-        gestoras: this.gestoras?.length || 0,
-        productos: this.productos?.length || 0
-      };
-      return info;
     }
   },
 
@@ -2421,11 +2438,11 @@ export default {
     },
 
     'nuevoServicio.importe': function() {
-      this.nuevoServicio.importeFinal = this.calcularImporteFinal;
+      this.nuevoServicio.importeFinal = Number(this.calcularImporteFinal());
     },
 
     'nuevoServicio.descuento': function() {
-      this.nuevoServicio.importeFinal = this.calcularImporteFinal;
+      this.nuevoServicio.importeFinal = Number(this.calcularImporteFinal());
     },
 
     'nuevoServicio.idPagoPlazos': {
@@ -2483,1268 +2500,4 @@ export default {
 };
 </script>
 
-<style scoped>
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
-
-/* Variables CSS para consistencia */
-:root {
-  --primary-color: rgba(252, 215, 0);
-  --surface-color: #ffffff;
-  --border-color: #e0e0e0;
-  --text-primary: #333333;
-  --text-secondary: #666666;
-}
-
-/* Contenedor principal sin pestañas */
-.main-content-container {
-  flex: 1;
-  background-color: #f8f9fa;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.main-content, .form-content {
-  padding: 20px;
-  height: 100%;
-  overflow-y: auto;
-}
-
-/* Botones de acción principales */
-.action-buttons-main {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 25px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.btn-warning {
-  background-color: #ffc107;
-  color: #212529;
-}
-
-.btn-warning:hover:not(:disabled) {
-  background-color: #e0a800;
-  transform: translateY(-1px);
-}
-
-.btn-success {
-  background-color: #198754;
-  color: white;
-}
-
-.btn-success:hover:not(:disabled) {
-  background-color: #157347;
-  transform: translateY(-1px);
-}
-
-/* Histórico de servicios */
-.contracts-history {
-  background: #fff;
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.contracts-history h3 {
-  margin: 0 0 20px 0;
-  color: #333;
-  font-size: 1.3rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Tabla del histórico */
-.history-table-container {
-  overflow: visible;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  margin-top: 1rem;
-  position: relative;
-}
-
-.history-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.history-table th {
-  background: #f8f9fa;
-  padding: 12px 8px;
-  text-align: left;
-  font-weight: 600;
-  color: #495057;
-  border-bottom: 2px solid #dee2e6;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.history-table td {
-  padding: 10px 8px;
-  border-bottom: 1px solid #e9ecef;
-  vertical-align: middle;
-}
-
-.history-row:hover {
-  background-color: #f8f9fa;
-}
-
-.contract-number {
-  font-weight: 600;
-  color: #495057;
-}
-
-/* Indicadores de estado */
-.status-vigente {
-  color: #198754;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.status-vigente i {
-  color: #198754;
-  animation: pulse 2s infinite;
-}
-
-.status-pendiente {
-  color: #28a745;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.status-pendiente i {
-  color: #28a745;
-  animation: pulseWarning 2s infinite;
-}
-
-.status-historico {
-  color: #6c757d;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
-
-@keyframes pulseWarning {
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.1); }
-  100% { opacity: 1; transform: scale(1); }
-}
-
-/* Estados de servicio en la tabla */
-.servicio-vigente {
-  background-color: rgba(252, 215, 0, 0.1) !important;
-  border-left: 4px solid rgba(252, 215, 0) !important;
-}
-
-.servicio-pendiente {
-  background-color: rgba(40, 167, 69, 0.1) !important;
-  border-left: 4px solid #28a745 !important;
-}
-
-/* Botones de acción en la tabla */
-.action-buttons {
-  display: flex;
-  gap: 4px;
-}
-
-.btn-icon {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  transition: all 0.2s ease;
-  position: relative;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  color: #495057;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-}
-
-.btn-icon:not(:disabled):hover {
-  background: #f8f9fa;
-  border-color: #ffd600;
-  color: #ffd600;
-  transform: scale(1.12);
-}
-
-.btn-icon:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-icon.btn-payment:hover {
-  background: rgba(25, 135, 84, 0.1);
-  border-color: #198754;
-  color: #198754;
-}
-
-.btn-icon.btn-delete {
-  color: #dc3545; /* Rojo para eliminar */
-}
-.btn-icon.btn-delete:hover {
-  background-color: rgba(220,53,69,0.1);
-  border-color: #dc3545;
-  color: #dc3545;
-}
-
-/* Tooltips mejorados */
-.btn-icon:hover::after {
-  content: attr(title);
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.9);
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  z-index: 10000;
-  pointer-events: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.btn-icon:hover::before {
-  content: '';
-  position: absolute;
-  bottom: calc(100% + 2px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid rgba(0, 0, 0, 0.9);
-  z-index: 10000;
-  pointer-events: none;
-}
-
-/* No history message */
-.no-history {
-  text-align: center;
-  padding: 40px 20px;
-  color: #6c757d;
-  background: #f8f9fa;
-  border-radius: 12px;
-}
-
-.no-history i {
-  font-size: 3rem;
-  margin-bottom: 15px;
-  color: #dee2e6;
-}
-
-.no-history p {
-  font-size: 1.1rem;
-  margin-bottom: 20px;
-}
-
-/* Pagos en la tabla */
-.pagos-column {
-  text-align: center;
-}
-
-.pagos-mini {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  align-items: center;
-}
-
-.pago-indicador {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 1px 4px;
-  border-radius: 2px;
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
-.total-indicador {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #333;
-}
-
-.sin-pagos-mini {
-  color: #6c757d;
-  font-style: italic;
-}
-
-/* ===== MODALES COMPACTADOS ===== */
-
-/* Estilos base del modal compacto */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 0.4rem;
-  width: 95%;
-  max-width: 95%;
-  height: 95vh;
-  max-height: 95vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-  overflow: hidden;
-}
-
-.modal-header {
-  padding: 0.8rem 0 0.8rem 1.3rem;
-  border-bottom: 1px solid #e0e0e0;
-  background: var(--primary-color);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: black;
-  flex-grow: 1;
-}
-
-.close-button {
-  align-self: stretch;
-  min-width: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #c0392b;
-  border: none;
-  border-left: 1px solid rgba(0, 0, 0, 0.12);
-  font-size: 0.9rem;
-  cursor: pointer;
-  color: white;
-  border-radius: 0 0.4rem 0 0;
-  transition: background-color 0.15s ease;
-  flex-shrink: 0;
-}
-
-.close-button:hover {
-  background-color: #96281b;
-  color: white;
-  border-left-color: transparent;
-}
-
-/* Banner del cliente compacto */
-.client-banner {
-  background: linear-gradient(135deg, #fff3cd 0%, #fffbe6 100%);
-  border-radius: 0.3rem;
-  padding: 0.6rem 0.8rem;
-  margin-bottom: 0.8rem;
-  border: 1px solid #ffe082;
-}
-
-.client-info h4 {
-  margin: 0 0 2px 0;
-  color: #333;
-  font-size: 1rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.client-header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.client-info span {
-  color: #666;
-  font-size: 0.85rem;
-}
-
-.client-details {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.client-details span {
-  color: #666;
-  font-size: 0.85rem;
-}
-
-/* Formulario compacto */
-.modern-form {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  gap: 0.6rem;
-}
-
-/* Grid compacto */
-.form-grid-modern {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.6rem;
-  margin-bottom: 0.6rem;
-}
-
-.form-section-modern {
-  background: var(--surface-color);
-  border-radius: 0.3rem;
-  border: 1px solid var(--border-color);
-  padding: 0.6rem;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-.form-section-modern.full-width {
-  grid-column: 1 / -1;
-}
-
-/* Encabezados compactos */
-.section-header-modern {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.6rem;
-  gap: 0.4rem;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.section-header-modern i {
-  font-size: 1rem;
-  color: black;
-  width: 16px;
-}
-
-.section-header-modern h3 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-/* Grupos de formulario compactos */
-.form-group-modern {
-  margin-bottom: 0.5rem;
-}
-
-.form-group-modern label {
-  display: block;
-  margin-bottom: 0.2rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.required {
-  color: #e74c3c;
-  margin-left: 2px;
-}
-
-/* Validación de errores */
-.input-error,
-.input-error:focus {
-  border-color: #e74c3c !important;
-  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15) !important;
-}
-.select-error select {
-  border-color: #e74c3c !important;
-  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15) !important;
-}
-.error-text {
-  display: block;
-  color: #e74c3c;
-  font-size: 0.72rem;
-  margin-top: 2px;
-  line-height: 1.2;
-}
-
-.icon-prefix {
-  position: absolute;
-  left: 0.4rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #aaa;
-  font-size: 0.8rem;
-  width: 14px;
-  z-index: 1;
-}
-
-.input-with-icon-modern .form-control-modern {
-  padding-left: 1.3rem;
-}
-
-.form-control-modern {
-  width: 100%;
-  padding: 0.25rem 0.4rem;
-  border: 1px solid #ddd;
-  border-radius: 0.2rem;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-  color: var(--text-primary);
-  background-color: white;
-  height: 28px;
-}
-
-.form-control-modern:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(252, 215, 0, 0.1);
-  outline: none;
-}
-
-.textarea-modern {
-  height: auto !important;
-  resize: vertical;
-  min-height: 42px;
-  padding-top: 0.4rem;
-}
-
-/* Selectores compactos */
-.form-select-modern {
-  width: 100%;
-  padding: 0.25rem 0.4rem;
-  border: 1px solid #ddd;
-  border-radius: 0.2rem;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-  color: var(--text-primary);
-  background-color: white;
-  height: 28px;
-  cursor: pointer;
-}
-
-.form-select-modern:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(252, 215, 0, 0.1);
-  outline: none;
-}
-
-.select-container-modern {
-  position: relative;
-  width: 100%;
-}
-
-/* Inputs con formato euro */
-.input-euro-inline {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.euro-inline {
-  color: #888;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.importe-euro-group {
-  margin-bottom: 0.4rem;
-}
-
-/* Botones compactos */
-.btn-modern {
-  padding: 0.5rem 0.8rem;
-  border-radius: 0.3rem;
-  font-weight: 500;
-  transition: all 0.2s;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-  border: none;
-  outline: none;
-}
-
-.btn-modern:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background-color: var(--primary-color);
-  color: black;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: rgb(222, 189, 0);
-  transform: translateY(-1px);
-}
-
-.btn-secondary {
-  background-color: #6c757d;
-  color: white;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background-color: #5a6268;
-  transform: translateY(-1px);
-}
-
-/* Pie del modal compacto */
-.modal-footer-modern {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem;
-  flex-shrink: 0;
-  border-top: 1px solid var(--border-color);
-  background: var(--surface-color);
-}
-
-.required-legend {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.6rem;
-}
-
-/* Estilos para cuotas compactas */
-.cuotas-grid-compact {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.cuota-card-compact {
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-  background: white;
-  overflow: hidden;
-  transition: all 0.2s;
-  min-height: 120px;
-}
-
-.cuota-card-compact:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-
-.cuota-card-compact.pagada {
-  border-color: #c6ebd9;
-  background: #f0fff7;
-}
-
-.cuota-header-compact {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.cuota-card-compact.pagada .cuota-header-compact {
-  background: #d9f3e7;
-}
-
-.cuota-numero-compact {
-  font-weight: 600;
-  color: #495057;
-  font-size: 0.8rem;
-}
-
-.cuota-estado-compact {
-  font-size: 0.7rem;
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-weight: 500;
-  background: #ffe9e9;
-  color: #dc3545;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.cuota-estado-compact.pagado {
-  background: #d1f0d9;
-  color: #198754;
-}
-
-.cuota-estado-compact i {
-  font-size: 0.65rem;
-}
-
-.cuota-contenido-compact {
-  padding: 6px 8px;
-  overflow: hidden; /* Evita que el contenido se desborde */
-}
-
-.cuota-fila {
-  display: flex;
-  gap: 4px; /* Gap reducido para ahorrar espacio */
-  margin-bottom: 6px;
-  align-items: flex-end; /* Alinea los campos por la parte inferior */
-}
-
-.cuota-campo-compact {
-  flex: 1;
-}
-
-/* Campo de importe más ancho que el de fecha */
-.cuota-campo-importe {
-  flex: 1.3 !important; /* 30% más ancho que el campo de fecha (más conservador) */
-  min-width: 80px !important; /* Ancho mínimo reducido para que quepa mejor */
-}
-
-.cuota-campo-compact label {
-  display: block;
-  font-size: 0.7rem;
-  margin-bottom: 2px;
-  color: #6c757d;
-  font-weight: 500;
-}
-
-.form-control-compact {
-  width: 100%;
-  padding: 3px 6px;
-  border: 1px solid #ced4da;
-  border-radius: 3px;
-  font-size: 0.75rem;
-  height: 24px;
-}
-
-.input-euro-compact {
-  display: flex;
-  align-items: center;
-}
-
-.input-euro-compact input {
-  flex: 1;
-  min-width: 70px; /* Ancho mínimo reducido para que quepa mejor */
-  padding: 3px 6px; /* Padding reducido para ahorrar espacio */
-}
-
-.euro-symbol {
-  margin-left: 2px;
-  color: #6c757d;
-  font-size: 0.7rem;
-}
-
-.cuota-acciones {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 4px;
-}
-
-.checkbox-label-compact {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  font-size: 0.75rem;
-  color: #495057;
-}
-
-.checkbox-label-compact input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
-  margin: 0;
-}
-
-.btn-guardar-compact {
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: 3px;
-  background: #fcd700;
-  color: black;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-guardar-compact:hover:not(:disabled) {
-  background: #ecc800;
-  transform: scale(1.1);
-}
-
-.btn-guardar-compact:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* Mantener estilos antiguos para compatibilidad */
-.cuotas-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.cuota-card {
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  background: white;
-  overflow: hidden;
-  transition: all 0.2s;
-}
-
-.cuota-card:hover {
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-}
-
-.cuota-card.pagada {
-  border-color: #c6ebd9;
-  background: #f0fff7;
-}
-
-.cuota-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.cuota-card.pagada .cuota-header {
-  background: #d9f3e7;
-}
-
-.cuota-numero {
-  font-weight: 600;
-  color: #495057;
-  font-size: 0.9rem;
-}
-
-.cuota-estado {
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 500;
-  background: #ffe9e9;
-  color: #dc3545;
-}
-
-.cuota-estado.pagado {
-  background: #d1f0d9;
-  color: #198754;
-}
-
-.cuota-contenido {
-  padding: 10px;
-}
-
-.cuota-campo {
-  margin-bottom: 8px;
-}
-
-.cuota-campo label {
-  display: block;
-  font-size: 0.8rem;
-  margin-bottom: 3px;
-  color: #6c757d;
-}
-
-.checkbox-field {
-  margin-top: 10px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
-.cuota-footer {
-  padding: 8px;
-  border-top: 1px solid #e9ecef;
-  text-align: center;
-}
-
-.btn-guardar {
-  width: 100%;
-  padding: 6px;
-  border: none;
-  border-radius: 4px;
-  background: #fcd700;
-  color: black;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.85rem;
-}
-
-.btn-guardar:hover:not(:disabled) {
-  background: #ecc800;
-}
-
-.btn-guardar:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Resumen de pagos compacto */
-.pagos-progreso {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 15px;
-  align-items: center;
-}
-
-.pagos-resumen-compacto {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-  background: #f8f9fa;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.resumen-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.resumen-label {
-  color: #495057;
-  font-weight: 600;
-  font-size: 0.85rem;
-}
-
-.resumen-valor {
-  color: #198754;
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.sin-cuotas {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  color: #6c757d;
-}
-
-/* Modal de detalle */
-.detalle-contrato-modal {
-  z-index: 2000;
-  background: rgba(0,0,0,0.35);
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.detalle-contrato-content {
-  background: #fff;
-  border-radius: 16px;
-  max-width: 60%;
-  width: 60%;
-  max-height: 80%;
-  overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  position: relative;
-  animation: modalFadeIn 0.3s;
-}
-
-.detalle-contrato-content .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid #e0e0e0;
-  background: #f8f9fa;
-  border-radius: 16px 16px 0 0;
-}
-
-.detalle-contrato-content .modal-header h2 {
-  margin: 0;
-  color: black;
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.detalle-contrato-content .modal-header h2 i {
-  color: var(--primary-color);
-}
-
-.detalle-contrato-pdf {
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.detalle-contrato-header {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 1.5rem;
-}
-
-.cliente-info, .contrato-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.cliente-info h4, .contrato-info h4 {
-  color: black;
-  margin: 0;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.cliente-info h4 i, .contrato-info h4 i {
-  color: var(--primary-color);
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.detalle-contrato-section {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 1.5rem;
-}
-
-.detalle-contrato-section h4 {
-  color: black;
-  margin: 0 0 1rem 0;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.detalle-contrato-section h4 i {
-  color: var(--primary-color);
-}
-
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0.7rem;
-  border-radius: 6px;
-  margin-bottom: 0.4rem;
-  background: #fff;
-  border: 1px solid #f0f0f0;
-  min-width: 300px; /* Ancho mínimo para evitar entrecortado */
-}
-
-.info-label {
-  color: #888;
-  font-size: 0.97rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.info-value {
-  color: #222;
-  font-size: 1.08rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 1; /* Permite que se expanda */
-  min-width: 120px; /* Ancho mínimo para importes largos */
-  text-align: right; /* Alinea los números a la derecha */
-  word-break: break-word; /* Evita que se entrecorte el texto */
-}
-
-.observaciones-content {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1rem;
-  border: 1px solid #e0e0e0;
-  color: black;
-  line-height: 1.5;
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Estilos para campo CUPS readonly */
-.cups-readonly {
-  background-color: #f8f9fa !important;
-  border-color: #e9ecef !important;
-  color: #495057 !important;
-  cursor: not-allowed !important;
-  font-weight: 600 !important;
-}
-
-/* Estilos para campo de importe pagado readonly */
-.importe-pagado-readonly {
-  background-color: #e8f5e8 !important;
-  border-color: #c3e6c3 !important;
-  color: #2d5a2d !important;
-  cursor: not-allowed !important;
-  font-weight: 600 !important;
-}
-
-.field-help {
-  display: block;
-  font-size: 0.75rem;
-  color: #6c757d;
-  margin-top: 0.25rem;
-  font-style: italic;
-}
-
-/* Estilos específicos para campos de importe */
-.info-row-importe {
-  min-width: 350px; /* Más ancho para campos de importe */
-}
-
-.info-value-importe {
-  min-width: 150px; /* Ancho mínimo mayor para importes */
-  font-family: 'Consolas', 'Monaco', monospace; /* Fuente monoespaciada para números */
-  font-size: 1.1rem; /* Ligeramente más grande */
-  color: #2c3e50; /* Color más definido */
-}
-
-/* Media queries para responsividad */
-@media (max-width: 1200px) {
-  .form-grid-modern {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .cuotas-grid-compact {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  
-  .cuotas-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 992px) {
-  .detalle-contrato-content {
-    width: 80%;
-    max-width: 80%;
-  }
-}
-
-@media (max-width: 768px) {
-  .form-grid-modern {
-    grid-template-columns: 1fr;
-  }
-  
-  .detalle-contrato-header {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .detalle-contrato-content {
-    width: 95%;
-    max-width: 95%;
-  }
-  
-  .cuotas-grid-compact {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .cuotas-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .modal-content {
-    width: 98%;
-    max-width: 98%;
-    height: 98vh;
-    max-height: 98vh;
-  }
-}
-
-@media (max-width: 480px) {
-  .modal-title {
-    font-size: 1rem;
-  }
-  
-  .btn-modern {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-  }
-  
-  .cuotas-grid-compact {
-    grid-template-columns: 1fr;
-  }
-  
-  .cuota-fila {
-    flex-direction: column;
-    gap: 4px;
-  }
-}
-</style>
+<style scoped src="./ModalServicios.css"></style>

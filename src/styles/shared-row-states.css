@@ -1,0 +1,61 @@
+/*
+ * Estados visuales de fila (tabla de datos): "dado de baja"/"vencida",
+ * "fijada" y "completada". Antes de esta consolidación, cada pantalla
+ * (Clientes, Puntos de Suministro, Tareas, y la mini-tabla de tareas
+ * dentro de Crea/Actualiza Cliente) definía su propia copia con un
+ * nombre de clase distinto pero el mismo color/comportamiento. Se
+ * combinan aquí en un solo lugar usando listas de selectores — las
+ * clases originales NO cambian de nombre en ninguna plantilla, solo
+ * comparten ahora una única definición.
+ */
+
+/* "Dado de baja" (Clientes/Puntos de Suministro) y "vencida" (Tareas y su
+   mini-tabla en Crea/Actualiza Cliente) son el mismo rojo. */
+.cliente-dado-baja,
+.punto-dado-baja,
+.tarea-vencida,
+.tp-row-vencida {
+  background-color: rgba(220, 53, 69, 0.05) !important;
+}
+
+.cliente-dado-baja:hover,
+.punto-dado-baja:hover,
+.tarea-vencida:hover,
+.tp-row-vencida:hover {
+  background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+/* Solo Clientes/Puntos de Suministro atenúan además la opacidad de la fila
+   (Tareas no lo hace en su tabla principal). */
+.cliente-dado-baja,
+.punto-dado-baja {
+  opacity: 0.7;
+}
+
+.cliente-dado-baja:hover,
+.punto-dado-baja:hover {
+  opacity: 0.8;
+}
+
+/* "Fijada"/pinned (Tareas y su mini-tabla en Crea/Actualiza Cliente). */
+.tarea-fijada,
+.tp-row-fijada {
+  background-color: rgba(255, 193, 7, 0.08) !important;
+  border-left: 3px solid #ffc107 !important;
+}
+
+.tarea-fijada:hover,
+.tp-row-fijada:hover {
+  background-color: rgba(255, 193, 7, 0.15) !important;
+}
+
+/* "Completada" (Tareas y su mini-tabla en Crea/Actualiza Cliente). */
+.tarea-completada,
+.tp-row-completada {
+  opacity: 0.6;
+}
+
+.tarea-completada td,
+.tp-row-completada td {
+  text-decoration: line-through;
+}

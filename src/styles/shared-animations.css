@@ -1,0 +1,31 @@
+/*
+ * Animaciones @keyframes compartidas. IMPORTANTE: en CSS `scoped` de Vue
+ * los nombres de `@keyframes` NO se aíslan por componente (a diferencia de
+ * las clases, que sí reciben el atributo `data-v-xxxxx`). Por eso, si dos
+ * componentes definen un `@keyframes` con el mismo nombre pero contenido
+ * distinto, "gana" el que quede último en el bundle final para TODOS los
+ * usos de ese nombre en la aplicación — un bug real que ya existía en este
+ * proyecto (ver `pulse` renombrado a `pulse-scale-bell` en
+ * NotificacionesComponent.css). Este archivo centraliza los `@keyframes`
+ * que sí son honestamente el mismo efecto reutilizado en varios sitios,
+ * para que dejen de depender del azar del orden de carga.
+ */
+
+/* Usado por ModalContratos.css y ModalServicios.css en .status-vigente i */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* Usado por PuntoSuministroComponent.css y ClientesComponent.css en .stat-card */
+@keyframes statCardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

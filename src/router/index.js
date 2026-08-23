@@ -44,7 +44,8 @@ const routes = [
       },
       {
         path: 'tareas',
-        component: TareasComponent
+        component: TareasComponent,
+        meta: { requiresAuth: true }
       }
     ]
   },  

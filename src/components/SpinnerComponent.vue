@@ -1,22 +1,24 @@
 <template>
-  <div v-if="isLoading" class="spinner-overlay">
-    <div class="spinner-container">
-      <div class="spinner-modern">
-        <div class="spinner-ring"></div>
-        <div class="spinner-ring"></div>
-        <div class="spinner-ring"></div>
-        <div class="spinner-core">
-          <i class="fas fa-bolt"></i>
+  <Teleport to="body">
+    <div v-if="isLoading" class="spinner-overlay">
+      <div class="spinner-container">
+        <div class="spinner-modern">
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+          <div class="spinner-core">
+            <i class="fas fa-bolt"></i>
+          </div>
+        </div>
+        <div class="loading-text">
+          <span class="loading-text-main">Cargando</span>
+          <span class="loading-dots">
+            <span>.</span><span>.</span><span>.</span>
+          </span>
         </div>
       </div>
-      <div class="loading-text">
-        <span class="loading-text-main">Cargando</span>
-        <span class="loading-dots">
-          <span>.</span><span>.</span><span>.</span>
-        </span>
-      </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script>
@@ -31,201 +33,4 @@ export default {
 };
 </script>
 
-<style scoped>
-.spinner-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.5) 100%);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  backdrop-filter: blur(8px);
-  animation: overlayFadeIn 0.3s ease;
-}
-
-@keyframes overlayFadeIn {
-  from { 
-    opacity: 0;
-    backdrop-filter: blur(0px);
-  }
-  to { 
-    opacity: 1;
-    backdrop-filter: blur(8px);
-  }
-}
-
-.spinner-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  padding: 40px 50px;
-  border-radius: 20px;
-  box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-  animation: containerFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes containerFadeIn {
-  from { 
-    opacity: 0;
-    transform: translateY(-30px) scale(0.9);
-  }
-  to { 
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Spinner Moderno con Anillos */
-.spinner-modern {
-  position: relative;
-  width: 80px;
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.spinner-ring {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 3px solid transparent;
-  animation: spinRing 2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-}
-
-.spinner-ring:nth-child(1) {
-  border-top-color: #fcd700;
-  animation-delay: -0.45s;
-  width: 100%;
-  height: 100%;
-}
-
-.spinner-ring:nth-child(2) {
-  border-top-color: #f97316;
-  animation-delay: -0.3s;
-  width: 75%;
-  height: 75%;
-}
-
-.spinner-ring:nth-child(3) {
-  border-top-color: #3b82f6;
-  animation-delay: -0.15s;
-  width: 50%;
-  height: 50%;
-}
-
-@keyframes spinRing {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.spinner-core {
-  position: relative;
-  z-index: 10;
-  width: 35px;
-  height: 35px;
-  background: linear-gradient(135deg, #fcd700 0%, #f97316 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 
-    0 4px 15px rgba(252, 215, 0, 0.4),
-    0 0 0 3px rgba(255, 255, 255, 0.5);
-  animation: corePulse 1.5s ease-in-out infinite;
-}
-
-@keyframes corePulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 
-      0 4px 15px rgba(252, 215, 0, 0.4),
-      0 0 0 3px rgba(255, 255, 255, 0.5);
-  }
-  50% {
-    transform: scale(1.15);
-    box-shadow: 
-      0 6px 25px rgba(252, 215, 0, 0.6),
-      0 0 0 5px rgba(255, 255, 255, 0.7);
-  }
-}
-
-.spinner-core i {
-  color: white;
-  font-size: 16px;
-  animation: iconRotate 2s linear infinite;
-}
-
-@keyframes iconRotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-text {
-  margin-top: 25px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.loading-text-main {
-  font-size: 1.1rem;
-  font-weight: 600;
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: 0.5px;
-}
-
-.loading-dots {
-  display: flex;
-  gap: 2px;
-}
-
-.loading-dots span {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #f97316;
-  animation: dotPulse 1.4s ease-in-out infinite;
-}
-
-.loading-dots span:nth-child(1) {
-  animation-delay: 0s;
-}
-
-.loading-dots span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.loading-dots span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes dotPulse {
-  0%, 60%, 100% {
-    opacity: 0.3;
-    transform: translateY(0);
-  }
-  30% {
-    opacity: 1;
-    transform: translateY(-8px);
-  }
-}
-</style>
+<style scoped src="./SpinnerComponent.css"></style>

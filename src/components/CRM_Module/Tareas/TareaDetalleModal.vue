@@ -1,7 +1,10 @@
 <template>
   <Teleport to="body">
-    <div v-if="value" class="modal-overlay" @click="cerrar">
+    <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Detalle de tarea" @click="cerrar">
       <div class="modal-content modal-detalle" @click.stop>
+      <button type="button" class="close-button close-button-floating" @click="cerrar" aria-label="Cerrar detalle de tarea">
+        <i class="fas fa-times"></i>
+      </button>
       <!-- Body del modal (Sin header separado) -->
       <div class="modal-body">
           <!-- Título y Descripción ARRIBA - Ancho completo -->
@@ -107,26 +110,50 @@
               </div>
             </div>
 
-            <!-- Adjuntos directos de la tarea -->
-            <div class="campo-detalle" v-if="adjuntosDirectos.length > 0">
-              <label><i class="fas fa-paperclip"></i> Archivos adjuntos</label>
-              <div class="adjuntos-directos-lista">
-                <div
-                  v-for="adj in adjuntosDirectos"
-                  :key="adj.id"
-                  class="adjunto-directo-item"
-                  @click="descargarAdjunto(adj)"
-                  :title="'Descargar ' + adj.nombreArchivo"
-                >
-                  <i class="fas fa-file-download"></i>
-                  <span class="adj-nombre">{{ adj.nombreArchivo }}</span>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- Panel Derecho (Acciones y Comentarios) -->
           <div class="right-panel">
+            <div class="adjuntos-panel-right">
+              <div class="adjuntos-panel-header">
+                <label class="section-label"><i class="fas fa-paperclip"></i> Adjuntos de la tarea</label>
+                <span class="adjuntos-total" v-if="adjuntosDirectos.length > 0">{{ adjuntosDirectos.length }}</span>
+              </div>
+
+              <div v-if="adjuntosDirectos.length === 0" class="adjuntos-empty">
+                Sin archivos adjuntos
+              </div>
+
+              <div
+                v-else
+                ref="adjuntosLista"
+                class="adjuntos-panel-lista"
+                :class="{ 'adjuntos-colapsados': !adjuntosExpandidos }"
+              >
+                <button
+                  v-for="adj in adjuntosDirectos"
+                  :key="adj.id"
+                  type="button"
+                  class="adjunto-chip"
+                  :disabled="adjuntoDescargandoId === adj.id"
+                  @click="descargarAdjunto(adj)"
+                  :title="adj.nombreArchivo || 'archivo'"
+                >
+                  <i v-if="adjuntoDescargandoId !== adj.id" :class="getIconoAdjunto(adj.nombreArchivo)"></i>
+                  <i v-else class="fas fa-spinner fa-spin"></i>
+                  <span class="adj-nombre">{{ adj.nombreArchivo }}</span>
+                </button>
+              </div>
+
+              <div v-if="adjuntosDirectos.length > adjuntosVisiblesColapsado" class="adjuntos-panel-footer">
+                <button type="button" class="btn-adjuntos-toggle" @click="toggleAdjuntosPanel">
+                  <i :class="adjuntosExpandidos ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+                  {{ adjuntosExpandidos ? 'Ver menos' : `Ver todos (+${adjuntosRestantes})` }}
+                </button>
+                <span class="adjuntos-counter">Mostrando {{ adjuntosMostrando }} de {{ adjuntosDirectos.length }}</span>
+              </div>
+            </div>
+
             <div class="acciones-bar">
               <!-- Actions Row: Status Badge, Change Status Selector, Buttons -->
               <div class="acciones-row-horizontal">
@@ -136,15 +163,16 @@
                   {{ formatearEstadoNombre(tarea.estadoNombre) }}
                 </div>
 
-                <!-- Selector de Cambio de Estado con icono animado -->
-                <div class="estado-selector-container">
+                <!-- Selector de cambio de estado -->
+                <div class="estado-selector-container task-action-control">
                   <i class="fas fa-exchange-alt icon-cambiar-estado"></i>
                   <select 
                     v-model="estadoSeleccionado" 
                     class="select-cambiar-estado"
                     @change="onEstadoChange"
+                    aria-label="Modificar estado de la tarea"
                   >
-                    <option :value="null" disabled>Modificar estado</option>
+                    <option :value="null" disabled>Cambiar estado</option>
                     <option v-for="estado in estadosDisponibles" :key="estado.id" :value="estado.id">
                       {{ formatearEstadoNombre(estado.nombre) }}
                     </option>
@@ -152,30 +180,41 @@
                 </div>
 
                 <!-- Botones de Acciones -->
-                <button v-if="!tarea.estadoFinal" class="btn-action-compact btn-completar-compact" @click="mostrarConfirmacionCompletacion = true" title="Marcar tarea como completada">
+                <button v-if="!tarea.estadoFinal" class="btn-action-compact task-action-control btn-completar-compact" @click="mostrarConfirmacionCompletacion = true" title="Marcar tarea como completada">
                   <i class="fas fa-check-circle"></i>
                   <span>Completar</span>
                 </button>
-                <button class="btn-action-compact btn-auditoria-compact" @click="abrirAuditoria" title="Ver historial de cambios">
+                <button class="btn-action-compact task-action-control btn-auditoria-compact" @click="abrirAuditoria" title="Ver historial de cambios">
                   <i class="fas fa-history"></i>
                   <span>Auditoría</span>
                 </button>
               </div>
 
                <!-- Motivo Cambio Estado (si se selecciona un nuevo estado) -->
-              <div v-if="estadoSeleccionado && estadoSeleccionado !== tarea.estadoId" class="motivo-cambio-container">
-                 <textarea 
-                    v-model="comentarioCambioEstado"
-                    class="form-control motivo-input"
-                    :placeholder="esEstadoBloqueado ? 'Motivo del bloqueo...' : 'Comentario sobre el cambio...'"
-                    rows="2"
-                  ></textarea>
+              <div v-if="estadoSeleccionado && estadoSeleccionado !== tarea.estadoId" class="motivo-cambio-container estado-cambio-panel">
+                  <div class="estado-cambio-summary">
+                    <span class="estado-cambio-label">Nuevo estado</span>
+                    <strong>{{ formatearEstadoNombre(estadoSeleccionadoInfo?.nombre) }}</strong>
+                  </div>
+                  <div class="estado-cambio-comentario">
+                    <label for="comentarioCambioEstado" class="estado-cambio-comentario-label">
+                      {{ esEstadoBloqueado ? 'Motivo del bloqueo' : 'Comentario del cambio' }}
+                      <span class="required">*</span>
+                    </label>
+                    <textarea
+                      id="comentarioCambioEstado"
+                      v-model="comentarioCambioEstado"
+                      class="form-control motivo-input"
+                      :placeholder="esEstadoBloqueado ? 'Explica por qué se bloquea la tarea...' : 'Describe brevemente el cambio...'"
+                      rows="2"
+                    ></textarea>
+                  </div>
                   <button 
                     class="btn-aplicar-cambio-estado"
                     @click="aplicarCambioEstado"
                     :disabled="!puedeAplicarCambio"
                   >
-                    <i class="fas fa-check"></i> Aplicar
+                    <i class="fas fa-check"></i> Aplicar cambio
                   </button>
               </div>
             </div>
@@ -188,7 +227,7 @@
                     <i class="fas fa-check-double"></i>
                     Confirmar Finalización
                   </h3>
-                  <button class="btn-close" @click="cerrarConfirmacion">&times;</button>
+                  <button type="button" class="close-button btn-close" @click="cerrarConfirmacion" aria-label="Cerrar confirmación"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="modal-body-confirmacion">
                   <p class="titulo-tarea"><strong>{{ tarea.titulo }}</strong></p>
@@ -226,7 +265,9 @@
               <!-- Nuevo Comentario siempre visible arriba -->
               <div
                 class="comentario-nuevo-compact"
-                style="position: relative;"
+                role="region"
+                aria-label="Zona para adjuntar archivos al comentario"
+                :aria-busy="dragActivoComentario"
                 @dragover.prevent="onDragOverComentario"
                 @dragleave="onDragLeaveComentario"
                 @drop.prevent="onDropComentario"
@@ -267,9 +308,9 @@
                         ref="fileInput" 
                         @change="onFilesSelected" 
                         multiple 
-                        style="display: none"
+                        class="input-file-oculto"
                       />
-                      <button class="btn-clip" @click="$refs.fileInput.click()" title="Adjuntar archivos">
+                      <button type="button" class="btn-clip" @click="$refs.fileInput.click()" title="Adjuntar archivos" aria-label="Adjuntar archivos">
                         <i class="fas fa-paperclip"></i>
                       </button>
                       <span v-if="archivosSeleccionados.length > 0" class="files-count-badge">
@@ -287,7 +328,7 @@
                 <!-- Preview Archivos -->
                 <div v-if="archivosSeleccionados.length > 0" class="mini-files-preview">
                     <div v-for="(archivo, index) in archivosSeleccionados" :key="index" class="mini-file-tag">
-                      <i class="fas fa-file" style="font-size:0.7rem"></i>
+                      <i class="fas fa-file mini-file-tag-icon"></i>
                       <span>{{ archivo.name }}</span>
                       <span class="adjunto-size-mini">{{ formatFileSizeComentario(archivo.size) }}</span>
                       <span class="remove-file" @click="quitarArchivo(index)">&times;</span>
@@ -407,10 +448,10 @@
             </div>
           </div>
         </div>
-        </div>
+      </div>
 
-        <!-- Footer del modal -->
-        <div class="modal-footer">
+      <!-- Footer del modal -->
+      <div class="modal-footer">
         <div class="footer-info">
           <span class="fecha-actualizacion">
             Última actualización: {{ formatearFecha(tarea.fechaActualizacion || tarea.fechaCreacion) }}
@@ -484,6 +525,10 @@ export default {
       textoComentarioEditando: '',
       adjuntoActualizando: null,
       adjuntosDirectos: [],
+      adjuntosExpandidos: false,
+      adjuntosVisiblesColapsado: 4,
+      onResizeAdjuntos: null,
+      adjuntoDescargandoId: null,
       mencionDropdownStyle: {},
       mencionContexto: 'nuevo',
       mencionDropdown: {
@@ -529,12 +574,25 @@ export default {
       if (!this.estados || !Array.isArray(this.estados)) return []
       return this.estados.filter(e => !e.estadoFinal && e.id !== this.tarea?.estadoId)
     },
+    estadoSeleccionadoInfo() {
+      if (!this.estados || !Array.isArray(this.estados)) return null
+      return this.estados.find(e => e.id === this.estadoSeleccionado) || null
+    },
     puedeAplicarCambio() {
       if (!this.estadoSeleccionado) {
         return false
       }
       // Siempre requerir comentario para cualquier cambio de estado
       return this.comentarioCambioEstado.trim().length > 0
+    },
+    adjuntosMostrando() {
+      if (!Array.isArray(this.adjuntosDirectos)) return 0
+      if (this.adjuntosExpandidos) return this.adjuntosDirectos.length
+      return Math.min(this.adjuntosVisiblesColapsado, this.adjuntosDirectos.length)
+    },
+    adjuntosRestantes() {
+      if (!Array.isArray(this.adjuntosDirectos)) return 0
+      return Math.max(this.adjuntosDirectos.length - this.adjuntosVisiblesColapsado, 0)
     }
   },
   watch: {
@@ -549,10 +607,12 @@ export default {
           this.esEstadoBloqueado = false
           this.nuevoComentario = ''
           this.archivosSeleccionados = []
+          this.adjuntosExpandidos = false
           // Cargar comentarios
           this.$nextTick(() => {
             this.cargarComentarios()
             this.cargarAdjuntosDirectos()
+            this.recalcularAdjuntosVisiblesColapsado()
           })
         }
       },
@@ -564,18 +624,26 @@ export default {
         if (newTarea && newTarea.id && this.value) {
           // Resetear el selector al abrir nueva tarea
           this.estadoSeleccionado = null
+          this.adjuntosExpandidos = false
           
           // Si la tarea cambió (no solo se actualizó), recargar comentarios
           if (!oldTarea || oldTarea.id !== newTarea.id) {
             this.$nextTick(() => {
               this.cargarComentarios()
               this.cargarAdjuntosDirectos()
+              this.recalcularAdjuntosVisiblesColapsado()
             })
           }
         }
       },
       immediate: true,
       deep: false
+    },
+
+    adjuntosDirectos() {
+      this.$nextTick(() => {
+        this.recalcularAdjuntosVisiblesColapsado()
+      })
     }
   },
   mounted() {
@@ -584,8 +652,66 @@ export default {
       this.cargarComentarios()
       this.cargarAdjuntosDirectos()
     }
+
+    this.onResizeAdjuntos = () => {
+      this.recalcularAdjuntosVisiblesColapsado()
+    }
+    window.addEventListener('resize', this.onResizeAdjuntos)
+  },
+  beforeUnmount() {
+    if (this.onResizeAdjuntos) {
+      window.removeEventListener('resize', this.onResizeAdjuntos)
+      this.onResizeAdjuntos = null
+    }
   },
   methods: {
+    toggleAdjuntosPanel() {
+      this.adjuntosExpandidos = !this.adjuntosExpandidos
+      this.$nextTick(() => {
+        this.recalcularAdjuntosVisiblesColapsado()
+      })
+    },
+
+    recalcularAdjuntosVisiblesColapsado() {
+      const lista = this.$refs.adjuntosLista
+      if (!lista || !Array.isArray(this.adjuntosDirectos) || this.adjuntosDirectos.length === 0) {
+        this.adjuntosVisiblesColapsado = 4
+        return
+      }
+
+      const chips = lista.querySelectorAll('.adjunto-chip')
+      if (!chips || chips.length === 0) {
+        this.adjuntosVisiblesColapsado = 4
+        return
+      }
+
+      const primeraFilaTop = chips[0].offsetTop
+      let visiblesPrimeraFila = 0
+
+      for (let i = 0; i < chips.length; i += 1) {
+        if (chips[i].offsetTop !== primeraFilaTop) break
+        visiblesPrimeraFila += 1
+      }
+
+      this.adjuntosVisiblesColapsado = Math.max(visiblesPrimeraFila, 1)
+    },
+
+    getIconoAdjunto(nombreArchivo) {
+      const nombre = (nombreArchivo || '').toLowerCase()
+      if (nombre.match(/\.(png|jpg|jpeg|gif|webp|svg)$/)) return 'fas fa-file-image'
+      if (nombre.endsWith('.pdf')) return 'fas fa-file-pdf'
+      if (nombre.match(/\.(doc|docx|odt)$/)) return 'fas fa-file-word'
+      if (nombre.match(/\.(xls|xlsx|csv)$/)) return 'fas fa-file-excel'
+      if (nombre.match(/\.(zip|rar|7z)$/)) return 'fas fa-file-archive'
+      return 'fas fa-file-download'
+    },
+
+    formatearTamanoAdjunto(adjunto) {
+      const bytes = adjunto?.tamanoBytes ?? adjunto?.size ?? adjunto?.tamano ?? null
+      if (!bytes || Number.isNaN(Number(bytes))) return ''
+      return this.formatFileSizeComentario(Number(bytes))
+    },
+
     onEstadoChange() {
       const estado = this.estados.find(e => e.id === this.estadoSeleccionado)
       // Usar campo estadoBloqueo en vez de detectar por nombre
@@ -620,6 +746,11 @@ export default {
         this.estadoSeleccionado = this.tarea.estadoId
         this.esEstadoBloqueado = false
         this.comentarioCambioEstado = ''
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo cambiar el estado de la tarea. Inténtelo de nuevo.'
+        })
       }
     },
 
@@ -797,11 +928,18 @@ export default {
       if (!this.tarea || !this.tarea.id) return
       try {
         const data = await tareasApi.obtenerAdjuntosTarea(this.tarea.id)
-        if (data) {
-          this.adjuntosDirectos = data
+        if (Array.isArray(data)) {
+          this.adjuntosDirectos = [...data].sort((a, b) => {
+            const aId = Number(a?.id || 0)
+            const bId = Number(b?.id || 0)
+            return bId - aId
+          })
+        } else {
+          this.adjuntosDirectos = []
         }
       } catch (e) {
         console.error('Error cargando adjuntos directos:', e)
+        this.adjuntosDirectos = []
       }
     },
 
@@ -975,6 +1113,7 @@ export default {
     },
 
     async descargarAdjunto(adjunto) {
+      this.adjuntoDescargandoId = adjunto?.id || null
       try {
         await tareasApi.descargarAdjunto(adjunto.id, adjunto.nombreArchivo)
       } catch (error) {
@@ -984,6 +1123,8 @@ export default {
           title: 'Error',
           text: 'Error al descargar el archivo'
         })
+      } finally {
+        this.adjuntoDescargandoId = null
       }
     },
 
@@ -1041,7 +1182,8 @@ export default {
       }
     },
 
-    onDragOverComentario() {
+    onDragOverComentario(event) {
+      if (event?.dataTransfer) event.dataTransfer.dropEffect = 'copy'
       this.dragActivoComentario = true
     },
 
@@ -1053,7 +1195,7 @@ export default {
 
     onDropComentario(event) {
       this.dragActivoComentario = false
-      this.procesarArchivosComentario(Array.from(event.dataTransfer.files))
+      this.procesarArchivosComentario(Array.from(event?.dataTransfer?.files || []))
     },
 
     onFilesSelected(event) {
@@ -1291,1956 +1433,4 @@ export default {
 }
 </script>
 
-<style scoped>
-/* Modal overlay */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 3000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 0.4rem;
-  width: 95%;
-  height: 95%;
-  max-width: 1400px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-  overflow: hidden;
-}
-
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* Header del modal */
-.modal-header {
-  display: none; /* Ocultar header completamente */
-}
-
-/* Botón cerrar flotante */
-.close-button-floating {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background-color: rgba(0, 0, 0, 0.5);
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: white;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  z-index: 10;
-}
-
-.close-button-floating:hover {
-  background-color: rgba(0, 0, 0, 0.7);
-  transform: rotate(90deg);
-}
-
-.header-main-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.header-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #2d3748;
-}
-
-.tarea-id {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.close-button {
-  background-color: transparent;
-  border: none;
-  font-size: 1.1rem;
-  cursor: pointer;
-  color: #a0aec0;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  margin-left: 8px;
-}
-
-.close-button:hover {
-  background-color: #f7fafc;
-  color: #2d3748;
-  transform: rotate(90deg);
-}
-
-/* Body del modal */
-.modal-body {
-  flex: 1;
-  padding: 8px 12px 0 12px;
-  overflow: hidden; /* Importante: hidden para delegar scroll a hijos */
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-height: 0;
-}
-
-/* Wrapper para body y footer */
-.modal-body-wrapper {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-  min-height: 0;
-}
-
-/* Título y descripción en la parte superior */
-.titulo-descripcion-header {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-bottom: 2px;
-  border-bottom: 1px solid #e9ecef;
-  flex-shrink: 0;
-}
-
-.titulo-campo {
-  width: 100%;
-}
-
-.titulo-valor {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #2d3748;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-  line-height: 1.1;
-}
-
-.descripcion-campo {
-  width: 100%;
-}
-
-.descripcion-completa {
-  background: #f8f9fa;
-  padding: 4px 8px;
-  border-radius: 4px;
-  border-left: 3px solid #667eea;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  max-height: 70px;
-  overflow-y: auto;
-  font-size: 0.85rem;
-  line-height: 1.2;
-}
-
-.detalle-grid {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 10px;
-  flex: 1;
-  overflow: hidden;
-  min-height: 0;
-}
-
-/* Sección de información */
-.info-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.campo-detalle {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.campo-detalle label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #495057;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.valor-campo {
-  font-size: 0.95rem;
-  color: #212529;
-  line-height: 1.4;
-}
-
-.campos-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.tipo-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: #e9ecef;
-  color: #495057;
-  width: fit-content;
-}
-
-.prioridad-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  width: fit-content;
-}
-
-.prioridad-0 { background: #7b0000; color: white; }
-.prioridad-1 { background: #dc3545; color: white; }
-.prioridad-2 { background: #ffc107; color: #212529; }
-.prioridad-3 { background: #28a745; color: white; }
-
-.cliente-info,
-.usuario-info,
-.fecha-info,
-.tiempo-info,
-.cups-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  color: #495057;
-}
-
-.cups-value {
-  font-family: monospace;
-  font-size: 0.88rem;
-  color: #1a56db;
-  font-weight: 600;
-}
-
-.cups-general {
-  font-size: 0.88rem;
-  color: #6c757d;
-  font-style: italic;
-}
-
-.potencial-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 7px;
-  background: #fff3cd;
-  color: #856404;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.fecha-info.fecha-vencida {
-  color: #dc3545;
-  font-weight: 600;
-}
-
-.etiquetas-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.etiqueta-badge {
-  background: rgba(102, 126, 234, 0.1);
-  color: #667eea;
-  padding: 3px 8px;
-  border-radius: 10px;
-  font-size: 0.7rem;
-  font-weight: 500;
-}
-
-/* Sección de acciones */
-.acciones-section {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  height: fit-content;
-}
-
-.estado-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.estado-actual {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.estado-badge-large {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  width: fit-content;
-  color: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  text-shadow: 0 1px 1px rgba(0,0,0,0.15);
-}
-
-.estado-badge-large i {
-  font-size: 0.85rem;
-}
-
-.cambiar-estado {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.campo-motivo {
-  margin-top: 8px;
-}
-
-.campo-motivo label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #495057;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.campo-motivo textarea {
-  resize: vertical;
-  min-height: 60px;
-}
-
-.btn-aplicar-cambio {
-  margin-top: 8px;
-  padding: 8px 16px;
-  background: #28a745;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  justify-content: center;
-}
-
-.btn-aplicar-cambio:hover:not(:disabled) {
-  background: #218838;
-  transform: translateY(-1px);
-}
-
-.btn-aplicar-cambio:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.required {
-  color: #dc3545;
-}
-
-.cambiar-estado label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #495057;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.form-control {
-  padding: 8px 12px;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  transition: all 0.2s ease;
-  background: white;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-/* Botón de completar rápido */
-.accion-rapida {
-  padding-top: 12px;
-  border-top: 1px solid #dee2e6;
-}
-
-.btn-completar-rapido {
-  width: 100%;
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
-  border: none;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.btn-completar-rapido:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
-}
-
-.info-adicional {
-  padding-top: 12px;
-  border-top: 1px solid #dee2e6;
-}
-
-.campo-info {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.campo-info:last-child {
-  margin-bottom: 0;
-}
-
-.campo-info label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Sección de comentarios */
-.comentarios-section {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 2px solid #e9ecef;
-}
-
-.comentarios-section > label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #495057;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.comentarios-loading,
-.comentarios-vacio {
-  padding: 20px;
-  text-align: center;
-  color: #6c757d;
-  font-size: 0.9rem;
-  background: #f8f9fa;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.comentarios-lista {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 8px;
-}
-
-.comentario-item {
-  background: #f8f9fa;
-  border-left: 4px solid #667eea;
-  border-radius: 6px;
-  padding: 12px;
-  transition: all 0.2s ease;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  max-width: 100%;
-}
-
-.comentario-item:hover {
-  background: #e9ecef;
-  transform: translateX(4px);
-}
-
-.comentario-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.comentario-autor {
-  font-weight: 600;
-  color: #495057;
-  font-size: 0.85rem;
-}
-
-.comentario-fecha {
-  font-size: 0.75rem;
-  color: #6c757d;
-}
-
-.comentario-fijado {
-  color: #ffc107;
-  font-size: 0.9rem;
-  margin-left: auto;
-}
-
-.comentario-contenido {
-  font-size: 0.9rem;
-  color: #212529;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  word-break: break-word;
-  overflow-wrap: break-word;
-  max-width: 100%;
-}
-
-.comentario-nuevo {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #e9ecef;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.comentario-nuevo-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.btn-adjuntar-comentario {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-adjuntar-comentario:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.btn-adjuntar-comentario:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Selector de archivos */
-.archivos-selector {
-  margin-top: 10px;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px dashed #dee2e6;
-}
-
-.btn-seleccionar-archivos {
-  background: white;
-  color: #667eea;
-  border: 1px solid #667eea;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.btn-seleccionar-archivos:hover {
-  background: #667eea;
-  color: white;
-}
-
-.archivos-lista {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.archivo-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: white;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
-  font-size: 0.85rem;
-}
-
-.archivo-nombre {
-  flex: 1;
-  color: #495057;
-  font-weight: 500;
-}
-
-.archivo-size {
-  color: #6c757d;
-  font-size: 0.75rem;
-}
-
-.btn-quitar-archivo {
-  background: transparent;
-  border: none;
-  color: #dc3545;
-  cursor: pointer;
-  padding: 4px;
-  transition: all 0.2s ease;
-}
-
-.btn-quitar-archivo:hover {
-  color: #a71d2a;
-  transform: scale(1.1);
-}
-
-/* Archivos adjuntos en comentarios */
-.comentario-adjuntos {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #e9ecef;
-}
-
-.adjuntos-titulo {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #6c757d;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.adjuntos-lista {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.adjunto-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: white;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.85rem;
-}
-
-.adjunto-item:hover {
-  background: #f8f9fa;
-  border-color: #667eea;
-  transform: translateX(4px);
-}
-
-.adjunto-item i {
-  color: #667eea;
-}
-
-.adjunto-nombre {
-  flex: 1;
-  color: #495057;
-  font-weight: 500;
-}
-
-.adjunto-size {
-  color: #6c757d;
-  font-size: 0.75rem;
-}
-
-.accion-auditoria {
-  padding-top: 12px;
-  border-top: 1px solid #dee2e6;
-}
-
-.btn-auditoria {
-  width: 100%;
-  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-  color: white;
-  border: none;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.btn-auditoria:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(23, 162, 184, 0.3);
-}
-
-/* Footer del modal */
-.modal-footer {
-  padding: 6px 12px; 
-  border-top: 1px solid #e9ecef;
-  background: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-  gap: 12px;
-  margin-top: auto;
-}
-
-.footer-info {
-  font-size: 0.8rem;
-  color: #6c757d;
-  flex: 1;
-}
-
-.footer-actions {
-  display: flex;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.btn {
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background: #5a6268;
-  transform: translateY(-1px);
-}
-
-.btn-primary {
-  background: var(--primary-color);
-  color: black;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .modal-overlay {
-    padding: 0;
-  }
-  
-  .modal-content {
-    height: 100vh;
-    max-height: 100vh;
-    border-radius: 0;
-  }
-  
-  .detalle-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  
-  .campos-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  
-  .modal-footer {
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
-  }
-  
-  .footer-actions {
-    width: 100%;
-  }
-  
-  .btn {
-    flex: 1;
-    justify-content: center;
-  }
-}
-
-/* Modal de confirmación de completación */
-.modal-overlay-confirmacion {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 4000;
-  backdrop-filter: blur(4px);
-}
-
-.modal-confirmacion-completar {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 500px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.modal-header-confirmacion {
-  padding: 24px;
-  border-bottom: 2px solid #f8f9fa;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px 12px 0 0;
-}
-
-.modal-header-confirmacion h3 {
-  margin: 0;
-  color: white;
-  font-size: 1.3rem;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.modal-header-confirmacion i {
-  font-size: 1.5rem;
-}
-
-.btn-close {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 1.8rem;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.btn-close:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.modal-body-confirmacion {
-  padding: 24px;
-}
-
-.titulo-tarea {
-  font-size: 1rem;
-  color: #2c3e50;
-  margin: 0 0 16px 0;
-  padding: 12px;
-  background: #f8f9fa;
-  border-left: 4px solid #667eea;
-  border-radius: 4px;
-}
-
-.aviso-importante {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px;
-  background: #fff3cd;
-  border-left: 4px solid #ffc107;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  color: #856404;
-  font-size: 0.9rem;
-}
-
-.aviso-importante i {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.form-group-confirmacion {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group-confirmacion label {
-  font-weight: 600;
-  color: #2c3e50;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.form-group-confirmacion label .required {
-  color: #e74c3c;
-}
-
-.textarea-confirmacion {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #e5e7eb;
-  border-radius: 6px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 0.9rem;
-  resize: vertical;
-  transition: border-color 0.3s, box-shadow 0.3s;
-}
-
-.textarea-confirmacion:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.contador-caracteres {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #6c757d;
-}
-
-.contador-caracteres.aviso {
-  color: #e74c3c;
-  font-weight: 500;
-}
-
-.modal-footer-confirmacion {
-  padding: 20px 24px;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  background: #f8f9fa;
-  border-radius: 0 0 12px 12px;
-}
-
-.btn-cancelar {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-}
-
-.btn-cancelar:hover {
-  background: #5a6268;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.btn-confirmar-completar {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
-  border: none;
-  padding: 10px 24px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-}
-
-.btn-confirmar-completar:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
-}
-
-.btn-confirmar-completar:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-confirmar-completar i {
-  font-size: 1rem;
-}
-
-.fa-spinner {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-/* Nuevo Layout Estilos */
-.right-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  height: 100%;
-  overflow: hidden;
-}
-
-.acciones-bar {
-  padding: 8px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* Fila horizontal con todos los controles */
-.acciones-row-horizontal {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  width: 100%;
-  flex-wrap: wrap; /* Para pantallas pequeñas */
-}
-
-/* Para hacerlo más bonito y alineado */
-.acciones-row-horizontal > * {
-  display: flex;
-  align-items: center;
-}
-
-
-.estado-badge-compact {
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: white;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-/* Selector de cambio de estado mejorado */
-.estado-selector-container {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.select-cambiar-estado {
-  padding: 6px 14px;
-  padding-left: 36px;
-  height: 34px;
-  font-size: 0.85rem;
-  width: auto;
-  min-width: 150px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 600;
-  color: #4a5568;
-  appearance: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 16 16'%3E%3Cpath fill='%23718096' d='M8 11L3 6h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 30px;
-}
-
-.select-cambiar-estado:hover {
-  border-color: #cbd5e0;
-  background-color: #f7fafc;
-  transform: translateY(-1px);
-}
-
-.select-cambiar-estado:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
-}
-
-/* Icono animado */
-.icon-cambiar-estado {
-  position: absolute;
-  left: 12px;
-  font-size: 0.9rem;
-  color: #718096;
-  pointer-events: none;
-  transition: all 0.3s ease;
-  opacity: 0.6;
-}
-
-.estado-selector-container:hover .icon-cambiar-estado {
-  animation: exchangeRotate 0.6s ease-in-out infinite;
-  opacity: 1;
-}
-
-.estado-selector-container .select-cambiar-estado:focus ~ .icon-cambiar-estado,
-.estado-selector-container:has(.select-cambiar-estado:focus) .icon-cambiar-estado {
-  animation: exchangePulse 0.5s ease infinite;
-  opacity: 1;
-}
-
-@keyframes exchangeRotate {
-  0%, 100% {
-    transform: rotate(0deg);
-  }
-  50% {
-    transform: rotate(180deg);
-  }
-}
-
-@keyframes exchangePulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.15);
-  }
-}
-
-/* Botones de acciones compactos */
-.btn-action-compact {
-  padding: 0 16px;
-  height: 34px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: white;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-action-compact:active {
-  transform: scale(0.98);
-}
-
-.btn-action-compact i {
-  font-size: 0.95rem;
-}
-
-/* Specific colors for buttons if not defined elsewhere */
-.btn-completar-compact {
-  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-}
-.btn-completar-compact:hover {
-  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
-  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
-}
-
-.btn-auditoria-compact {
-  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-}
-.btn-auditoria-compact:hover {
-  background: linear-gradient(135deg, #3182ce 0%, #2b6cb0 100%);
-  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
-}
-
-.btn-completar-compact {
-  background: #28a745;
-}
-.btn-completar-compact:hover {
-  background: #218838;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
-}
-
-.btn-auditoria-compact {
-  background: #17a2b8;
-}
-.btn-auditoria-compact:hover {
-  background: #138496;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(23, 162, 184, 0.2);
-}
-
-/* Contenedor del motivo de cambio */
-.motivo-cambio-container {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 10px;
-  border-top: 1px dashed #dee2e6;
-}
-
-.motivo-input {
-  font-size: 0.85rem;
-  min-height: 60px;
-  resize: vertical;
-}
-
-.btn-aplicar-cambio-estado {
-  padding: 8px 16px;
-  background: #667eea;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.2s;
-}
-
-.btn-aplicar-cambio-estado:hover:not(:disabled) {
-  background: #5568d3;
-  transform: translateY(-1px);
-}
-
-.btn-aplicar-cambio-estado:disabled {
-  background: #cbd5e0;
-  cursor: not-allowed;
-}
-
-
-.motivo-cambio-container {
-  margin-top: 5px;
-  padding-top: 10px;
-  border-top: 1px dashed #dee2e6;
-}
-
-.motivo-input {
-  font-size: 0.85rem;
-  min-height: 60px;
-}
-
-/* Comentarios Right Side */
-.comentarios-section-right {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden; /* Important for scroll */
-  border-top: 1px solid #e9ecef;
-  padding-top: 4px;
-  min-height: 0; /* Critical for flex scroll */
-  margin-top: 0;
-}
-
-.section-label {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #4a5568;
-  margin-bottom: 3px;
-  display: block;
-  flex-shrink: 0;
-}
-
-.comentarios-lista-compact {
-  flex: 1;
-  overflow-y: auto;
-  padding: 5px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: #fff;
-  min-height: 0; /* Critical for scroll */
-}
-
-.comentarios-vacio {
-  text-align: center;
-  padding: 20px;
-  color: #aaa;
-  font-style: italic;
-}
-
-.comentario-item-compact {
-  background: #f8f9fa;
-  border-left: 3px solid #667eea;
-  border-radius: 4px;
-  padding: 7px;
-  font-size: 0.85rem;
-  transition: all 0.2s ease;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  max-width: 100%;
-}
-
-.comentario-item-compact.comentario-fijado {
-  background: #fffbeb;
-  border-left-color: #f59e0b;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
-}
-
-.comentario-header-compact {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.75rem;
-  color: #718096;
-  margin-bottom: 5px;
-  gap: 8px;
-}
-
-.comentario-info {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.comentario-autor { font-weight: 600; color: #2d3748; }
-
-.comentario-fecha {
-  font-size: 0.7rem;
-  color: #a0aec0;
-}
-
-.fijado-badge {
-  color: #f59e0b;
-  font-size: 0.7rem;
-}
-
-.editado-badge {
-  color: #8b5cf6;
-  font-size: 0.7rem;
-  font-style: italic;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.comentario-fecha-edicion {
-  font-size: 0.7rem;
-  color: #a0aec0;
-  font-style: italic;
-}
-
-.comentario-actions {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  background: rgba(102, 126, 234, 0.08);
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-}
-
-.comentario-item-compact:hover .comentario-actions {
-  background: rgba(102, 126, 234, 0.15);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
-}
-
-.btn-fijar-comentario,
-.btn-editar-comentario,
-.btn-eliminar-comentario {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px 8px;
-  font-size: 1rem;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.6;
-  position: relative;
-}
-
-.btn-fijar-comentario:disabled,
-.btn-editar-comentario:disabled,
-.btn-eliminar-comentario:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.btn-fijar-comentario::before,
-.btn-editar-comentario::before,
-.btn-eliminar-comentario::before {
-  content: '';
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  z-index: -1;
-}
-
-.btn-fijar-comentario {
-  color: #f59e0b;
-}
-
-.btn-fijar-comentario::before {
-  background: rgba(245, 158, 11, 0.1);
-  transform: scale(0);
-}
-
-.btn-fijar-comentario:hover {
-  color: #f59e0b;
-  opacity: 1;
-  transform: scale(1.15);
-}
-
-.btn-fijar-comentario:hover::before {
-  transform: scale(1);
-}
-
-.comentario-fijado .btn-fijar-comentario {
-  color: #f59e0b;
-  opacity: 1;
-}
-
-.btn-editar-comentario {
-  color: #3182ce;
-}
-
-.btn-editar-comentario::before {
-  background: rgba(49, 130, 206, 0.1);
-  transform: scale(0);
-}
-
-.btn-editar-comentario:hover {
-  color: #3182ce;
-  opacity: 1;
-  transform: scale(1.15);
-}
-
-.btn-editar-comentario:hover::before {
-  transform: scale(1);
-}
-
-.btn-eliminar-comentario {
-  color: #e53e3e;
-}
-
-.btn-eliminar-comentario::before {
-  background: rgba(229, 62, 62, 0.1);
-  transform: scale(0);
-}
-
-.btn-eliminar-comentario:hover {
-  color: #e53e3e;
-  opacity: 1;
-  transform: scale(1.15);
-}
-
-.btn-eliminar-comentario:hover::before {
-  transform: scale(1);
-}
-
-/* Mostrar más prominentemente al hover del comentario */
-.comentario-item-compact:hover .btn-fijar-comentario,
-.comentario-item-compact:hover .btn-editar-comentario,
-.comentario-item-compact:hover .btn-eliminar-comentario {
-  opacity: 0.8;
-}
-
-.comentario-edicion {
-  margin-top: 8px;
-}
-
-.comentario-edicion textarea {
-  width: 100%;
-  padding: 8px;
-  border: 2px solid #e2e8f0;
-  border-radius: 6px;
-  font-family: inherit;
-  font-size: 0.85rem;
-  resize: vertical;
-  transition: border-color 0.3s;
-}
-
-.comentario-edicion textarea:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.comentario-edicion-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-  justify-content: flex-end;
-}
-
-.btn-guardar-edicion,
-.btn-cancelar-edicion {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.btn-guardar-edicion {
-  background: #28a745;
-  color: white;
-}
-
-.btn-guardar-edicion:hover {
-  background: #218838;
-  transform: translateY(-1px);
-}
-
-.btn-cancelar-edicion {
-  background: #6c757d;
-  color: white;
-}
-
-.btn-cancelar-edicion:hover {
-  background: #5a6268;
-  transform: translateY(-1px);
-}
-
-.adjunto-item-compact {
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 10px;
-  background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
-  border: 1.5px solid #d6e4ff;
-  border-radius: 6px;
-  margin-bottom: 4px;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.adjunto-item-compact::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transition: left 0.5s ease;
-  pointer-events: none;
-}
-
-.adjunto-item-compact:hover::before {
-  left: 100%;
-}
-
-.adjunto-item-compact:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
-  background: linear-gradient(135deg, #f8faff 0%, #ffffff 100%);
-  transform: translateY(-2px);
-}
-
-.adjunto-nombre {
-  flex: 1;
-  color: #667eea;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.adjunto-nombre:hover {
-  text-decoration: underline;
-  color: #5568d3;
-}
-
-.adjunto-nombre i {
-  font-size: 0.9rem;
-}
-
-.adjunto-actions {
-  display: flex;
-  gap: 4px;
-  opacity: 0.5;
-  transition: opacity 0.3s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.adjunto-item-compact:hover .adjunto-actions {
-  opacity: 1;
-}
-
-.btn-actualizar-adjunto,
-.btn-eliminar-adjunto {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px 8px;
-  font-size: 0.95rem;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.btn-actualizar-adjunto::before,
-.btn-eliminar-adjunto::before {
-  content: '';
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  z-index: -1;
-}
-
-.btn-actualizar-adjunto {
-  color: #3182ce;
-}
-
-.btn-actualizar-adjunto::before {
-  background: rgba(49, 130, 206, 0.1);
-  transform: scale(0);
-}
-
-.btn-actualizar-adjunto:hover {
-  color: #2c5282;
-  transform: scale(1.18) rotate(180deg);
-}
-
-.btn-actualizar-adjunto:hover::before {
-  transform: scale(1);
-}
-
-.btn-eliminar-adjunto {
-  color: #e53e3e;
-}
-
-.btn-eliminar-adjunto::before {
-  background: rgba(229, 62, 62, 0.1);
-  transform: scale(0);
-}
-
-.btn-eliminar-adjunto:hover {
-  color: #c53030;
-  transform: scale(1.18);
-}
-
-.btn-eliminar-adjunto:hover::before {
-  transform: scale(1);
-}
-
-.comentario-nuevo-compact {
-  margin-bottom: 6px;
-  background: #f1f5f9;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  flex-shrink: 0;
-}
-
-.textarea-autoresize {
-  resize: none;
-  min-height: 60px;
-  overflow-y: hidden;
-  transition: height 0.1s ease;
-}
-
-.mencion-dropdown {
-  position: fixed;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-  z-index: 10000;
-  max-height: 220px;
-  overflow-y: auto;
-}
-
-.mencion-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  font-size: 0.85rem;
-  color: #2d3748;
-  transition: background 0.1s;
-}
-
-.mencion-item:hover,
-.mencion-item.mencion-activa {
-  background: #eef2ff;
-  color: #4c51bf;
-}
-
-/* Adjuntos directos de tarea */
-.adjuntos-directos-lista {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 2px;
-}
-
-.adjunto-directo-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  background: #f1f5f9;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-  cursor: pointer;
-  font-size: 0.8rem;
-  color: #4c51bf;
-  transition: background 0.15s;
-}
-
-.adjunto-directo-item:hover {
-  background: #e0e7ff;
-}
-
-.adjunto-directo-item .adj-nombre {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.comentario-tools {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 5px;
-}
-
-.btn-clip {
-  background: none;
-  border: none;
-  color: #4a5568;
-  cursor: pointer;
-  font-size: 1.1rem;
-}
-
-.btn-send-mini {
-  background: #667eea;
-  color: white;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-.btn-send-mini:disabled { background: #cbd5e0; }
-
-.comentario-nuevo-compact {
-  transition: outline 0.15s, background 0.15s;
-}
-
-.drag-activo-comentario {
-  outline: 2px dashed #667eea;
-  border-radius: 8px;
-  background: #eef2ff;
-}
-
-.drag-overlay-comentario {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: rgba(238, 242, 255, 0.92);
-  border-radius: 8px;
-  font-size: 0.9rem;
-  color: #667eea;
-  font-weight: 600;
-  pointer-events: none;
-}
-
-.drag-overlay-comentario i {
-  font-size: 1.6rem;
-}
-
-.mini-files-preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 5px;
-}
-.mini-file-tag {
-  background: #e2e8f0;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  display: flex;
-  gap: 5px;
-  align-items: center;
-}
-.adjunto-size-mini {
-  color: #718096;
-  font-size: 0.7rem;
-}
-.remove-file { cursor: pointer; color: red; font-weight: bold; }
-
-/* Info adicional left */
-.info-adicional-left {
-  margin-top: 20px;
-  border-top: 1px solid #eee;
-  padding-top: 10px;
-}
-
-.adjunto-item-compact {
-  font-size: 0.8rem;
-  color: #667eea;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2px 0;
-}
-.adjunto-item-compact:hover { text-decoration: underline; }
-</style>
+<style scoped src="./TareaDetalleModal.css"></style>
