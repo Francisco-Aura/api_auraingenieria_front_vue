@@ -1,13 +1,10 @@
 <template>
   <!-- Contenedor principal del módulo de gestión de clientes -->
   <div class="clientes-container fade-in">
-    <!-- Loading spinner -->
-    <Spinner :isLoading="loading" />
-
     <!-- Panel superior con stats y botón de crear cliente -->
     <div class="stats-panel">
       <div class="stats-container">
-        <div class="stat-card" style="animation-delay: 0s">
+        <div class="stat-card stat-card--clientes">
           <div class="stat-icon">
             <i class="fas fa-users"></i>
           </div>
@@ -16,7 +13,7 @@
             <div class="stat-label">Total Clientes</div>
           </div>
         </div>
-        <div class="stat-card" style="animation-delay: 0.1s">
+        <div class="stat-card stat-card--puntos">
           <div class="stat-icon">
             <i class="fas fa-bolt"></i>
           </div>
@@ -25,7 +22,7 @@
             <div class="stat-label">Puntos Suministro</div>
           </div>
         </div>
-        <div class="stat-card" style="animation-delay: 0.2s">
+        <div class="stat-card stat-card--sectores">
           <div class="stat-icon">
             <i class="fas fa-industry"></i>
           </div>
@@ -70,7 +67,7 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th class="sortable" style="width: 20%">
+              <th class="sortable th-col-nombre">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('nombre')">
                     <i class="fas fa-user mr-2"></i>Nombre Cliente
@@ -88,7 +85,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 15%">
+              <th class="sortable th-col-cif">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('cif')">
                     <i class="fas fa-id-card mr-2"></i>CIF
@@ -106,7 +103,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 15%">
+              <th class="sortable th-col-grupo">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('nombreComercial')">
                     <i class="fas fa-building mr-2"></i>Grupo Empresarial
@@ -124,7 +121,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 15%">
+              <th class="sortable th-col-sector">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('nombreSector')">
                     <i class="fas fa-industry mr-2"></i>Sector
@@ -178,7 +175,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 25%">
+              <th class="sortable th-col-dirfiscal">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('direccionFiscal')">
                     <i class="fas fa-map-marker-alt mr-2"></i>Dirección Fiscal
@@ -196,7 +193,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 15%">
+              <th class="sortable th-col-ps">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('numeroPuntosSuministro')">
                     <i class="fas fa-bolt mr-2"></i>PS
@@ -214,7 +211,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 15%">
+              <th class="sortable th-col-usuario">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('usuarioAsignado')">
                     <i class="fas fa-user-tie mr-2"></i>Usuario
@@ -232,7 +229,7 @@
                   </div>
                 </div>
               </th>
-              <th style="width: 10%">
+              <th class="th-col-acciones-cli">
                 <div class="column-header">
                   <div class="column-title">
                     <i class="fas fa-cogs mr-2"></i>Acciones
@@ -242,7 +239,12 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="cliente in paginatedClientes" :key="cliente.idCliente" 
+            <template v-if="loading">
+              <tr v-for="n in 8" :key="'skeleton-' + n" class="skeleton-row">
+                <td v-for="col in 7" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
+              </tr>
+            </template>
+            <tr v-for="cliente in paginatedClientes" v-show="!loading" :key="cliente.idCliente" 
                 :class="{ 'cliente-dado-baja': estaClienteDadoDeBaja(cliente) }">
               <td class="text-truncate" :title="cliente.nombre">
                 <div class="cliente-cell">
@@ -259,7 +261,7 @@
               <td>
                 <div class="ps-cell">
                   <span class="ps-badge">{{ cliente.numeroPuntosSuministro }}</span>
-                  <button class="btn-icon btn-view" @click="verPuntosSuministro(cliente)" title="Ver puntos de suministro">
+                  <button class="btn-icon btn-view" @click="verPuntosSuministro(cliente)" title="Ver puntos de suministro" aria-label="Ver puntos de suministro">
                     <i class="fas fa-eye"></i>
                   </button>
                 </div>
@@ -273,14 +275,13 @@
                   <button class="btn-icon btn-add" 
                     @click="abrirFormularioNuevoPunto(cliente)" 
                     :disabled="estaClienteDadoDeBaja(cliente)"
-                    :title="estaClienteDadoDeBaja(cliente) ? 'No se pueden crear puntos de suministro en un cliente dado de baja' : 'Crear Punto de Suministro'"
-                    :style="estaClienteDadoDeBaja(cliente) ? 'opacity: 0.4; cursor: not-allowed;' : ''">
+                    :title="estaClienteDadoDeBaja(cliente) ? 'No se pueden crear puntos de suministro en un cliente dado de baja' : 'Crear Punto de Suministro'">
                     <i class="fas fa-plus-circle"></i>
                   </button>
                 </div>
               </td>
             </tr>
-            <tr v-if="paginatedClientes.length === 0">
+            <tr v-if="!loading && paginatedClientes.length === 0">
               <td colspan="7" class="text-center py-4">
                 <div class="empty-state">
                   <i class="fas fa-search fa-3x text-muted"></i>
@@ -379,7 +380,6 @@
 
 <script>
 import axios from "axios";
-import Spinner from "@/components/SpinnerComponent.vue";
 import PuntosSuministroClienteComponent from "@/components/CRM_Module/Clientes/PuntosSuministroClienteComponent.vue";
 import CreaActualizaClienteComponent from "@/components/CRM_Module/Clientes/CreaActualizaClientesComponent.vue";
 import ModalActualizarPuntoSuministro from "@/components/CRM_Module/PuntosSuministro/ActualizarPuntoSuministro.vue";
@@ -388,7 +388,6 @@ import ExcelJS from 'exceljs';
 export default {
   name: "ClientesComponent",
   components: {
-    Spinner,
     PuntosSuministroClienteComponent,
     CreaActualizaClienteComponent,
     ModalActualizarPuntoSuministro
@@ -967,792 +966,6 @@ export default {
 };
 </script>
 
-<style scoped>
-/* Grid layout para el contenedor principal */
-.clientes-container {
-  display: grid;
-  grid-template-rows: auto auto auto 1fr;
-  gap: 20px;
-  padding: 20px;
-  max-width: 90%;
-  margin: 0 auto;
-}
-
-/* Panel de la tabla */
-.table-panel {
-  background: white;
-  border-radius: 0.7rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-
-/* Panel de estadísticas */
-.stats-panel {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-}
-
-.stats-container {
-  display: flex;
-  flex: 1;
-  gap: 20px;
-}
-
-.stat-card {
-  background-color: var(--surface-color);
-  border-radius: var(--border-radius);
-  box-shadow: var(--card-shadow);
-  padding: 0.7rem 1rem;
-  display: flex;
-  align-items: center;
-  transition: all 0.3s ease;
-  flex: 1;
-  animation: statCardEntrance 0.5s ease both;
-}
-
-@keyframes statCardEntrance {
-  from {
-    opacity: 0;
-    transform: translateY(15px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-}
-
-.stat-icon {
-  width: 2.8rem;
-  height: 2.8rem;
-  border-radius: 0.7rem;
-  background-color: var(--primary-light);
-  color: black;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  margin-right: 0.8rem;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-top: 0.2rem;
-}
-
-.action-card {
-  border-radius: var(--border-radius);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  min-width: auto;
-}
-
-.action-card .btn {
-  /* Los estilos de .btn-primary tienen prioridad */
-}
-
-.action-card .btn:hover {
-  /* Los estilos de hover de .btn-primary tienen prioridad */
-}
-
-
-.table-header {
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.table-actions-horizontal {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  margin-left: auto;
-}
-
-.btn-export {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-export i {
-  font-size: 1.2em;
-}
-
-.btn-icon {
-  background: transparent;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  padding: 0;
-  margin: 0;
-}
-
-.btn-icon i {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.btn-icon.btn-edit {
-  color: #2196f3; /* Azul para editar */
-}
-.btn-icon.btn-edit:hover {
-  background-color: rgba(33,150,243,0.1);
-}
-
-.btn-icon.btn-view {
-  color: #43a047; /* Verde para ver */
-}
-.btn-icon.btn-view:hover {
-  background-color: rgba(67,160,71,0.1);
-}
-
-.btn-icon.btn-add {
-  color: #ff9800; /* Naranja para agregar */
-}
-.btn-icon.btn-add:hover {
-  background-color: rgba(255,152,0,0.1);
-}
-
-.ps-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: center;
-}
-
-.ps-badge {
-  background-color: var(--primary-light);
-  color: black;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.table-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  background-color: var(--surface-color);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.records-per-page {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.records-per-page label {
-  color: var(--text-secondary);
-  font-weight: 500;
-  font-size: 14px; /* Reducir tamaño de fuente */
-}
-
-.records-per-page select {
-  width: auto; /* Ajustar ancho */
-  padding: 6px 8px; /* Ajustar padding */
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: white;
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.sortable {
-  cursor: pointer;
-  user-select: none;
-}
-
-.sortable:hover {
-  background-color: var(--hover-color);
-}
-
-.pagination-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  background-color: var(--surface-color);
-  border-top: 1px solid var(--border-color);
-}
-
-.pagination-info {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  background-color: white;
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.pagination-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: white;
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.page-info {
-  color: var(--text-primary);
-  font-weight: 500;
-  padding: 0 10px;
-}
-
-.btn-outline {
-  background: white;
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-  min-width: 40px;
-}
-
-.btn-outline:hover:not(:disabled) {
-  background-color: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.btn-outline:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: #f5f5f5;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-bottom: 0;
-}
-
-.data-table th {
-  background-color: var(--surface-color);
-  color: var(--text-primary);
-  font-weight: 600;
-  padding: 15px;
-  text-align: left;
-  border-bottom: 2px solid var(--border-color);
-  white-space: nowrap;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.data-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
-  height: 52px; /* Altura fija para las filas */
-}
-
-/* Row fade-in animation */
-.data-table tbody tr {
-  animation: rowFadeIn 0.3s ease both;
-}
-.data-table tbody tr:nth-child(1) { animation-delay: 0s; }
-.data-table tbody tr:nth-child(2) { animation-delay: 0.03s; }
-.data-table tbody tr:nth-child(3) { animation-delay: 0.06s; }
-.data-table tbody tr:nth-child(4) { animation-delay: 0.09s; }
-.data-table tbody tr:nth-child(5) { animation-delay: 0.12s; }
-.data-table tbody tr:nth-child(n+6) { animation-delay: 0.15s; }
-
-@keyframes rowFadeIn {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-/* Highlight flash for recently updated rows */
-.row-highlight {
-  animation: highlightFlash 1.5s ease;
-}
-@keyframes highlightFlash {
-  0% { background-color: rgba(76, 175, 80, 0.3); }
-  100% { background-color: transparent; }
-}
-
-.text-truncate {
-  max-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.table-responsive {
-  overflow-x: auto;
-  background-color: white;
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  min-width: 120px; /* Ancho mínimo para los botones de acción */
-}
-
-.column-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.column-title {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-}
-
-.column-title:hover {
-  background-color: var(--hover-color);
-}
-
-.column-filter-container {
-  position: relative;
-}
-
-.column-filter {
-  width: 100%;
-  padding: 6px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 0.9rem;
-  background-color: white;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.column-filter:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
-}
-
-.column-filter::placeholder {
-  color: var(--text-secondary);
-  opacity: 0.7;
-}
-
-.data-table th {
-  padding: 12px;
-  vertical-align: top;
-  background-color: var(--surface-color);
-  border-bottom: 2px solid var(--border-color);
-}
-
-.data-table th i {
-  margin-left: 4px;
-  font-size: 0.9em;
-  color: var(--text-secondary);
-}
-
-.sortable .column-title {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.sortable .column-title:hover {
-  color: var(--primary-color);
-}
-
-/* Estilos para el dropdown de sectores */
-.sector-filter-dropdown {
-  position: relative;
-}
-
-.dropdown-button {
-  background-color: var(--surface-color);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 100%;
-  text-align: left;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.dropdown-button:hover {
-  background-color: var(--hover-color);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.dropdown-button.active {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.dropdown-button i {
-  transition: transform 0.3s ease;
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  background-color: white;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  z-index: 1000;
-  max-height: 200px;
-  overflow-y: auto;
-  margin-top: 5px;
-}
-
-.dropdown-item {
-  padding: 8px 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  transition: all 0.2s ease;
-}
-
-.dropdown-item:hover {
-  background-color: var(--hover-color);
-  color: var(--primary-color);
-}
-
-.dropdown-item.checked {
-  background-color: var(--primary-light);
-  color: black;
-}
-
-.dropdown-item.checked:hover {
-  background-color: var(--primary-light);
-  color: black;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 10px;
-}
-
-.checkbox-label input {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-  height: 0;
-  width: 0;
-}
-
-.checkmark {
-  height: 18px;
-  width: 18px;
-  background-color: white;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  margin-right: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.checkbox-label input:checked ~ .checkmark {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-.checkbox-label input:checked ~ .checkmark:after {
-  content: "";
-  display: block;
-  width: 6px;
-  height: 12px;
-  border: solid white;
-  border-width: 0 3px 3px 0;
-  transform: rotate(45deg);
-  margin-top: -1px;
-}
-
-.checkmark:after {
-  content: "";
-  display: none;
-}
-
-/* Estilos para clientes dados de baja */
-.cliente-dado-baja {
-  background-color: rgba(220, 53, 69, 0.05) !important;
-  opacity: 0.7;
-}
-
-.cliente-dado-baja:hover {
-  background-color: rgba(220, 53, 69, 0.1) !important;
-  opacity: 0.8;
-}
-
-.cliente-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.cliente-nombre {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-.baja-indicator {
-  color: #dc3545;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: rgba(220, 53, 69, 0.1);
-  flex-shrink: 0;
-}
-
-/* Estilos Generales de Botones - Actualizados */
-.btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
-  padding: 10px 20px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  font-size: 0.95rem !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  border: none !important;
-  cursor: pointer !important;
-  letter-spacing: 0.3px !important;
-}
-
-.btn i {
-  font-size: 1.1em !important;
-}
-
-/* Estilos de botones profesionales */
-/* Botón Refresh/Actualizar */
-.btn-refresh {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1) !important;
-}
-
-.btn-refresh:hover:not(:disabled) {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.15) !important;
-}
-
-.btn-refresh:disabled {
-  opacity: 0.6 !important;
-  cursor: not-allowed !important;
-  transform: none !important;
-  box-shadow: none !important;
-  background: #9ca3af !important;
-}
-
-/* Botón Excel */
-.btn-excel {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1) !important;
-}
-
-.btn-excel:hover {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15) !important;
-}
-
-/* Botón Primary (Crear, Guardar, etc) */
-.btn-primary {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
-}
-
-.btn-primary i {
-  font-size: 1.1em !important;
-}
-
-/* Botón Create (Alias para Primary) */
-.btn-create {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
-}
-
-.btn-create:hover {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
-}
-
-.btn-create i {
-  font-size: 1.1em !important;
-}
-
-/* Botón Toggle Baja (Mostrar/Ocultar dados de baja) */
-.btn-toggle-baja {
-  background: #f3f4f6 !important;
-  color: #4b5563 !important;
-  border: 1px solid #e5e7eb !important;
-  font-weight: 600 !important;
-  padding: 10px 20px !important;
-  border-radius: 8px !important;
-  transition: all 0.3s ease !important;
-}
-
-.btn-toggle-baja:hover {
-  background: #e5e7eb !important;
-  color: #1f2937 !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Estado Activo (Rojo) para Toggle Baja */
-.btn-toggle-baja.active {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-  color: white !important;
-  border-color: transparent !important;
-  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1) !important;
-}
-
-.btn-export {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  padding: 10px 20px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  transition: all 0.3s ease !important;
-  border: none !important;
-  cursor: pointer !important;
-}
-
-.btn-export i {
-  font-size: 1.2em !important;
-}
-
-.btn-icon {
-  background: transparent;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  padding: 0;
-  margin: 0;
-}
-
-.btn-icon i {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.btn-icon.btn-edit {
-  color: #2196f3;
-}
-
-.btn-icon.btn-edit:hover {
-  background-color: rgba(33, 150, 243, 0.1);
-}
-
-.btn-icon.btn-view {
-  color: #43a047;
-}
-
-.btn-icon.btn-view:hover {
-  background-color: rgba(67, 160, 71, 0.1);
-}
-
-.btn-icon.btn-delete {
-  color: #dc3545;
-}
-
-.btn-icon.btn-delete:hover {
-  background-color: rgba(220, 53, 69, 0.1);
-}
-</style>
+<style scoped src="./ClientesComponent.css"></style>
 
  

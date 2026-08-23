@@ -1,28 +1,35 @@
 <template>
-  <div v-if="visible" class="modal-overlay">
-    <!-- Loading spinner -->
-    <Spinner :isLoading="cargandoDatos" />
-    
+  <div v-if="visible" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="contratos-modal-title">
     <div class="modal-content">
       <!-- Encabezado del modal -->
       <div class="modal-header">
-        <h1 class="modal-title">Gestión de Contratos</h1>
-        <button type="button" @click="cerrarModal" class="close-button" aria-label="Cerrar">
+        <h1 id="contratos-modal-title" class="modal-title">Gestión de Contratos</h1>
+        <button type="button" @click="cerrarModal" class="close-button" aria-label="Cerrar gestión de contratos">
           <i class="fas fa-times"></i>
         </button>
       </div>
 
       <!-- Contenido principal sin pestañas -->
-      <div v-if="cargandoDatos" class="modal-loading">
-        <div class="loading-spinner">
-          <div class="spinner"></div>
-          <p>Cargando datos del contrato...</p>
+      <div v-if="cargandoDatos" class="main-content-container main-content-skeleton">
+        <div class="client-banner">
+          <div class="client-info">
+            <div class="skeleton-line skeleton-line--lg"></div>
+          </div>
+        </div>
+        <div class="contracts-history">
+          <div class="history-table-container">
+            <table class="history-table">
+              <tbody>
+                <tr v-for="n in 4" :key="'skeleton-' + n" class="skeleton-row">
+                  <td v-for="col in 11" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
       
       <div v-else class="main-content-container">
-        <!-- Debug info (invisible pero ejecuta el computed) -->
-        <span style="display: none;">{{ debugEstadoCarga }}</span>
         
         <!-- Vista principal: Histórico de contratos con formulario de edición/creación cuando sea necesario -->
         <div v-if="!mostrandoFormulario" class="main-content">
@@ -108,10 +115,10 @@
                       </div>
                     </td>
                     <td class="action-buttons">
-                      <button @click="editarContratoGenerico(contrato)" class="btn-icon btn-edit" title="Editar contrato">
+                      <button @click="editarContratoGenerico(contrato)" class="btn-icon btn-edit" title="Editar contrato" aria-label="Editar contrato">
                         <i class="fas fa-edit"></i>
                       </button>
-                      <button @click="renovarContratoGenerico(contrato)" class="btn-icon btn-renew" title="Renovar contrato">
+                      <button @click="renovarContratoGenerico(contrato)" class="btn-icon btn-renew" title="Renovar contrato" aria-label="Renovar contrato">
                         <i class="fas fa-sync-alt"></i>
                       </button>
                       <button @click="verDetalleContrato(contrato)" class="btn-icon btn-view" title="Ver Detalle">
@@ -445,26 +452,57 @@
                   <h3>Documento del Contrato</h3>
                 </div>
                 
-                <div class="pdf-upload-area" @click="mostrarNotificacionSubidaPDF">
+                <label
+                  class="pdf-upload-area"
+                  :class="{ 'is-dragging': arrastrandoPdf, 'has-file': selectedFile, 'has-error': errorArchivoContrato }"
+                  for="contrato-pdf-input"
+                  role="button"
+                  tabindex="0"
+                  :aria-describedby="errorArchivoContrato ? 'contrato-pdf-ayuda contrato-pdf-error' : 'contrato-pdf-ayuda'"
+                  @keydown.enter.prevent="$refs.pdfInput.click()"
+                  @keydown.space.prevent="$refs.pdfInput.click()"
+                  @dragenter.prevent="onPdfDragEnter"
+                  @dragover.prevent="onPdfDragEnter"
+                  @dragleave.prevent="onPdfDragLeave"
+                  @drop.prevent="onPdfDrop"
+                >
                   <div class="pdf-icon">
-                    <i class="fas fa-file-pdf"></i>
+                    <i :class="arrastrandoPdf ? 'fas fa-cloud-upload-alt' : 'fas fa-file-pdf'"></i>
                   </div>
                   <div class="pdf-text">
-                    <span class="pdf-title">Subir contrato PDF</span>
-                    <span class="pdf-desc">Clic para seleccionar archivo</span>
+                    <span class="pdf-title">{{ arrastrandoPdf ? 'Suelta aquí el contrato' : 'Arrastra el contrato o selecciónalo' }}</span>
+                    <span id="contrato-pdf-ayuda" class="pdf-desc">Solo PDF · máximo 10 MB</span>
                   </div>
-                  <input 
-                    type="file" 
-                    ref="pdfInput" 
-                    @change="handleFileUpload" 
-                    accept=".pdf" 
-                    style="display:none" 
+                  <span class="pdf-select-button">Seleccionar PDF</span>
+                  <input
+                    id="contrato-pdf-input"
+                    type="file"
+                    ref="pdfInput"
+                    @change="handleFileUpload"
+                    accept="application/pdf,.pdf"
+                    class="input-file-oculto"
                   />
-                </div>
-                
+                </label>
+
+                <p v-if="errorArchivoContrato" id="contrato-pdf-error" class="pdf-upload-error" role="alert">
+                  <i class="fas fa-exclamation-circle"></i>
+                  {{ errorArchivoContrato }}
+                </p>
+
                 <div v-if="selectedFile" class="file-selected">
-                  <i class="fas fa-file-pdf"></i> 
-                  {{ selectedFile.name }}
+                  <div class="file-selected-icon"><i class="fas fa-file-pdf"></i></div>
+                  <div class="file-selected-info">
+                    <strong>{{ selectedFile.name }}</strong>
+                    <span>{{ formatearTamanoArchivo(selectedFile.size) }}</span>
+                  </div>
+                  <div class="file-selected-actions">
+                    <button type="button" class="btn-file-action btn-file-replace" @click="$refs.pdfInput.click()">
+                      <i class="fas fa-sync-alt"></i> Sustituir PDF
+                    </button>
+                    <button type="button" class="btn-file-action btn-file-remove" @click="limpiarArchivoSeleccionado" aria-label="Quitar PDF seleccionado">
+                      <i class="fas fa-trash-alt"></i> Quitar
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -493,14 +531,14 @@
                   </div>
                   
                   <!-- Indicador de Exención Impuesto Eléctrico -->
-                  <div v-if="tieneExencionImpuestoElectrico" class="info-badge-modern success" style="margin-top: 0.4rem;">
+                  <div v-if="tieneExencionImpuestoElectrico" class="info-badge-modern success margen-reducido">
                     <i class="fas fa-bolt"></i>
                     <div class="badge-content">
                       <span class="badge-title">Exención Impuesto Eléctrico:</span>
                       <strong>Sí</strong>
                     </div>
                   </div>
-                  <div v-else class="info-badge-modern neutral" style="margin-top: 0.4rem;">
+                  <div v-else class="info-badge-modern neutral margen-reducido">
                     <i class="fas fa-bolt"></i>
                     <div class="badge-content">
                       <span class="badge-title">Exención Impuesto Eléctrico:</span>
@@ -561,7 +599,7 @@
                 <button type="button" @click="cancelarFormulario" class="btn-modern btn-secondary">
                   <i class="fas fa-times"></i> Cancelar
                 </button>
-                <button type="submit" class="btn-modern btn-primary">
+                <button type="submit" class="btn-modern btn-primary" :disabled="guardando" :aria-busy="guardando">
                   <i class="fas fa-save"></i> {{ textoBotonGuardar }}
                 </button>
               </div>
@@ -576,7 +614,7 @@
       <div class="modal-content detalle-contrato-content">
         <div class="modal-header">
           <h2><i class="fas fa-file-contract"></i> Detalle del Contrato</h2>
-          <button type="button" @click="cerrarModalDetalleContrato" class="close-button" aria-label="Cerrar">
+          <button type="button" @click="cerrarModalDetalleContrato" class="close-button" aria-label="Cerrar detalle del contrato">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -728,13 +766,10 @@
 import axios from "axios";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import Spinner from "@/components/SpinnerComponent.vue";
 
 export default {
   name: "ModalContratos",
-  components: {
-    Spinner
-  },
+  components: {},
   props: {
     visible: {
       type: Boolean,
@@ -807,6 +842,7 @@ export default {
       modoRenovacion: false,
       contratoEditandoId: null,
       cargandoDatos: false, // Inicializar en false para evitar spinner innecesario
+      guardando: false,
       nuevoContrato: {
         idCliente:"",
         idPuntoSuministro:"",        
@@ -840,6 +876,8 @@ export default {
       errores: {},
       contratoOriginalIdRenovar: null,
       selectedFile: null,
+      arrastrandoPdf: false,
+      errorArchivoContrato: '',
       mostrarModalDetalleContrato: false,
       contratoDetalle: null,
       clienteDetalle: null,
@@ -848,7 +886,66 @@ export default {
 
   methods: {
     handleFileUpload(event) {
-      this.selectedFile = event.target.files[0];
+      const archivo = event.target.files?.[0];
+      if (!archivo) return false;
+      return this.procesarArchivoContrato(archivo);
+    },
+
+    procesarArchivoContrato(archivo) {
+      if (!archivo) return false;
+
+      const esPdf = archivo.type === 'application/pdf' || archivo.name.toLowerCase().endsWith('.pdf');
+      if (!esPdf) {
+        this.mostrarErrorArchivo('El archivo seleccionado debe ser un PDF.');
+        return false;
+      }
+      if (archivo.size > 10 * 1024 * 1024) {
+        this.mostrarErrorArchivo('El PDF no puede superar los 10 MB.');
+        return false;
+      }
+      this.errorArchivoContrato = '';
+      this.selectedFile = archivo;
+      return true;
+    },
+
+    onPdfDragEnter() {
+      this.arrastrandoPdf = true;
+    },
+
+    onPdfDragLeave() {
+      this.arrastrandoPdf = false;
+    },
+
+    onPdfDrop(event) {
+      this.arrastrandoPdf = false;
+      const archivo = event?.dataTransfer?.files?.[0];
+      if (archivo) this.procesarArchivoContrato(archivo);
+    },
+
+    formatearTamanoArchivo(bytes) {
+      if (!Number.isFinite(Number(bytes)) || Number(bytes) <= 0) return '0 KB';
+      const size = Number(bytes);
+      if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`;
+      return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    },
+
+    limpiarArchivoSeleccionado() {
+      this.selectedFile = null;
+      this.errorArchivoContrato = '';
+      this.arrastrandoPdf = false;
+      if (this.$refs?.pdfInput) this.$refs.pdfInput.value = '';
+    },
+
+    mostrarErrorArchivo(mensaje) {
+      this.selectedFile = null;
+      this.errorArchivoContrato = mensaje;
+      if (this.$refs?.pdfInput) this.$refs.pdfInput.value = '';
+      this.$swal.fire({
+        icon: 'warning',
+        title: 'PDF no válido',
+        text: mensaje,
+        confirmButtonColor: 'rgba(252, 215, 0)'
+      });
     },
     validarContrato() {
       this.errores = {};
@@ -1191,9 +1288,15 @@ export default {
       this.contratoEditandoId = null;
       this.contratoOriginalIdRenovar = null;
       this.selectedFile = null;
+      this.errorArchivoContrato = '';
+      this.arrastrandoPdf = false;
     },
 
     async guardarContrato() {
+      if (this.guardando) {
+        return;
+      }
+
       if (!this.validarContrato()) {
         this.$swal.fire({
           icon: 'warning',
@@ -1204,6 +1307,8 @@ export default {
         });
         return;
       }
+
+      this.guardando = true;
       try {
         // Copiar los valores de los inputs pot1...pot6 a potencia1...potencia6 antes de enviar
         for (let i = 1; i <= 6; i++) {
@@ -1245,8 +1350,8 @@ export default {
           } else if (this.modoRenovacion && this.contratoOriginalIdRenovar) {
             response = await axios.post(
               `${process.env.VUE_APP_API_URL}/contratos/renovar/${this.contratoOriginalIdRenovar}`,
-              this.nuevoContrato,
-              { headers: { 'Content-Type': 'application/json' } }
+              formData,
+              { headers: { 'Content-Type': 'multipart/form-data' } }
             );
           } else {
             response = await axios.post(
@@ -1306,6 +1411,7 @@ export default {
         
         // Volver a la vista principal
         this.cancelarFormulario();
+        this.limpiarArchivoSeleccionado();
         
       } catch (error) {
         console.error("Error al guardar el contrato:", error);
@@ -1318,6 +1424,8 @@ export default {
           confirmButtonColor: 'rgba(252, 215, 0)',
           confirmButtonText: 'Aceptar'
         });
+      } finally {
+        this.guardando = false;
       }
     },
 
@@ -1440,6 +1548,8 @@ export default {
       this.contratoEditandoId = null;
       this.contratoOriginalIdRenovar = null;
       this.selectedFile = null;
+      this.errorArchivoContrato = '';
+      this.arrastrandoPdf = false;
       this.mostrarModalDetalleContrato = false;
       this.contratoDetalle = null;
       this.clienteDetalle = null;
@@ -1482,15 +1592,6 @@ export default {
       doc.save(`contrato_${contrato.contrato || 'detalle'}.pdf`);
     },
 
-    mostrarNotificacionSubidaPDF() {
-      this.$swal.fire({
-        title: 'Función en Desarrollo',
-        text: 'La funcionalidad de subida de contratos PDF será implementada según las indicaciones del cliente.',
-        icon: 'info',
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: 'rgba(252, 215, 0)'
-      });
-    },
 
     async cargarComercializadoras() {
       try {
@@ -1729,23 +1830,6 @@ export default {
     // Contrato vigente unificado (usa contratoActual del padre o calcula internamente)
     contratoVigente() {
       return this.contratoActual || this.contratoActualCalculado;
-    },
-    
-    // Debug computed para entender el estado de carga
-    debugEstadoCarga() {
-      const info = {
-        cargandoDatos: this.cargandoDatos,
-        mostrandoFormulario: this.mostrandoFormulario,
-        visible: this.visible,
-        tieneContratos: this.contratos?.length || 0,
-        tieneHistoricos: this.contratosHistoricos?.length || 0,
-        tarifasGas: this.tarifasGas?.length || 0,
-        tarifasLuz: this.tarifasLuz?.length || 0,
-        shouldShowSpinner: this.cargandoDatos,
-        shouldShowMain: !this.cargandoDatos && !this.mostrandoFormulario,
-        shouldShowForm: !this.cargandoDatos && this.mostrandoFormulario
-      };
-      return info;
     }
   },
   watch: {
@@ -2000,1592 +2084,4 @@ export default {
 };
 </script>
 
-<style scoped>
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
-
-/* Variables CSS para consistencia */
-:root {
-  --primary-color: rgba(252, 215, 0);
-  --surface-color: #ffffff;
-  --border-color: #e0e0e0;
-  --text-primary: #333333;
-  --text-secondary: #666666;
-}
-
-/* Contenedor principal sin pestañas */
-.main-content-container {
-  flex: 1;
-  background-color: #f8f9fa;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.main-content, .form-content {
-  padding: 20px;
-  height: 100%;
-  overflow-y: auto;
-}
-
-/* Botones de acción principales */
-.action-buttons-main {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 25px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.btn-warning {
-  background-color: #ffc107;
-  color: #212529;
-}
-
-.btn-warning:hover:not(:disabled) {
-  background-color: #e0a800;
-  transform: translateY(-1px);
-}
-
-.btn-success {
-  background-color: #198754;
-  color: white;
-}
-
-.btn-success:hover:not(:disabled) {
-  background-color: #157347;
-  transform: translateY(-1px);
-}
-
-/* Histórico de contratos */
-.contracts-history {
-  background: #fff;
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.contracts-history h3 {
-  margin: 0 0 20px 0;
-  color: #333;
-  font-size: 1.3rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Tabla del histórico */
-.history-table-container {
-  overflow: visible;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  margin-top: 1rem;
-  position: relative;
-}
-
-.history-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.history-table th {
-  background: #f8f9fa;
-  padding: 12px 8px;
-  text-align: left;
-  font-weight: 600;
-  color: #495057;
-  border-bottom: 2px solid #dee2e6;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-
-.history-table td {
-  padding: 10px 8px;
-  border-bottom: 1px solid #e9ecef;
-  vertical-align: middle;
-}
-
-.history-row:hover {
-  background-color: #f8f9fa;
-}
-
-.contract-number {
-  font-weight: 600;
-  color: #495057;
-}
-
-/* Indicadores de estado */
-.status-indicators {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.status-badge {
-  padding: 2px 6px;
-  border-radius: 12px;
-  font-size: 0.7rem;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.status-badge.autoconsumo {
-  background: #d4edda;
-  color: #155724;
-}
-
-.status-badge.denuncia {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.status-badge.normal {
-  background: #e2e3e5;
-  color: #383d41;
-}
-
-.status-badge.exencion {
-  background: #fff3cd;
-  color: #856404;
-}
-
-/* Botones de acción en la tabla */
-.action-buttons {
-  display: flex;
-}
-
-.btn-icon {
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  transition: all 0.2s ease;
-  position: relative;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  color: #495057;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-}
-
-.btn-icon:not(:disabled):hover {
-  background: #f8f9fa;
-  border-color: #ffd600;
-  color: #ffd600;
-  transform: scale(1.12);
-}
-
-.btn-icon:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-icon.btn-delete {
-  color: #dc3545; /* Rojo para eliminar */
-}
-.btn-icon.btn-delete:hover {
-  background-color: rgba(220,53,69,0.1);
-  border-color: #dc3545;
-  color: #dc3545;
-}
-
-/* Tooltips mejorados */
-.btn-icon:hover::after {
-  content: attr(title);
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.9);
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  z-index: 10000;
-  pointer-events: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.btn-icon:hover::before {
-  content: '';
-  position: absolute;
-  bottom: calc(100% + 2px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid rgba(0, 0, 0, 0.9);
-  z-index: 10000;
-  pointer-events: none;
-}
-
-/* No history message */
-.no-history {
-  text-align: center;
-  padding: 40px 20px;
-  color: #6c757d;
-  background: #f8f9fa;
-  border-radius: 12px;
-}
-
-.no-history i {
-  font-size: 3rem;
-  margin-bottom: 15px;
-  color: #dee2e6;
-}
-
-.no-history p {
-  font-size: 1.1rem;
-  margin-bottom: 20px;
-}
-
-/* Estados de contrato en la tabla */
-.contrato-vigente {
-  background-color: rgba(252, 215, 0, 0.1) !important;
-  border-left: 4px solid rgba(252, 215, 0) !important;
-}
-
-.status-vigente {
-  color: #198754;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.status-vigente i {
-  color: #198754;
-  animation: pulse 2s infinite;
-}
-
-.status-historico {
-  color: #6c757d;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
-
-/* ===== MODALES COMPACTADOS ===== */
-
-/* Estilos base del modal compacto */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 0.4rem;
-  width: 95%;
-  max-width: 95%;
-  height: 95vh;
-  max-height: 95vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-  overflow: hidden;
-}
-
-.modal-header {
-  padding: 0.8rem 0 0.8rem 1.3rem;
-  border-bottom: 1px solid #e0e0e0;
-  background: var(--primary-color);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: black;
-  flex-grow: 1;
-}
-
-.close-button {
-  align-self: stretch;
-  min-width: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #c0392b;
-  border: none;
-  border-left: 1px solid rgba(0, 0, 0, 0.12);
-  font-size: 0.9rem;
-  cursor: pointer;
-  color: white;
-  border-radius: 0 0.4rem 0 0;
-  transition: background-color 0.15s ease;
-  flex-shrink: 0;
-}
-
-.close-button:hover {
-  background-color: #96281b;
-  color: white;
-  border-left-color: transparent;
-}
-
-/* Banner del cliente compacto */
-.client-banner {
-  background: linear-gradient(135deg, #fff3cd 0%, #fffbe6 100%);
-  border-radius: 0.3rem;
-  padding: 0.6rem 0.8rem;
-  margin-bottom: 0.8rem;
-  border: 1px solid #ffe082;
-}
-
-.client-info h4 {
-  margin: 0 0 2px 0;
-  color: #333;
-  font-size: 1rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.client-header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.client-info span {
-  color: #666;
-  font-size: 0.85rem;
-}
-
-.client-details {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.client-details span {
-  color: #666;
-  font-size: 0.85rem;
-}
-
-/* Formulario compacto */
-.modern-form {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  gap: 0.6rem;
-}
-
-/* Grid compacto */
-.form-grid-modern {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.6rem;
-  margin-bottom: 0.6rem;
-}
-
-.form-section-modern {
-  background: var(--surface-color);
-  border-radius: 0.3rem;
-  border: 1px solid var(--border-color);
-  padding: 0.6rem;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-.form-section-modern.full-width {
-  grid-column: 1 / -1;
-}
-
-/* Encabezados compactos */
-.section-header-modern {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.6rem;
-  gap: 0.4rem;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.section-header-modern i {
-  font-size: 1rem;
-  color: black;
-  width: 16px;
-}
-
-.section-header-modern h3 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-/* Grupos de formulario compactos */
-.form-group-modern {
-  margin-bottom: 0.5rem;
-}
-
-.form-group-modern label {
-  display: block;
-  margin-bottom: 0.2rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.required {
-  color: #e74c3c;
-  margin-left: 2px;
-}
-
-/* Validación de errores */
-.input-error,
-.input-error:focus {
-  border-color: #e74c3c !important;
-  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15) !important;
-}
-.select-error select {
-  border-color: #e74c3c !important;
-  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15) !important;
-}
-.error-text {
-  display: block;
-  color: #e74c3c;
-  font-size: 0.72rem;
-  margin-top: 2px;
-  line-height: 1.2;
-}
-
-/* Inputs compactos */
-.input-with-icon-modern {
-  position: relative;
-}
-
-.icon-prefix {
-  position: absolute;
-  left: 0.4rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #aaa;
-  font-size: 0.8rem;
-  width: 14px;
-  z-index: 1;
-}
-
-.input-with-icon-modern .form-control-modern {
-  padding-left: 1.3rem;
-}
-
-.form-control-modern {
-  width: 100%;
-  padding: 0.25rem 0.4rem;
-  border: 1px solid #ddd;
-  border-radius: 0.2rem;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-  color: var(--text-primary);
-  background-color: white;
-  height: 28px;
-}
-
-.form-control-modern:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(252, 215, 0, 0.1);
-  outline: none;
-}
-
-.textarea-modern {
-  height: auto !important;
-  resize: vertical;
-  min-height: 80px;
-  max-height: 400px;
-  padding-top: 0.4rem;
-  line-height: 1.4;
-  overflow-y: auto;
-}
-
-.section-observaciones-compartidas {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  padding-bottom: 0.7rem;
-}
-
-.observaciones-compartidas {
-  display: grid;
-  grid-template-rows: minmax(0, 1.65fr) minmax(0, 1fr);
-  gap: 0.55rem;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.campo-compartido {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.campo-compartido label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-bottom: 0.2rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.campo-compartido .textarea-modern {
-  flex: 1 1 auto;
-  height: 100% !important;
-  min-height: 0 !important;
-  max-height: none;
-  resize: vertical;
-  padding-top: 0.45rem;
-  line-height: 1.34;
-}
-
-.textarea-observaciones-compartida {
-  font-size: 0.84rem;
-}
-
-.textarea-comentario-renovacion {
-  font-size: 0.82rem;
-}
-
-/* Selectores compactos */
-.form-select-modern {
-  width: 100%;
-  padding: 0.25rem 0.4rem;
-  border: 1px solid #ddd;
-  border-radius: 0.2rem;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-  color: var(--text-primary);
-  background-color: white;
-  height: 28px;
-  cursor: pointer;
-}
-
-.form-select-modern:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(252, 215, 0, 0.1);
-  outline: none;
-}
-
-/* Potencias contratadas compactas */
-.potencias-contratadas {
-  margin-bottom: 0;
-  padding: 0;
-}
-
-.potencias-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.4rem;
-}
-
-.potencia-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.potencia-item label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 0.1rem;
-}
-
-.potencia-item input {
-  border: 1px solid #ddd;
-  border-radius: 0.2rem;
-  background: white;
-  padding: 0.25rem 0.4rem;
-  font-size: 0.85rem;
-  height: 28px;
-  width: 100%;
-  transition: border-color 0.2s;
-}
-
-.potencia-item input:focus {
-  border-color: var(--primary-color);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(252, 215, 0, 0.1);
-}
-
-/* Potencias contratadas compactas integradas */
-.potencias-label {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.4rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.potencias-contratadas-compactas {
-  background: #f8f9fa;
-  border-radius: 0.3rem;
-  padding: 0.6rem;
-  border: 1px solid #e9ecef;
-}
-
-.potencias-grid-compacta {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 0.4rem;
-}
-
-.potencia-item-compacta {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
-}
-
-.potencia-label-compacta {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 0.1rem;
-  text-align: center;
-}
-
-.potencia-input-compacta {
-  width: 100%;
-  height: 26px;
-  border: 1px solid #ddd;
-  border-radius: 0.2rem;
-  background: white;
-  padding: 0.2rem 0.3rem;
-  font-size: 0.75rem;
-  text-align: center;
-  transition: all 0.2s;
-}
-
-.potencia-input-compacta:focus {
-  border-color: var(--primary-color);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(252, 215, 0, 0.1);
-}
-
-.potencia-input-compacta::placeholder {
-  color: #aaa;
-  font-size: 0.7rem;
-}
-
-/* Área de subida de PDF compacta */
-.pdf-upload-area {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  background: #f8f9fa;
-  border: 2px dashed #ddd;
-  border-radius: 0.3rem;
-  padding: 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.pdf-upload-area:hover {
-  border-color: var(--primary-color);
-  background: #fff9e6;
-}
-
-.pdf-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #e74c3c;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1rem;
-}
-
-.pdf-text {
-  flex: 1;
-}
-
-.pdf-title {
-  display: block;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 0.1rem;
-  font-size: 0.9rem;
-}
-
-.pdf-desc {
-  display: block;
-  font-size: 0.75rem;
-  color: #666;
-}
-
-.file-selected {
-  margin-top: 0.4rem;
-  padding: 0.4rem 0.6rem;
-  background: #fff6f4;
-  border: 1px solid #ffe0db;
-  border-radius: 0.2rem;
-  color: #e74c3c;
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-/* Checkboxes compactos */
-.checkbox-input-modern {
-  display: none;
-}
-
-.checkbox-custom-modern {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--border-color);
-  border-radius: 0.2rem;
-  margin-right: 0.4rem;
-  position: relative;
-  transition: all 0.3s ease;
-  background-color: white;
-}
-
-.checkbox-input-modern:checked + .checkbox-custom-modern {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-.checkbox-input-modern:checked + .checkbox-custom-modern::after {
-  content: '\f00c';
-  font-family: 'Font Awesome 5 Free';
-  font-weight: 900;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 10px;
-}
-
-.checkbox-label-modern {
-  font-weight: 500;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-}
-
-/* Estilos compactos para la gestión de denuncia */
-.denuncia-compacta {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 0.3rem;
-  padding: 0.6rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.denuncia-checkbox-compacta {
-  display: flex;
-  align-items: center;
-}
-
-.denuncia-label-compacta {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #dc2626;
-  user-select: none;
-}
-
-.denuncia-input {
-  display: none;
-}
-
-.denuncia-checkmark {
-  height: 18px;
-  width: 18px;
-  background-color: white;
-  border: 2px solid #dc2626;
-  border-radius: 3px;
-  position: relative;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  display: inline-block;
-  cursor: pointer;
-}
-
-.denuncia-input:checked ~ .denuncia-checkmark {
-  background-color: #dc2626;
-  border-color: #dc2626;
-}
-
-.denuncia-checkmark:after {
-  content: "";
-  position: absolute;
-  display: none;
-}
-
-.denuncia-input:checked ~ .denuncia-checkmark:after {
-  display: block;
-}
-
-.denuncia-checkmark:after {
-  left: 5px;
-  top: 2px;
-  width: 4px;
-  height: 8px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.denuncia-text {
-  color: #dc2626;
-  font-weight: 500;
-  padding: 5px;
-}
-
-.fecha-denuncia-inline {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  padding-top: 0.3rem;
-  border-top: 1px solid #fecaca;
-  margin-top: 0.3rem;
-  animation: slideIn 0.3s ease-out;
-}
-
-.fecha-label-compacta {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #991b1b;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-bottom: 0.2rem;
-}
-
-.fecha-input-compacta {
-  width: 100%;
-  padding: 0.25rem 0.4rem;
-  border: 1px solid #dc2626;
-  border-radius: 0.2rem;
-  font-size: 0.8rem;
-  background-color: white;
-  color: #991b1b;
-  height: 28px;
-}
-
-.fecha-input-compacta:focus {
-  outline: none;
-  border-color: #b91c1c;
-  box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.1);
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Badges informativos compactos */
-.info-badge-modern {
-  margin-top: 0.6rem;
-  padding: 0.6rem 0.8rem;
-  border-radius: 0.3rem;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.info-badge-modern.success {
-  background-color: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  color: #059669;
-}
-
-.info-badge-modern.neutral {
-  background-color: rgba(107, 114, 128, 0.1);
-  border: 1px solid rgba(107, 114, 128, 0.3);
-  color: #374151;
-}
-
-/* Contenido estructurado de los badges */
-.badge-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  flex: 1;
-}
-
-.badge-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  opacity: 0.8;
-}
-
-.badge-content strong {
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.badge-content span:not(.badge-title) {
-  font-size: 0.8rem;
-}
-
-/* Botones compactos */
-.btn-modern {
-  padding: 0.5rem 0.8rem;
-  border-radius: 0.3rem;
-  font-weight: 500;
-  transition: all 0.2s;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  font-size: 0.85rem;
-  border: none;
-  outline: none;
-}
-
-.btn-modern:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background-color: var(--primary-color);
-  color: black;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: rgb(222, 189, 0);
-  transform: translateY(-1px);
-}
-
-.btn-secondary {
-  background-color: #6c757d;
-  color: white;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background-color: #5a6268;
-  transform: translateY(-1px);
-}
-
-/* Pie del modal compacto */
-.modal-footer-modern {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem;
-  flex-shrink: 0;
-  border-top: 1px solid var(--border-color);
-  background: var(--surface-color);
-}
-
-.required-legend {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-/* ===== ESTILOS ORIGINALES PARA CONTRATO ACTUAL ===== */
-
-.modern-contract-card {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
-  padding: 2rem 2rem 1.5rem 2rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid #f3f3f3;
-}
-
-.contract-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e0e0e0;
-}
-
-.contract-info h4 {
-  margin: 0 0 0.5rem 0;
-  color: #2c3e50;
-  font-size: 1.2rem;
-}
-
-.contract-dates {
-  color: #444;
-  font-size: 1rem;
-  margin-top: 0.2rem;
-}
-
-.contract-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.modern-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 1.2rem;
-}
-
-.modern-section {
-  background: #f7f8fa;
-  border-radius: 12px;
-  padding: 1.2rem 1.5rem 1rem 1.5rem;
-  box-shadow: 0 2px 8px rgba(255,196,12,0.04);
-  border: 1px solid #f3f3f3;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 1rem;
-}
-
-.section-header h5 {
-  color: #333;
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0.7rem;
-  border-radius: 6px;
-  margin-bottom: 0.4rem;
-  background: #fff;
-  border: 1px solid #f0f0f0;
-}
-
-/* Sección de características */
-.features-section {
-  background: #f7f8fa;
-  border-radius: 12px;
-  padding: 1.2rem 1.5rem 1rem 1.5rem;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(255,196,12,0.04);
-  border: 1px solid #f3f3f3;
-}
-
-.features-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 1rem;
-}
-
-.features-header i {
-  font-size: 1.2rem;
-  color: #333;
-}
-
-.features-header h5 {
-  color: #333;
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.feature-cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-}
-
-.feature-card {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  background-color: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-  padding: 15px;
-  transition: all 0.3s ease;
-}
-
-.feature-card.feature-active {
-  border-color: var(--primary-color);
-  background-color: rgba(252, 215, 0, 0.05);
-}
-
-.feature-card.denuncia.feature-active {
-  border-color: #e74c3c;
-  background-color: rgba(231, 76, 60, 0.05);
-}
-
-.feature-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f8f9fa;
-  color: #aaa;
-  font-size: 1.5rem;
-}
-
-.feature-card.feature-active .feature-icon {
-  background-color: rgba(252, 215, 0, 0.2);
-  color: var(--primary-color);
-}
-
-.feature-card.denuncia.feature-active .feature-icon {
-  background-color: rgba(231, 76, 60, 0.2);
-  color: #e74c3c;
-}
-
-.feature-details {
-  flex: 1;
-}
-
-.feature-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0 0 5px 0;
-  color: #333;
-}
-
-.feature-status {
-  font-size: 0.9rem;
-  color: #777;
-  margin: 0;
-}
-
-.feature-card.feature-active .feature-status {
-  color: black;
-  font-weight: 500;
-}
-
-.feature-card.denuncia.feature-active .feature-status {
-  color: #e74c3c;
-  font-weight: 500;
-}
-
-/* Sección de potencias */
-.potencia-section {
-  background: #f7f8fa;
-  border-radius: 12px;
-  padding: 1.2rem 1.5rem 1rem 1.5rem;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(255,196,12,0.04);
-  border: 1px solid #f3f3f3;
-}
-
-.potencia-grid-detalle {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  margin-top: 10px;
-}
-
-.potencia-item-detalle {
-  background: #f9f9f9;
-  border-radius: 6px;
-  padding: 12px 15px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border: 1px solid #e9e9e9;
-}
-
-.potencia-label {
-  font-size: 0.9rem;
-  color: #666;
-  font-weight: 600;
-}
-
-.potencia-value {
-  font-size: 1rem;
-  color: #2c3e50;
-  font-weight: 500;
-}
-
-.modern-notes {
-  background: #f7f8fa;
-  border-radius: 10px;
-  padding: 1rem 1.5rem;
-  margin-top: 1.2rem;
-  border: 1px solid #f3f3f3;
-}
-
-.modern-notes h5 {
-  color: black;
-  font-size: 1.05rem;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.modern-notes p {
-  color: #444;
-  font-size: 1rem;
-  margin: 0;
-}
-
-.no-contract {
-  text-align: center;
-  padding: 3rem;
-  background: #f8f9fa;
-  border-radius: 12px;
-  color: #6c757d;
-}
-
-.no-contract i {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  color: #adb5bd;
-}
-
-/* Modal de detalle */
-.detalle-contrato-modal {
-  z-index: 2000;
-  background: rgba(0,0,0,0.35);
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.detalle-contrato-content {
-  background: #fff;
-  border-radius: 16px;
-  max-width: 60%;
-  width: 60%;
-  max-height: 80%;
-  overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  position: relative;
-  animation: modalFadeIn 0.3s;
-}
-
-.detalle-contrato-content .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid #e0e0e0;
-  background: #f8f9fa;
-  border-radius: 16px 16px 0 0;
-}
-
-.detalle-contrato-content .modal-header h2 {
-  margin: 0;
-  color: #2c3e50;
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.detalle-contrato-content .modal-header h2 i {
-  color: var(--primary-color);
-}
-
-.detalle-contrato-pdf {
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.detalle-contrato-header {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 1.5rem;
-}
-
-.cliente-info, .contrato-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.cliente-info h4, .contrato-info h4 {
-  color: #2c3e50;
-  margin: 0;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.cliente-info h4 i, .contrato-info h4 i {
-  color: var(--primary-color);
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.detalle-contrato-section {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 1.5rem;
-}
-
-.detalle-contrato-section h4 {
-  color: #2c3e50;
-  margin: 0 0 1rem 0;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.detalle-contrato-section h4 i {
-  color: var(--primary-color);
-}
-
-.observaciones-content {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1rem;
-  border: 1px solid #e0e0e0;
-  color: #2c3e50;
-  line-height: 1.5;
-}
-
-.status-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  background: #f8f9fa;
-  color: #666;
-  border: 1px solid #e0e0e0;
-}
-
-.status-chip.active {
-  background: var(--primary-color);
-  color: black;
-  border-color: var(--primary-color);
-}
-
-.status-chip.denuncia.active {
-  background: #e74c3c;
-  color: #fff;
-  border-color: #e74c3c;
-}
-
-.status-chip.exencion.active {
-  background: #ffc107;
-  color: #212529;
-  border-color: #ffc107;
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  transition: all 0.3s ease;
-  font-weight: 500;
-}
-
-/* Media queries para responsividad */
-@media (max-width: 1200px) {
-  .form-grid-modern {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .section-observaciones-compartidas {
-    grid-column: 1 / -1;
-    min-height: 260px;
-  }
-
-  .observaciones-compartidas {
-    grid-template-rows: minmax(110px, 1.5fr) minmax(85px, 1fr);
-  }
-  
-  .feature-cards {
-    grid-template-columns: 1fr;
-  }
-  
-  .potencias-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .potencias-grid-compacta {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 992px) {
-  .modern-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .detalle-contrato-content {
-    width: 80%;
-    max-width: 80%;
-  }
-}
-
-@media (max-width: 768px) {
-  .form-grid-modern {
-    grid-template-columns: 1fr;
-  }
-
-  .section-observaciones-compartidas {
-    grid-column: auto;
-    min-height: 220px;
-  }
-
-  .observaciones-compartidas {
-    grid-template-rows: minmax(100px, 1.4fr) minmax(80px, 1fr);
-  }
-  
-  .contract-header {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
-  }
-  
-  .contract-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .detalle-contrato-header {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .detalle-contrato-content {
-    width: 95%;
-    max-width: 95%;
-  }
-  
-  .potencias-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .potencias-grid-compacta {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .modal-content {
-    width: 98%;
-    max-width: 98%;
-    height: 98vh;
-    max-height: 98vh;
-  }
-}
-
-@media (max-width: 480px) {
-  .modal-title {
-    font-size: 1rem;
-  }
-  
-  .btn-modern {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-  }
-  
-  .potencias-grid-compacta {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.2rem;
-  }
-  
-  .potencia-input-compacta {
-    max-width: 50px;
-    font-size: 0.7rem;
-    height: 24px;
-  }
-  
-  .potencia-label-compacta {
-    font-size: 0.7rem;
-  }
-}
-</style>
+<style scoped src="./ModalContratos.css"></style>

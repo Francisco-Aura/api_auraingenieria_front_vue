@@ -1,7 +1,7 @@
 <template>
   <div class="tareas-container fade-in">
-    <!-- Loading spinner -->
-    <Spinner :isLoading="cargando" />
+    <!-- Loading spinner (solo para vista calendario; la vista tabla usa skeleton) -->
+    <Spinner :isLoading="cargando && vistaActual !== 'tabla'" />
 
     <!-- Estadísticas detalladas -->
     <EstadisticasTareasComponent ref="estadisticas" />
@@ -44,7 +44,7 @@
         <table v-if="vistaActual === 'tabla'" class="data-table">
           <thead>
             <tr>
-              <th class="sortable" style="width: 22%">
+              <th class="sortable th-col-titulo">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('titulo')">
                     <i class="fas fa-text-width mr-2"></i>Título
@@ -62,7 +62,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 24%">
+              <th class="sortable th-col-cliente">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('clienteRelacionadoNombre')">
                     <i class="fas fa-building mr-2"></i>Cliente
@@ -80,7 +80,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 5%">
+              <th class="sortable th-col-asignado">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('usuarioAsignadoNombre')">
                     <i class="fas fa-user-tie mr-2"></i>Asignado a
@@ -98,7 +98,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 12%">
+              <th class="sortable th-col-estado">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('estadoNombre')">
                     <i class="fas fa-tasks mr-2"></i>Estado
@@ -116,7 +116,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 10%">
+              <th class="sortable th-col-prioridad">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('prioridad')">
                     <i class="fas fa-flag mr-2"></i>Prioridad
@@ -134,7 +134,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 12%">
+              <th class="sortable th-col-categoria">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('categoriaNombre')">
                     <i class="fas fa-folder mr-2"></i>Categoría
@@ -152,7 +152,7 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable" style="width: 12%">
+              <th class="sortable th-col-fecha">
                 <div class="column-header">
                   <div class="column-title" @click="sortBy('fechaVencimiento')">
                     <i class="fas fa-calendar-alt mr-2"></i>Fecha vto.
@@ -170,7 +170,7 @@
                   </div>
                 </div>
               </th>
-              <th style="width: 8%">
+              <th class="th-col-acciones">
                 <div class="column-header">
                   <div class="column-title">
                     <i class="fas fa-cogs mr-2"></i>Acciones
@@ -180,7 +180,12 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="tarea in paginatedTareas" :key="tarea.id" 
+            <template v-if="cargando">
+              <tr v-for="n in 8" :key="'skeleton-' + n" class="skeleton-row">
+                <td v-for="col in 8" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
+              </tr>
+            </template>
+            <tr v-for="tarea in paginatedTareas" v-show="!cargando" :key="tarea.id" 
                 :class="{ 'tarea-vencida': tarea.vencida, 'tarea-completada': tarea.estadoFinal, 'tarea-fijada': tarea.fijada }">
               <td class="text-truncate" :title="tarea.titulo">
                 <span class="titulo-container">
@@ -229,10 +234,10 @@
               </td>
               <td>
                 <div class="action-buttons">
-                  <button class="btn-icon btn-view" @click="handleVerDetalle(tarea)" title="Ver detalle">
+                  <button class="btn-icon btn-view" @click="handleVerDetalle(tarea)" title="Ver detalle" aria-label="Ver detalle de tarea">
                     <i class="fas fa-eye"></i>
                   </button>
-                  <button v-if="puedeEditarTarea(tarea)" class="btn-icon btn-edit" @click="handleActualizarTarea(tarea)" title="Editar">
+                  <button v-if="puedeEditarTarea(tarea)" class="btn-icon btn-edit" @click="handleActualizarTarea(tarea)" title="Editar" aria-label="Editar tarea">
                     <i class="fas fa-edit"></i>
                   </button>
                   <button v-if="puedeEliminarTarea(tarea)" class="btn-icon btn-delete" @click="handleEliminarTarea(tarea.id)" title="Eliminar">
@@ -241,7 +246,7 @@
                 </div>
               </td>
             </tr>
-            <tr v-if="paginatedTareas.length === 0">
+            <tr v-if="!cargando && paginatedTareas.length === 0">
               <td colspan="8" class="text-center py-4">
                 <div class="empty-state">
                   <i class="fas fa-search fa-3x text-muted"></i>
@@ -420,7 +425,10 @@ export default {
       vistaActual: 'tabla',
 
       // Estado de guardado
-      guardandoTarea: false
+      guardandoTarea: false,
+
+      // Evita doble carga inicial cuando el watcher inmediato y mounted() coinciden
+      promesaInicializacionEnCurso: null
     }
   },
   computed: {
@@ -579,6 +587,18 @@ export default {
     },
 
     async inicializar() {
+      if (this.promesaInicializacionEnCurso) {
+        return this.promesaInicializacionEnCurso
+      }
+      this.promesaInicializacionEnCurso = this._inicializarInterno()
+      try {
+        return await this.promesaInicializacionEnCurso
+      } finally {
+        this.promesaInicializacionEnCurso = null
+      }
+    },
+
+    async _inicializarInterno() {
       try {
         this.cargando = true
         
@@ -1151,926 +1171,4 @@ export default {
 }
 </script>
 
-<style scoped>
-/* Grid layout para el contenedor principal */
-.tareas-container {
-  display: grid;
-  grid-template-rows: auto auto auto 1fr;
-  gap: 20px;
-  padding: 20px;
-  max-width: 90%;
-  margin: 0 auto;
-}
-
-/* Panel de la tabla */
-.table-panel {
-  background: white;
-  border-radius: 0.7rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  overflow: hidden;
-  position: relative;
-}
-
-.table-header {
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 20px;
-  background-color: var(--surface-color);
-  gap: 15px;
-}
-
-.table-title {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.vista-toggle {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  padding: 6px;
-  background-color: white;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.btn-view-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border: none;
-  background-color: transparent;
-  color: var(--text-secondary);
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 0.85rem;
-  transition: all 0.2s ease;
-}
-
-.btn-view-toggle:hover {
-  background-color: rgba(252, 215, 0, 0.1);
-  color: var(--text-primary);
-}
-
-.btn-view-toggle.active {
-  background-color: rgb(252, 215, 0);
-  color: black;
-  font-weight: 600;
-}
-
-.table-actions-horizontal {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  margin-left: auto;
-}
-
-.btn-export {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  border: none;
-  cursor: pointer;
-}
-
-/* Estilos Generales de Botones - Actualizados */
-.btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
-  padding: 10px 20px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  font-size: 0.95rem !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  border: none !important;
-  cursor: pointer !important;
-  letter-spacing: 0.3px !important;
-}
-
-.btn i {
-  font-size: 1.1em !important;
-}
-
-/* Botón Refresh/Actualizar */
-.btn-refresh {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2), 0 2px 4px -1px rgba(59, 130, 246, 0.1) !important;
-}
-
-.btn-refresh:hover:not(:disabled) {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.15) !important;
-}
-
-.btn-refresh:disabled {
-  opacity: 0.6 !important;
-  cursor: not-allowed !important;
-  transform: none !important;
-  box-shadow: none !important;
-  background: #9ca3af !important;
-}
-
-/* Botón Excel */
-.btn-excel {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1) !important;
-}
-
-.btn-excel:hover {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.15) !important;
-}
-
-/* Botón Primary (Crear, Guardar, etc) */
-.btn-primary {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
-}
-
-.btn-primary i {
-  font-size: 1.1em !important;
-}
-
-/* Botón Toggle Completed (Mostrar/Ocultar completadas) */
-.btn-toggle-completed {
-  background: #f3f4f6 !important;
-  color: #4b5563 !important;
-  border: 1px solid #e5e7eb !important;
-  font-weight: 600 !important;
-  padding: 10px 20px !important;
-  border-radius: 8px !important;
-  transition: all 0.3s ease !important;
-}
-
-.btn-toggle-completed:hover {
-  background: #e5e7eb !important;
-  color: #1f2937 !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Estado Activo (Rojo) para Toggle Completed */
-.btn-toggle-completed.active {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-  color: white !important;
-  border-color: transparent !important;
-  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1) !important;
-}
-
-.btn-toggle-completed.active:hover {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
-  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15) !important;
-}
-
-/* Botón Create (Crear Tarea) */
-.btn-create {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1) !important;
-}
-
-.btn-create:hover {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3), 0 4px 6px -2px rgba(249, 115, 22, 0.15) !important;
-}
-
-.btn-create i {
-  font-size: 1.1em !important;
-}
-
-.btn-export i {
-  font-size: 1.2em;
-}
-
-.btn-icon {
-  background: transparent;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  padding: 0;
-  margin: 0;
-}
-
-.btn-icon i {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.btn-icon.btn-edit {
-  color: #2196f3;
-}
-.btn-icon.btn-edit:hover {
-  background-color: rgba(33,150,243,0.1);
-}
-
-.btn-icon.btn-view {
-  color: #43a047;
-}
-.btn-icon.btn-view:hover {
-  background-color: rgba(67,160,71,0.1);
-}
-
-.btn-icon.btn-complete {
-  color: #28a745;
-}
-.btn-icon.btn-complete:hover {
-  background-color: rgba(40,167,69,0.1);
-}
-
-.btn-icon.btn-delete {
-  color: #dc3545;
-}
-.btn-icon.btn-delete:hover {
-  background-color: rgba(220,53,69,0.1);
-}
-
-.records-per-page {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.records-per-page label {
-  color: var(--text-secondary);
-  font-weight: 500;
-  font-size: 14px;
-}
-
-.records-per-page select {
-  width: auto;
-  padding: 6px 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: white;
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.sortable {
-  cursor: pointer;
-  user-select: none;
-}
-
-.sortable:hover {
-  background-color: var(--hover-color);
-}
-
-.pagination-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  background-color: var(--surface-color);
-  border-top: 1px solid var(--border-color);
-}
-
-.pagination-info {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  background-color: white;
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.pagination-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: white;
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.page-info {
-  color: var(--text-primary);
-  font-weight: 500;
-  padding: 0 10px;
-}
-
-.btn-outline {
-  background: white;
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 500;
-  min-width: 40px;
-}
-
-.btn-outline:hover:not(:disabled) {
-  background-color: var(--primary-color);
-  color: black;
-  border-color: var(--primary-color);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.btn-outline:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: #f5f5f5;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-bottom: 0;
-}
-
-.data-table th {
-  background-color: var(--surface-color);
-  color: var(--text-primary);
-  font-weight: 600;
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 2px solid var(--border-color);
-  white-space: nowrap;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  vertical-align: top;
-}
-
-.data-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
-  height: 52px;
-}
-
-.data-table th i {
-  margin-left: 4px;
-  font-size: 0.9em;
-  color: var(--text-secondary);
-}
-
-.text-truncate {
-  max-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.table-responsive {
-  overflow-x: auto;
-  background-color: white;
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  min-width: 120px;
-}
-
-.column-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.column-title {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-}
-
-.column-title:hover {
-  background-color: var(--hover-color);
-}
-
-.sortable .column-title {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.sortable .column-title:hover {
-  color: var(--primary-color);
-}
-
-.column-filter-container {
-  position: relative;
-}
-
-.column-filter {
-  width: 100%;
-  padding: 6px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 0.9rem;
-  background-color: white;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.column-filter:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.1);
-}
-
-.column-filter::placeholder {
-  color: var(--text-secondary);
-  opacity: 0.7;
-}
-
-/* Badges */
-.cliente-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.cliente-nombre-truncate {
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-
-.potencial-badge {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 4px;
-  color: #f39c12;
-  font-size: 0.75rem;
-  opacity: 0.85;
-}
-
-.cups-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #0369a1;
-  background: #e0f2fe;
-  border-radius: 5px;
-  padding: 1px 6px;
-  white-space: nowrap;
-  width: fit-content;
-}
-
-.categoria-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  background: #e7f1f8;
-  color: #0c5460;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.estado-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border-radius: 6px;
-  color: white;
-  font-size: 0.7rem;
-  font-weight: 600;
-  white-space: nowrap;
-  text-transform: uppercase;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  letter-spacing: 0.5px;
-}
-
-.estado-badge i {
-  font-size: 0.65rem;
-}
-
-.prioridad-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border-radius: 50px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  white-space: nowrap;
-  letter-spacing: 0.3px;
-  border: 2px solid transparent;
-}
-
-.prioridad-0 { 
-  background: #8b0000; 
-  color: white;
-  border-color: #5c0000;
-  animation: pulse-urgente 2s infinite;
-}
-
-.prioridad-0::before {
-  content: '\f071';
-  font-family: 'Font Awesome 5 Free';
-  font-weight: 900;
-}
-
-@keyframes pulse-urgente {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0.4); }
-  50% { box-shadow: 0 0 0 4px rgba(139, 0, 0, 0); }
-}
-
-.prioridad-1 { 
-  background: #dc3545; 
-  color: white;
-  border-color: #bd2130;
-}
-
-.prioridad-1::before {
-  content: '\f062';
-  font-family: 'Font Awesome 5 Free';
-  font-weight: 900;
-}
-
-.prioridad-2 { 
-  background: #fff3cd; 
-  color: #856404;
-  border-color: #ffc107;
-}
-
-.prioridad-2::before {
-  content: '\f068';
-  font-family: 'Font Awesome 5 Free';
-  font-weight: 900;
-}
-
-.prioridad-3 { 
-  background: #d4edda; 
-  color: #155724;
-  border-color: #28a745;
-}
-
-.prioridad-3::before {
-  content: '\f063';
-  font-family: 'Font Awesome 5 Free';
-  font-weight: 900;
-}
-
-.fecha-vencida {
-  color: #dc3545;
-  font-weight: 600;
-}
-
-/* Estados de filas */
-.tarea-vencida {
-  background-color: rgba(220, 53, 69, 0.05) !important;
-}
-
-.tarea-vencida:hover {
-  background-color: rgba(220, 53, 69, 0.1) !important;
-}
-
-.tarea-fijada {
-  background-color: rgba(255, 193, 7, 0.08) !important;
-  border-left: 3px solid #ffc107 !important;
-}
-
-.tarea-fijada:hover {
-  background-color: rgba(255, 193, 7, 0.15) !important;
-}
-
-.titulo-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-pin {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 4px;
-  color: #adb5bd;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-pin:hover {
-  background-color: rgba(255, 193, 7, 0.2);
-  color: #ffc107;
-}
-
-.btn-pin .pin-activo {
-  color: #ffc107;
-  transform: rotate(-45deg);
-}
-
-.tarea-completada {
-  opacity: 0.6;
-}
-
-.tarea-completada td {
-  text-decoration: line-through;
-}
-
-.text-muted {
-  color: var(--text-secondary);
-}
-
-/* Empty state */
-.empty-state {
-  text-align: center;
-  padding: 40px 16px;
-  color: var(--text-secondary);
-}
-
-.empty-state i {
-  color: var(--border-color);
-}
-
-/* Card base */
-.card {
-  background: white;
-  border-radius: var(--border-radius);
-  box-shadow: var(--card-shadow);
-}
-
-/* Fade-in animation */
-.fade-in {
-  animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* Modal overlay */
-/* Modal overlay */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-.btn {
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.btn-primary {
-  background: var(--primary-color);
-  color: black;
-}
-
-.btn-primary:hover {
-  background: #e6c200;
-  transform: translateY(-1px);
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background: #5a6268;
-  transform: translateY(-1px);
-}
-
-.btn-success {
-  background: #28a745;
-  color: white;
-}
-
-.btn-success:hover {
-  background: #218838;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-}
-
-/* Snackbar */
-.snackbar {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 14px 20px;
-  border-radius: 8px;
-  color: white;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 1100;
-  animation: slideInUp 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 300px;
-}
-
-.snackbar-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-}
-
-.snackbar.success {
-  background: #28a745;
-}
-
-.snackbar.error {
-  background: #dc3545;
-}
-
-.snackbar.warning {
-  background: #ffc107;
-  color: #212529;
-}
-
-.snackbar-close {
-  background: none;
-  border: none;
-  color: inherit;
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 0;
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
-}
-
-.snackbar-close:hover {
-  opacity: 1;
-}
-
-@keyframes slideInUp {
-  from {
-    transform: translateY(100px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Responsive */
-@media (max-width: 992px) {
-  .tareas-container {
-    max-width: 100%;
-    padding: 15px;
-  }
-  
-  .stats-panel {
-    flex-direction: column;
-  }
-  
-  .stats-container {
-    flex-wrap: wrap;
-  }
-  
-  .stat-card {
-    min-width: calc(50% - 10px);
-  }
-  
-  .action-card {
-    width: 100%;
-  }
-}
-
-@media (max-width: 768px) {
-  .tareas-container {
-    padding: 10px;
-    gap: 15px;
-  }
-  
-  .stats-container {
-    gap: 10px;
-  }
-  
-  .stat-card {
-    min-width: 100%;
-    padding: 0.5rem 0.8rem;
-  }
-  
-  .table-header {
-    padding: 10px 15px;
-  }
-  
-  .table-actions-horizontal {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  
-  .btn-refresh,
-  .btn-export,
-  .btn-toggle-baja {
-    padding: 6px 12px;
-    font-size: 0.85rem;
-  }
-  
-  .pagination-controls {
-    flex-direction: column;
-    gap: 15px;
-    padding: 15px;
-  }
-  
-  .records-per-page {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .pagination-info {
-    width: 100%;
-    text-align: center;
-  }
-  
-  .pagination-buttons {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .data-table th,
-  .data-table td {
-    padding: 8px 10px;
-    font-size: 0.85rem;
-  }
-  
-  .column-filter {
-    padding: 4px 8px;
-    font-size: 0.8rem;
-  }
-}
-
-/* Form control */
-.form-control {
-  padding: 6px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  background: white;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(252, 215, 0, 0.15);
-}
-</style>
+<style scoped src="./TareasComponent.css"></style>

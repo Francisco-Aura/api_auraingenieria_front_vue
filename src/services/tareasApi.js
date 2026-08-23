@@ -10,7 +10,11 @@ axios.interceptors.response.use(
       config.__retryCount = 0
     }
 
+    const metodo = (config.method || 'get').toLowerCase()
+    const esIdempotente = metodo === 'get' || metodo === 'head'
+
     const shouldRetry = (
+      esIdempotente &&
       (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') &&
       config.__retryCount < 2
     )
@@ -260,11 +264,12 @@ export const tareasApi = {
     return response.data
   },
 
-  async crearNotaCliente(clienteId, payload, archivo) {
-    if (archivo) {
+  async crearNotaCliente(clienteId, payload, archivos) {
+    const lista = Array.isArray(archivos) ? archivos.filter(a => a instanceof Blob || a instanceof File) : [];
+    if (lista.length > 0) {
       const formData = new FormData();
       formData.append('datos', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
-      formData.append('archivo', archivo);
+      lista.forEach(archivo => formData.append('archivos', archivo));
       const response = await axios.post(`/clientes/${clienteId}/timeline/notas`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -274,11 +279,12 @@ export const tareasApi = {
     return response.data
   },
 
-  async actualizarNotaCliente(clienteId, notaId, payload, archivo) {
-    if (archivo) {
+  async actualizarNotaCliente(clienteId, notaId, payload, archivos) {
+    const lista = Array.isArray(archivos) ? archivos.filter(a => a instanceof Blob || a instanceof File) : [];
+    if (lista.length > 0) {
       const formData = new FormData();
       formData.append('datos', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
-      formData.append('archivo', archivo);
+      lista.forEach(archivo => formData.append('archivos', archivo));
       const response = await axios.put(`/clientes/${clienteId}/timeline/notas/${notaId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -297,6 +303,23 @@ export const tareasApi = {
 
   async eliminarNotaCliente(clienteId, notaId) {
     await axios.delete(`/clientes/${clienteId}/timeline/notas/${notaId}`)
+  },
+
+  async eliminarArchivoNotaCliente(clienteId, notaId) {
+    const response = await axios.delete(`/clientes/${clienteId}/timeline/notas/${notaId}/archivo`)
+    return response.data
+  },
+
+  async descargarAdjuntoNota(clienteId, notaId, adjuntoId) {
+    const response = await axios.get(`/clientes/${clienteId}/timeline/notas/${notaId}/adjuntos/${adjuntoId}/descargar`, {
+      responseType: 'blob'
+    });
+    return response;
+  },
+
+  async eliminarAdjuntoNotaCliente(clienteId, notaId, adjuntoId) {
+    const response = await axios.delete(`/clientes/${clienteId}/timeline/notas/${notaId}/adjuntos/${adjuntoId}`)
+    return response.data
   },
 
   async toggleFijadaNota(clienteId, notaId) {
