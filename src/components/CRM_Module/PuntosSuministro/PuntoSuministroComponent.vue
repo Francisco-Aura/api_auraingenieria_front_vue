@@ -1067,12 +1067,16 @@ export default {
       }
     },
 
-    // Maneja la creación de un nuevo contrato (simplificado - sin recarga automática)
+    // Maneja la creación de un nuevo contrato
     async handleContratoCreado() {
-      // Mostrar mensaje informativo al usuario
+      // Recargar automáticamente los contratos del modal y la tabla principal
+      // (tarifaActual/fechaFinUltimoContrato dependen del contrato recién creado)
+      await this.recargarContratosDelPuntoSuministro();
+      await this.fetchPuntosSuministro();
+
       this.$swal.fire({
         title: 'Contrato creado',
-        text: 'El contrato se ha creado correctamente. Usa el botón "Actualizar" para ver los cambios en la tabla.',
+        text: 'El contrato se ha creado correctamente y la lista se ha refrescado.',
         icon: 'success',
         confirmButtonColor: 'rgba(252, 215, 0)',
         confirmButtonText: 'Entendido',
@@ -1086,6 +1090,7 @@ export default {
       
       // Recargar automáticamente los contratos para reflejar los cambios
       await this.recargarContratosDelPuntoSuministro();
+      await this.fetchPuntosSuministro();
       
       // Mostrar mensaje de confirmación
       this.$swal.fire({
@@ -1103,6 +1108,7 @@ export default {
     async handleContratoRenovado() {
       // Recargar automáticamente los contratos para reflejar los cambios
       await this.recargarContratosDelPuntoSuministro();
+      await this.fetchPuntosSuministro();
       
       // Mostrar mensaje de confirmación
       this.$swal.fire({
@@ -1132,17 +1138,14 @@ export default {
 
         // Recalcular el contrato actual
         const ahora = new Date();
-        this.contratoActualData = this.contratos.find(contrato => {
+        this.contratoActual = this.contratos.find(contrato => {
           const fechaFin = new Date(contrato.fechaFin);
           const fechaInicio = new Date(contrato.fechaInicio);
           return fechaInicio <= ahora && fechaFin > ahora;
         }) || null;
 
         // Separar contratos históricos (los que no están vigentes)
-        // Nota: contratoActual y contratosHistoricos son computed con caché
-        // sobre contratoActualData / contratosHistoricosData, por lo que hay
-        // que actualizar esos campos, no los computed.
-        this.contratosHistoricosData = this.contratos.filter(contrato => {
+        this.contratosHistoricos = this.contratos.filter(contrato => {
           const fechaFin = new Date(contrato.fechaFin);
           const fechaInicio = new Date(contrato.fechaInicio);
           return !(fechaInicio <= ahora && fechaFin > ahora);

@@ -910,7 +910,6 @@ export default {
       };
       
       this.$emit('actualizar-punto-suministro', datosAdaptados);
-      this.cerrarModal();
     },
     formatPotenciaCompact(valor) {
       if (valor === null || valor === undefined || valor === 0) {
@@ -1026,7 +1025,6 @@ export default {
           };
           
           this.$emit('actualizar-punto-suministro', datosAdaptados);
-          this.cerrarModal();
         }
       } catch (error) {
         console.error('Error en confirmaci\u00f3n de baja:', error);
