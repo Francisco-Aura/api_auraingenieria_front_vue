@@ -454,6 +454,11 @@ export default {
   },
   methods: {
     async seleccionarTabla(tabla) {
+      // Si es la misma tabla que ya estaba seleccionada (p.ej. un refresco tras
+      // guardar/eliminar un registro o pulsar "Actualizar"), no reseteamos la
+      // página ni los filtros: solo se recargan los datos.
+      const esMismaTabla = this.tablaSeleccionada && tabla &&
+        this.tablaSeleccionada.nombre === tabla.nombre;
       this.loading = true;
       try {
         const respuesta = await axios.get(tabla.url);
@@ -461,10 +466,12 @@ export default {
         this.columnas = Object.keys(this.datos[0] || {});
         this.tablaSeleccionada = tabla;
         this.registrosCount = { ...this.registrosCount, [tabla.nombre]: this.datos.length };
-        this.currentPage = 1;
-        this.columnFilters = {};
-        this.sortKey = null;
-        this.sortOrder = null;
+        if (!esMismaTabla) {
+          this.currentPage = 1;
+          this.columnFilters = {};
+          this.sortKey = null;
+          this.sortOrder = null;
+        }
         
         // Si es tabla de subcategorías, cargar las categorías disponibles
         if (tabla.nombre === 'Tareas - Subcategorías') {
@@ -531,7 +538,7 @@ export default {
         this.cargandoContadores = false;
       }
     },
-
+    
     getRegistrosCount(nombreTabla) {
       return this.registrosCount[nombreTabla] ?? 0;
     },
@@ -782,6 +789,14 @@ export default {
       deep: true,
       handler() {
         this.currentPage = 1;
+      }
+    },
+    totalPages(newVal) {
+      // Tras un refresco (guardar/editar/eliminar), si la página actual queda
+      // fuera de rango llevamos al usuario a la última página válida en vez
+      // de dejarlo viendo una página vacía.
+      if (newVal > 0 && this.currentPage > newVal) {
+        this.currentPage = newVal;
       }
     }
   }

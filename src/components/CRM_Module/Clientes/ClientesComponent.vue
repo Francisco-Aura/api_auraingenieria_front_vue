@@ -940,6 +940,14 @@ export default {
     filter() {
       this.currentPage = 1;
     },
+    totalPages(newVal) {
+      // Tras un refresco (guardar/editar), si la página actual queda fuera de
+      // rango llevamos al usuario a la última página válida en vez de dejarlo
+      // viendo una página vacía.
+      if (newVal > 0 && this.currentPage > newVal) {
+        this.currentPage = newVal;
+      }
+    },
     formularioVisible(newVal) {
       if (!newVal) {
         // Cuando el formulario se cierra, asegurarnos de que nuevoCliente tenga un valor válido

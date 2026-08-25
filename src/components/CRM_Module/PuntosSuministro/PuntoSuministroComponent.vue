@@ -1757,6 +1757,14 @@ export default {
     filter() {
       this.currentPage = 1;
     },
+    totalPages(newVal) {
+      // Si tras un refresco (guardar/editar) el nuevo total de páginas es menor
+      // que la página en la que estaba el usuario, lo llevamos a la última
+      // página válida en vez de dejarlo viendo una página vacía.
+      if (newVal > 0 && this.currentPage > newVal) {
+        this.currentPage = newVal;
+      }
+    },
     'puntosSuministro.length'(val) {
       this.animateCounter('animatedPuntos', val);
     },

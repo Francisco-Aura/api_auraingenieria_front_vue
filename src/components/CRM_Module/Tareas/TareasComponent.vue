@@ -512,7 +512,16 @@ export default {
   },
   watch: {
     mostrarCompletadas() {
+      this.paginaActual = 1
       this.aplicarFiltros()
+    },
+    totalPages(newVal) {
+      // Tras un refresco (guardar/editar/eliminar), si la página actual queda
+      // fuera de rango llevamos al usuario a la última página válida en vez
+      // de dejarlo viendo una página vacía.
+      if (newVal > 0 && this.paginaActual > newVal) {
+        this.paginaActual = newVal
+      }
     },
     '$route.query.abrirDetalle': {
       immediate: true,
@@ -713,6 +722,7 @@ export default {
       }
       // Ejecutar filtros después de 150ms sin escribir
       this.filtroDebounceTimer = setTimeout(() => {
+        this.paginaActual = 1
         this.aplicarFiltrosInmediato()
       }, 150)
     },
@@ -790,7 +800,6 @@ export default {
       }
       
       this.tareasFiltradas = resultado
-      this.paginaActual = 1
     },
 
     sortBy(campo) {
