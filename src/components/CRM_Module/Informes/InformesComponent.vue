@@ -402,8 +402,19 @@ export default {
         this.currentPage = newVal;
       }
     },
-    // Watcher para filteredData para resetear a la primera página cuando se apliquen filtros
-    filteredData() {
+    // Resetear a la primera página solo cuando el usuario cambia un filtro u
+    // ordenación, no cuando se refrescan los datos (actualizarInforme,
+    // marcarSiguientePago, etc.) manteniendo así su página actual.
+    columnFilters: {
+      deep: true,
+      handler() {
+        this.currentPage = 1;
+      }
+    },
+    sortKey() {
+      this.currentPage = 1;
+    },
+    sortOrder() {
       this.currentPage = 1;
     }
   },
@@ -520,6 +531,9 @@ export default {
     },
 
     async mostrarInforme(tipo) {
+      // Si es el mismo informe que ya estaba visible (p.ej. un refresco tras
+      // marcar un pago), no reseteamos la página ni el tamaño de página.
+      const esMismoInforme = this.tipoSeleccionado === tipo && this.mostrarTabla;
       this.tipoSeleccionado = tipo;
       this.loading = true;
       try {
@@ -536,10 +550,12 @@ export default {
         this.procesarDatosParaTabla(respuesta.data);
         this.tituloInforme = this.formatearTitulo(tipo);
         this.mostrarTabla = true;
-        // Resetear estado de paginación
-        this.currentPage = 1;
-        this.recordsPerPage = 10;
-        this.recordsPerPageValue = 10;
+        if (!esMismoInforme) {
+          // Resetear estado de paginación solo al cambiar a un informe distinto
+          this.currentPage = 1;
+          this.recordsPerPage = 10;
+          this.recordsPerPageValue = 10;
+        }
       } catch (error) {
         console.error("Error al obtener el informe", error);
         Swal.fire({
@@ -568,10 +584,8 @@ export default {
           respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${this.tipoSeleccionado}`);
         }
         this.procesarDatosParaTabla(respuesta.data);
-        // Resetear estado de paginación
-        this.currentPage = 1;
-        this.recordsPerPage = 10;
-        this.recordsPerPageValue = 10;
+        // No reseteamos página ni tamaño de página: es un refresco del mismo
+        // informe, el usuario debe permanecer donde estaba.
       } catch (error) {
         console.error("Error al actualizar el informe", error);
         Swal.fire({

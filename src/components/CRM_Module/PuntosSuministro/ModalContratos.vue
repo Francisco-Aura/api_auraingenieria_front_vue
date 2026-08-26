@@ -124,7 +124,7 @@
                       <button @click="verDetalleContrato(contrato)" class="btn-icon btn-view" title="Ver Detalle">
                         <i class="fas fa-eye"></i>
                       </button>
-                      <button @click="descargarPDF(contrato)" class="btn-icon btn-download" title="Descargar PDF" v-if="contrato.rutaArchivoContrato">
+                      <button @click="descargarPDFExistente(nuevoContrato)" class="btn-icon btn-download" title="Descargar PDF" v-if="contrato.rutaArchivoContrato">
                         <i class="fas fa-download"></i>
                       </button>
                       <button @click="eliminarContrato(contrato)" class="btn-icon btn-delete" title="Eliminar contrato" v-if="nivelAcceso === 1">
@@ -452,9 +452,14 @@
                   <h3>Documento del Contrato</h3>
                 </div>
                 
+                <!-- La zona de arrastre/selección solo se muestra si no hay ningún
+                     archivo activo (ni uno recién elegido, ni uno ya guardado en el
+                     contrato). Evita poder seleccionar un archivo nuevo "encima" de
+                     uno que ya existe sin haberlo quitado antes. -->
                 <label
+                  v-if="!selectedFile && !contratoTieneArchivo"
                   class="pdf-upload-area"
-                  :class="{ 'is-dragging': arrastrandoPdf, 'has-file': selectedFile, 'has-error': errorArchivoContrato }"
+                  :class="{ 'is-dragging': arrastrandoPdf, 'has-error': errorArchivoContrato }"
                   for="contrato-pdf-input"
                   role="button"
                   tabindex="0"
@@ -474,32 +479,56 @@
                     <span id="contrato-pdf-ayuda" class="pdf-desc">Solo PDF · máximo 10 MB</span>
                   </div>
                   <span class="pdf-select-button">Seleccionar PDF</span>
-                  <input
-                    id="contrato-pdf-input"
-                    type="file"
-                    ref="pdfInput"
-                    @change="handleFileUpload"
-                    accept="application/pdf,.pdf"
-                    class="input-file-oculto"
-                  />
                 </label>
+
+                <!-- El input vive fuera del label de arriba para que los botones
+                     "Sustituir" de las tarjetas de abajo puedan seguir abriendo el
+                     selector de archivos aunque la zona de arrastre esté oculta. -->
+                <input
+                  id="contrato-pdf-input"
+                  type="file"
+                  ref="pdfInput"
+                  @change="handleFileUpload"
+                  accept="application/pdf,.pdf"
+                  class="input-file-oculto"
+                />
 
                 <p v-if="errorArchivoContrato" id="contrato-pdf-error" class="pdf-upload-error" role="alert">
                   <i class="fas fa-exclamation-circle"></i>
                   {{ errorArchivoContrato }}
                 </p>
 
+                <!-- Archivo recién seleccionado por el usuario, pendiente de guardar -->
                 <div v-if="selectedFile" class="file-selected">
                   <div class="file-selected-icon"><i class="fas fa-file-pdf"></i></div>
                   <div class="file-selected-info">
                     <strong>{{ selectedFile.name }}</strong>
-                    <span>{{ formatearTamanoArchivo(selectedFile.size) }}</span>
+                    <span>{{ formatearTamanoArchivo(selectedFile.size) }} · se guardará al pulsar "{{ textoBotonGuardar }}"</span>
                   </div>
                   <div class="file-selected-actions">
                     <button type="button" class="btn-file-action btn-file-replace" @click="$refs.pdfInput.click()">
                       <i class="fas fa-sync-alt"></i> Sustituir PDF
                     </button>
                     <button type="button" class="btn-file-action btn-file-remove" @click="limpiarArchivoSeleccionado" aria-label="Quitar PDF seleccionado">
+                      <i class="fas fa-trash-alt"></i> Quitar
+                    </button>
+                  </div>
+                </div>
+                <!-- Archivo que el contrato ya tiene guardado en el backend -->
+                <div v-else-if="contratoTieneArchivo" class="file-selected file-uploaded-from-backend">
+                  <div class="file-selected-icon"><i class="fas fa-file-pdf"></i></div>
+                  <div class="file-selected-info">
+                    <strong>{{ nombreArchivoExistente || 'Documento del contrato' }}</strong>
+                    <span>Ya guardado en el contrato</span>
+                  </div>
+                  <div class="file-selected-actions">
+                    <button type="button" class="btn-file-action btn-download-existing" @click="descargarPDFExistente(nuevoContrato)">
+                      <i class="fas fa-download"></i> Descargar
+                    </button>
+                    <button type="button" class="btn-file-action btn-file-replace" @click="$refs.pdfInput.click()">
+                      <i class="fas fa-sync-alt"></i> Sustituir
+                    </button>
+                    <button type="button" class="btn-file-action btn-file-remove" @click="quitarArchivoBackend" aria-label="Quitar PDF del contrato">
                       <i class="fas fa-trash-alt"></i> Quitar
                     </button>
                   </div>
@@ -874,6 +903,7 @@ export default {
       comercializadorasList: [],
       nivelAcceso: null,
       errores: {},
+      contratoTieneArchivo: false,
       contratoOriginalIdRenovar: null,
       selectedFile: null,
       arrastrandoPdf: false,
@@ -933,6 +963,7 @@ export default {
       this.selectedFile = null;
       this.errorArchivoContrato = '';
       this.arrastrandoPdf = false;
+      this.contratoTieneArchivo = false;
       if (this.$refs?.pdfInput) this.$refs.pdfInput.value = '';
     },
 
@@ -940,12 +971,21 @@ export default {
       this.selectedFile = null;
       this.errorArchivoContrato = mensaje;
       if (this.$refs?.pdfInput) this.$refs.pdfInput.value = '';
+      this.contratoTieneArchivo = false;
       this.$swal.fire({
         icon: 'warning',
         title: 'PDF no válido',
         text: mensaje,
         confirmButtonColor: 'rgba(252, 215, 0)'
       });
+    },
+
+    quitarArchivoBackend() {
+      this.contratoTieneArchivo = false;
+     
+      this.selectedFile = null;
+      this.errorArchivoContrato = '';
+      if (this.$refs?.pdfInput) this.$refs.pdfInput.value = '';
     },
     validarContrato() {
       this.errores = {};
@@ -1233,6 +1273,8 @@ export default {
       this.nuevoContrato.idComercializadoraActual = contrato.idComercializadoraActual || "";
       this.nuevoContrato.idComercializadoraAnterior = contrato.idComercializadoraAnterior || "";
       
+      // Detectar si el contrato trae un archivo ya subido desde el backend
+      this.contratoTieneArchivo = !!(contrato.rutaArchivoContrato);
       this.selectedFile = null;
     },
 
@@ -1436,7 +1478,7 @@ export default {
       return fechaInicio <= ahora && fechaFin > ahora;
     },
 
-    async descargarPDF(contrato) {
+    async descargarPDFExistente(contrato) {
       if (!contrato.rutaArchivoContrato) {
         this.$swal.fire({
           icon: 'warning',
@@ -1453,14 +1495,15 @@ export default {
         );
 
         const url = window.URL.createObjectURL(new Blob([response.data]));
+        const filename = contrato.nombreArchivo ? contrato.nombreArchivo : `contrato_${contrato.contrato}.pdf`;
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `contrato_${contrato.contrato}.pdf`);
+        link.setAttribute('download', filename);
         document.body.appendChild(link);
         link.click();
         link.remove();
       } catch (error) {
-        console.error("Error al descargar el PDF:", error);
+        console.error("Error al descargar el PDF existente:", error);
         this.$swal.fire({
           icon: 'error',
           title: 'Error',
