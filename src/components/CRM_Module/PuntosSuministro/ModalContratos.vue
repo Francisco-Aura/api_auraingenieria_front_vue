@@ -124,8 +124,16 @@
                       <button @click="verDetalleContrato(contrato)" class="btn-icon btn-view" title="Ver Detalle">
                         <i class="fas fa-eye"></i>
                       </button>
-                      <button @click="descargarPDFExistente(nuevoContrato)" class="btn-icon btn-download" title="Descargar PDF" v-if="contrato.rutaArchivoContrato">
-                        <i class="fas fa-download"></i>
+                      <button
+                        @click="descargarPDF(contrato)"
+                        class="btn-icon btn-download"
+                        title="Descargar PDF"
+                        v-if="contrato.rutaArchivoContrato"
+                        :disabled="descargandoPdfId === contrato.id"
+                        :aria-busy="descargandoPdfId === contrato.id"
+                        aria-label="Descargar PDF del contrato"
+                      >
+                        <i :class="descargandoPdfId === contrato.id ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
                       </button>
                       <button @click="eliminarContrato(contrato)" class="btn-icon btn-delete" title="Eliminar contrato" v-if="nivelAcceso === 1">
                         <i class="fas fa-trash"></i>
@@ -522,8 +530,15 @@
                     <span>Ya guardado en el contrato</span>
                   </div>
                   <div class="file-selected-actions">
-                    <button type="button" class="btn-file-action btn-download-existing" @click="descargarPDFExistente(nuevoContrato)">
-                      <i class="fas fa-download"></i> Descargar
+                    <button
+                      type="button"
+                      class="btn-file-action btn-download-existing"
+                      @click="descargarPDFExistente(nuevoContrato)"
+                      :disabled="descargandoPdfModal"
+                      :aria-busy="descargandoPdfModal"
+                    >
+                      <i :class="descargandoPdfModal ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
+                      {{ descargandoPdfModal ? 'Descargando...' : 'Descargar' }}
                     </button>
                     <button type="button" class="btn-file-action btn-file-replace" @click="$refs.pdfInput.click()">
                       <i class="fas fa-sync-alt"></i> Sustituir
@@ -904,6 +919,8 @@ export default {
       nivelAcceso: null,
       errores: {},
       contratoTieneArchivo: false,
+      nombreArchivoExistente: '',
+      eliminarArchivoExistente: false,
       contratoOriginalIdRenovar: null,
       selectedFile: null,
       arrastrandoPdf: false,
@@ -911,6 +928,8 @@ export default {
       mostrarModalDetalleContrato: false,
       contratoDetalle: null,
       clienteDetalle: null,
+      descargandoPdfId: null,
+      descargandoPdfModal: false,
     };
   },
 
@@ -959,11 +978,13 @@ export default {
       return `${(size / (1024 * 1024)).toFixed(1)} MB`;
     },
 
+    // Cancela la selección de un archivo NUEVO pendiente de guardar. No debe
+    // tocar el archivo que el contrato ya tenía guardado en el backend: si lo
+    // hubiera, la tarjeta correspondiente debe reaparecer, no desaparecer.
     limpiarArchivoSeleccionado() {
       this.selectedFile = null;
       this.errorArchivoContrato = '';
       this.arrastrandoPdf = false;
-      this.contratoTieneArchivo = false;
       if (this.$refs?.pdfInput) this.$refs.pdfInput.value = '';
     },
 
@@ -971,7 +992,6 @@ export default {
       this.selectedFile = null;
       this.errorArchivoContrato = mensaje;
       if (this.$refs?.pdfInput) this.$refs.pdfInput.value = '';
-      this.contratoTieneArchivo = false;
       this.$swal.fire({
         icon: 'warning',
         title: 'PDF no válido',
@@ -980,9 +1000,12 @@ export default {
       });
     },
 
+    // Quita el archivo YA GUARDADO en el backend. Solo actualiza el estado
+    // local; la eliminación real (borrar el fichero y limpiar la BD) ocurre
+    // al guardar el formulario, mandando eliminarArchivoContrato: true.
     quitarArchivoBackend() {
       this.contratoTieneArchivo = false;
-     
+      this.eliminarArchivoExistente = true;
       this.selectedFile = null;
       this.errorArchivoContrato = '';
       if (this.$refs?.pdfInput) this.$refs.pdfInput.value = '';
@@ -1175,6 +1198,10 @@ export default {
       this.nuevoContrato.idComercializadoraActual = this.contratoVigente.idComercializadoraActual || "";
       this.nuevoContrato.idComercializadoraAnterior = this.contratoVigente.idComercializadoraAnterior || "";
       
+      // Detectar si el contrato vigente trae un archivo ya subido desde el backend
+      this.contratoTieneArchivo = !!(this.contratoVigente.rutaArchivoContrato);
+      this.nombreArchivoExistente = this.contratoVigente.nombreArchivo || '';
+      this.eliminarArchivoExistente = false;
       this.selectedFile = null;
     },
 
@@ -1222,6 +1249,10 @@ export default {
       this.nuevoContrato.idComercializadoraActual = this.contratoVigente.idComercializadoraActual || "";
       this.nuevoContrato.idComercializadoraAnterior = this.contratoVigente.idComercializadoraAnterior || "";
       
+      // Una renovación siempre parte sin archivo (el usuario puede adjuntar uno nuevo)
+      this.contratoTieneArchivo = false;
+      this.nombreArchivoExistente = '';
+      this.eliminarArchivoExistente = false;
       this.selectedFile = null;
     },
 
@@ -1275,6 +1306,8 @@ export default {
       
       // Detectar si el contrato trae un archivo ya subido desde el backend
       this.contratoTieneArchivo = !!(contrato.rutaArchivoContrato);
+      this.nombreArchivoExistente = contrato.nombreArchivo || '';
+      this.eliminarArchivoExistente = false;
       this.selectedFile = null;
     },
 
@@ -1320,6 +1353,9 @@ export default {
       this.nuevoContrato.idComercializadoraActual = contrato.idComercializadoraActual || "";
       this.nuevoContrato.idComercializadoraAnterior = contrato.idComercializadoraAnterior || "";
       
+      this.contratoTieneArchivo = false;
+      this.nombreArchivoExistente = '';
+      this.eliminarArchivoExistente = false;
       this.selectedFile = null;
     },
 
@@ -1332,6 +1368,9 @@ export default {
       this.selectedFile = null;
       this.errorArchivoContrato = '';
       this.arrastrandoPdf = false;
+      this.contratoTieneArchivo = false;
+      this.nombreArchivoExistente = '';
+      this.eliminarArchivoExistente = false;
     },
 
     async guardarContrato() {
@@ -1361,7 +1400,13 @@ export default {
         if (this.modoEdicion && this.contratoEditandoId) {
           this.nuevoContrato.id = this.contratoEditandoId;
         }
-        
+
+        // Indicar al backend si hay que borrar el PDF ya guardado (el usuario
+        // pulsó "Quitar" sobre el documento existente y no seleccionó uno nuevo).
+        // Si se seleccionó un archivo nuevo, este flag es irrelevante: el backend
+        // sustituye y borra el anterior automáticamente al subir el nuevo.
+        this.nuevoContrato.eliminarArchivoContrato = this.eliminarArchivoExistente;
+
         this.$swal.fire({
           title: 'Guardando contrato...',
           text: 'Por favor, espere mientras se procesa la información.',
@@ -1478,6 +1523,43 @@ export default {
       return fechaInicio <= ahora && fechaFin > ahora;
     },
 
+    async descargarPDF(contrato) {
+      if (!contrato.rutaArchivoContrato) {
+        this.$swal.fire({
+          icon: 'warning',
+          title: 'Archivo no disponible',
+          text: 'No hay archivo PDF disponible para este contrato'
+        })
+        return;
+      }
+
+      this.descargandoPdfId = contrato.id;
+      try {
+        const response = await axios.get(
+          `${process.env.VUE_APP_API_URL}/contratos/${contrato.id}/pdf`,
+          { responseType: 'blob' }
+        );
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const filename = contrato.nombreArchivo ? contrato.nombreArchivo : `contrato_${contrato.id}.pdf`;
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } catch (error) {
+        console.error("Error al descargar el PDF:", error);
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al descargar el PDF del contrato'
+        })
+      } finally {
+        this.descargandoPdfId = null;
+      }
+    },
+
     async descargarPDFExistente(contrato) {
       if (!contrato.rutaArchivoContrato) {
         this.$swal.fire({
@@ -1488,6 +1570,7 @@ export default {
         return;
       }
 
+      this.descargandoPdfModal = true;
       try {
         const response = await axios.get(
           `${process.env.VUE_APP_API_URL}/contratos/${contrato.id}/pdf`,
@@ -1495,7 +1578,7 @@ export default {
         );
 
         const url = window.URL.createObjectURL(new Blob([response.data]));
-        const filename = contrato.nombreArchivo ? contrato.nombreArchivo : `contrato_${contrato.contrato}.pdf`;
+        const filename = contrato.nombreArchivo ? contrato.nombreArchivo : `contrato_${contrato.id}.pdf`;
         const link = document.createElement('a');
         link.href = url;
         link.setAttribute('download', filename);
@@ -1509,6 +1592,8 @@ export default {
           title: 'Error',
           text: 'Error al descargar el PDF del contrato'
         })
+      } finally {
+        this.descargandoPdfModal = false;
       }
     },
 
@@ -1579,6 +1664,9 @@ export default {
       for (let i = 1; i <= 6; i++) {
         this.nuevoContrato['pot' + i] = 0;
       }
+      this.contratoTieneArchivo = false;
+      this.nombreArchivoExistente = '';
+      this.eliminarArchivoExistente = false;
       this.selectedFile = null;
     },
 
@@ -1593,6 +1681,9 @@ export default {
       this.selectedFile = null;
       this.errorArchivoContrato = '';
       this.arrastrandoPdf = false;
+      this.contratoTieneArchivo = false;
+      this.nombreArchivoExistente = '';
+      this.eliminarArchivoExistente = false;
       this.mostrarModalDetalleContrato = false;
       this.contratoDetalle = null;
       this.clienteDetalle = null;
@@ -1889,6 +1980,9 @@ export default {
           this.modoRenovacion = false;
           this.contratoEditandoId = null;
           this.selectedFile = null;
+          this.contratoTieneArchivo = false;
+          this.nombreArchivoExistente = '';
+          this.eliminarArchivoExistente = false;
           this.mostrarModalDetalleContrato = false;
           this.contratoDetalle = null;
           this.clienteDetalle = null;
