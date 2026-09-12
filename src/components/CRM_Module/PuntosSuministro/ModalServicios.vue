@@ -540,42 +540,51 @@
             </div>
           </div>
           
-          <!-- Grid de cuotas compacto -->
-          <div v-if="cuotas.length" class="cuotas-grid-compact">
-            <div v-for="cuota in cuotas" :key="cuota.id" class="cuota-card-compact" :class="{ 'pagada': cuota.pagado }">
-              <div class="cuota-header-compact">
-                <span class="cuota-numero-compact">Cuota {{ cuota.numeroPago }}</span>
-                <div class="cuota-estado-compact" :class="{ 'pagado': cuota.pagado }">
-                  <i :class="cuota.pagado ? 'fas fa-check-circle' : 'fas fa-clock'"></i>
-                  {{ cuota.pagado ? 'Pagado' : 'Pendiente' }}
-                </div>
-              </div>
-              <div class="cuota-contenido-compact">
-                <div class="cuota-fila">
-                  <div class="cuota-campo-compact">
-                    <label>Fecha:</label>
-                    <input type="date" v-model="cuota.fechaPago" @change="marcarEditado(cuota)" class="form-control-compact" />
-                  </div>
-                  <div class="cuota-campo-compact cuota-campo-importe">
-                    <label>Importe:</label>
-                    <div class="input-euro-compact">
-                      <input type="number" v-model="cuota.importePago" min="0" step="0.01" @change="marcarEditado(cuota)" class="form-control-compact" />
-                      <span class="euro-symbol">€</span>
+          <!-- Tabla de cuotas -->
+          <div v-if="cuotas.length" class="cuotas-table-wrapper">
+            <table class="cuotas-table">
+              <thead>
+                <tr>
+                  <th class="ct-num">#</th>
+                  <th class="ct-estado">Estado</th>
+                  <th class="ct-fecha">Fecha</th>
+                  <th class="ct-importe">Importe</th>
+                  <th class="ct-pagado">Pagado</th>
+                  <th class="ct-acciones"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="cuota in cuotas" :key="cuota.id" :class="{ 'ct-row-pagada': cuota.pagado }">
+                  <td class="ct-num">
+                    <span class="ct-badge-num">{{ cuota.numeroPago }}</span>
+                  </td>
+                  <td class="ct-estado">
+                    <span class="ct-pill" :class="cuota.pagado ? 'ct-pill--pagado' : 'ct-pill--pendiente'">
+                      <i :class="cuota.pagado ? 'fas fa-check-circle' : 'fas fa-clock'"></i>
+                      {{ cuota.pagado ? 'Pagado' : 'Pendiente' }}
+                    </span>
+                  </td>
+                  <td class="ct-fecha">
+                    <input type="date" v-model="cuota.fechaPago" @change="marcarEditado(cuota)" class="ct-input" />
+                  </td>
+                  <td class="ct-importe">
+                    <div class="ct-input-euro">
+                      <input type="number" v-model="cuota.importePago" min="0" step="0.01" @change="marcarEditado(cuota)" class="ct-input" />
+                      <span class="ct-euro">€</span>
                     </div>
-                  </div>
-                </div>
-                <div class="cuota-acciones">
-                  <label class="checkbox-label-compact">
-                    <input type="checkbox" v-model="cuota.pagado" @change="marcarEditado(cuota)" />
-                    <span>Pagado</span>
-                  </label>
-                  <button type="button" class="btn-guardar-compact" :disabled="!cuota.editado" @click="guardarCuota(cuota)" title="Guardar cambios">
-                    <i class="fas fa-save"></i>
-                    <span>Guardar</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+                  </td>
+                  <td class="ct-pagado">
+                    <input type="checkbox" v-model="cuota.pagado" @change="marcarEditado(cuota)" class="ct-checkbox" />
+                  </td>
+                  <td class="ct-acciones">
+                    <button type="button" class="btn-guardar-compact" :disabled="!cuota.editado" @click="guardarCuota(cuota)" title="Guardar cambios">
+                      <i class="fas fa-save"></i>
+                      <span>Guardar</span>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
           <div v-else class="sin-cuotas">
             <i class="fas fa-info-circle"></i> No hay cuotas generadas para este servicio.
@@ -816,6 +825,8 @@ export default {
       this.modoEdicion = false;
       this.modoRenovacion = false;
       this.servicioEditandoId = null;
+      this.pagosExistentes = null;
+      this.cuotas = [];
       this.inicializarNuevoServicio();
     },
 
@@ -1068,7 +1079,7 @@ export default {
         
         // Si hay datos de pagos, manejarlos según el modo
         if (this.nuevoServicio.idPagoPlazos && 
-            (this.nuevoServicio.importe > 0 || this.nuevoServicio.importeFinal > 0)) {
+            (this.nuevoServicio.importe >= 0 || this.nuevoServicio.importeFinal >= 0)) {
           
           // Validar que tenemos un ID de servicio válido
           if (this.modoEdicion) {
@@ -1783,7 +1794,7 @@ export default {
       // Si no hay datos existentes pero ahora hay modalidad de pago, hay cambios
       if (!this.pagosExistentes) {
         return !!(this.nuevoServicio.idPagoPlazos && 
-                 (this.nuevoServicio.importe > 0 || this.nuevoServicio.importeFinal > 0));
+                 (this.nuevoServicio.importe >= 0 || this.nuevoServicio.importeFinal >= 0));
       }
       
       // Verificar si alguno de los campos relevantes cambió
@@ -1816,7 +1827,7 @@ export default {
       if (!this.modoEdicion) return { proceder: true };
 
       const hayDatosDePago = this.nuevoServicio.idPagoPlazos &&
-        (this.nuevoServicio.importe > 0 || this.nuevoServicio.importeFinal > 0);
+        (this.nuevoServicio.importe >= 0 || this.nuevoServicio.importeFinal >= 0);
       if (!hayDatosDePago) return { proceder: true };
 
       const pagosCambiaron = this.verificarCambiosEnPagos();
