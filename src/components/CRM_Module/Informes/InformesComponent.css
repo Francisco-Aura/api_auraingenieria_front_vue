@@ -312,6 +312,8 @@
 .column-header {
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
   gap: 4px;
 }
 
@@ -325,6 +327,9 @@
   gap: 4px;
   font-size: 0.95rem;
   min-height: 20px;
+  overflow: hidden;
+  min-width: 0;
+  flex-wrap: nowrap;
 }
 
 .column-title--sin-orden {
@@ -332,10 +337,16 @@
 }
 
 .column-text {
-  margin-right: 0;
-  word-break: break-word;
-  white-space: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1.2;
+  min-width: 0;
+  flex: 1;
+}
+
+.column-title i {
+  flex-shrink: 0;
 }
 
 .column-title:hover {
@@ -345,6 +356,7 @@
 .column-filter-container {
   position: relative;
   min-width: 60px;
+  flex-shrink: 0;
 }
 
 .column-filter {
@@ -443,10 +455,11 @@
   top: 0;
   z-index: var(--z-sticky);
   min-width: 90px;
-  word-break: break-word;
-  white-space: normal;
-  line-height: 1.25;
   font-size: 0.94rem;
+  vertical-align: bottom;
+  height: 72px;
+  overflow: hidden;
+  max-width: 160px;
 }
 
 .data-table td {
@@ -886,44 +899,32 @@
   justify-content: center;
   height: 100%;
   width: 100%;
-  padding: 8px;
 }
 
-.btn-mark-paid {
-  background: none;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  width: auto;
-  height: auto;
-  min-width: unset;
-  min-height: unset;
-  display: flex;
+.btn-pago-check {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-mark-paid:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.icono-billete-verde {
+  gap: 5px;
+  padding: 4px 10px;
+  background-color: #f0faf4;
   color: #217346;
-  font-size: 1.4rem;
+  border: 1px solid #b7dfc8;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.btn-icono-desnudo {
-  background: none;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  width: auto;
-  height: auto;
-  min-width: unset;
-  min-height: unset;
+.btn-pago-check:hover {
+  background-color: #217346;
+  color: #fff;
+  border-color: #217346;
+}
+
+.btn-pago-check i {
+  font-size: 0.9rem;
 }
 
 /* Celda especial para columna acciones: sin restricciones de ancho */
@@ -933,6 +934,33 @@
   min-width: 78px;
   max-width: 78px;
   width: 78px;
+  text-align: center;
+}
+
+/* Cabeceras de acciones y pagos: centradas, sin truncar, ancho fijo */
+.th-acciones,
+.th-pagos {
+  text-align: center !important;
+  min-width: 60px;
+  max-width: 110px;
+  width: 100px;
+}
+
+.th-acciones .column-header,
+.th-pagos .column-header {
+  align-items: center;
+  justify-content: center;
+}
+
+.column-text--center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.column-filter-placeholder {
+  height: 28px;
 }
 
 /* Botones de acción en contratos pendientes de renovación */
