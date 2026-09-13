@@ -36,7 +36,7 @@
 
           <div class="card informe-card" v-if="nivelAcceso === 1" :class="{ 'informe-card--activo': esInformeActivo('servicios-pendientes-pago') }" @click="toggleInforme('servicios-pendientes-pago')">
             <div class="informe-icon">
-              <i class="fas fa-money-bill-wave"></i>
+              <i class="fas fa-credit-card"></i>
             </div>
             <div class="informe-info">
               <h3>Servicios Pendientes de Pago</h3>
@@ -123,11 +123,15 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th v-for="columna in encabezados" :key="columna" class="sortable" :data-column="columna">
+              <th v-for="columna in encabezados" :key="columna" class="sortable" :data-column="columna"
+                  :class="{ 'th-acciones': columna === 'acciones', 'th-pagos': columna === 'pagos' }">
                 <div class="column-header">
-                  <div class="column-title" :class="{ 'column-title--sin-orden': columna === 'acciones' }" @click="columna !== 'acciones' && sortBy(columna)">
-                    <span class="column-text">{{ formatearColumna(columna) }}</span>
-                    <i v-if="columna !== 'acciones'" :class="getSortIcon(columna)"></i>
+                  <div class="column-title" :class="{ 'column-title--sin-orden': columna === 'acciones' || columna === 'pagos' }" @click="columna !== 'acciones' && columna !== 'pagos' && sortBy(columna)">
+                    <span v-if="columna === 'pagos'" class="column-text column-text--center" :title="'Marcar como pagado'">
+                      <i class="fas fa-credit-card" style="color: #217346; font-size: 1rem;"></i>
+                    </span>
+                    <span v-else class="column-text" :title="formatearColumna(columna)">{{ formatearColumna(columna) }}</span>
+                    <i v-if="columna !== 'acciones' && columna !== 'pagos'" :class="getSortIcon(columna)"></i>
                   </div>
                   <div v-if="columna !== 'pagos' && columna !== 'acciones'" class="column-filter-container">
                     <input 
@@ -139,6 +143,7 @@
                       @click.stop
                     >
                   </div>
+                  <div v-else-if="columna === 'pagos'" class="column-filter-container column-filter-placeholder"></div>
                 </div>
               </th>
             </tr>
@@ -154,12 +159,12 @@
                 <template v-if="tipoSeleccionado === 'servicios-pendientes-pago' && columna === 'pagos'">
                   <div class="pagos-simple-display">
                     <button 
-                      class="btn btn-sm btn-mark-paid btn-icono-desnudo"
+                      class="btn-pago-check"
                       @click="confirmarMarcoPagado(fila)"
-                      :disabled="false"
                       title="Marcar siguiente pago como pagado"
                     >
-                      <i class="fas fa-money-bill-wave icono-billete-verde"></i>
+                      <i class="fas fa-credit-card"></i>
+                      <span>Pagado</span>
                     </button>
                   </div>
                 </template>
@@ -332,6 +337,8 @@ export default {
         codigoContrato: 'Código Contrato',
         fechaInicio: 'Fecha Inicio',
         fechaFin: 'Fecha Fin',
+        fechaInicioServicio: 'Inicio',
+        fechaFinServicio: 'Fin',
         cliente: 'Cliente',
         cups: 'CUPS',
         contrato: 'Contrato',
@@ -340,9 +347,15 @@ export default {
         tarifa: 'Tarifa',
         estado: 'Estado',
         comercializadoraActual: 'Com. Actual',
+        comercializadora: 'Comercializadora',
+        gestora: 'Gestora',
+        producto: 'Producto',
         consumoAnual: 'Consumo kWh',
         importeCuotaPendiente: 'Importe Cuota Pendiente',
-        importeFinal: 'Importe Final',
+        importeFinal: 'Importe',
+        descripcion: 'Descripción',
+        estadoVencimiento: 'Estado',
+        estadoPago: 'Pago',
         nombreCliente: 'Nombre Cliente',
         tipoContacto: 'Tipo Contacto',
         nombre: 'Nombre',
@@ -459,7 +472,7 @@ export default {
         showCancelButton: true,
         confirmButtonColor: '#28a745',
         cancelButtonColor: '#d33',
-        confirmButtonText: '<i class="fas fa-money-bill-wave"></i> Sí, marcar como pagado',
+        confirmButtonText: '<i class="fas fa-credit-card"></i> Confirmar',
         cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
         reverseButtons: true,
         customClass: {
@@ -629,8 +642,8 @@ export default {
         ],
         "servicios-vigentes": [
           "idServicio", // identificador
-          "cliente", "servicio", "fechaInicioServicio", "fechaFinServicio", 
-          "gestora", "producto", "comercializadora", "cups", "tarifa", "importeFinal",
+          "fechaInicioServicio", "fechaFinServicio", "cliente", "producto",
+          "gestora", "comercializadora", "cups", "tarifa", "descripcion", "importeFinal",
           "estadoVencimiento", "estadoPago"
         ],
         "contactos-clientes": [
@@ -651,6 +664,12 @@ export default {
                 // Para el resto de informes, calcular el valor consolidado desde cupsLuz/cupsGas
                 fila[key] = this.obtenerCupsParaMostrar(item);
               }
+            } else if (key === 'descripcion' && this.tipoSeleccionado === 'servicios-vigentes') {
+              // El backend devuelve el campo como 'servicio', lo mapeamos a 'descripcion'
+              fila[key] = item.servicio || '';
+            } else if (key === 'importeFinal' && this.tipoSeleccionado === 'servicios-vigentes') {
+              // Mostrar importe aunque comercializadora sea null
+              fila[key] = item.importeFinal !== null && item.importeFinal !== undefined ? item.importeFinal : '';
             } else if (key === 'acciones') {
               // columna virtual, no copiar del item
               fila[key] = null;
@@ -728,7 +747,7 @@ export default {
 
     // Formatear importe con euros
     formatearImporte(valor) {
-      if (!valor && valor !== 0) return '';
+      if (valor === null || valor === undefined || valor === '') return '';
       const numero = parseFloat(valor);
       if (isNaN(numero)) return valor;
       return new Intl.NumberFormat('es-ES', {
