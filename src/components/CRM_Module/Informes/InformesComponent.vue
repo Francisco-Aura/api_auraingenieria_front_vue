@@ -154,7 +154,7 @@
                 <td v-for="columna in encabezados" :key="columna"><div class="skeleton-line skeleton-line--md"></div></td>
               </tr>
             </template>
-            <tr v-for="(fila, index) in paginatedData" v-show="!loading" :key="index">
+            <tr v-for="(fila, index) in paginatedData" v-show="!loading" :key="filaKey(fila, index)" :class="index % 2 === 0 ? 'fila-par' : 'fila-impar'">
               <td v-for="columna in encabezados" :key="columna" :class="['table-cell', columna === 'acciones' ? 'table-cell-acciones' : '']" :data-column="columna">
                 <template v-if="tipoSeleccionado === 'servicios-pendientes-pago' && columna === 'pagos'">
                   <div class="pagos-simple-display">
@@ -365,6 +365,7 @@ export default {
         correo: 'Correo',
         estadoBaja: 'De Baja',
         acciones: 'Acciones',
+        grupo: 'Grupo Empresarial',
       }
     };
   },
@@ -436,6 +437,11 @@ export default {
     onRecordsPerPageChange() {
       this.recordsPerPage = this.recordsPerPageValue;
       this.currentPage = 1; // Resetear a la primera página
+    },
+
+    // Identificador estable de fila, usado como :key en la tabla
+    filaKey(fila, index) {
+      return fila.idServicio ?? fila.codigoContrato ?? fila.idPS ?? index;
     },
 
     // Método para confirmar antes de marcar como pagado
@@ -642,7 +648,7 @@ export default {
         ],
         "servicios-vigentes": [
           "idServicio", // identificador
-          "fechaInicioServicio", "fechaFinServicio", "cliente", "producto",
+          "fechaInicioServicio", "fechaFinServicio", "cliente", "grupo", "producto",
           "gestora", "comercializadora", "cups", "tarifa", "descripcion", "importeFinal",
           "estadoVencimiento", "estadoPago"
         ],
@@ -697,7 +703,7 @@ export default {
           }
           return fila;
         });
-        // Quita el identificador y numeroCuotas de los encabezados visibles
+        // Quita el identificador, numeroCuotas y campos internos de los encabezados visibles
         this.encabezados = columnasPermitidas[this.tipoSeleccionado].filter(
           col => !["codigoContrato", "idPS", "idServicio", "numeroCuotas", "siguientePagoNumero", "cupsLuz", "cupsGas"].includes(col)
         );
@@ -892,7 +898,10 @@ export default {
           return;
         }
 
-        // Usar los datos filtrados (incluyendo ordenamiento y filtros)
+        // Usar los datos filtrados (incluyendo ordenamiento y filtros).
+        // NOTA: se exportan TODAS las columnas del informe (this.encabezados),
+        // no solo las primarias visibles en pantalla: el detalle expandible
+        // es solo una forma de mostrarlo, no reduce la información exportada.
         const columnasImporte = new Set();
         const data = this.filteredData.map(item => {
           const rowData = {};
