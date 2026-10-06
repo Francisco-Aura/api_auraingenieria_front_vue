@@ -2,15 +2,13 @@
   <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="auditoria-modal-title" @click="cerrar">
     <div class="modal-auditoria" @click.stop>
       <!-- Header -->
-      <div class="modal-header">
-        <div class="header-content">
-          <div class="header-title">
-            <i class="fas fa-history"></i>
-            <h2 id="auditoria-modal-title">Auditoría de Tarea</h2>
-          </div>
-          <span class="tarea-titulo" v-if="tarea">{{ tarea.titulo }}</span>
+      <div class="modal-header aura-modal-header">
+        <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-history"></i></span>
+        <div class="aura-modal-header__titulos">
+          <h2 id="auditoria-modal-title">Auditoría de la tarea</h2>
+          <span v-if="tarea" class="aura-modal-header__subtitulo"><span><strong>{{ tarea.titulo }}</strong></span></span>
         </div>
-        <button class="close-button" @click="cerrar">
+        <button type="button" class="close-button" @click="cerrar" aria-label="Cerrar">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -40,7 +38,7 @@
         <div class="metricas-panel">
           <h3 class="section-title">
             <i class="fas fa-chart-pie"></i>
-            Resumen de Tiempos
+            Resumen de tiempos
           </h3>
           
           <div class="metricas-grid">
@@ -126,7 +124,7 @@
         <div class="timeline-panel">
           <h3 class="section-title">
             <i class="fas fa-stream"></i>
-            Historial de Estados
+            Historial de estados
           </h3>
 
           <div class="timeline-container" v-if="historial.length > 0">
@@ -203,7 +201,7 @@
         <div class="bloqueos-panel" v-if="metricas.bloqueos && metricas.bloqueos.length > 0">
           <h3 class="section-title">
             <i class="fas fa-ban"></i>
-            Detalle de Bloqueos
+            Detalle de bloqueos
           </h3>
 
           <div class="bloqueos-tabla">
@@ -246,11 +244,11 @@
           </div>
         </div>
 
-        <!-- Información de Fechas -->
+        <!-- Información de fechas -->
         <div class="fechas-panel">
           <h3 class="section-title">
             <i class="fas fa-calendar-check"></i>
-            Información de Fechas
+            Información de fechas
           </h3>
           <div class="fechas-grid">
             <div class="fecha-item">
@@ -295,6 +293,8 @@
 
 <script>
 import { tareasApi } from '@/services/tareasApi'
+import { cargarExcelJS, descargarLibroExcel } from '@/utils/excel'
+import { fechaLocalISO } from '@/utils/fechas'
 
 export default {
   name: 'TareaAuditoriaModal',
@@ -451,7 +451,7 @@ export default {
 
     async exportarAuditoria() {
       try {
-        const ExcelJS = require('exceljs')
+        const ExcelJS = await cargarExcelJS()
         const workbook = new ExcelJS.Workbook()
         const worksheet = workbook.addWorksheet('Auditoría de Tarea')
         
@@ -660,14 +660,7 @@ export default {
         ]
         
         // Generar y descargar el archivo
-        const buffer = await workbook.xlsx.writeBuffer()
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = `Auditoria_Tarea_${this.tareaId}_${new Date().toISOString().split('T')[0]}.xlsx`
-        link.click()
-        window.URL.revokeObjectURL(url)
+        await descargarLibroExcel(workbook, `Auditoria_Tarea_${this.tareaId}_${fechaLocalISO()}.xlsx`)
       } catch (error) {
         console.error('Error exportando auditoría:', error)
         this.$swal.fire({
@@ -676,38 +669,6 @@ export default {
           text: 'Error al exportar la auditoría a Excel'
         })
       }
-    },
-
-    generarReporteAuditoria() {
-      let reporte = `REPORTE DE AUDITORÍA DE TAREA\n`
-      reporte += `================================\n\n`
-      reporte += `Tarea: ${this.tarea?.titulo || 'N/A'}\n`
-      reporte += `ID: ${this.tareaId}\n`
-      reporte += `Fecha del reporte: ${new Date().toLocaleString('es-ES')}\n\n`
-      
-      reporte += `MÉTRICAS DE TIEMPO\n`
-      reporte += `------------------\n`
-      reporte += `Tiempo Total: ${this.formatearDuracion(this.metricas.tiempoTotalSegundos)}\n`
-      reporte += `Tiempo Activo: ${this.formatearDuracion(this.metricas.tiempoActivoTotal)}\n`
-      reporte += `Tiempo Bloqueado: ${this.formatearDuracion(this.metricas.tiempoBloqueadoTotal)}\n`
-      reporte += `Total Bloqueos: ${this.metricas.totalBloqueos}\n`
-      reporte += `Eficiencia: ${this.metricas.eficiencia}%\n\n`
-      
-      reporte += `HISTORIAL DE ESTADOS\n`
-      reporte += `--------------------\n`
-      this.historial.forEach((h, i) => {
-        reporte += `${i + 1}. ${this.formatearEstadoNombre(h.estadoNombre)}\n`
-        reporte += `   Fecha: ${this.formatearFecha(h.fechaInicio)}\n`
-        if (h.motivoBloqueo) {
-          reporte += `   Motivo bloqueo: ${h.motivoBloqueo}\n`
-        }
-        if (h.usuarioNombre) {
-          reporte += `   Usuario: ${h.usuarioNombre}\n`
-        }
-        reporte += `\n`
-      })
-      
-      return reporte
     },
 
     cerrar() {

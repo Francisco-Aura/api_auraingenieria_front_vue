@@ -456,17 +456,19 @@
   padding: 0;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 0.875rem;
-  color: #4f46e5;
+  color: var(--color-text-dark);
   font-weight: 600;
   letter-spacing: 0.025em;
   cursor: pointer;
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration-color: var(--color-brand-yellow-hex, #fcd700);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
   transition: color 0.15s;
 }
 
 .btn-cups-link:hover {
-  color: #3730a3;
+  color: #000;
 }
 
 /* Pestañas del modal de cliente */
@@ -495,19 +497,19 @@
 }
 
 .tab-btn-cliente:hover {
-  color: #4f46e5;
-  background: #f0f0ff;
+  color: var(--color-text-dark);
+  background: rgba(252, 215, 0, 0.08);
 }
 
 .tab-btn-cliente.active {
-  color: #4f46e5;
-  border-bottom-color: #4f46e5;
+  color: var(--color-text-dark);
+  border-bottom-color: var(--color-brand-yellow-hex, #fcd700);
   font-weight: 600;
 }
 
 .tab-count {
-  background: #e0e7ff;
-  color: #4f46e5;
+  background: var(--color-brand-yellow-hex, #fcd700);
+  color: var(--color-text-dark);
   border-radius: 99px;
   padding: 0 6px;
   font-size: 0.75rem;
@@ -653,34 +655,4 @@
   .cups-cell {
     min-width: 120px; /* Ajustar ancho en móviles */
   }
-}
-
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-  padding: 20px;
-}
-
-.detail-item {
-  background-color: var(--surface-color);
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.detail-item.full-width {
-  grid-column: 1 / -1;
-}
-
-.detail-item strong {
-  display: block;
-  color: var(--neutral-700);
-  font-size: 0.9rem;
-  margin-bottom: 5px;
-}
-
-.detail-item:not(strong) {
-  color: var(--text-primary);
-  font-size: 1rem;
 }

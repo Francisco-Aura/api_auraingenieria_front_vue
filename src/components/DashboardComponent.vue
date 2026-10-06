@@ -8,8 +8,15 @@
           <img v-if="!sidebarCollapsed" src="@/assets/logo.png" alt="AURA Logo" class="logo-icon" />
           <span v-if="!sidebarCollapsed" class="logo-text">AURA</span>
         </div>
-        <button class="toggle-sidebar" @click="toggleSidebar">
-          <i class="fas" :class="sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+        <button
+          type="button"
+          class="toggle-sidebar"
+          :title="sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'"
+          :aria-label="sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'"
+          :aria-expanded="sidebarCollapsed ? 'false' : 'true'"
+          @click="toggleSidebar"
+        >
+          <i class="fas" :class="sidebarCollapsed ? 'fa-bars' : 'fa-angles-left'" aria-hidden="true"></i>
         </button>
       </div>
 
@@ -43,7 +50,21 @@
           <i class="fas fa-cog menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Administración</span>
           <div v-if="sidebarCollapsed" class="tooltip">Administración</div>
-        </router-link> 
+        </router-link>
+
+        <router-link v-if="nivelAcceso === 1" to="/dashboard/mcas" class="menu-item" active-class="active">
+          <i class="fas fa-sliders-h menu-icon"></i>
+          <span v-if="!sidebarCollapsed" class="menu-text">Configuración MCAS</span>
+          <div v-if="sidebarCollapsed" class="tooltip">Configuración MCAS</div>
+        </router-link>
+
+        <!-- Insignia con las comisiones por aprobar (abierto y plegado); el desglose va en el título -->
+        <router-link v-if="nivelAcceso === 1" to="/dashboard/mcas-propuestas" class="menu-item" active-class="active" :title="sidebarCollapsed ? null : (tituloPendientesMcas || null)">
+          <i class="fas fa-file-invoice-dollar menu-icon"></i>
+          <span v-if="!sidebarCollapsed" class="menu-text">Comisiones MCAS</span>
+          <span v-if="pendientesPorValidar" class="menu-insignia" :title="tituloPendientesMcas" :aria-label="pendientesPorValidar + ' por aprobar'">{{ insigniaPendientesMcas }}</span>
+          <div v-if="sidebarCollapsed" class="tooltip">Comisiones MCAS<span v-if="tituloPendientesMcas" class="tooltip-detalle">{{ tituloPendientesMcas }}</span></div>
+        </router-link>
       </div>
 
       <!-- User profile at the bottom -->
@@ -93,6 +114,7 @@
 <script>
 import NotificacionesComponent from '@/components/CRM_Module/Tareas/NotificacionesComponent.vue'
 import { tareasApi } from '@/services/tareasApi'
+import { crearSondeoPendientes, textoPendientesMcas } from '@/services/mcasPendientes'
 
 export default {
   name: 'Dashboard-Component',
@@ -111,15 +133,28 @@ export default {
         '/dashboard/puntos-suministro': 'Puntos de Suministro',
         '/dashboard/informes': 'Informes',
         '/dashboard/administracion': 'Administración',
-        '/dashboard/tareas': 'Gestión de Tareas'
+        '/dashboard/tareas': 'Gestión de Tareas',
+        '/dashboard/mcas': 'Configuración MCAS',
+        '/dashboard/mcas-propuestas': 'Comisiones MCAS'
       },
-      moduloTareasActivo: false
+      moduloTareasActivo: false,
+      // Recuento de comisiones MCAS pendientes (solo administradores): { porValidar, porRevisar, enCorreccion, total }
+      pendientesMcas: null
     };
   },
   computed: {
     pageTitle() {
       // Retorna el título basado en la ruta actual
       return this.routes[this.$route.path] || 'Dashboard';
+    },
+    pendientesPorValidar() {
+      return this.pendientesMcas?.porValidar || 0;
+    },
+    insigniaPendientesMcas() {
+      return this.pendientesPorValidar > 99 ? '99+' : String(this.pendientesPorValidar);
+    },
+    tituloPendientesMcas() {
+      return textoPendientesMcas(this.pendientesMcas);
     }
   },
   methods: {
@@ -160,6 +195,12 @@ export default {
         this.sidebarCollapsed = true;
         this.userMenuOpen = false;
       }
+    },
+    // Contador de «Comisiones MCAS»: sondeo cada 60 s, en pausa con la pestaña oculta
+    iniciarPendientesMcas() {
+      this.sondeoPendientesMcas = crearSondeoPendientes();
+      this.sondeoPendientesMcas.suscribir((recuento) => { this.pendientesMcas = recuento; });
+      this.sondeoPendientesMcas.iniciar();
     }
   },
   async created() {
@@ -169,6 +210,7 @@ export default {
       this.nivelAcceso = usuario.nivelAcceso;
       this.userName = usuario.nombre || 'Usuario';
       this.userRole = usuario.nivelAcceso === 1 ? 'Administrador' : 'Usuario';
+      if (usuario.nivelAcceso === 1) this.iniciarPendientesMcas();
     } else {
       // Si no hay usuario autenticado, redirigir al login
       this.$router.push('/');
@@ -186,6 +228,7 @@ export default {
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.handleResize);
+    this.sondeoPendientesMcas?.detener();
   },
   watch: {
     // Cerrar menú de usuario al cambiar de ruta

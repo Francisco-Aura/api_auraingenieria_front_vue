@@ -2,8 +2,16 @@
   <div v-if="visible" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="servicios-modal-title">
     <div class="modal-content">
       <!-- Encabezado del modal -->
-      <div class="modal-header">
-        <h1 id="servicios-modal-title" class="modal-title">Gestión de Servicios</h1>
+      <div class="modal-header aura-modal-header">
+        <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-tools"></i></span>
+        <div class="aura-modal-header__titulos">
+          <h1 id="servicios-modal-title" class="modal-title">{{ tituloModal }}</h1>
+          <span class="aura-modal-header__subtitulo">
+            <span><strong>{{ cliente?.nombre || 'Cliente no disponible' }}</strong></span>
+            <span class="aura-dato"><span class="aura-dato__etiqueta">DNI/CIF</span>{{ cifCliente || 'No disponible' }}</span>
+            <span class="aura-dato"><span class="aura-dato__etiqueta">CUPS</span>{{ obtenerCupsDelPuntoSuministro() || 'No disponible' }}</span>
+          </span>
+        </div>
         <button type="button" @click="cerrarModal" class="close-button" aria-label="Cerrar gestión de servicios">
           <i class="fas fa-times"></i>
         </button>
@@ -13,35 +21,22 @@
       <div v-if="!cargando && !cargandoDatos" class="main-content-container">
         <!-- Vista principal: Histórico de servicios con formulario de edición/creación cuando sea necesario -->
         <div v-if="!mostrandoFormulario" class="main-content">
-          <!-- Banner del cliente -->
-          <div class="client-banner">
-            <div class="client-info">
-              <div class="client-header">
-                <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Desconocido' }}</h4>
-                <div class="client-details">
-                  <span><strong>DNI/CIF:</strong> {{ cliente?.cif?.trim() || cliente?.dniAutorizado?.trim() || 'No disponible' }}</span>
-                  <span><strong>CUPS:</strong> {{ obtenerCupsDelPuntoSuministro() || 'No disponible' }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Botones de acción principales -->
           <div class="action-buttons-main">
             <button @click="crearNuevoServicio" class="btn-modern btn-primary">
-              <i class="fas fa-plus"></i> Crear Servicio
+              <i class="fas fa-plus"></i> Crear servicio
             </button>
             <button @click="modificarServicioActual" class="btn-modern btn-warning" v-if="tieneServicioVigente">
-              <i class="fas fa-edit"></i> Modificar Actual
+              <i class="fas fa-edit"></i> Modificar actual
             </button>
             <button @click="renovarServicioActual" class="btn-modern btn-success" v-if="tieneServicioVigente">
-              <i class="fas fa-sync-alt"></i> Renovar Actual
+              <i class="fas fa-sync-alt"></i> Renovar actual
             </button>
           </div>
 
           <!-- Histórico de servicios -->
           <div class="contracts-history">
-            <h3><i class="fas fa-history"></i> Histórico de Servicios</h3>
+            <h3><i class="fas fa-history"></i> Histórico de servicios</h3>
             <div v-if="todosLosServiciosOrdenados.length" class="history-table-container">
               <table class="history-table">
                 <thead>
@@ -85,7 +80,7 @@
                     <td class="pagos-column">
                       <div v-if="servicio.pagos" class="pagos-mini">
                         <span class="pago-indicador">{{ obtenerMesesPagados(servicio.pagos) }}/{{ obtenerNumeroCuotas(servicio.pagos) }} P</span>
-                        <span class="total-indicador">{{ servicio.pagos.importeFinal || servicio.pagos.importe || 0 }}€</span>
+                        <span class="total-indicador">{{ formatearEuros(servicio.pagos.importeFinal || servicio.pagos.importe) }}</span>
                       </div>
                       <div v-else class="sin-pagos-mini">
                         <span>--/--</span>
@@ -98,13 +93,13 @@
                       <button @click="renovarServicioGenerico(servicio)" class="btn-icon btn-renew" title="Renovar servicio" aria-label="Renovar servicio">
                         <i class="fas fa-sync-alt"></i>
                       </button>
-                      <button @click="verDetalleServicio(servicio)" class="btn-icon btn-view" title="Ver Detalle">
+                      <button @click="verDetalleServicio(servicio)" class="btn-icon btn-view" title="Ver detalle" aria-label="Ver detalle del servicio">
                         <i class="fas fa-eye"></i>
                       </button>
-                      <button @click="gestionarPagosServicio(servicio)" class="btn-icon btn-payment" title="Gestionar Pagos">
+                      <button @click="gestionarPagosServicio(servicio)" class="btn-icon btn-payment" title="Gestionar pagos" aria-label="Gestionar pagos del servicio">
                         <i class="fas fa-euro-sign"></i>
                       </button>
-                      <button @click="eliminarServicio(servicio)" class="btn-icon btn-delete" title="Eliminar servicio" v-if="nivelAcceso === 1">
+                      <button @click="eliminarServicio(servicio)" class="btn-icon btn-delete" title="Eliminar servicio" aria-label="Eliminar servicio" v-if="nivelAcceso === 1">
                         <i class="fas fa-trash"></i>
                       </button>
                     </td>
@@ -121,26 +116,13 @@
 
         <!-- Formulario de creación/edición de servicios -->
         <div v-if="mostrandoFormulario" class="form-content">
-          <!-- Banner del cliente -->
-          <div class="client-banner">
-            <div class="client-info">
-              <div class="client-header">
-                <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'Desconocido' }}</h4>
-                <div class="client-details">
-                  <span><strong>DNI/CIF:</strong> {{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'No disponible' }}</span>
-                  <span><strong>CUPS:</strong> {{ obtenerCupsDelPuntoSuministro() || 'No disponible' }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <form @submit.prevent="guardarServicio" class="modern-form" novalidate>
             <div class="form-grid-modern">
-              <!-- Sección de Información del Servicio -->
+              <!-- Sección de Información del servicio -->
               <div class="form-section-modern">
                 <div class="section-header-modern">
                   <i class="fas fa-info-circle"></i>
-                  <h3>Información del Servicio</h3>
+                  <h3>Información del servicio</h3>
                 </div>
 
                 <div class="form-group-modern">
@@ -218,11 +200,11 @@
               <div class="form-section-modern">
                 <div class="section-header-modern">
                   <i class="fas fa-calendar-alt"></i>
-                  <h3>Fechas del Servicio</h3>
+                  <h3>Fechas del servicio</h3>
                 </div>
                 
                 <div class="form-group-modern">
-                  <label for="fechaInicioServicio">Fecha Inicio <span class="required">*</span></label>
+                  <label for="fechaInicioServicio">Fecha inicio <span class="required">*</span></label>
                   <div class="input-with-icon-modern">
                     <i class="fas fa-play icon-prefix"></i>
                     <input
@@ -238,7 +220,7 @@
                 </div>
 
                 <div class="form-group-modern">
-                  <label for="fechaFinServicio">Fecha Fin <span class="required">*</span></label>
+                  <label for="fechaFinServicio">Fecha fin <span class="required">*</span></label>
                   <div class="input-with-icon-modern">
                     <i class="fas fa-stop icon-prefix"></i>
                     <input
@@ -269,15 +251,15 @@
                 </div>
               </div>
 
-               <!-- Sección de Gestión de Pagos y Cuotas -->
+               <!-- Sección de Gestión de pagos y Cuotas -->
                <div class="form-section-modern">
                 <div class="section-header-modern">
                   <i class="fas fa-euro-sign"></i>
-                  <h3>Gestión de Pagos</h3>
+                  <h3>Gestión de pagos</h3>
                 </div>
 
                 <div class="form-group-modern">
-                  <label for="modalidadPago">Modalidad de Pago <span class="required">*</span></label>
+                  <label for="modalidadPago">Modalidad de pago <span class="required">*</span></label>
                   <div class="select-container-modern" :class="{ 'select-error': errores.idPagoPlazos }">
                     <select
                       id="modalidadPago"
@@ -296,7 +278,7 @@
                 </div>
 
                 <div class="form-group-modern importe-euro-group">
-                  <label>Importe Total</label>
+                  <label>Importe total</label>
                   <div class="input-euro-inline">
                     <input
                       type="number"
@@ -326,7 +308,7 @@
                 </div>
 
                 <div class="form-group-modern importe-euro-group">
-                  <label>Importe Final</label>
+                  <label>Importe final</label>
                   <div class="input-euro-inline">
                     <input
                       type="number"
@@ -341,7 +323,7 @@
                 </div>
 
                 <div class="form-group-modern importe-euro-group">
-                  <label>Importe Pagado</label>
+                  <label>Importe pagado</label>
                   <div class="input-euro-inline">
                     <input
                       type="number"
@@ -396,11 +378,6 @@
         </div>
       </div>
       <div v-else class="main-content-container main-content-skeleton">
-        <div class="client-banner">
-          <div class="client-info">
-            <div class="skeleton-line skeleton-line--lg"></div>
-          </div>
-        </div>
         <div class="contracts-history">
           <div class="history-table-container">
             <table class="history-table">
@@ -418,8 +395,12 @@
     <!-- MODAL DETALLE SERVICIO - FUERA DEL MODAL PRINCIPAL -->
     <div v-if="mostrarModalDetalleServicio" class="modal-overlay detalle-contrato-modal">
       <div class="modal-content detalle-contrato-content">
-        <div class="modal-header">
-          <h2><i class="fas fa-clipboard-list"></i> Detalle del Servicio</h2>
+        <div class="modal-header aura-modal-header">
+          <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-clipboard-list"></i></span>
+          <div class="aura-modal-header__titulos">
+            <h2>Detalle del servicio</h2>
+            <span class="aura-modal-header__subtitulo"><span class="aura-dato"><span class="aura-dato__etiqueta">Servicio</span>#{{ servicioDetalle?.id }}</span></span>
+          </div>
           <button type="button" @click="cerrarModalDetalleServicio" class="close-button" aria-label="Cerrar detalle del servicio">
             <i class="fas fa-times"></i>
           </button>
@@ -434,7 +415,7 @@
               </div>
               <div class="info-row">
                 <span class="info-label">DNI/CIF:</span>
-                <span class="info-value">{{ cliente?.dniAutorizado?.trim() || cliente?.cif?.trim() || 'No disponible' }}</span>
+                <span class="info-value">{{ cifCliente || 'No disponible' }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">CUPS:</span>
@@ -442,7 +423,7 @@
               </div>
             </div>
             <div class="contrato-info">
-              <h4><i class="fas fa-clipboard-list"></i> Información del Servicio</h4>
+              <h4><i class="fas fa-clipboard-list"></i> Información del servicio</h4>
               <div class="info-row">
                 <span class="info-label">ID Servicio:</span>
                 <span class="info-value">#{{ servicioDetalle?.id }}</span>
@@ -485,15 +466,15 @@
             <div class="info-grid">
               <div class="info-row info-row-importe">
                 <span class="info-label">Importe Total:</span>
-                <span class="info-value info-value-importe">{{ servicioDetalle.pagos.importe || 0 }}€</span>
+                <span class="info-value info-value-importe">{{ formatearEuros(servicioDetalle.pagos.importe) }}</span>
               </div>
               <div class="info-row info-row-importe">
                 <span class="info-label">Descuento:</span>
-                <span class="info-value info-value-importe">{{ servicioDetalle.pagos.descuento || 0 }}€</span>
+                <span class="info-value info-value-importe">{{ formatearEuros(servicioDetalle.pagos.descuento) }}</span>
               </div>
               <div class="info-row info-row-importe">
                 <span class="info-label">Importe Final:</span>
-                <span class="info-value info-value-importe">{{ servicioDetalle.pagos.importeFinal || 0 }}€</span>
+                <span class="info-value info-value-importe">{{ formatearEuros(servicioDetalle.pagos.importeFinal) }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Cuotas Pagadas:</span>
@@ -515,8 +496,12 @@
     <!-- MODAL GESTIÓN DE PAGOS - FUERA DEL MODAL PRINCIPAL -->
     <div v-if="mostrarModalGestionPagos" class="modal-overlay detalle-contrato-modal">
       <div class="modal-content detalle-contrato-content">
-        <div class="modal-header">
-          <h2><i class="fas fa-euro-sign"></i> Gestión de Pagos - Servicio #{{ servicioGestionPagos?.id }}</h2>
+        <div class="modal-header aura-modal-header">
+          <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-euro-sign"></i></span>
+          <div class="aura-modal-header__titulos">
+            <h2>Gestión de pagos</h2>
+            <span class="aura-modal-header__subtitulo"><span class="aura-dato"><span class="aura-dato__etiqueta">Servicio</span>#{{ servicioGestionPagos?.id }}</span><span>Marque cada cuota cobrada y pulse «Guardar» en su fila</span></span>
+          </div>
           <button type="button" @click="cerrarModalGestionPagos" class="close-button" aria-label="Cerrar gestión de pagos">
             <i class="fas fa-times"></i>
           </button>
@@ -531,11 +516,11 @@
               </div>
               <div class="resumen-item">
                 <span class="resumen-label">Total pagado:</span>
-                <span class="resumen-valor">{{ totalPagado.toFixed(2) }}€</span>
+                <span class="resumen-valor">{{ formatearEuros(totalPagado) }}</span>
               </div>
               <div class="resumen-item">
                 <span class="resumen-label">Importe final:</span>
-                <span class="resumen-valor">{{ servicioGestionPagos?.pagos?.importeFinal || 0 }}€</span>
+                <span class="resumen-valor">{{ formatearEuros(servicioGestionPagos?.pagos?.importeFinal) }}</span>
               </div>
             </div>
           </div>
@@ -597,6 +582,9 @@
 
 <script>
 import axios from "axios";
+import { fechaLocalISO } from "@/utils/fechas";
+
+const FORMATO_EUROS = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
 
 export default {
   name: "ModalServicios",
@@ -686,7 +674,6 @@ export default {
       servicioDetalle: null,
       mostrarModalGestionPagos: false,
       servicioGestionPagos: null,
-      puntosSuministro: [],
       comercializadorasList: [],
       modalidadesPago: [],
       nivelAcceso: null,
@@ -733,6 +720,12 @@ export default {
       }
       return valido;
     },
+    // Importes en formato español: 92,5 → «92,50 €»
+    formatearEuros(valor) {
+      const numero = Number(valor);
+      return FORMATO_EUROS.format(Number.isFinite(numero) ? numero : 0);
+    },
+
     // Helper para obtener el CUPS correcto del punto de suministro
     obtenerCupsDelPuntoSuministro() {
       const cupsluz = this.puntoSuministroData?.cupsluz?.trim() || "";
@@ -758,7 +751,7 @@ export default {
           return '';
         }
         
-        return date.toISOString().split('T')[0];
+        return fechaLocalISO(date);
       } catch (error) {
         console.error('Error formateando fecha:', error, dateString);
         return '';
@@ -989,7 +982,7 @@ export default {
           icon: 'warning',
           title: 'Campos obligatorios',
           text: 'Revise los campos marcados en rojo antes de guardar.',
-          confirmButtonColor: '#3085d6',
+          confirmButtonColor: '#fcd700',
           confirmButtonText: 'Entendido'
         });
         return;
@@ -1001,7 +994,7 @@ export default {
             icon: 'warning',
             title: 'Error de configuración',
             text: 'No se pudo determinar el punto de suministro. Verifique la configuración.',
-            confirmButtonColor: '#3085d6'
+            confirmButtonColor: '#fcd700'
           });
           return;
         }
@@ -1012,7 +1005,7 @@ export default {
             icon: 'warning',
             title: 'Importes inválidos',
             text: 'Los importes no pueden ser negativos',
-            confirmButtonColor: '#3085d6'
+            confirmButtonColor: '#fcd700'
           });
           return;
         }
@@ -1023,7 +1016,7 @@ export default {
             icon: 'warning',
             title: 'Descuento inválido',
             text: 'El descuento no puede ser mayor que el importe total',
-            confirmButtonColor: '#3085d6'
+            confirmButtonColor: '#fcd700'
           });
           return;
         }
@@ -1093,36 +1086,14 @@ export default {
                 // La confirmación de posible pérdida de cuotas pagadas ya se
                 // resolvió en confirmarCambioModalidadPagoSiAplica(), antes de
                 // persistir el servicio. Aquí solo se genera el nuevo plan.
-                let pagosGenerados;
-                try {
-                  const generarPlanResp = await axios.post(`${process.env.VUE_APP_API_URL}/servicios-pagos/generar-plan`, {
-                    idPagoPlazos: this.nuevoServicio.idPagoPlazos,
-                    importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
-                    fechaInicio: this.nuevoServicio.fechaInicioServicio
-                  });
-                  pagosGenerados = generarPlanResp.data;
-                } catch (errorGenerarPlan) {
-                  console.error("Error al generar el plan de pagos:", errorGenerarPlan);
-                  throw new Error('No se pudo generar el nuevo plan de pagos');
-                }
+                const pagosGenerados = await this.generarPlanDePagos();
 
                 // Fusionar cuotas existentes con el nuevo plan
                 pagosPayload = await this.fusionarCuotasConNuevoPlan(servicioId, pagosGenerados);
               } else if (cambioModalidad && !this.pagosExistentes) {
                 // CASO ESPECIAL: Servicio sin pagos previos pero ahora con modalidad de pago
                 
-                let pagosGenerados;
-                try {
-                  const generarPlanResp = await axios.post(`${process.env.VUE_APP_API_URL}/servicios-pagos/generar-plan`, {
-                    idPagoPlazos: this.nuevoServicio.idPagoPlazos,
-                    importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
-                    fechaInicio: this.nuevoServicio.fechaInicioServicio
-                  });
-                  pagosGenerados = generarPlanResp.data;
-                } catch (errorGenerarPlan) {
-                  console.error("Error al generar el plan de pagos:", errorGenerarPlan);
-                  throw new Error('No se pudo generar el nuevo plan de pagos');
-                }
+                const pagosGenerados = await this.generarPlanDePagos();
 
                 if (pagosGenerados) {
                   pagosPayload = {
@@ -1148,18 +1119,7 @@ export default {
             } 
           } else {
             // MODO CREACIÓN: Generar nuevo plan de pagos
-            let pagosGenerados;
-            try {
-              const generarPlanResp = await axios.post(`${process.env.VUE_APP_API_URL}/servicios-pagos/generar-plan`, {
-                idPagoPlazos: this.nuevoServicio.idPagoPlazos,
-                importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
-                fechaInicio: this.nuevoServicio.fechaInicioServicio
-              });
-              pagosGenerados = generarPlanResp.data;
-            } catch (errorGenerarPlan) {
-              console.error("Error al generar el plan de pagos:", errorGenerarPlan);
-              throw new Error('No se pudo generar el nuevo plan de pagos');
-            }
+            const pagosGenerados = await this.generarPlanDePagos();
 
             if (pagosGenerados && this.nuevoServicio.idPagoPlazos) {
               pagosPayload = {
@@ -1243,7 +1203,7 @@ export default {
           title: this.modoEdicion ? 'Servicio actualizado' : (this.modoRenovacion ? 'Servicio renovado' : 'Servicio creado'),
           text: mensajeExito,
           icon: 'success',
-          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonColor: '#fcd700',
           confirmButtonText: 'Aceptar',
           timer: 3000,
           timerProgressBar: true
@@ -1268,7 +1228,7 @@ export default {
           title: 'Error',
           text: `No se pudo ${this.modoEdicion ? 'actualizar' : (this.modoRenovacion ? 'renovar' : 'crear')} el servicio.${detalle ? ' ' + detalle : ' Por favor, verifica los datos e inténtalo de nuevo.'}`,
           icon: 'error',
-          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonColor: '#fcd700',
           confirmButtonText: 'Aceptar'
         });
       } finally {
@@ -1276,13 +1236,6 @@ export default {
           this.guardando = false;
         }
       }
-    },
-
-    esServicioVigente(servicio) {
-      const ahora = new Date();
-      const fechaFin = new Date(servicio.fechaFinServicio);
-      const fechaInicio = new Date(servicio.fechaInicioServicio);
-      return fechaInicio <= ahora && fechaFin > ahora;
     },
 
     // Verificar si un servicio tiene cuotas pendientes de pago
@@ -1346,7 +1299,7 @@ export default {
           icon: 'error',
           title: 'Error',
           text: 'No se pudo identificar el servicio seleccionado.',
-          confirmButtonColor: '#d33'
+          confirmButtonColor: '#fcd700'
         });
         return;
       }
@@ -1364,7 +1317,7 @@ export default {
           icon: 'error',
           title: 'Error al cargar cuotas',
           text: 'No se pudieron cargar las cuotas del servicio.',
-          confirmButtonColor: '#d33'
+          confirmButtonColor: '#fcd700'
         });
         // Si falla, cerrar el modal
         this.cerrarModalGestionPagos();
@@ -1423,7 +1376,12 @@ export default {
       this.$emit("recargar-servicios");
     },
 
+    /** Usa la lista que ya envía el padre y solo la pide al servidor si llega vacía. */
     async cargarComercializadoras() {
+      if (this.comercializadoras && this.comercializadoras.length > 0) {
+        this.comercializadorasList = [...this.comercializadoras];
+        return;
+      }
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/comercializadoras`);
         this.comercializadorasList = response.data;
@@ -1457,7 +1415,6 @@ export default {
           icon: 'warning',
           showCancelButton: true,
           confirmButtonColor: '#d33',
-          cancelButtonColor: '#3085d6',
           confirmButtonText: 'Sí, eliminar',
           cancelButtonText: 'Cancelar'
         });
@@ -1488,7 +1445,7 @@ export default {
               title: 'Eliminado',
               text: 'El servicio y sus datos asociados han sido eliminados correctamente.',
               icon: 'success',
-              confirmButtonColor: 'rgba(252, 215, 0)',
+              confirmButtonColor: '#fcd700',
               confirmButtonText: 'Aceptar',
               timer: 2000,
               timerProgressBar: true
@@ -1498,63 +1455,40 @@ export default {
             this.$emit("recargar-servicios");
           } catch (deleteError) {
             console.error('Error durante la eliminación:', deleteError);
-            
-            // Si el error es por restricción de clave foránea, intentar eliminación en cascada
-            if (deleteError.response?.status === 500 && 
-                deleteError.response?.data?.message?.includes('foreign key constraint')) {
-              
-              // Intentar eliminación forzada desde el backend
-              try {
-                await axios.delete(`${process.env.VUE_APP_API_URL}/servicios/${servicio.id}/force`);
-                
-                await this.$swal.fire({
-                  title: 'Eliminado',
-                  text: 'El servicio ha sido eliminado correctamente.',
-                  icon: 'success',
-                  confirmButtonColor: 'rgba(252, 215, 0)',
-                  confirmButtonText: 'Aceptar',
-                  timer: 2000,
-                  timerProgressBar: true
-                });
-
-                this.$emit("recargar-servicios");
-                return;
-              } catch (forceDeleteError) {
-                console.error('Error en eliminación forzada:', forceDeleteError);
-              }
-            }
-            
             throw deleteError;
           }
         }
       } catch (error) {
         console.error('Error al eliminar servicio:', error);
-        
-        let mensajeError = 'No se pudo eliminar el servicio. ';
-        if (error.response?.status === 500 && 
-            error.response?.data?.message?.includes('foreign key constraint')) {
-          mensajeError += 'El servicio tiene datos asociados que impiden su eliminación.';
-        } else {
-          mensajeError += 'Por favor, inténtalo de nuevo.';
-        }
-        
+
+        // El servidor explica el motivo cuando lo hay (p. ej. datos asociados)
+        const motivo = error.response?.data?.error;
+        const mensajeError = motivo
+          ? `No se pudo eliminar el servicio: ${motivo}`
+          : 'No se pudo eliminar el servicio. Por favor, inténtalo de nuevo.';
+
         this.$swal.fire({
           title: 'Error',
           text: mensajeError,
           icon: 'error',
-          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonColor: '#fcd700',
           confirmButtonText: 'Aceptar'
         });
       }
     },
 
-    async cargarPuntosSuministro() {
+    /** Pide al servidor el reparto de cuotas de la modalidad elegida. */
+    async generarPlanDePagos() {
       try {
-        const clienteId = typeof this.cliente === 'object' ? this.cliente.id : this.cliente;
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/puntos-suministro/cliente/${clienteId}`);
-        this.puntosSuministro = response.data;
+        const respuesta = await axios.post(`${process.env.VUE_APP_API_URL}/servicios-pagos/generar-plan`, {
+          idPagoPlazos: this.nuevoServicio.idPagoPlazos,
+          importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
+          fechaInicio: this.nuevoServicio.fechaInicioServicio
+        });
+        return respuesta.data;
       } catch (error) {
-        console.error('Error al cargar puntos de suministro:', error);
+        console.error('Error al generar el plan de pagos:', error);
+        throw new Error('No se pudo generar el nuevo plan de pagos');
       }
     },
 
@@ -1880,8 +1814,7 @@ export default {
         `,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#e74c3c',
-        cancelButtonColor: '#6c757d',
+        confirmButtonColor: '#d33',
         confirmButtonText: 'Sí, continuar y perder datos',
         cancelButtonText: 'Cancelar operación',
         width: '600px'
@@ -2160,26 +2093,6 @@ export default {
     },
 
     // Método para verificar cambios de modalidad en tiempo real
-    verificarCambioModalidadEnTiempoReal() {
-      if (!this.pagosExistentes || !this.nuevoServicio.idPagoPlazos) return;
-      
-      const infoActual = this.obtenerInfoModalidadActual();
-      const infoNueva = this.obtenerInfoNuevaModalidad();
-      
-      if (infoActual.cuotas !== infoNueva.cuotas) {
-        
-        // Si hay cuotas pagadas, verificar si se perderían datos
-        if (this.cambioModalidadPago()) {
-          const cuotasPagadas = this.contarCuotasPagadas();
-          if (cuotasPagadas > 0) {
-            if (infoNueva.cuotas < infoActual.cuotas && cuotasPagadas > infoNueva.cuotas) {
-              // No hacer nada
-            }
-          }
-        }
-      }
-    },
-
     // Método para obtener información resumida de la modalidad actual
     obtenerInfoModalidadActual() {
       if (!this.pagosExistentes || !this.pagosExistentes.pagoPlazos) {
@@ -2276,49 +2189,7 @@ export default {
       }
     },
 
-    // Método para mostrar información de ayuda sobre el cambio de modalidad
-    mostrarAyudaCambioModalidad() {
-      this.$swal.fire({
-        title: '💡 Información sobre cambio de cuotas',
-        html: `
-          <div class="swal-recalculo-cuotas-contenedor">
-            <h4>¿Qué sucede cuando cambias el número de cuotas?</h4>
-            
-            <div class="swal-recalculo-cuotas-bloque swal-recalculo-cuotas-bloque--aumento">
-              <h5>✅ Si aumentas las cuotas:</h5>
-              <ul>
-                <li>Se preservan todas las cuotas ya pagadas</li>
-                <li>Se crean nuevas cuotas con importes recalculados</li>
-                <li>No se pierde ningún dato</li>
-              </ul>
-            </div>
-            
-            <div class="swal-recalculo-cuotas-bloque swal-recalculo-cuotas-bloque--reduccion">
-              <h5>⚠️ Si reduces las cuotas:</h5>
-              <ul>
-                <li>Se preservan las cuotas pagadas que quepan en el nuevo número</li>
-                <li>Las cuotas pagadas que excedan el nuevo límite se eliminarán</li>
-                <li>Te pediremos confirmación antes de eliminar datos</li>
-              </ul>
-            </div>
-            
-            <div class="swal-recalculo-cuotas-bloque swal-recalculo-cuotas-bloque--info">
-              <h5>🔢 Recálculo de importes:</h5>
-              <ul>
-                <li>Las cuotas ya pagadas mantienen su importe original</li>
-                <li>Las cuotas pendientes se recalculan con el nuevo importe total</li>
-                <li>Se distribuye equitativamente entre las cuotas restantes</li>
-              </ul>
-            </div>
-          </div>
-        `,
-        icon: 'info',
-        confirmButtonColor: '#fcd700',
-        confirmButtonText: 'Entendido',
-        width: '600px'
-      });
-    },
-
+    /** Importe menos descuento, con dos decimales, para el resumen del formulario. */
     calcularImporteFinal() {
       const imp = parseFloat(this.nuevoServicio.importe) || 0;
       const desc = parseFloat(this.nuevoServicio.descuento) || 0;
@@ -2338,17 +2209,25 @@ export default {
     },
 
     textoBotonGuardar() {
-      if (this.modoEdicion) return 'Guardar Cambios';
+      if (this.modoEdicion) return 'Guardar cambios';
       if (this.modoRenovacion) return 'Guardar y Renovar';
       return 'Guardar Servicio';
     },
 
-    puntoSuministroData() {
-      return this.puntoSuministroSeleccionado;
+    tituloModal() {
+      if (!this.mostrandoFormulario) return 'Gestión de servicios';
+      if (this.modoEdicion) return 'Modificar servicio';
+      if (this.modoRenovacion) return 'Renovar servicio';
+      return 'Nuevo servicio';
     },
 
-    puntoSuministroActivo() {
-      return this.puntoSuministroData;
+    // Mismo criterio que contratos: primero el CIF del cliente y, si no hay, el DNI del autorizado.
+    cifCliente() {
+      return this.cliente?.cif?.trim() || this.cliente?.dniAutorizado?.trim() || '';
+    },
+
+    puntoSuministroData() {
+      return this.puntoSuministroSeleccionado;
     },
 
     servicioActualCalculado() {
@@ -2427,10 +2306,6 @@ export default {
                 await this.cargarModalidadesPago();
               }
               
-              if (!this.puntosSuministro || !this.puntosSuministro.length) {
-                await this.cargarPuntosSuministro();
-              }
-              
             } catch (error) {
               console.error("Error al inicializar vista del modal:", error);
               this.cargandoDatos = false;
@@ -2494,8 +2369,7 @@ export default {
     try {
       await Promise.all([
         this.cargarComercializadoras(),
-        this.cargarModalidadesPago(),
-        this.cargarPuntosSuministro()
+        this.cargarModalidadesPago()
       ]);
     } catch (error) {
       console.error('Error al cargar datos iniciales en ModalServicios:', error);

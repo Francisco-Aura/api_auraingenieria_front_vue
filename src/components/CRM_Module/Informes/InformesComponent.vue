@@ -281,8 +281,12 @@
   <!-- Modal Comentario de Renovación -->
   <div v-if="mostrarModalComentario" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="comentario-renovacion-title" @click.self="mostrarModalComentario = false">
     <div class="modal-comentario-renovacion">
-      <div class="modal-header">
-        <h3 id="comentario-renovacion-title"><i class="fas fa-comment-alt"></i> Comentario de Renovación</h3>
+      <div class="modal-header aura-modal-header">
+        <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-comment-alt"></i></span>
+        <div class="aura-modal-header__titulos">
+          <h3 id="comentario-renovacion-title">Comentario de renovación</h3>
+          <span class="aura-modal-header__subtitulo">Seguimiento de la renovación de este contrato</span>
+        </div>
         <button class="close-button" @click="mostrarModalComentario = false"><i class="fas fa-times"></i></button>
       </div>
       <div class="modal-body">
@@ -305,15 +309,17 @@
 </template>
 
 <script>
+import { ordenTabla } from '@/mixins/ordenTabla';
+import { compararValores } from '@/utils/orden';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import ExcelJS from 'exceljs';
+import { cargarExcelJS, descargarLibroExcel } from '@/utils/excel';
 
 export default {
+  mixins: [ordenTabla],
   data() {
     return {
       loading: false,
-      mostrarModal: false,
       mostrarTabla: false,
       nivelAcceso: null,            // Nivel de acceso del usuario
       datosInforme: [],
@@ -365,6 +371,10 @@ export default {
         correo: 'Correo',
         estadoBaja: 'De Baja',
         acciones: 'Acciones',
+        direccion: 'Dirección',
+        codigoPostal: 'Código Postal',
+        poblacion: 'Población',
+        provincia: 'Provincia',
       }
     };
   },
@@ -375,24 +385,19 @@ export default {
       // Aplicar filtros por columna
       Object.entries(this.columnFilters).forEach(([column, value]) => {
         if (value) {
-          result = result.filter(item => 
-            String(item[column] || '').toLowerCase().includes(value.toLowerCase())
+          // Coincide con el valor tal como se ve (fechas dd/mm/aaaa, importes...) o con el original
+          const buscado = value.toLowerCase();
+          result = result.filter(item =>
+            String(item[column] ?? '').toLowerCase().includes(buscado)
+            || String(this.mostrarValorCelda(item, column) ?? '').toLowerCase().includes(buscado)
           );
         }
       });
 
       // Aplicar ordenamiento
       if (this.sortKey && this.sortOrder) {
-        result.sort((a, b) => {
-          let aValue = a[this.sortKey] || '';
-          let bValue = b[this.sortKey] || '';
-          
-          if (this.sortOrder === 'asc') {
-            return aValue > bValue ? 1 : -1;
-          } else {
-            return aValue < bValue ? 1 : -1;
-          }
-        });
+        const signo = this.sortOrder === 'asc' ? 1 : -1;
+        result.sort((a, b) => compararValores(a[this.sortKey], b[this.sortKey]) * signo);
       }
 
       return result;
@@ -470,8 +475,7 @@ export default {
         `,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#28a745',
-        cancelButtonColor: '#d33',
+        confirmButtonColor: '#fcd700',
         confirmButtonText: '<i class="fas fa-credit-card"></i> Confirmar',
         cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
         reverseButtons: true,
@@ -488,17 +492,6 @@ export default {
     },
 
     // Método para obtener el número de pagos realizados
-    getPagosPagados(fila) {
-      let pagados = 0;
-      const numCuotas = fila.numeroCuotas || 12;
-      for (let i = 1; i <= numCuotas; i++) {
-        if (fila[`pago${i}_pagado`] === 1) {
-          pagados++;
-        }
-      }
-      return pagados;
-    },
-
     // Método para marcar el siguiente pago como pagado
     async marcarSiguientePago(fila) {
       this.isSavingBulk = true;
@@ -561,7 +554,7 @@ export default {
           respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/informes/${tipo}`);
         }
         this.procesarDatosParaTabla(respuesta.data);
-        this.tituloInforme = this.formatearTitulo(tipo);
+        this.tituloInforme = this.tituloVisible(tipo);
         this.mostrarTabla = true;
         if (!esMismoInforme) {
           // Resetear estado de paginación solo al cambiar a un informe distinto
@@ -708,7 +701,21 @@ export default {
     },
 
 
-    // Formatea el título para mostrar
+    // Mismo título que la tarjeta del informe
+    tituloVisible(tipo) {
+      const titulos = {
+        'contratos-pendientes-renovacion': 'Contratos Pendientes de Renovación',
+        'puntos-suministro-sin-contrato': 'Puntos de Suministro sin Contrato',
+        'servicios-pendientes-pago': 'Servicios Pendientes de Pago',
+        'contratos-vigentes': 'Contratos Vigentes',
+        'contratos-historico': 'Histórico de Contratos',
+        'servicios-vigentes': 'Servicios Vigentes',
+        'contactos-clientes': 'Contactos de Clientes',
+      };
+      return titulos[tipo] || this.formatearTitulo(tipo);
+    },
+
+    // Formatea el título corto (también nombre de la hoja Excel, máx. 31 caracteres)
     formatearTitulo(texto) {
       return texto
         .split('-')
@@ -802,6 +809,12 @@ export default {
 
     // Método auxiliar para mostrar valores en la tabla
     mostrarValorCelda(fila, columna) {
+      // Fechas en el mismo formato que el resto de la aplicación (dd/mm/aaaa)
+      const valorFecha = fila[columna];
+      if (/^fecha/.test(columna) && typeof valorFecha === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valorFecha)) {
+        const [anio, mes, dia] = valorFecha.slice(0, 10).split('-');
+        return `${dia}/${mes}/${anio}`;
+      }
       if ((columna === 'importeCuotaPendiente' && this.tipoSeleccionado === 'servicios-pendientes-pago') ||
           (columna === 'importeFinal' && this.tipoSeleccionado === 'servicios-vigentes')) {
         return this.formatearImporte(fila[columna]);
@@ -822,6 +835,14 @@ export default {
         return (valor !== null && valor !== undefined && String(valor).trim() !== '') ? valor : '-';
       }
       return fila[columna] ?? '';
+    },
+
+    // Fecha ISO (AAAA-MM-DD...) como Date para Excel; a medianoche UTC para que
+    // Excel muestre exactamente ese día. Cualquier otro valor se devuelve tal cual.
+    valorFechaExcel(valor) {
+      if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(valor)) return valor;
+      const [anio, mes, dia] = valor.slice(0, 10).split('-').map(Number);
+      return new Date(Date.UTC(anio, mes - 1, dia));
     },
 
     // Obtiene el CUPS consolidado para mostrar (luz o gas)
@@ -847,25 +868,6 @@ export default {
     },
 
     // Métodos para ordenamiento y filtrado
-    sortBy(key) {
-      if (this.sortKey === key) {
-        if (this.sortOrder === 'asc') {
-          this.sortOrder = 'desc';
-        } else if (this.sortOrder === 'desc') {
-          this.sortKey = null;
-          this.sortOrder = null;
-        }
-      } else {
-        this.sortKey = key;
-        this.sortOrder = 'asc';
-      }
-    },
-
-    getSortIcon(key) {
-      if (this.sortKey !== key) return 'fas fa-sort';
-      if (!this.sortOrder) return 'fas fa-sort';
-      return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
-    },
 
     filterByColumn(column, value) {
       this.columnFilters[column] = value;
@@ -894,6 +896,7 @@ export default {
 
         // Usar los datos filtrados (incluyendo ordenamiento y filtros)
         const columnasImporte = new Set();
+        const columnasFecha = new Set();
         const data = this.filteredData.map(item => {
           const rowData = {};
           // Mapear las columnas según los encabezados actuales
@@ -919,6 +922,10 @@ export default {
                 const valor = item[columnaKey] || '';
                 rowData[formattedColumnaName] = tipo ? `${tipo}: ${valor}` : valor;
               }
+            } else if (/^fecha/.test(columnaKey)) {
+              // Fecha real de Excel (se puede ordenar y filtrar), mostrada como dd/mm/aaaa
+              columnasFecha.add(formattedColumnaName);
+              rowData[formattedColumnaName] = this.valorFechaExcel(item[columnaKey]) ?? '';
             } else {
               rowData[formattedColumnaName] = item[columnaKey] ?? '';
             }
@@ -927,6 +934,7 @@ export default {
         });
 
         // Crear un libro de trabajo y una hoja de cálculo
+        const ExcelJS = await cargarExcelJS();
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet(this.formatearTitulo(this.tipoSeleccionado));
 
@@ -965,6 +973,9 @@ export default {
           if (columnasImporte.has(col)) {
             columna.style = { numFmt: '#,##0.00 "€"' };
           }
+          if (columnasFecha.has(col)) {
+            columna.style = { numFmt: 'dd/mm/yyyy' };
+          }
 
           return columna;
         });
@@ -987,27 +998,8 @@ export default {
         
         // Configurar altura de encabezado
         worksheet.getRow(1).height = 30;
-        
-        // Aplicar estilos a todas las filas
-        (worksheet.rows || []).forEach((row, index) => {
-          if (index > 0) {
-            row.alignment = {
-              vertical: 'middle',
-              horizontal: 'left',
-              wrapText: false
-            };
-          }
-        });
 
-        // Generar buffer y descargar
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${this.formatearTitulo(this.tipoSeleccionado)}.xlsx`;
-        link.click();
-        window.URL.revokeObjectURL(url);
+        await descargarLibroExcel(workbook, `${this.formatearTitulo(this.tipoSeleccionado)}.xlsx`);
 
       } catch (error) {
         console.error("Error al exportar a Excel:", error);

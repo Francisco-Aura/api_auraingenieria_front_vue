@@ -35,7 +35,7 @@
       <div class="action-card">
         <button class="btn btn-primary" @click="abrirFormularioCrearCliente">
           <i class="fas fa-plus"></i>
-          <span>Crear Cliente</span>
+          <span>Crear cliente</span>
         </button>
       </div>
     </div>
@@ -231,7 +231,7 @@
               </th>
               <th class="th-col-acciones-cli">
                 <div class="column-header">
-                  <div class="column-title">
+                  <div class="column-title column-title--sin-orden">
                     <i class="fas fa-cogs mr-2"></i>Acciones
                   </div>
                 </div>
@@ -269,13 +269,14 @@
               <td class="text-truncate" :title="cliente.usuarioAsignado">{{ cliente.usuarioAsignado }}</td>
               <td>
                 <div class="action-buttons">
-                  <button class="btn-icon btn-edit" @click="cargarDatosCliente(cliente.idCliente)" title="Consultar Cliente">
+                  <button class="btn-icon btn-edit" @click="cargarDatosCliente(cliente.idCliente)" title="Modificar cliente" aria-label="Modificar cliente">
                     <i class="fas fa-edit"></i>
                   </button>
                   <button class="btn-icon btn-add" 
                     @click="abrirFormularioNuevoPunto(cliente)" 
                     :disabled="estaClienteDadoDeBaja(cliente)"
-                    :title="estaClienteDadoDeBaja(cliente) ? 'No se pueden crear puntos de suministro en un cliente dado de baja' : 'Crear Punto de Suministro'">
+                    :title="estaClienteDadoDeBaja(cliente) ? 'No se pueden crear puntos de suministro en un cliente dado de baja' : 'Crear punto de suministro'"
+                    aria-label="Crear punto de suministro">
                     <i class="fas fa-plus-circle"></i>
                   </button>
                 </div>
@@ -295,7 +296,7 @@
       <div class="pagination-controls">
         <div class="records-per-page">
           <label for="recordsPerPage">Registros por página:</label>
-          <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
+          <select v-model.number="recordsPerPage" id="recordsPerPage" class="form-control">
             <option value="10">10</option>
             <option value="25">25</option>
             <option value="50">50</option>
@@ -348,6 +349,7 @@
       v-if="isModalPuntosOpen"
       :cliente="clienteSeleccionado"
       :puntosSuministro="puntosSuministro"
+      :cargando="loading"
       @cerrar-modal="cerrarModalPuntos"
     />
 
@@ -379,14 +381,17 @@
 </template>
 
 <script>
+import { ordenTabla } from '@/mixins/ordenTabla';
+import { compararValores } from '@/utils/orden';
 import axios from "axios";
 import PuntosSuministroClienteComponent from "@/components/CRM_Module/Clientes/PuntosSuministroClienteComponent.vue";
 import CreaActualizaClienteComponent from "@/components/CRM_Module/Clientes/CreaActualizaClientesComponent.vue";
 import ModalActualizarPuntoSuministro from "@/components/CRM_Module/PuntosSuministro/ActualizarPuntoSuministro.vue";
-import ExcelJS from 'exceljs';
+import { cargarExcelJS, descargarLibroExcel } from '@/utils/excel';
 
 export default {
   name: "ClientesComponent",
+  mixins: [ordenTabla],
   components: {
     PuntosSuministroClienteComponent,
     CreaActualizaClienteComponent,
@@ -420,7 +425,6 @@ export default {
       cargosContacto: [], // Opciones de cargos de contacto
       appMonitorizacion: [], // Opciones de aplicaciones de monitorización
       integracionSistemasFV: [], // Opciones de integración sistemas FV
-      isSubmitting: false, // Evita múltiples envíos del formulario
       showModalPS: false,           // Control de visibilidad para el modal de crear/actualizar Punto de Suministro
       modificarPunto: null,         // Datos del formulario para modificar/crear un punto de suministro
       currentPage: 1,
@@ -429,7 +433,6 @@ export default {
       sortOrder: null,
       modoConsulta: false,          // Flag para indicar si el ModalActualizarPuntoSuministro está en modo consulta
       isCreating: false,            // Flag para indicar si el ModalActualizarPuntoSuministro está en modo creación
-      mostrarModalContratos: false, // Control de visibilidad del modal de contratos
       mostrarClientesDadosDeBaja: false,
       // Contadores animados
       animatedClientes: 0,
@@ -441,28 +444,30 @@ export default {
   computed: {
     // Lista de clientes filtrados según el texto de búsqueda
     filteredClientes() {
-      return this.clientes.filter((cliente) => {
-        // Primero aplicamos el filtro de estado de baja
-        const estadoBajaFilter = this.mostrarClientesDadosDeBaja ? this.estaClienteDadoDeBaja(cliente) : !this.estaClienteDadoDeBaja(cliente);
-        
-        // Luego aplicamos el filtro general
-        const generalFilter = Object.values(cliente).some((value) =>
-          String(value).toLowerCase().includes(this.filter.toLowerCase())
-        );
+      // El término y los filtros de columna se preparan una vez, no por cada fila:
+      // con la caja de búsqueda vacía ni siquiera se recorren los campos del cliente
+      // (antes se convertía a texto cada campo de cada fila en cada pulsación).
+      const termino = this.filter.toLowerCase();
+      const filtrosColumna = Object.entries(this.columnFilters)
+        .filter(([clave, valor]) => valor && clave !== 'nombreSector')
+        .map(([clave, valor]) => [clave, valor.toLowerCase()]);
+      const sectores = this.selectedSectores;
 
-        // Luego aplicamos los filtros por columna (excepto sector que se maneja por separado)
-        const columnFilters = Object.entries(this.columnFilters).every(([key, value]) => {
-          if (!value || key === 'nombreSector') return true; // Excluir sector del filtro de texto
-          const fieldValue = String(cliente[key] || '').toLowerCase();
-          return fieldValue.includes(value.toLowerCase());
-        });
+      return this.clientes.filter((cliente) => {
+        const dadoDeBaja = this.estaClienteDadoDeBaja(cliente);
+        if (this.mostrarClientesDadosDeBaja ? !dadoDeBaja : dadoDeBaja) return false;
+
+        if (termino && !Object.values(cliente).some(
+          (valor) => String(valor).toLowerCase().includes(termino))) return false;
+
+        for (const [clave, valor] of filtrosColumna) {
+          if (!String(cliente[clave] || '').toLowerCase().includes(valor)) return false;
+        }
 
         // Filtro específico para sectores múltiples
-        const sectorFilter = this.selectedSectores.length === 0 || 
-          this.selectedSectores.includes(cliente.nombreSector) ||
-          (this.selectedSectores.includes('Sin sector') && !cliente.nombreSector);
-
-        return estadoBajaFilter && generalFilter && columnFilters && sectorFilter;
+        return sectores.length === 0
+          || sectores.includes(cliente.nombreSector)
+          || (sectores.includes('Sin sector') && !cliente.nombreSector);
       });
     },
     // Total de puntos de suministro de todos los clientes
@@ -474,21 +479,9 @@ export default {
     sortedClientes() {
       if (!this.sortKey || !this.sortOrder) return this.filteredClientes;
       
-      const sorted = [...this.filteredClientes].sort((a, b) => {
-        let aValue = a[this.sortKey];
-        let bValue = b[this.sortKey];
-        
-        aValue = aValue ?? '';
-        bValue = bValue ?? '';
-        
-        if (this.sortOrder === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
-        }
-      });
-      
-      return sorted;
+      const signo = this.sortOrder === 'asc' ? 1 : -1;
+      return [...this.filteredClientes]
+        .sort((a, b) => compararValores(a[this.sortKey], b[this.sortKey]) * signo);
     },
     
     paginatedClientes() {
@@ -528,7 +521,7 @@ export default {
           title: 'Error',
           text: `No se pudieron actualizar los clientes: ${error.message}`,
           icon: 'error',
-          confirmButtonColor: 'rgba(252, 215, 0)'
+          confirmButtonColor: '#fcd700'
         });
       } finally {
         this.loading = false;
@@ -688,7 +681,7 @@ export default {
           icon: 'error',
           title: 'Error al actualizar cliente',
           text: detalle ? `No se pudo actualizar el cliente: ${detalle}` : 'No se pudo actualizar el cliente. Por favor, inténtelo de nuevo.',
-          confirmButtonColor: 'rgba(252, 215, 0)'
+          confirmButtonColor: '#fcd700'
         });
       }
     },    
@@ -717,7 +710,7 @@ export default {
           icon: 'error',
           title: 'Error al crear cliente',
           text: detalle ? `No se pudo crear el cliente: ${detalle}` : 'No se pudo crear el cliente. Por favor, inténtelo de nuevo.',
-          confirmButtonColor: 'rgba(252, 215, 0)'
+          confirmButtonColor: '#fcd700'
         });
       }
     },
@@ -763,26 +756,6 @@ export default {
         });
       }
     },
-    sortBy(key) {
-      if (this.sortKey === key) {
-        // Ciclo: asc -> desc -> null
-        if (this.sortOrder === 'asc') {
-          this.sortOrder = 'desc';
-        } else if (this.sortOrder === 'desc') {
-          this.sortKey = null;
-          this.sortOrder = null;
-        }
-      } else {
-        this.sortKey = key;
-        this.sortOrder = 'asc';
-      }
-    },
-    
-    getSortIcon(key) {
-      if (this.sortKey !== key) return 'fas fa-sort';
-      if (!this.sortOrder) return 'fas fa-sort';
-      return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
-    },
 
     async exportarExcel() {
       try {
@@ -796,6 +769,7 @@ export default {
           'Usuario Asignado': cliente.usuarioAsignado
         }));
 
+        const ExcelJS = await cargarExcelJS();
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Clientes');
 
@@ -821,18 +795,14 @@ export default {
           fgColor: { argb: 'FFE0E0E0' }
         };
 
-        // Generar buffer y descargar
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'Cartera_Clientes.xlsx';
-        link.click();
-        window.URL.revokeObjectURL(url);
+        await descargarLibroExcel(workbook, 'Cartera_Clientes.xlsx');
       } catch (error) {
         console.error('Error al exportar a Excel:', error);
-        this.$toast.error('Error al exportar a Excel');
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error al exportar',
+          text: 'No se pudo exportar la cartera de clientes a Excel. Por favor, inténtelo de nuevo.'
+        });
       }
     },
 

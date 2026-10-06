@@ -1,6 +1,5 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
 :root {
   /* Colores principales */
@@ -58,11 +57,6 @@ body {
   overflow-x: hidden;
 }
 
-.v-application {
-  background-color: var(--background-color) !important;
-  font-family: 'Poppins', sans-serif !important;
-}
-
 /* Estilos de tarjetas */
 .card {
   background-color: var(--surface-color);
@@ -95,8 +89,6 @@ body {
   white-space: nowrap;
 }
 
-
-
 .btn-primary {
   background: var(--color-brand-yellow-hex);
   color: #000;
@@ -106,17 +98,6 @@ body {
   background: #e6c200;
   transform: translateY(-1px);
   box-shadow: 0 6px 15px rgba(252, 215, 0, 0.4);
-}
-
-.btn-accent {
-  background-color: var(--accent-color);
-  color: white;
-}
-
-.btn-accent:hover {
-  background-color: #e67e22;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(243, 156, 18, 0.3);
 }
 
 .btn-success {
@@ -158,6 +139,9 @@ body {
   width: 100%;
 }
 
+/* Sin «overflow: hidden»: convertía la tabla en su propio contenedor de scroll y
+   eso anula position: sticky en sus celdas (la columna de acciones fija). El
+   redondeo y el recorte los pone .table-responsive, que es quien desplaza. */
 .data-table {
   width: 100%;
   border-collapse: separate;
@@ -165,7 +149,6 @@ body {
   background-color: var(--surface-color);
   border-radius: var(--border-radius);
   box-shadow: var(--card-shadow);
-  overflow: hidden;
 }
 
 .data-table th {
@@ -224,58 +207,8 @@ body {
   padding-right: 0.6rem;
   flex: 1;
 }
-
-.col-6 {
-  flex: 0 0 50%;
-  max-width: 50%;
-  padding-left: 0.6rem;
-  padding-right: 0.6rem;
-}
-
-.col-4 {
-  flex: 0 0 33.333333%;
-  max-width: 33.333333%;
-  padding-left: 0.6rem;
-  padding-right: 0.6rem;
-}
-
-.col-3 {
-  flex: 0 0 25%;
-  max-width: 25%;
-  padding-left: 0.6rem;
-  padding-right: 0.6rem;
-}
-
-/* Utilidades de margen y padding */
-.mt-1 { margin-top: var(--spacing-xs); }
-.mt-2 { margin-top: var(--spacing-sm); }
 .mt-3 { margin-top: var(--spacing-md); }
-.mt-4 { margin-top: var(--spacing-lg); }
-.mt-5 { margin-top: var(--spacing-xl); }
-
-.mb-1 { margin-bottom: var(--spacing-xs); }
-.mb-2 { margin-bottom: var(--spacing-sm); }
-.mb-3 { margin-bottom: var(--spacing-md); }
-.mb-4 { margin-bottom: var(--spacing-lg); }
-.mb-5 { margin-bottom: var(--spacing-xl); }
-
-.ml-1 { margin-left: var(--spacing-xs); }
-.ml-2 { margin-left: var(--spacing-sm); }
-.ml-3 { margin-left: var(--spacing-md); }
-.ml-4 { margin-left: var(--spacing-lg); }
-.ml-5 { margin-left: var(--spacing-xl); }
-
-.mr-1 { margin-right: var(--spacing-xs); }
 .mr-2 { margin-right: var(--spacing-sm); }
-.mr-3 { margin-right: var(--spacing-md); }
-.mr-4 { margin-right: var(--spacing-lg); }
-.mr-5 { margin-right: var(--spacing-xl); }
-
-.p-1 { padding: var(--spacing-xs); }
-.p-2 { padding: var(--spacing-sm); }
-.p-3 { padding: var(--spacing-md); }
-.p-4 { padding: var(--spacing-lg); }
-.p-5 { padding: var(--spacing-xl); }
 
 /* Utilidades de texto */
 .text-center { text-align: center; }
@@ -290,19 +223,6 @@ body {
 .text-danger { color: var(--danger-color); }
 .text-muted { color: var(--text-secondary); }
 
-/* Utilidades flex */
-.d-flex { display: flex; }
-.flex-row { flex-direction: row; }
-.flex-column { flex-direction: column; }
-.justify-content-center { justify-content: center; }
-.justify-content-between { justify-content: space-between; }
-.justify-content-end { justify-content: flex-end; }
-.align-items-center { align-items: center; }
-.align-items-start { align-items: flex-start; }
-.align-items-end { align-items: flex-end; }
-.flex-wrap { flex-wrap: wrap; }
-.flex-grow-1 { flex-grow: 1; }
-
 /* Animaciones */
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -312,15 +232,6 @@ body {
 .fade-in {
   animation: fadeIn 0.3s ease-in;
 }
-
-/* Utilities */
-.shadow { box-shadow: var(--card-shadow); }
-.rounded { border-radius: var(--border-radius); }
-.w-100 { width: 100%; }
-.h-100 { height: 100%; }
-.overflow-hidden { overflow: hidden; }
-.position-relative { position: relative; }
-.position-absolute { position: absolute; }
 
 .app-container {
   min-height: 100vh;

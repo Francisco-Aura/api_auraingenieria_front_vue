@@ -48,36 +48,6 @@
   border-radius: 12px 12px 0 0;
 }
 
-.header-content {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.header-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.header-title h2 {
-  margin: 0;
-  font-size: 1.3rem;
-  font-weight: 600;
-}
-
-.header-title i {
-  font-size: 1.3rem;
-}
-
-.tarea-titulo {
-  font-size: 0.9rem;
-  opacity: 0.9;
-  max-width: 500px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 .close-button {
   background: rgba(255, 255, 255, 0.2);

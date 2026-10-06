@@ -133,6 +133,19 @@ test('guardarContrato ignora un segundo envio mientras el primero sigue pendient
   assert.equal(context.guardando, false);
 });
 
+test('MCAS normaliza FEE con coma y rechaza valores negativos', () => {
+  const component = loadComponent(
+    'src/components/CRM_Module/PuntosSuministro/ModalContratos.vue',
+    {},
+  );
+  const context = createContext(component);
+
+  assert.equal(component.methods.normalizarDecimalMcas.call(context, '7,25'), 7.25);
+  assert.equal(component.methods.normalizarDecimalMcas.call(context, '1.234,56'), 1234.56);
+  assert.equal(component.methods.normalizarDecimalMcas.call(context, '-1'), null);
+  assert.equal(component.methods.normalizarDecimalMcas.call(context, 'abc'), null);
+});
+
 test('guardarServicio con pagos usa una sola mutacion atomica', async () => {
   const calls = [];
   const axios = {

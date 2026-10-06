@@ -280,10 +280,6 @@
     flex-direction: column;
     align-items: stretch;
   }
-  
-  .option-selector {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 768px) {
@@ -347,10 +343,6 @@
 
 .column-title i {
   flex-shrink: 0;
-}
-
-.column-title:hover {
-  background-color: var(--hover-color);
 }
 
 .column-filter-container {
@@ -482,9 +474,7 @@
   user-select: none;
 }
 
-.sortable:hover {
-  background-color: var(--hover-color);
-}
+/* El efecto del ratón en las cabeceras es común a todas las tablas: shared-ui.css */
 
 /* Estilos Generales de Botones - Actualizados */
 .btn {
@@ -601,12 +591,6 @@
   align-items: center;
 }
 
-.filters-container {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
 /* Permitir wrap en los nombres de las columnas */
 .data-table th .column-title {
   display: flex;
@@ -689,8 +673,8 @@
 .data-table td[data-column="tarifaLuz"],
 .data-table th[data-column="tarifaGas"],
 .data-table td[data-column="tarifaGas"] {
-  min-width: 88px;
-  max-width: 96px;
+  min-width: 96px;
+  max-width: 104px;
 }
 
 .data-table th[data-column="consumoAnual"],

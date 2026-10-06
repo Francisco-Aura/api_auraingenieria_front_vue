@@ -144,12 +144,18 @@
       </div>
     </div>
 
-    <!-- Modal de todas las notificaciones -->
+    <!-- Modal de todas las notificaciones: en <body> para cubrir toda la pantalla
+         (dentro de la barra superior quedaba recortado y sin oscurecer el menú) -->
+    <Teleport to="body">
     <div v-if="modalTodasNotificaciones" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="notif-modal-title" @click="modalTodasNotificaciones = false">
       <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3 id="notif-modal-title">Todas las Notificaciones</h3>
-          <button class="close-button" @click="modalTodasNotificaciones = false">
+        <div class="modal-header aura-modal-header">
+          <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-bell"></i></span>
+          <div class="aura-modal-header__titulos">
+            <h3 id="notif-modal-title">Todas las notificaciones</h3>
+            <span class="aura-modal-header__subtitulo">Historial completo: leídas y no leídas</span>
+          </div>
+          <button type="button" class="close-button" aria-label="Cerrar" @click="modalTodasNotificaciones = false">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -213,6 +219,7 @@
         </div>
       </div>
     </div>
+    </Teleport>
 
     <!-- Snackbar para mensajes -->
     <div v-if="snackbar.show" class="snackbar" :class="snackbar.color">
@@ -471,10 +478,11 @@ export default {
       try {
         await tareasApi.eliminarNotificacion(notificacionId)
         
-        // Remover de listas locales
+        // Remover de listas locales (y de la lista filtrada que se muestra)
         this.notificaciones = this.notificaciones.filter(n => n.id !== notificacionId)
         this.todasLasNotificaciones = this.todasLasNotificaciones.filter(n => n.id !== notificacionId)
-        
+        this.aplicarFiltroTipo()
+
         await this.actualizarContador()
         this.mostrarMensaje('Notificación eliminada', 'success')
       } catch (error) {

@@ -10,6 +10,12 @@
   --ui-focus-ring: var(--focus-ring);
 }
 
+/* Sin esto el navegador pinta los textarea (observaciones, notas, comentarios) en
+   letra monoespaciada, distinta del resto del formulario. */
+textarea {
+  font-family: inherit;
+}
+
 .btn,
 .btn-modern {
   display: inline-flex;
@@ -281,8 +287,114 @@
   transition: background-color 0.2s ease;
 }
 
-.sortable:hover {
-  background-color: var(--ui-table-hover);
+/* ---------------------------------------------------------------------------
+ * Cabeceras de tabla: mismo aspecto y mismo efecto al pasar el ratón en todas
+ * las tablas. La celda nunca cambia de color; solo el título que ordena
+ * reacciona, con una pastilla gris muy suave, y el texto no se vuelve amarillo.
+ * Cada pantalla trae sus reglas scoped (unas pintaban la celda entera y otras
+ * solo el título): :not(#aura-tabla) da peso de id para que manden estas.
+ * ------------------------------------------------------------------------- */
+
+.data-table thead th.sortable:not(#aura-tabla):hover {
+  background-color: var(--surface-color) !important;
+}
+
+.data-table thead .column-title:not(#aura-tabla) {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  max-width: 100%;
+  padding: 4px 6px !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+/* El texto del título queda alineado con el borde del filtro de debajo; el
+   ancho extra compensa el margen negativo para no recortar más el texto */
+.data-table thead .column-title:not(.column-title--sin-orden):not(#aura-tabla) {
+  align-self: flex-start;
+  margin-left: -6px !important;
+  margin-right: 0 !important;
+  max-width: calc(100% + 6px);
+}
+
+.data-table thead .column-title:not(.column-title--sin-orden):not(#aura-tabla):hover {
+  background: rgba(44, 62, 80, 0.07) !important;
+  color: var(--color-text-dark, #2c3e50) !important;
+}
+
+.data-table thead .column-title:not(#aura-tabla) i {
+  margin: 0 !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.85em !important;
+  transition: color 0.15s ease;
+}
+
+.data-table thead .column-title:not(.column-title--sin-orden):not(#aura-tabla):hover i,
+.data-table thead .column-title:not(#aura-tabla) i:is(.fa-sort-up, .fa-sort-down) {
+  color: var(--color-text-dark, #2c3e50) !important;
+}
+
+.data-table thead .column-title.column-title--sin-orden:not(#aura-tabla) {
+  cursor: default;
+  margin: 0 -6px !important;
+}
+
+/* Todas las cabeceras empiezan arriba: títulos en una misma línea aunque la
+   columna no tenga filtro (Acciones, No-Switching...) */
+.data-table thead th:not(#aura-tabla) {
+  vertical-align: top !important;
+}
+
+.data-table thead .column-header:not(#aura-tabla) {
+  justify-content: flex-start !important;
+}
+
+/* Filtros de columna (texto, lista o el botón de Sector): mismo alto, sin el
+   margen superior que styles.css pone a todo input/select (el botón no lo tenía
+   y quedaba más alto que los demás) */
+.data-table thead :is(.column-filter, .dropdown-button):not(#aura-tabla) {
+  box-sizing: border-box !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 6px !important;
+  background-color: #fff !important;
+  color: var(--text-primary) !important;
+  font-family: inherit !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.data-table thead :is(.column-filter, .dropdown-button):not(#aura-tabla):hover {
+  border-color: #aab4c0 !important;
+}
+
+.data-table thead :is(.column-filter, .dropdown-button):not(#aura-tabla):focus {
+  outline: none !important;
+  border-color: var(--color-brand-yellow-hex, #fcd700) !important;
+  box-shadow: 0 0 0 3px rgba(252, 215, 0, 0.3) !important;
+}
+
+.data-table thead .dropdown-button:not(#aura-tabla):hover {
+  background-color: #fafbfc !important;
+  color: var(--color-text-dark, #2c3e50) !important;
+}
+
+/* Sector con filtro aplicado: marcado en amarillo suave, texto oscuro legible */
+.data-table thead .dropdown-button.active:not(#aura-tabla) {
+  background-color: #fffbe0 !important;
+  border-color: var(--color-brand-yellow-hex, #fcd700) !important;
+  color: var(--color-text-dark, #2c3e50) !important;
 }
 
 .column-filter,
@@ -437,4 +549,74 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+
+/* ---------------------------------------------------------------------------
+ * Columna de acciones fija a la derecha (Puntos de Suministro y Tareas)
+ *
+ * A 1366 px con el menú abierto esas dos tablas no caben: había que desplazarse
+ * a la derecha para ver los botones de cada fila. Con la última columna fija, las
+ * acciones se ven siempre y el resto de columnas se desplaza por debajo.
+ *
+ * La celda fija necesita fondo propio (si no, se transparenta y se lee encima el
+ * contenido que pasa por detrás) y un fondo distinto por cada estado de la fila:
+ * par/impar, hover y filas marcadas. El selector :not(#aura-tabla) da peso de id
+ * para ganar a las reglas scoped de cada pantalla.
+ * ------------------------------------------------------------------------- */
+
+/* La animación de entrada de las filas termina con «transform: translateX(0)» y
+   se queda aplicada (animation-fill-mode: both). Un transform en un ancestro
+   convierte a la fila en bloque contenedor y anula position: sticky, así que en
+   estas tablas la entrada es solo de opacidad. */
+.data-table--acciones-fijas tbody tr {
+  animation-name: auraFilaAparece !important;
+}
+
+@keyframes auraFilaAparece {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.data-table--acciones-fijas :is(th, td):last-child:not(#aura-tabla) {
+  position: sticky !important;
+  right: 0;
+  z-index: 2;
+  background-color: #fff;
+  box-shadow: inset 1px 0 0 var(--border-color), -6px 0 10px -8px rgba(16, 24, 40, 0.28);
+}
+
+.data-table--acciones-fijas thead th:last-child:not(#aura-tabla) {
+  z-index: calc(var(--z-sticky) + 1);
+  background-color: var(--surface-color);
+}
+
+.data-table--acciones-fijas tbody tr td:last-child:not(#aura-tabla) {
+  background-color: #fff;
+}
+
+.data-table--acciones-fijas tbody tr:nth-child(even) td:last-child:not(#aura-tabla) {
+  background-color: #f8fafc;
+}
+
+.data-table--acciones-fijas tbody tr:hover td:last-child:not(#aura-tabla) {
+  background-color: #fdf6d6;
+}
+
+/* Filas con estado propio (baja, vencida, completada, fijada): el mismo color que
+   la fila, para que la columna fija no corte la franja de color. */
+.data-table--acciones-fijas tbody tr:is(.cliente-dado-baja, .punto-dado-baja, .fila-inactiva) td:last-child:not(#aura-tabla) {
+  background-color: #f5f5f5;
+}
+
+.data-table--acciones-fijas tbody tr.tarea-vencida td:last-child:not(#aura-tabla) {
+  background-color: #fff5f5;
+}
+
+.data-table--acciones-fijas tbody tr.tarea-completada td:last-child:not(#aura-tabla) {
+  background-color: #f6fbf4;
+}
+
+.data-table--acciones-fijas tbody tr.tarea-fijada td:last-child:not(#aura-tabla) {
+  background-color: #fffdf2;
 }

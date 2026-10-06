@@ -1,0 +1,792 @@
+/* Configuración MCAS: piezas propias (interruptores, barra de contexto, estado por
+   comercializadora, menú «Más acciones», activación). El resto de estilos (tabla,
+   stat-cards, modal) vive en McasShared.css. */
+
+/* ===== Tarjeta de interruptores del módulo ===== */
+.stat-card--flags {
+  flex: 1.35;
+}
+
+.flags-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.flags-titulo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.flags-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  gap: 2px 20px;
+  min-width: 0;
+}
+
+.toggle-switch--compacto {
+  min-height: 24px;
+  gap: 8px;
+}
+
+.toggle-switch--compacto .toggle-slider {
+  width: 34px;
+  height: 18px;
+  border-radius: 18px;
+}
+
+.toggle-switch--compacto .toggle-slider::before {
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+}
+
+.toggle-switch--compacto input:checked + .toggle-slider::before {
+  transform: translateX(16px);
+}
+
+.toggle-switch--compacto .toggle-label {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.toggle-switch--no-disponible {
+  cursor: not-allowed;
+}
+
+.toggle-switch--no-disponible .toggle-label {
+  color: var(--text-muted);
+}
+
+.toggle-switch--bajo-campo {
+  margin-top: 8px;
+  align-self: flex-start;
+}
+
+/* ===== Barra de contexto (conjunto / regla seleccionados) ===== */
+.context-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  margin: 0 calc(-1 * var(--spacing-md));
+  padding: 12px var(--spacing-md);
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.context-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.context-label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.context-field .toolbar-select {
+  min-width: 300px;
+}
+
+.context-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-left: auto;
+}
+
+.context-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.context-meta i {
+  color: var(--text-muted);
+}
+
+/* ===== Tabla ===== */
+.th-col-acciones {
+  width: 10%;
+}
+
+/* Casillas para «Activar seleccionadas» (neutraliza width/margin globales de input) */
+.data-table th.th-col-seleccion {
+  width: 44px;
+}
+
+.celda-seleccion {
+  width: 44px;
+}
+
+.casilla-seleccion {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.casilla-seleccion:disabled {
+  cursor: not-allowed;
+}
+
+.celda-nombre {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.celda-codigo--secundario {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Lista de reglas: nombre y, debajo, a qué se aplica y cómo calcula (sin ensanchar la columna) */
+.celda-regla {
+  max-width: 0;
+}
+
+.regla-nombre {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  overflow: hidden;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.regla-resumen strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.data-table tbody tr.fila-inactiva .regla-nombre {
+  color: var(--text-muted);
+}
+
+/* Menú «Más acciones» (se pinta en <body> para que la tabla no lo recorte) */
+.menu-acciones {
+  position: fixed;
+  z-index: var(--z-overlay-elevated);
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  max-width: 240px;
+  padding: 6px 0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.menu-acciones-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-acciones-item:hover,
+.menu-acciones-item:focus-visible {
+  background: rgba(var(--color-brand-yellow-rgb), 0.12);
+  outline: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.menu-acciones-item i {
+  width: 16px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.menu-acciones-item--peligro,
+.menu-acciones-item--peligro i {
+  color: #a32d2d;
+}
+
+.menu-acciones-item--peligro:hover {
+  background: #fcebeb;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  max-width: 100%;
+  padding: 2px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Mantiene las acciones fijas en la misma columna cuando falta una opcional */
+.btn-icon-hueco {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.data-table tbody tr.fila-inactiva td {
+  color: var(--text-muted);
+}
+
+.data-table tbody tr.fila-inactiva .badge,
+.data-table tbody tr.fila-inactiva .chips {
+  opacity: 0.6;
+}
+
+.texto-codigo {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text-primary);
+}
+
+/* ===== Editor visual de reglas ===== */
+.footer-izquierda {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.rango-condicion {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.rango-condicion-titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.rango-condicion-titulo .mcas-label {
+  margin: 0;
+}
+
+.mcas-input.rango-unidad {
+  width: auto;
+  min-width: 88px;
+  min-height: 32px;
+  padding: 4px 10px;
+}
+
+.linea-suma {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 1.6fr) 32px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.linea-suma-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.linea-suma-valor {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.linea-suma-valor .mcas-input {
+  padding-right: 58px;
+}
+
+.linea-suma-unidad {
+  position: absolute;
+  right: 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.btn-anadir-linea {
+  align-self: flex-start;
+}
+
+.resumen-regla {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px 16px;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.resumen-regla dt {
+  padding-top: 2px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.resumen-regla dd {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.resumen-regla .chip {
+  white-space: normal;
+}
+
+/* ===== Probar con un contrato ===== */
+.sim-contrato {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sim-contrato .btn {
+  flex-shrink: 0;
+}
+
+/* ===== Retrocesiones ===== */
+/* El resumen no ensancha la columna: dos líneas y el texto completo en el título */
+.celda-resumen {
+  max-width: 0;
+}
+
+.resumen-politica {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.aviso-sin-confirmar {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.aviso-sin-confirmar i {
+  margin-right: 4px;
+}
+
+/* Modo consulta: el fieldset desactiva todos los campos sin cambiar el aspecto del formulario */
+.fieldset-limpio {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.mcas-alert + .fieldset-limpio {
+  margin-top: 16px;
+}
+
+.tramos-cabecera,
+.tramo-fila {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1.3fr) 32px;
+  align-items: center;
+  gap: 10px;
+}
+
+.tramos-cabecera {
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.tramo {
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.tramo-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 20px;
+  margin: 6px 0 0 38px;
+}
+
+.tramo-aviso {
+  margin: 8px 0 0 38px;
+}
+
+.tramo-error {
+  margin-left: 38px;
+}
+
+.btn-anadir-tramo {
+  margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .tramos-cabecera {
+    display: none;
+  }
+
+  .tramo-fila {
+    grid-template-columns: 28px minmax(0, 1fr) 32px;
+  }
+
+  .tramo-fila > :not(.linea-suma-numero):not(.btn-icon) {
+    grid-column: 2 / 3;
+  }
+
+  .tramo-opciones,
+  .tramo-aviso,
+  .tramo-error {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .linea-suma {
+    grid-template-columns: 28px minmax(0, 1fr) 32px;
+  }
+
+  .linea-suma > .linea-suma-valor,
+  .linea-suma > input {
+    grid-column: 2 / 3;
+  }
+
+  .resumen-regla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .context-field {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .context-field .toolbar-select {
+    min-width: 0;
+  }
+
+  .context-info {
+    margin-left: 0;
+  }
+}
+
+/* ===== Estado del módulo (qué falta para calcular comisiones) ===== */
+.estado-modulo {
+  background: #fff;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-left: 4px solid var(--color-warning, #f39c12);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-card, 0 2px 4px rgba(0, 0, 0, 0.05));
+  padding: 0.75rem 1rem;
+  /* sin margen: la separación la pone el hueco de la rejilla .mcas-container */
+}
+
+.estado-modulo--listo {
+  border-left-color: var(--color-success, #27ae60);
+}
+
+.estado-modulo-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--color-text-dark, #2c3e50);
+  margin-bottom: 0.6rem;
+}
+
+.estado-modulo--listo .estado-modulo-cabecera i { color: var(--color-success, #27ae60); }
+.estado-modulo--pendiente .estado-modulo-cabecera i { color: var(--color-warning, #f39c12); }
+
+.estado-modulo-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.estado-modulo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.estado-modulo-item > i {
+  flex: 0 0 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #fff;
+  margin-top: 0.1rem;
+}
+
+.estado-modulo-item.is-ok > i { background: var(--color-success, #27ae60); }
+.estado-modulo-item.is-pendiente > i { background: var(--color-warning, #f39c12); }
+/* Informativa (retrocesiones): no cuenta para que el módulo esté listo */
+.estado-modulo-item.is-info > i { background: #90a4ae; }
+
+.estado-modulo-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.estado-modulo-titulo {
+  font-weight: 600;
+  color: var(--color-text-dark, #2c3e50);
+}
+
+.estado-modulo-detalle {
+  color: var(--color-text-secondary, #5b6b79);
+}
+
+.estado-modulo-item.is-pendiente .estado-modulo-detalle {
+  color: #9a5b00;
+}
+
+.estado-modulo-enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-weight: 600;
+  color: var(--color-action-view, #1565c0);
+  text-decoration: none;
+}
+
+.estado-modulo-enlace:hover {
+  text-decoration: underline;
+}
+
+/* ===== Estado por comercializadora y pendientes de confirmar ===== */
+.estado-comercializadoras {
+  background: #fff;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-card, 0 2px 4px rgba(0, 0, 0, 0.05));
+  padding: 0.75rem 1rem;
+}
+
+.estado-comercializadoras-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.estado-comercializadoras-cabecera h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-dark, #2c3e50);
+}
+
+.estado-comercializadoras-cabecera h3 i {
+  margin-right: 6px;
+  color: var(--text-secondary);
+}
+
+.estado-comercializadoras-resumen {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.estado-comercializadoras-cabecera .btn {
+  margin-left: auto;
+}
+
+.estado-com-lista {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.6rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.estado-com-fila {
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border-color);
+  font-size: 0.8rem;
+}
+
+.estado-com-fila:last-child {
+  border-bottom: none;
+}
+
+.estado-com-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.estado-com-nombre {
+  color: var(--color-text-dark, #2c3e50);
+}
+
+.estado-com-texto {
+  color: var(--text-secondary);
+}
+
+.estado-com-pendientes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0 0;
+  padding: 0 0 0 12px;
+  list-style: none;
+}
+
+.estado-com-pendientes li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.estado-com-pendiente-texto {
+  color: #9a5b00;
+}
+
+.estado-com-sin-tabla {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 6px;
+  padding-left: 12px;
+}
+
+.estado-com-vacio {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+}
+
+/* Enlace con aspecto de texto: abre la pantalla donde se completa lo pendiente */
+.enlace-pendiente {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-action-view, #1565c0);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.enlace-pendiente:hover {
+  color: var(--text-primary);
+  transform: none;
+  box-shadow: none;
+}
+
+.enlace-pendiente:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: 4px;
+}
+
+/* ===== Modal «Activar» ===== */
+.aviso-fase {
+  margin-top: 16px;
+}
+
+.activacion-cargando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 0;
+  color: var(--text-secondary);
+}
+
+.activacion-acciones {
+  margin-top: 10px;
+}
+
+.activacion-incidencias {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.activacion-grupo-titulo {
+  display: block;
+  font-weight: 600;
+}
+
+.activacion-grupo ul {
+  margin: 2px 0 0;
+}
+
+.activacion-grupo .enlace-pendiente {
+  color: inherit;
+  font-weight: 500;
+}
+
+.activacion-lista {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+}

@@ -2,12 +2,14 @@
   <div>
     <div class="modal-overlay fade-in" role="dialog" aria-modal="true" aria-labelledby="detalle-cliente-title">
     <div class="modal-content">
-      <div class="modal-header">
-        <div>
-          <h2 id="detalle-cliente-title"><i class="fas fa-building"></i> Detalle del Cliente</h2>
-          <div class="cliente-info">
-            <span class="cliente-nombre">{{ cliente?.nombre || "Desconocido" }}</span>
-          </div>
+      <div class="modal-header aura-modal-header">
+        <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-building"></i></span>
+        <div class="aura-modal-header__titulos">
+          <h2 id="detalle-cliente-title">Detalle del cliente</h2>
+          <span class="aura-modal-header__subtitulo">
+            <span><strong>{{ cliente?.nombre || "Desconocido" }}</strong></span>
+            <span v-if="cliente?.cif" class="aura-dato"><span class="aura-dato__etiqueta">CIF</span>{{ cliente.cif }}</span>
+          </span>
         </div>
         <button type="button" class="close-button" @click="$emit('cerrar-modal')" aria-label="Cerrar detalle del cliente">
           <i class="fas fa-times"></i>
@@ -37,7 +39,7 @@
         </div>
 
         <div class="table-responsive">
-          <table v-if="puntosSuministro.length > 0 || loading" class="data-table">
+          <table v-if="puntosSuministroLocal.length > 0 || cargandoPuntos" class="data-table">
             <thead>
               <tr>
                 <th><i class="fas fa-map-marker-alt"></i> Direccion</th>
@@ -56,12 +58,12 @@
               </tr>
             </thead>
             <tbody>
-              <template v-if="loading">
+              <template v-if="cargandoPuntos">
                 <tr v-for="n in 5" :key="'skeleton-' + n" class="skeleton-row">
                   <td v-for="col in 13" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
                 </tr>
               </template>
-              <tr v-for="punto in filteredPuntosSuministro" v-show="!loading" :key="punto.id">
+              <tr v-for="punto in filteredPuntosSuministro" v-show="!cargandoPuntos" :key="punto.id">
                 <td class="text-truncate" :title="`${punto.direccion}, ${punto.codigoPostal}, ${punto.poblacion}, ${punto.provincia}`">
                   {{ punto.direccion }}, {{ punto.codigoPostal }}, {{ punto.poblacion }}, {{ punto.provincia }}
                 </td>
@@ -94,7 +96,7 @@
                 <td class="text-center">{{ punto.comercializadoraActual || '-' }}</td>
                 <td class="actions-cell">
                   <div class="action-buttons">
-                    <button class="btn-icon btn-view" @click="verDetallePunto(punto)" title="Ver Detalles" aria-label="Ver Detalles">
+                    <button class="btn-icon btn-view" @click="verDetallePunto(punto)" title="Ver detalle" aria-label="Ver detalle del punto de suministro">
                       <i class="fas fa-eye"></i>
                     </button>
                   </div>
@@ -154,6 +156,11 @@ export default {
       required: true,
       default: () => [],
     },
+    // El padre está cargando los puntos (se muestran filas de carga en vez de "no hay puntos")
+    cargando: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -167,6 +174,9 @@ export default {
     };
   },
   computed: {
+    cargandoPuntos() {
+      return this.loading || this.cargando;
+    },
     filteredPuntosSuministro() {
       const filtro = this.normalizeText(this.filterPuntos);
       return this.puntosSuministroLocal.filter((punto) => {
@@ -187,33 +197,33 @@ export default {
       immediate: true,
       deep: true,
       handler(newVal) {
-        // Si recibimos puntos de suministro del padre, usar el nuevo endpoint para obtener las potencias
-        if (newVal && newVal.length > 0 && this.cliente && this.cliente.idCliente) {
-          this.refreshPuntosSuministro();
-        } else {
-          this.puntosSuministroLocal = newVal.map(punto => {
-            const newPunto = { ...punto };
-            if (newPunto.CUPSluz !== undefined) {
-              newPunto.cupsluz = newPunto.CUPSluz;
-              delete newPunto.CUPSluz;
-            }
-            if (newPunto.CUPSgas !== undefined) {
-              newPunto.cupsgas = newPunto.CUPSgas;
-              delete newPunto.CUPSgas;
-            }
-            if (newPunto.cupsluz === undefined && newPunto.cups === undefined) {
-              newPunto.cupsluz = '';
-            }
-            if (newPunto.cupsgas === undefined) {
-              newPunto.cupsgas = '';
-            }
-            return newPunto;
-          });
-        }
+        // El padre ya los trae de la cartera del cliente (con potencias): no se vuelven a pedir
+        this.puntosSuministroLocal = this.normalizarPuntos(newVal || []);
       },
     },
   },
   methods: {
+    // Unifica los nombres de los CUPS (el backend devuelve CUPSluz/CUPSgas)
+    normalizarPuntos(puntos) {
+      return puntos.map(punto => {
+        const newPunto = { ...punto };
+        if (newPunto.CUPSluz !== undefined) {
+          newPunto.cupsluz = newPunto.CUPSluz;
+          delete newPunto.CUPSluz;
+        }
+        if (newPunto.CUPSgas !== undefined) {
+          newPunto.cupsgas = newPunto.CUPSgas;
+          delete newPunto.CUPSgas;
+        }
+        if (newPunto.cupsluz === undefined && newPunto.cups === undefined) {
+          newPunto.cupsluz = '';
+        }
+        if (newPunto.cupsgas === undefined) {
+          newPunto.cupsgas = '';
+        }
+        return newPunto;
+      });
+    },
     normalizeText(text) {
       if (!text) return "";
       return text
@@ -227,33 +237,14 @@ export default {
       this.loading = true;
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/puntos-suministro/cliente/${this.cliente.idCliente}/cartera`);
-        this.puntosSuministroLocal = response.data.map(punto => {
-          const newPunto = { ...punto };
-          // Normalizar nombres de propiedades si es necesario
-          if (newPunto.CUPSluz !== undefined) {
-            newPunto.cupsluz = newPunto.CUPSluz;
-            delete newPunto.CUPSluz;
-          }
-          if (newPunto.CUPSgas !== undefined) {
-            newPunto.cupsgas = newPunto.CUPSgas;
-            delete newPunto.CUPSgas;
-          }
-          if (newPunto.cupsluz === undefined && newPunto.cups === undefined) {
-            newPunto.cupsluz = '';
-          }
-          if (newPunto.cupsgas === undefined) {
-            newPunto.cupsgas = '';
-          }
-          return newPunto;
-        });
-        // Eliminada la alerta de éxito, solo loading
+        this.puntosSuministroLocal = this.normalizarPuntos(response.data);
       } catch (error) {
         console.error("Error al actualizar puntos de suministro:", error);
         await this.$swal.fire({
           title: 'Error',
           text: `No se pudieron actualizar los puntos de suministro: ${error.message}`,
           icon: 'error',
-          confirmButtonColor: 'rgba(252, 215, 0)'
+          confirmButtonColor: '#fcd700'
         });
       } finally {
         this.loading = false;

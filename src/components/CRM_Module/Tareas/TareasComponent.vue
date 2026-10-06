@@ -31,17 +31,17 @@
           </button>
           <button class="btn btn-toggle-completed" :class="{ active: mostrarCompletadas }" @click="mostrarCompletadas = !mostrarCompletadas" title="Mostrar/ocultar tareas completadas">
             <i :class="mostrarCompletadas ? 'fas fa-check-circle' : 'fas fa-tasks'"></i>
-            <span>{{ mostrarCompletadas ? 'Completadas' : 'Sin Completar' }}</span>
+            <span>{{ mostrarCompletadas ? 'Completadas' : 'Sin completar' }}</span>
           </button>
           <button class="btn btn-create" @click="abrirModalCrearTarea" title="Crear nueva tarea">
             <i class="fas fa-plus-circle"></i>
-            <span>Crear Tarea</span>
+            <span>Crear tarea</span>
           </button>
         </div>
       </div>
 
       <div class="table-responsive">
-        <table v-if="vistaActual === 'tabla'" class="data-table">
+        <table v-if="vistaActual === 'tabla'" class="data-table data-table--acciones-fijas">
           <thead>
             <tr>
               <th class="sortable th-col-titulo">
@@ -172,7 +172,7 @@
               </th>
               <th class="th-col-acciones">
                 <div class="column-header">
-                  <div class="column-title">
+                  <div class="column-title column-title--sin-orden">
                     <i class="fas fa-cogs mr-2"></i>Acciones
                   </div>
                 </div>
@@ -192,7 +192,7 @@
                   <button class="btn-pin" @click.stop="toggleFijada(tarea)" :title="tarea.fijada ? 'Quitar fijado' : 'Fijar tarea'">
                     <i class="fas fa-thumbtack" :class="{ 'pin-activo': tarea.fijada }"></i>
                   </button>
-                  {{ tarea.titulo }}
+                  <span class="titulo-texto">{{ tarea.titulo }}</span>
                 </span>
               </td>
               <td :title="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre || '-'">
@@ -240,7 +240,7 @@
                   <button v-if="puedeEditarTarea(tarea)" class="btn-icon btn-edit" @click="handleActualizarTarea(tarea)" title="Editar" aria-label="Editar tarea">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button v-if="puedeEliminarTarea(tarea)" class="btn-icon btn-delete" @click="handleEliminarTarea(tarea.id)" title="Eliminar">
+                  <button v-if="puedeEliminarTarea(tarea)" class="btn-icon btn-delete" @click="handleEliminarTarea(tarea.id)" title="Eliminar tarea" aria-label="Eliminar tarea">
                     <i class="fas fa-trash"></i>
                   </button>
                 </div>
@@ -271,7 +271,7 @@
       <div v-if="vistaActual === 'tabla'" class="pagination-controls">
         <div class="records-per-page">
           <label for="recordsPerPage">Registros por página:</label>
-          <select v-model="tareasPorPagina" id="recordsPerPage" class="form-control">
+          <select v-model.number="tareasPorPagina" id="recordsPerPage" class="form-control">
             <option value="10">10</option>
             <option value="25">25</option>
             <option value="50">50</option>
@@ -359,15 +359,20 @@
 </template>
 
 <script>
+import { ordenTabla } from '@/mixins/ordenTabla';
+import { compararValores } from '@/utils/orden'
 import { tareasApi } from '@/services/tareasApi'
 import TareaDetalleModal from './TareaDetalleModal.vue'
 import EstadisticasTareasComponent from './EstadisticasTareasComponent.vue'
 import TareaModalCorporativo from './TareaModalCorporativo.vue'
 import TareasCalendarioView from './TareasCalendarioView.vue'
 import Spinner from '@/components/SpinnerComponent.vue'
+import { cargarExcelJS, descargarLibroExcel } from '@/utils/excel'
+import { fechaLocalISO } from '@/utils/fechas'
 
 export default {
   name: 'TareasComponent',
+  mixins: [ordenTabla],
   components: {
     TareaDetalleModal,
     EstadisticasTareasComponent,
@@ -382,7 +387,6 @@ export default {
       estados: [],
       usuarios: [],
       categorias: [],
-      subcategorias: [],
       cargando: false,
       mostrarCompletadas: false,
       
@@ -432,53 +436,17 @@ export default {
     }
   },
   computed: {
-    // Usuario actual logueado
-    usuarioActual() {
-      return JSON.parse(localStorage.getItem('usuario') || '{}')
-    },
-    
     esAdmin() {
       const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
       return usuario && usuario.nivelAcceso === 1
     },
 
-    tareasVencidas() {
-      return this.tareas.filter(t => t.vencida && !t.estadoFinal)
-    },
-
-    tareasEnProgreso() {
-      return this.tareas.filter(t => t.estadoNombre?.toLowerCase().includes('progreso'))
-    },
-
-    tareasCompletadas() {
-      return this.tareas.filter(t => t.estadoFinal)
-    },
-
     sortedTareas() {
       if (!this.sortKey || !this.sortOrder) return this.tareasFiltradas
       
-      const sorted = [...this.tareasFiltradas].sort((a, b) => {
-        let aValue = a[this.sortKey]
-        let bValue = b[this.sortKey]
-        
-        aValue = aValue ?? ''
-        bValue = bValue ?? ''
-        
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-          return this.sortOrder === 'asc' ? aValue - bValue : bValue - aValue
-        }
-        
-        const aStr = String(aValue).toLowerCase()
-        const bStr = String(bValue).toLowerCase()
-        
-        if (this.sortOrder === 'asc') {
-          return aStr > bStr ? 1 : -1
-        } else {
-          return aStr < bStr ? 1 : -1
-        }
-      })
-      
-      return sorted
+      const signo = this.sortOrder === 'asc' ? 1 : -1
+      return [...this.tareasFiltradas]
+        .sort((a, b) => compararValores(a[this.sortKey], b[this.sortKey]) * signo)
     },
     
     paginatedTareas() {
@@ -498,16 +466,6 @@ export default {
     paginationEnd() {
       const end = this.paginaActual * this.tareasPorPagina
       return end > this.tareasFiltradas.length ? this.tareasFiltradas.length : end
-    },
-
-    todasSeleccionadasComputed: {
-      get() {
-        return this.paginatedTareas.length > 0 && 
-               this.paginatedTareas.every(tarea => this.tareaSeleccionadas?.includes(tarea.id))
-      },
-      set() {
-        // No se usa en esta versión mejorada
-      }
     }
   },
   watch: {
@@ -538,6 +496,9 @@ export default {
         }
       }
     }
+  },
+  beforeUnmount() {
+    if (this.filtroDebounceTimer) clearTimeout(this.filtroDebounceTimer)
   },
   async mounted() {
     await this.inicializar()
@@ -693,27 +654,6 @@ export default {
       }
     },
     
-    async cargarEstados() {
-      try {
-        this.estados = await tareasApi.obtenerEstados()
-      } catch (error) {
-        console.error('Error cargando estados:', error)
-      }
-    },
-    
-    async cargarUsuarios() {
-      this.usuarios = await this.fetchUsuarios()
-    },
-
-    async cargarCategorias() {
-      try {
-        this.categorias = await tareasApi.obtenerCategorias?.() || []
-      } catch (error) {
-        console.error('Error cargando categorías:', error)
-        this.categorias = []
-      }
-    },
-    
     // Aplicar filtros con debounce para mejor rendimiento (llamado desde @input)
     aplicarFiltrosDebounced() {
       // Limpiar timer anterior
@@ -801,28 +741,10 @@ export default {
       
       this.tareasFiltradas = resultado
     },
-
-    sortBy(campo) {
-      if (this.sortKey === campo) {
-        // Cambiar dirección si se hace clic en el mismo campo
-        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
-      } else {
-        // Nuevo campo, ordenar ascendente
-        this.sortKey = campo
-        this.sortOrder = 'asc'
-      }
-    },
-
-    getSortIcon(campo) {
-      if (this.sortKey !== campo) {
-        return 'fas fa-sort'
-      }
-      return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'
-    },
     
     async exportarExcel() {
       try {
-        const ExcelJS = require('exceljs')
+        const ExcelJS = await cargarExcelJS()
         const workbook = new ExcelJS.Workbook()
         const worksheet = workbook.addWorksheet('Tareas')
         
@@ -860,16 +782,8 @@ export default {
           fgColor: { argb: 'FFE0E0E0' }
         }
         
-        // Generar buffer y descargar (funciona en navegador)
-        const buffer = await workbook.xlsx.writeBuffer()
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = `Tareas_${new Date().toISOString().split('T')[0]}.xlsx`
-        link.click()
-        window.URL.revokeObjectURL(url)
-        
+        await descargarLibroExcel(workbook, `Tareas_${fechaLocalISO()}.xlsx`)
+
         this.mostrarMensaje('Archivo exportado exitosamente', 'success')
       } catch (error) {
         console.error('Error exportando a Excel:', error)
@@ -1055,6 +969,7 @@ export default {
         text: 'Esta acción no se puede deshacer.',
         showCancelButton: true,
         confirmButtonText: 'Sí, eliminar',
+        confirmButtonColor: '#d33',
         cancelButtonText: 'Cancelar',
         reverseButtons: true,
       })

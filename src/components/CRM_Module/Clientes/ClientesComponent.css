@@ -213,9 +213,7 @@
   user-select: none;
 }
 
-.sortable:hover {
-  background-color: var(--hover-color);
-}
+/* El efecto del ratón en las cabeceras es común a todas las tablas: shared-ui.css */
 
 .page-info {
   color: var(--text-primary);
@@ -329,11 +327,6 @@
   from { opacity: 0; transform: translateX(-8px); }
   to { opacity: 1; transform: translateX(0); }
 }
-
-/* Highlight flash for recently updated rows */
-.row-highlight {
-  animation: highlightFlash 1.5s ease;
-}
 @keyframes highlightFlash {
   0% { background-color: rgba(76, 175, 80, 0.3); }
   100% { background-color: transparent; }
@@ -374,10 +367,6 @@
   transition: background-color 0.2s ease;
 }
 
-.column-title:hover {
-  background-color: var(--hover-color);
-}
-
 .column-filter-container {
   position: relative;
 }
@@ -415,15 +404,6 @@
   margin-left: 4px;
   font-size: 0.9em;
   color: var(--text-secondary);
-}
-
-.sortable .column-title {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.sortable .column-title:hover {
-  color: var(--primary-color);
 }
 
 /* Estilos para el dropdown de sectores */

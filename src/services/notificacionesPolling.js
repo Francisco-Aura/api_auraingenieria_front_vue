@@ -39,6 +39,8 @@ class NotificacionesService {
       webSocketFactory: () => new SockJS('/ws'),
       reconnectDelay: 5000,
       onConnect: () => {
+        // Con el WebSocket (re)conectado ya no hace falta el sondeo de respaldo
+        this._pararFallbackPolling()
         // Suscripción al topic personal del usuario (no requiere autenticación)
         this.stompClient.subscribe(
           `/topic/notificaciones/${this.usuarioId}`,

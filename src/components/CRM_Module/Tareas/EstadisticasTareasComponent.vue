@@ -105,7 +105,7 @@
 
         <!-- Métricas Avanzadas de Productividad -->
         <div class="metricas-avanzadas">
-          <h3><i class="fas fa-chart-line"></i> Análisis de Productividad</h3>
+          <h3><i class="fas fa-chart-line"></i> Análisis de productividad</h3>
           <div class="metricas-grid">
             <!-- Tasa de Completación -->
             <div class="metrica-item">
@@ -210,7 +210,6 @@ export default {
   name: 'EstadisticasTareasComponent',
   data() {
     return {
-      mostrarFiltros: true,
       mostrarEstadisticas: false,
       tipoRango: 'semana',
       mesSeleccionado: new Date().getMonth() + 1,
@@ -286,22 +285,6 @@ export default {
           return 'Progreso del Período'
         default:
           return 'Progreso'
-      }
-    },
-    tipoRangoTexto() {
-      switch (this.tipoRango) {
-        case 'hoy':
-          return 'de hoy'
-        case 'semana':
-          return 'de la semana'
-        case 'mes':
-          return `del mes`
-        case 'año':
-          return `del año`
-        case 'personalizado':
-          return 'del período'
-        default:
-          return 'del período'
       }
     },
     esAdmin() {

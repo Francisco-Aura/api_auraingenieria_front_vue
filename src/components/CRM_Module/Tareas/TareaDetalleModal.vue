@@ -1,20 +1,26 @@
 <template>
   <Teleport to="body">
-    <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Detalle de tarea" @click="cerrar">
+    <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tarea-detalle-title" @click="cerrar">
       <div class="modal-content modal-detalle" @click.stop>
-      <button type="button" class="close-button close-button-floating" @click="cerrar" aria-label="Cerrar detalle de tarea">
-        <i class="fas fa-times"></i>
-      </button>
-      <!-- Body del modal (Sin header separado) -->
+      <!-- Cabecera común de Aura: el título de la tarea hace de título del modal -->
+      <div class="modal-header aura-modal-header">
+        <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-clipboard-check"></i></span>
+        <div class="aura-modal-header__titulos">
+          <h2 id="tarea-detalle-title">{{ tarea.titulo || 'Detalle de la tarea' }}</h2>
+          <span class="aura-modal-header__subtitulo">
+            <span class="aura-dato"><span class="aura-dato__etiqueta">Tarea</span>#{{ tarea.id }}</span>
+            <span v-if="tarea.estadoNombre" class="aura-dato"><span class="aura-dato__etiqueta">Estado</span>{{ formatearEstadoNombre(tarea.estadoNombre) }}</span>
+            <span v-if="tarea.fechaVencimiento" class="aura-dato"><span class="aura-dato__etiqueta">Vence</span>{{ formatearFecha(tarea.fechaVencimiento) }}</span>
+          </span>
+        </div>
+        <button type="button" class="close-button" @click="cerrar" aria-label="Cerrar detalle de tarea">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
       <div class="modal-body">
-          <!-- Título y Descripción ARRIBA - Ancho completo -->
-          <div class="titulo-descripcion-header">
-          <div class="campo-detalle titulo-campo">
-            <label>Título</label>
-            <div class="valor-campo titulo-valor">{{ tarea.titulo }}</div>
-          </div>
-
-          <div class="campo-detalle descripcion-campo" v-if="tarea.descripcion">
+          <!-- Descripción arriba, a todo el ancho -->
+          <div v-if="tarea.descripcion" class="titulo-descripcion-header">
+          <div class="campo-detalle descripcion-campo">
             <label>Descripción</label>
             <div class="valor-campo descripcion-completa">{{ tarea.descripcion }}</div>
           </div>
@@ -172,7 +178,7 @@
                     @change="onEstadoChange"
                     aria-label="Modificar estado de la tarea"
                   >
-                    <option :value="null" disabled>Cambiar estado</option>
+                    <option :value="null">Cambiar estado</option>
                     <option v-for="estado in estadosDisponibles" :key="estado.id" :value="estado.id">
                       {{ formatearEstadoNombre(estado.nombre) }}
                     </option>
@@ -209,31 +215,38 @@
                       rows="2"
                     ></textarea>
                   </div>
-                  <button 
-                    class="btn-aplicar-cambio-estado"
-                    @click="aplicarCambioEstado"
-                    :disabled="!puedeAplicarCambio"
-                  >
-                    <i class="fas fa-check"></i> Aplicar cambio
-                  </button>
+                  <div class="estado-cambio-acciones">
+                    <button type="button" class="btn-cancelar-cambio-estado" @click="cancelarCambioEstado">
+                      <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-aplicar-cambio-estado"
+                      @click="aplicarCambioEstado"
+                      :disabled="!puedeAplicarCambio"
+                    >
+                      <i class="fas fa-check"></i> Aplicar cambio
+                    </button>
+                  </div>
               </div>
             </div>
 
             <!-- Modal de confirmación de completación -->
             <div v-if="mostrarConfirmacionCompletacion" class="modal-overlay-confirmacion" @click.self="cerrarConfirmacion">
               <div class="modal-confirmacion-completar">
-                <div class="modal-header-confirmacion">
-                  <h3>
-                    <i class="fas fa-check-double"></i>
-                    Confirmar Finalización
-                  </h3>
-                  <button type="button" class="close-button btn-close" @click="cerrarConfirmacion" aria-label="Cerrar confirmación"><i class="fas fa-times"></i></button>
+                <div class="modal-header-confirmacion aura-modal-header">
+                  <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-check-double"></i></span>
+                  <div class="aura-modal-header__titulos">
+                    <h3>Confirmar finalización</h3>
+                    <span class="aura-modal-header__subtitulo">Escriba el resultado para completar la tarea</span>
+                  </div>
+                  <button type="button" class="close-button" @click="cerrarConfirmacion" aria-label="Cerrar confirmación"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="modal-body-confirmacion">
                   <p class="titulo-tarea"><strong>{{ tarea.titulo }}</strong></p>
                   <div class="form-group-confirmacion">
                     <label for="comentario-completacion">
-                      Comentario de Finalización <span class="required">*</span>
+                      Comentario de finalización <span class="required">*</span>
                     </label>
                     <textarea 
                       id="comentario-completacion"
@@ -481,6 +494,7 @@
 </template>
 
 <script>
+import { textoError } from '@/utils/errores';
 import TareaAuditoriaModal from './TareaAuditoriaModal.vue'
 import tareasApi from '@/services/tareasApi'
 
@@ -489,7 +503,7 @@ export default {
   components: {
     TareaAuditoriaModal
   },
-  emits: ['actualizar', 'cambiarEstado', 'completarConComentario', 'completar-con-comentario', 'crearComentarioEstado', 'crear-comentario-estado', 'cerrar', 'update:value'],
+  emits: ['actualizar', 'cambiarEstado', 'completarConComentario', 'completar-con-comentario', 'crearComentarioEstado', 'crear-comentario-estado', 'comentario-creado', 'cerrar', 'update:value'],
   props: {
     value: {
       type: Boolean,
@@ -523,7 +537,6 @@ export default {
       subiendoArchivos: false,
       comentarioEditando: null,
       textoComentarioEditando: '',
-      adjuntoActualizando: null,
       adjuntosDirectos: [],
       adjuntosExpandidos: false,
       adjuntosVisiblesColapsado: 4,
@@ -706,16 +719,18 @@ export default {
       return 'fas fa-file-download'
     },
 
-    formatearTamanoAdjunto(adjunto) {
-      const bytes = adjunto?.tamanoBytes ?? adjunto?.size ?? adjunto?.tamano ?? null
-      if (!bytes || Number.isNaN(Number(bytes))) return ''
-      return this.formatFileSizeComentario(Number(bytes))
-    },
-
     onEstadoChange() {
       const estado = this.estados.find(e => e.id === this.estadoSeleccionado)
       // Usar campo estadoBloqueo en vez de detectar por nombre
       this.esEstadoBloqueado = estado && estado.estadoBloqueo === true
+      if (!this.estadoSeleccionado) this.comentarioCambioEstado = ''
+    },
+
+    /** Deshace la elección de estado sin tener que cerrar y abrir la tarea. */
+    cancelarCambioEstado() {
+      this.estadoSeleccionado = null
+      this.comentarioCambioEstado = ''
+      this.esEstadoBloqueado = false
     },
 
     async aplicarCambioEstado() {
@@ -751,20 +766,6 @@ export default {
           title: 'Error',
           text: 'No se pudo cambiar el estado de la tarea. Inténtelo de nuevo.'
         })
-      }
-    },
-
-    async completarRapido() {
-      const estadoCompletado = this.estados.find(e => e.estadoFinal === true)
-      if (!estadoCompletado) {
-        console.error('No se encontró estado de finalización')
-        return
-      }
-
-      try {
-        this.$emit('cambiar-estado', this.tarea.id, estadoCompletado.id)
-      } catch (error) {
-        console.error('Error completando tarea:', error)
       }
     },
 
@@ -1025,23 +1026,6 @@ export default {
       this.mostrarAuditoria = true
     },
 
-    formatearDuracionCorta(segundos) {
-      if (!segundos || segundos <= 0) return '0s'
-      
-      const dias = Math.floor(segundos / 86400)
-      const horas = Math.floor((segundos % 86400) / 3600)
-      const minutos = Math.floor((segundos % 3600) / 60)
-      const segs = segundos % 60
-      
-      const partes = []
-      if (dias > 0) partes.push(`${dias}d`)
-      if (horas > 0) partes.push(`${horas}h`)
-      if (minutos > 0) partes.push(`${minutos}m`)
-      if (segs > 0 && dias === 0) partes.push(`${segs}s`)
-      
-      return partes.slice(0, 2).join(' ') || '0s'
-    },
-
     getEstadoIcon(estadoId) {
       const estado = this.estados.find(e => e.id === estadoId)
       if (!estado) return 'fas fa-circle'
@@ -1102,14 +1086,6 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
-    },
-
-    formatFileSize(bytes) {
-      if (bytes === 0) return '0 Bytes'
-      const k = 1024
-      const sizes = ['Bytes', 'KB', 'MB', 'GB']
-      const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
     },
 
     async descargarAdjunto(adjunto) {
@@ -1174,7 +1150,7 @@ export default {
         this.$swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Error al guardar el comentario. Por favor, inténtalo de nuevo.'
+          text: textoError(error, 'Error al guardar el comentario. Por favor, inténtalo de nuevo.')
         })
       } finally {
         this.guardandoComentario = false
@@ -1249,7 +1225,7 @@ export default {
         this.$swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Error al actualizar el comentario'
+          text: textoError(error, 'Error al actualizar el comentario')
         })
       }
     },
@@ -1308,7 +1284,6 @@ export default {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'
       })
@@ -1363,8 +1338,7 @@ export default {
           text: `Se reemplazará "${adjunto.nombreArchivo}" por "${file.name}"`,
           icon: 'question',
           showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#6c757d',
+          confirmButtonColor: '#fcd700',
           confirmButtonText: 'Sí, actualizar',
           cancelButtonText: 'Cancelar'
         })
@@ -1386,7 +1360,7 @@ export default {
             this.$swal.fire({
               icon: 'error',
               title: 'Error',
-              text: 'Error al actualizar el archivo'
+              text: textoError(error, 'Error al actualizar el archivo')
             })
           }
         }
@@ -1402,7 +1376,6 @@ export default {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'
       })
@@ -1424,7 +1397,7 @@ export default {
           this.$swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Error al eliminar el archivo'
+            text: textoError(error, 'Error al eliminar el archivo')
           })
         }
       }

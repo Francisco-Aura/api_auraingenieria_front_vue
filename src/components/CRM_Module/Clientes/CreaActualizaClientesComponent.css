@@ -59,47 +59,6 @@
   padding-right: 0.5rem;
 }
 
-/* Tareas/actividad button */
-.btn-tareas-actividad {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 1rem;
-  background: linear-gradient(135deg, var(--color-orange) 0%, #ea580c 100%);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
-  text-transform: uppercase;
-  white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.35);
-}
-
-.btn-tareas-actividad:hover {
-  background: linear-gradient(135deg, #fb923c 0%, var(--color-orange) 100%);
-  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.45);
-}
-
-.btn-tareas-actividad i {
-  font-size: 0.95rem;
-}
-
-.tareas-count-badge {
-  background: #fff;
-  color: #ea580c;
-  border-radius: 9999px;
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 0.05rem 0.45rem;
-  min-width: 20px;
-  text-align: center;
-  line-height: 1.5;
-}
-
 /* ═══════════════════════════════════════════════
    PANEL TAREAS / ACTIVIDAD  (clon de TareasComponent)
    ═══════════════════════════════════════════════ */
@@ -159,29 +118,6 @@
   font-weight: 700;
   letter-spacing: 0.01em;
 }
-
-.tareas-panel-cliente-nombre {
-  font-weight: 400;
-  opacity: 0.9;
-  font-size: 0.9rem;
-}
-
-.tareas-panel-close {
-  background: rgba(255,255,255,0.18);
-  border: 1px solid rgba(255,255,255,0.3);
-  color: #fff;
-  border-radius: 6px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.15s;
-}
-
-.tareas-panel-close:hover { background: rgba(255,255,255,0.3); }
 
 /* Body */
 .tareas-panel-body {
@@ -751,37 +687,6 @@
   align-self: flex-end;
 }
 
-.tp-btn-pin-note {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1.5px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 6px 10px;
-  background: #f8fafc;
-  color: #64748b;
-  font-weight: 600;
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  min-height: 32px;
-}
-
-.tp-btn-pin-note:hover {
-  border-color: #f59e0b;
-  color: #f59e0b;
-}
-
-.tp-btn-pin-note.pinned {
-  border-color: #f59e0b;
-  background: #fffbeb;
-  color: #f59e0b;
-}
-
-.tp-btn-pin-note.pinned .fa-thumbtack {
-  transform: rotate(-45deg);
-}
-
 .tp-note-pin-comment {
   background: none;
   border: none;
@@ -1139,16 +1044,6 @@
 
 .tp-note-cancel:hover:not(:disabled) {
   background: #f1f5f9;
-}
-
-.tp-doc-pendiente {
-  margin: 10px 12px 12px;
-  padding: 8px 10px;
-  background: #fff7ed;
-  border: 1px dashed #fb923c;
-  border-radius: 8px;
-  color: #9a3412;
-  font-size: 0.82rem;
 }
 
 @media (max-width: 1250px) {
@@ -1542,10 +1437,6 @@
   color: #333;
 }
 
-.tab-text {
-  font-size: 1rem;
-}
-
 /* Contenedor de pestañas optimizado */
 .tab-container {
   flex: 1;
@@ -1699,19 +1590,6 @@
   padding-left: 1.8rem;
 }
 
-.icon-suffix {
-  position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #aaa;
-  padding: 0;
-  font-size: 0.8rem;
-}
-
 /* CORRECCIÓN: Optimizar tamaños de controles */
 .form-control-compact {
   width: 100%;
@@ -1830,20 +1708,6 @@
   box-shadow: 0 10px 15px -3px rgba(252, 215, 0, 0.45), 0 4px 6px -2px rgba(252, 215, 0, 0.25);
 }
 
-/* CORRECCIÓN: Botón cancelar flotante eliminado */
-
-/* CORRECCIÓN: Reducir espacios en footer */
-.modal-footer-compact {
-  padding: 0.3rem 0.8rem !important;
-  border-top: 1px solid #e0e0e0;
-  background: #f8f9fa;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-  margin-top: 0.2rem !important;
-}
-
 .required-legend {
   font-size: 0.8rem;
   color: var(--text-secondary);
@@ -1910,10 +1774,6 @@
   .form-row-compact {
     flex-direction: column;
     gap: 0.3rem;
-  }
-  
-  .tab-text {
-    display: none;
   }
 
   .tab-btn {
@@ -2255,27 +2115,6 @@
   background: #e0e7ff;
 }
 
-.tp-attach-select-link {
-  padding: 0 6px;
-  background: transparent;
-  border: none;
-  text-decoration: underline;
-}
-
-.tp-attach-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  color: #2d3748;
-  background: #f7fafc;
-  border: 1px solid var(--border-color, #e2e8f0);
-  padding: 4px 8px;
-  border-radius: 6px;
-  min-width: 0;
-  max-width: 100%;
-}
-
 .tp-attach-name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2300,38 +2139,6 @@
 
 .tp-attach-remove:hover {
   color: #c53030;
-}
-
-.tp-attach-download {
-  color: var(--color-accent-indigo);
-}
-
-.tp-attach-download:hover {
-  color: #4c51bf;
-}
-
-.tp-attach-undo {
-  color: #38a169;
-}
-
-.tp-attach-undo:hover {
-  color: #276749;
-}
-
-.tp-attach-chip-existente {
-  background: #fffbeb;
-  border-color: #f6e05e;
-}
-
-.tp-attach-chip-eliminado {
-  background: #fff5f5;
-  border-color: #feb2b2;
-  color: #c53030;
-}
-
-.tp-attach-hint-inline {
-  font-size: 0.75rem;
-  color: #a0aec0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2408,4 +2215,31 @@
 
 .tp-note-actions-edit-bottom {
   margin-top: 6px;
+}
+
+/* Pie de cada pestaña: fijo abajo y siempre visible, aunque el contenido tenga scroll */
+.tab-container > .tab-content {
+  padding-bottom: 0;
+}
+
+.tab-content > .tab-navigation {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin: auto -0.5rem 0;
+  padding: 0.6rem 0.75rem;
+  background: #fff;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+  box-shadow: 0 -6px 12px -10px rgba(16, 24, 40, 0.35);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.tab-content > .tab-navigation .action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }

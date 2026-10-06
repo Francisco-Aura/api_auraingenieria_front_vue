@@ -18,7 +18,6 @@ a {
   transition: color 0.3s ease;
 }
 
-
 a:hover {
   color: #2980b9;
 }
@@ -117,7 +116,6 @@ button:hover {
   gap: 0.5rem; /* Espaciado entre label y campo */
 }
 
-
 .form-group input,
 .form-group textarea {
   width: 100%; /* Ancho completo del contenedor padre */
@@ -159,12 +157,6 @@ input:focus {
   box-shadow: var(--focus-ring);
 }
 
-.input-with-checkbox {
-  display: flex; /* Utiliza Flexbox para la disposición del checkbox y el input */
-  align-items: center; /* Alinea verticalmente los elementos */
-  gap: 0.5rem; /* Espaciado entre checkbox e input */
-}
-
 input, textarea, select {
   font-size: 0.9rem;
   width: 98%; /* Ancho del campo, con un pequeño margen */
@@ -184,7 +176,6 @@ textarea#notas {
   font-size: 15px; /* Tamaño de la fuente */
   resize: none; /* Permite redimensionar solo verticalmente */
 }
-
 
 /* =============================== */
 /*             TABLAS              */
@@ -217,12 +208,10 @@ table tr:hover {
 /* =============================== */
 .modal-overlay {
   position: fixed;/* Fijar en la pantalla */
-  top: 0;
-  left: 0;
-  width: 130vw;
-  height: 120vh;
-  border: 2px solid rgb(39, 39, 39);
-  border-radius: 10px; /* Bordes redondeados */ 
+  /* Exactamente la pantalla: con 130vw x 120vh los modales que no fijaban su
+     propio tamaño (notificaciones, auditoría, comentario de informes) salían
+     descentrados, y el borde oscuro se veía como un marco alrededor. */
+  inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
@@ -368,26 +357,8 @@ input:-webkit-autofill:focus {
   font-size: 0.875rem;
 }
 
-.alert-success {
-  background-color: rgba(46, 204, 113, 0.1);
-  border-left-color: var(--success-color);
-  color: #27ae60;
-}
-
-.alert-warning {
-  background-color: rgba(243, 156, 18, 0.1);
-  border-left-color: var(--warning-color);
-  color: #e67e22;
-}
-
 .alert-danger {
   background-color: rgba(231, 76, 60, 0.1);
   border-left-color: var(--danger-color);
   color: #c0392b;
-}
-
-.alert-info {
-  background-color: rgba(52, 152, 219, 0.1);
-  border-left-color: var(--info-color);
-  color: #2980b9;
 }

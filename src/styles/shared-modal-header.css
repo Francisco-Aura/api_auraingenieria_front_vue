@@ -1,0 +1,399 @@
+/*
+ * Cabecera y pestañas comunes de los modales de Aura.
+ *
+ * Todos los modales usan la misma cabecera: azul oscuro del menú lateral, título
+ * blanco, icono en círculo amarillo y línea amarilla de marca. Se aplica con la
+ * clase .aura-modal-header junto a la cabecera propia del componente.
+ *
+ * Los componentes traen reglas scoped para su cabecera (colores y rellenos
+ * distintos, algunas con !important). Para que esta sea la única apariencia, las
+ * propiedades visuales se fijan aquí con un selector más específico
+ * (div.aura-modal-header.aura-modal-header) y !important.
+ */
+
+div.aura-modal-header.aura-modal-header {
+  /* Fija arriba: la X de cerrar se ve aunque se desplace el contenido de la ventana */
+  position: sticky !important;
+  top: 0;
+  z-index: 20;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 12px 16px 12px 18px !important;
+  min-height: 62px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, var(--color-text-dark, #2c3e50) 0%, #1a252f 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-bottom: 3px solid var(--color-brand-yellow-hex, #fcd700) !important;
+  flex-shrink: 0;
+}
+
+div.aura-modal-header.aura-modal-header :is(h1, h2, h3, .modal-title) {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 1.12rem !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  color: #fff !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+div.aura-modal-header.aura-modal-header :is(h1, h2, h3, .modal-title) > i {
+  color: var(--color-brand-yellow-hex, #fcd700) !important;
+}
+
+/* Esquinas superiores iguales a las del modal que la contiene */
+div.aura-modal-header.aura-modal-header {
+  border-top-left-radius: inherit !important;
+  border-top-right-radius: inherit !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Cabeceras con marcado propio (Administración y MCAS): contenedor de icono y
+   textos (.modal-title / .mcas-modal-title), icono (.modal-icon /
+   .mcas-modal-icon) y línea explicativa (.title-text p). */
+div.aura-modal-header.aura-modal-header :is(div.modal-title, .mcas-modal-title) {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+div.aura-modal-header.aura-modal-header .title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+div.aura-modal-header.aura-modal-header .title-text p {
+  margin: 0 !important;
+  font-size: 0.8rem !important;
+  font-weight: 400 !important;
+  line-height: 1.3 !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.aura-modal-header__icono,
+div.aura-modal-header.aura-modal-header :is(.modal-icon, .mcas-modal-icon) {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-brand-yellow-hex, #fcd700);
+  color: var(--color-text-dark, #2c3e50);
+  font-size: 1rem;
+  box-shadow: 0 0 0 3px rgba(252, 215, 0, 0.18);
+}
+
+.aura-modal-header__titulos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.aura-modal-header__subtitulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.3;
+}
+
+.aura-modal-header__subtitulo strong {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+/* Dato de contexto (DNI/CIF, CUPS, nº de contrato...): etiqueta amarilla y valor
+   blanco sobre una pastilla clara, para que se lea de un vistazo */
+.aura-dato {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.aura-dato__etiqueta {
+  color: var(--color-brand-yellow-hex, #fcd700);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.aura-modal-header__acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Botón secundario de cabecera (p. ej. «Tareas y actividad») */
+div.aura-modal-header.aura-modal-header .aura-modal-header__boton {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px !important;
+  border-radius: 17px !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+div.aura-modal-header.aura-modal-header .aura-modal-header__boton:hover {
+  background: var(--color-brand-yellow-hex, #fcd700) !important;
+  border-color: var(--color-brand-yellow-hex, #fcd700) !important;
+  color: var(--color-text-dark, #2c3e50) !important;
+}
+
+/* Botón de cierre: mismo círculo rojo en todos los modales */
+div.aura-modal-header.aura-modal-header .close-button {
+  position: static !important;
+  flex: 0 0 34px;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  margin: 0 0 0 auto;
+  padding: 0 !important;
+  align-self: center !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  border: none !important;
+  border-radius: 50% !important;
+  background: #c0392b !important;
+  color: #fff !important;
+  font-size: 0.95rem !important;
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+div.aura-modal-header.aura-modal-header .aura-modal-header__acciones .close-button {
+  margin: 0;
+}
+
+div.aura-modal-header.aura-modal-header .close-button:hover {
+  background: #96281b !important;
+}
+
+div.aura-modal-header.aura-modal-header .close-button:focus-visible,
+div.aura-modal-header.aura-modal-header .aura-modal-header__boton:focus-visible {
+  outline: 2px solid var(--color-brand-yellow-hex, #fcd700);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Pestañas de formulario con pasos numerados
+ * ------------------------------------------------------------------------- */
+
+.aura-pestanas {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 0 16px;
+  background: #f4f6f9;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+button.aura-pestana {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 -1px;
+  padding: 11px 16px 10px;
+  width: auto;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text-secondary, #5b6b79);
+  font-size: 0.88rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: none;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+button.aura-pestana:hover {
+  color: var(--color-text-dark, #2c3e50);
+  background: rgba(252, 215, 0, 0.08);
+  transform: none;
+  box-shadow: none;
+}
+
+button.aura-pestana.aura-pestana--activa {
+  color: var(--color-text-dark, #2c3e50);
+  font-weight: 600;
+  background: #fff;
+  border-bottom-color: var(--color-brand-yellow-hex, #fcd700);
+}
+
+.aura-pestana__numero {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e3e8ee;
+  color: var(--color-text-secondary, #5b6b79);
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.aura-pestana--activa .aura-pestana__numero {
+  background: var(--color-brand-yellow-hex, #fcd700);
+  color: var(--color-text-dark, #2c3e50);
+}
+
+.aura-pestana--error .aura-pestana__numero {
+  background: var(--color-danger-alt, #e74c3c);
+  color: #fff;
+}
+
+/* Marca de estado junto al nombre de la pestaña (p. ej. MCAS listo / falta algo) */
+.aura-pestana__marca {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.aura-pestana__marca--ok { background: var(--color-success, #28a745); }
+.aura-pestana__marca--aviso { background: #f39c12; }
+
+/* assets/styles.css da a todo .modal-content un relleno del 1 % y un borde gris
+   heredados; con la cabecera común el modal va a sangre y la cabecera ocupa el
+   ancho completo, redondeada con las esquinas del propio modal. */
+.modal-content:has(> .aura-modal-header) {
+  padding: 0 !important;
+  border: none !important;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * Fichas de detalle (contrato y servicio): cabecera fija arriba, contenido con
+ * desplazamiento propio y cada dato como fila «etiqueta ···· valor».
+ * ------------------------------------------------------------------------- */
+
+.detalle-contrato-content.detalle-contrato-content {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.detalle-contrato-content.detalle-contrato-content > .detalle-contrato-pdf {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem !important;
+  gap: 1rem !important;
+}
+
+.detalle-contrato-content.detalle-contrato-content :is(.detalle-contrato-header, .detalle-contrato-section) {
+  padding: 1rem 1.1rem !important;
+  border-radius: 10px !important;
+  background: #f6f8fa !important;
+  gap: 1rem 1.25rem !important;
+}
+
+.detalle-contrato-content.detalle-contrato-content :is(.cliente-info, .contrato-info) {
+  gap: 6px !important;
+  min-width: 0;
+}
+
+.detalle-contrato-content.detalle-contrato-content :is(.cliente-info h4, .contrato-info h4, .detalle-contrato-section h4) {
+  margin: 0 0 6px !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  color: var(--color-text-dark, #2c3e50) !important;
+}
+
+.detalle-contrato-content.detalle-contrato-content .info-grid {
+  gap: 0 1.25rem !important;
+}
+
+.detalle-contrato-content.detalle-contrato-content .info-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 16px !important;
+  min-width: 0 !important;
+  margin: 0 0 6px !important;
+  padding: 9px 12px !important;
+  background: #fff !important;
+  border: 1px solid #e6eaef !important;
+  border-radius: 8px !important;
+}
+
+.detalle-contrato-content.detalle-contrato-content .info-label {
+  flex: 0 0 auto;
+  color: #6b7785 !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap;
+}
+
+.detalle-contrato-content.detalle-contrato-content .info-value {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  text-align: right !important;
+  color: #1f2a36 !important;
+  font-family: inherit !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  word-break: break-word;
+}
+
+.detalle-contrato-content.detalle-contrato-content .info-value i {
+  color: #8a96a3;
+  font-size: 0.85rem;
+}

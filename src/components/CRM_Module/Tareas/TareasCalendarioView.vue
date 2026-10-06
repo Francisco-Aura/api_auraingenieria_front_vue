@@ -61,8 +61,8 @@
         <div class="dia-numero">{{ dia.numero }}</div>
         
         <div class="tareas-dia">
-          <div 
-            v-for="tarea in obtenerTareasDia(dia.fecha)" 
+          <div
+            v-for="tarea in tareasVisiblesDia(dia.fecha)"
             :key="tarea.id"
             class="tarea-item"
             :style="{ borderLeftColor: tarea.estadoColor || 'rgb(252, 215, 0)' }"
@@ -71,9 +71,9 @@
             <span v-if="vista !== 'mes'" class="tarea-hora">{{ formatHora(tarea.fechaVencimiento) }}</span>
             <span class="tarea-titulo-corto">{{ tarea.titulo }}</span>
           </div>
-          
-          <div v-if="obtenerTareasDia(dia.fecha).length > mostrarTareasMaximo" class="mas-tareas">
-            +{{ obtenerTareasDia(dia.fecha).length - mostrarTareasMaximo }} más
+
+          <div v-if="tareasDelDia(dia.fecha).length > mostrarTareasMaximo" class="mas-tareas">
+            +{{ tareasDelDia(dia.fecha).length - mostrarTareasMaximo }} más
           </div>
         </div>
       </div>
@@ -102,15 +102,15 @@
           </button>
           
           <div class="tareas-lista">
-            <h4>Tareas ({{ obtenerTareasDia(diaSeleccionado.fecha).length }})</h4>
-            
-            <div v-if="obtenerTareasDia(diaSeleccionado.fecha).length === 0" class="sin-tareas">
+            <h4>Tareas ({{ tareasDelDia(diaSeleccionado.fecha).length }})</h4>
+
+            <div v-if="tareasDelDia(diaSeleccionado.fecha).length === 0" class="sin-tareas">
               <i class="fas fa-inbox fa-2x"></i>
               <p>No hay tareas para este día</p>
             </div>
-            
-            <div 
-              v-for="tarea in obtenerTareasDia(diaSeleccionado.fecha)" 
+
+            <div
+              v-for="tarea in tareasDelDia(diaSeleccionado.fecha)"
               :key="tarea.id"
               class="tarea-detalle"
               @click="verDetalleTarea(tarea)">
@@ -191,6 +191,18 @@ export default {
       if (this.vista === 'semana') return 4
       return 10
     },
+    // Tareas agrupadas por día de vencimiento (clave AAAA-MM-DD local): se calcula
+    // una vez por cambio de tareas en lugar de recorrer todas en cada celda
+    tareasPorDia() {
+      const porDia = new Map()
+      for (const tarea of this.tareas) {
+        if (!tarea.fechaVencimiento) continue
+        const clave = this.claveDia(new Date(tarea.fechaVencimiento))
+        if (!porDia.has(clave)) porDia.set(clave, [])
+        porDia.get(clave).push(tarea)
+      }
+      return porDia
+    },
     diasDelMes() {
       const dias = []
       const primerDia = new Date(this.año, this.mes, 1)
@@ -240,11 +252,15 @@ export default {
       } else if (this.vista === 'semana') {
         const dias = []
         const hoy = this.fechaActual
-        const primerDiaSemana = new Date(hoy)
-        primerDiaSemana.setDate(hoy.getDate() - hoy.getDay() + 1)
-        
+        // getDay() devuelve 0 el domingo: sin este ajuste, los domingos la vista
+        // saltaba a la semana siguiente y el día actual no aparecía.
+        const diaSemana = hoy.getDay()
+        const desplazamiento = diaSemana === 0 ? -6 : 1 - diaSemana
+
         for (let i = 0; i < 7; i++) {
-          const fecha = new Date(primerDiaSemana.getTime() + i * 24 * 60 * 60 * 1000)
+          // Aritmética de calendario, no de milisegundos: sumar 24 h se descuadra
+          // la semana del cambio de hora (marzo y octubre).
+          const fecha = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + desplazamiento + i)
           dias.push({
             numero: fecha.getDate(),
             fecha: fecha,
@@ -307,14 +323,16 @@ export default {
              fecha1.getMonth() === fecha2.getMonth() &&
              fecha1.getFullYear() === fecha2.getFullYear()
     },
-    obtenerTareasDia(fecha) {
-      return this.tareas.filter(tarea => {
-        if (!tarea.fechaVencimiento) return false
-        const fechaTarea = new Date(tarea.fechaVencimiento)
-        return fechaTarea.getDate() === fecha.getDate() &&
-               fechaTarea.getMonth() === fecha.getMonth() &&
-               fechaTarea.getFullYear() === fecha.getFullYear()
-      }).slice(0, this.mostrarTareasMaximo)
+    claveDia(fecha) {
+      return `${fecha.getFullYear()}-${fecha.getMonth()}-${fecha.getDate()}`
+    },
+    // Todas las tareas que vencen ese día (panel lateral y contador «+N más»)
+    tareasDelDia(fecha) {
+      return this.tareasPorDia.get(this.claveDia(fecha)) || []
+    },
+    // Las que caben en la celda del calendario
+    tareasVisiblesDia(fecha) {
+      return this.tareasDelDia(fecha).slice(0, this.mostrarTareasMaximo)
     },
     seleccionarDia(dia) {
       this.diaSeleccionado = dia

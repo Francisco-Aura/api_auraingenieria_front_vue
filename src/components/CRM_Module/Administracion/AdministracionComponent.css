@@ -418,17 +418,11 @@
   cursor: default;
 }
 
-.column-title:hover {
-  background-color: var(--hover-color);
-}
+/* El efecto del ratón en las cabeceras es común a todas las tablas: shared-ui.css */
 
 .actions-header .column-title {
   justify-content: center;
   cursor: default;
-}
-
-.actions-header .column-title:hover {
-  background-color: transparent;
 }
 
 .column-filter-container {
@@ -496,7 +490,6 @@
   margin: 0 0 20px 0;
   font-size: 1rem;
 }
-
 
 /* Modal CORREGIDO */
 .modal-overlay {
@@ -674,15 +667,6 @@
     align-items: stretch;
   }
   
-  .controls-left {
-    max-width: 100%;
-  }
-  
-  .pagination-footer {
-    flex-direction: column;
-    gap: 15px;
-  }
-  
   .tables-grid {
     grid-template-columns: 1fr;
   }
@@ -767,6 +751,23 @@
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid var(--border-color);
+}
+
+/* Aviso de tabla de solo consulta (catálogos fijos) */
+.aviso-solo-lectura {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  padding: var(--space-10) 30px;
+  background: var(--color-accent-indigo-tint);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.aviso-solo-lectura i {
+  color: var(--color-accent-indigo);
 }
 
 .selector-help {
@@ -898,4 +899,16 @@
   font-size: 0.72rem;
   margin-top: 2px;
   line-height: 1.2;
+}
+
+/* Pie del formulario: fijo abajo y siempre visible, aunque la tabla tenga muchos campos */
+form.modal-body {
+  padding-bottom: 0 !important;
+}
+
+form.modal-body > .modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin: 25px -25px 0;
 }

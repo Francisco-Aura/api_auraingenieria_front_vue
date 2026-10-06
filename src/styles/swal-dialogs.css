@@ -129,6 +129,14 @@
   color: #8b4545;
 }
 
+/* MCAS (McasComponent.vue): motivo de rechazo en un <textarea> nativo de SweetAlert2,
+   que por defecto usa la fuente monoespaciada del navegador. */
+.swal-accion-textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
 /* ModalServicios.vue: advertencia de pérdida de cuotas al cambiar modalidad de pago */
 .swal-perdida-cuotas-contenedor {
   text-align: left;

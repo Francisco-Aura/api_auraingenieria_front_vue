@@ -219,3 +219,12 @@ test('soltar sin dataTransfer no rompe los adjuntos de tareas', () => {
   assert.match(corporativo, /Array\.from\(event\?\.dataTransfer\?\.files \|\| \[\]\)/);
   assert.match(detalle, /Array\.from\(event\?\.dataTransfer\?\.files \|\| \[\]\)/);
 });
+
+test('los informes muestran fechas dd/mm/aaaa, cabeceras con tilde y el mismo título que su tarjeta', () => {
+  const source = read('src/components/CRM_Module/Informes/InformesComponent.vue');
+  assert.match(source, /return `\$\{dia\}\/\$\{mes\}\/\$\{anio\}`/);
+  assert.match(source, /direccion: 'Dirección'/);
+  assert.match(source, /codigoPostal: 'Código Postal'/);
+  assert.match(source, /'puntos-suministro-sin-contrato': 'Puntos de Suministro sin Contrato'/);
+  assert.match(source, /this\.tituloInforme = this\.tituloVisible\(tipo\)/);
+});

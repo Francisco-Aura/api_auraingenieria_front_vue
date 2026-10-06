@@ -30,8 +30,16 @@
   align-items: center;
   justify-content: space-between;
   padding: 24px 20px;
+  min-height: 105px;
+  box-sizing: border-box;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.1);
+}
+
+/* Plegado: el botón queda centrado a la misma altura que con el menú abierto */
+.sidebar-collapsed .sidebar-header {
+  justify-content: center;
+  padding: 24px 0;
 }
 
 .logo-container {
@@ -55,45 +63,65 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
+/* Botón de plegar/expandir: cuadrado redondeado, sin saltos al pasar el ratón */
 .toggle-sidebar {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  font-size: 1.2rem;
-  padding: 6px;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   position: relative;
   z-index: calc(var(--z-overlay) + 1);
-  margin-left: 0;
 }
 
 .toggle-sidebar:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: var(--color-brand-yellow);
+  border-color: var(--color-brand-yellow);
+  color: #1f2a36;
+  transform: none;
+  box-shadow: none;
+}
+
+.toggle-sidebar:focus-visible {
+  outline: 2px solid var(--color-brand-yellow);
+  outline-offset: 2px;
 }
 
 .sidebar-collapsed .toggle-sidebar {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  border: 2px solid var(--color-brand-yellow);
-  left: 10px;
-  position: absolute;
-  top: 16px;
-  transform: none;
+  width: 40px;
+  height: 40px;
+  flex-basis: 40px;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
-.sidebar-collapsed .toggle-sidebar:hover {
-  background: var(--color-brand-yellow);
-  color: #222;
-  border-color: var(--color-brand-yellow);
+/* Plegado: los nombres salen como globo al pasar el ratón; con scroll propio
+   quedaban recortados y aparecía una barra horizontal */
+.sidebar-collapsed .sidebar-menu {
+  overflow: visible;
+}
+
+.sidebar-collapsed .menu-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar-collapsed .menu-icon {
+  margin-right: 0;
 }
 
 /* Sidebar menu */
@@ -166,6 +194,45 @@
 .menu-item:hover .tooltip {
   opacity: 1;
   left: calc(100% + 8px);
+}
+
+/* Desglose de pendientes MCAS en el globo del menú plegado */
+.tooltip-detalle {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Insignia de «Comisiones MCAS»: propuestas por aprobar.
+   Abierto va al final de la fila; plegado, sobre la esquina del icono. */
+.menu-insignia {
+  margin-left: auto;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 11px;
+  background: var(--color-brand-yellow);
+  color: var(--color-text-dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+.sidebar-collapsed .menu-insignia {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 0.68rem;
+  line-height: 18px;
 }
 
 /* User profile and user menu */
@@ -241,19 +308,6 @@
 .user-role {
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.7);
-}
-
-.dropdown-icon {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin-left: 8px;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
 }
 
 .user-menu {
@@ -388,24 +442,6 @@
   width: 280px;
 }
 
-.header-icons {
-  display: flex;
-  align-items: center;
-}
-
-.icon-container {
-  position: relative;
-  margin-left: 20px;
-  padding: 8px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.icon-container:hover {
-  color: var(--primary-color);
-}
-
 /* Content area */
 .content-wrapper {
   flex: 1;
@@ -536,26 +572,6 @@
   font-weight: 500;
   opacity: 0.92;
   line-height: 1.1;
-}
-
-.sidebar:not(.sidebar-collapsed) .dropdown-icon {
-  margin-left: 12px;
-  background: rgba(255,255,255,0.13);
-  color: #fffbe6;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-size: 1.2rem;
-  transition: background 0.2s;
-  flex-shrink: 0;
-}
-
-.sidebar:not(.sidebar-collapsed) .dropdown-icon:hover {
-  background: var(--color-brand-yellow);
-  color: #222;
 }
 
 /* Layout para separar info y flecha */

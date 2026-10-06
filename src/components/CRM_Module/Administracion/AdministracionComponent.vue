@@ -110,12 +110,17 @@
               <i class="fas fa-file-excel"></i>
               <span>Excel</span>
             </button>
-            <button class="btn btn-primary" @click="nuevoRegistro">
+            <button v-if="!tablaSoloLectura" class="btn btn-primary" @click="nuevoRegistro">
               <i class="fas fa-plus"></i>
-              <span>Nuevo Registro</span>
+              <span>Nuevo registro</span>
             </button>
           </div>
         </div>
+
+        <p v-if="tablaSoloLectura" class="aviso-solo-lectura">
+          <i class="fas fa-lock"></i>
+          Tabla de solo consulta: sus valores son fijos y no se pueden crear, modificar ni eliminar desde aquí.
+        </p>
 
         <!-- Tabla de datos con altura calculada -->
         <div class="table-container">
@@ -140,7 +145,7 @@
                       </div>
                     </div>
                   </th>
-                  <th class="actions-header">
+                  <th v-if="!tablaSoloLectura" class="actions-header">
                     <div class="column-header">
                       <div class="column-title column-title--sin-orden">
                         <i class="fas fa-cogs mr-2"></i>Acciones
@@ -152,14 +157,14 @@
               <tbody>
                 <template v-if="loading">
                   <tr v-for="n in 8" :key="'skeleton-' + n" class="skeleton-row">
-                    <td v-for="col in columnasVisibles.length + 1" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
+                    <td v-for="col in columnasVisibles.length + (tablaSoloLectura ? 0 : 1)" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
                   </tr>
                 </template>
                 <tr v-for="fila in paginatedDatos" v-show="!loading" :key="fila.id" class="table-row">
                   <td v-for="col in columnasVisibles" :key="col" class="data-cell" :title="formatCellValue(fila[col])">
                     <span class="cell-content">{{ formatCellValue(fila[col]) }}</span>
                   </td>
-                  <td class="actions-cell">
+                  <td v-if="!tablaSoloLectura" class="actions-cell">
                     <div class="action-buttons">
                       <button class="btn-icon btn-edit" @click="editarRegistro(fila)" title="Editar" aria-label="Editar registro">
                         <i class="fas fa-edit"></i>
@@ -171,14 +176,14 @@
                   </td>
                 </tr>
                 <tr v-if="!loading && paginatedDatos.length === 0">
-                  <td :colspan="columnasVisibles.length + 1" class="empty-state-cell">
+                  <td :colspan="columnasVisibles.length + (tablaSoloLectura ? 0 : 1)" class="empty-state-cell">
                     <div class="empty-state">
                       <i class="fas fa-inbox fa-3x"></i>
                       <h3>No hay registros</h3>
                       <p>No se encontraron registros que coincidan con los filtros</p>
-                      <button class="btn btn-primary" @click="nuevoRegistro">
+                      <button v-if="!tablaSoloLectura" class="btn btn-primary" @click="nuevoRegistro">
                         <i class="fas fa-plus"></i>
-                        <span>Crear Primer Registro</span>
+                        <span>Crear primer registro</span>
                       </button>
                     </div>
                   </td>
@@ -192,7 +197,7 @@
         <div class="pagination-controls">
           <div class="records-per-page">
             <label for="adminRecordsPerPage">Registros por página:</label>
-            <select v-model="recordsPerPage" id="adminRecordsPerPage">
+            <select v-model.number="recordsPerPage" id="adminRecordsPerPage">
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
@@ -224,7 +229,7 @@
     <!-- Modal CORREGIDO para formularios -->
     <div v-if="mostrarFormulario" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="admin-form-title">
       <div class="modal-content" @click.stop>
-        <div class="modal-header">
+        <div class="modal-header aura-modal-header">
           <div class="modal-title">
             <div class="modal-icon">
               <i :class="editando ? 'fas fa-edit' : 'fas fa-plus-circle'"></i>
@@ -244,7 +249,7 @@
             <div v-for="col in columnasFiltradas" :key="col" class="form-group">
               <label :for="col" class="form-label">
                 {{ formatColumnName(col) }}
-                <span v-if="col === 'nombre'" class="required-asterisk">*</span>
+                <span v-if="col === campoObligatorio" class="required-asterisk">*</span>
               </label>
               <!-- Campo especial para activo: checkbox -->
               <template v-if="col === 'activo'">
@@ -256,17 +261,17 @@
               </template>
               <!-- Campos normales -->
               <template v-else>
-                <input 
-                  :id="col" 
-                  v-model="registro[col]" 
+                <input
+                  :id="col"
+                  v-model="registro[col]"
                   class="form-input"
-                  :class="{ 'input-error': col === 'nombre' && errorNombre }"
-                  @input="col === 'nombre' && (errorNombre = '')"
+                  :class="{ 'input-error': col === campoObligatorio && errorNombre }"
+                  @input="col === campoObligatorio && (errorNombre = '')"
                   :placeholder="`Ingresa ${formatColumnName(col).toLowerCase()}`"
-                  :required="col === 'nombre'"
+                  :required="col === campoObligatorio"
                   type="text"
                 />
-                <small v-if="col === 'nombre' && errorNombre" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errorNombre }}</small>
+                <small v-if="col === campoObligatorio && errorNombre" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errorNombre }}</small>
               </template>
             </div>
           </div>
@@ -319,35 +324,41 @@
 
 
 <script>
+import { ordenTabla } from '@/mixins/ordenTabla';
+import { compararValores } from '@/utils/orden';
 import axios from 'axios';
-import ExcelJS from 'exceljs';
+import { cargarExcelJS, descargarLibroExcel } from '@/utils/excel';
 
 export default {
   name: 'AdministracionComponent',
+  mixins: [ordenTabla],
   data() {
     return {
+      // campos: los de la tabla en el servidor (para el formulario cuando la tabla está vacía).
+      // soloLectura: el servidor solo permite consultarlas (catálogos fijos).
       tablas: [
-        { nombre: "Comercializadoras", url: `${process.env.VUE_APP_API_URL}/comercializadoras`, icono: "fas fa-building" },
-        { nombre: "Gestoras", url: `${process.env.VUE_APP_API_URL}/gestoras`, icono: "fas fa-briefcase" },
-        { nombre: "Métodos de Pago", url: `${process.env.VUE_APP_API_URL}/metodos-pago`, icono: "fas fa-credit-card" },
-        { nombre: "Niveles de Acceso", url: `${process.env.VUE_APP_API_URL}/niveles-acceso`, icono: "fas fa-user-shield" },
-        { nombre: "Pago Plazos", url: `${process.env.VUE_APP_API_URL}/pagos-plazos`, icono: "fas fa-calendar-check" },
-        { nombre: "Productos", url: `${process.env.VUE_APP_API_URL}/productos`, icono: "fas fa-box-open" },
-        { nombre: "Sectores", url: `${process.env.VUE_APP_API_URL}/sectores`, icono: "fas fa-industry" },
-        { nombre: "Subtipologías", url: `${process.env.VUE_APP_API_URL}/subtipologias`, icono: "fas fa-tags" },
-        { nombre: "Tarifas Gas", url: `${process.env.VUE_APP_API_URL}/tarifas-gas`, icono: "fas fa-fire" },
-        { nombre: "Tarifas Luz", url: `${process.env.VUE_APP_API_URL}/tarifas-luz`, icono: "fas fa-bolt" },        { nombre: "Usuarios", url: `${process.env.VUE_APP_API_URL}/usuarios`, icono: "fas fa-users" },
-        { nombre: "Distribuidoras", url: `${process.env.VUE_APP_API_URL}/distribuidoras`, icono: "fas fa-truck-moving" },
-        { nombre: "Tipos de Contador", url: `${process.env.VUE_APP_API_URL}/tipos-contador`, icono: "fas fa-tachometer-alt" },
-        { nombre: "Tipos de Comunicación", url: `${process.env.VUE_APP_API_URL}/tipos-comunicacion`, icono: "fas fa-wifi" },
-        { nombre: "Propiedades", url: `${process.env.VUE_APP_API_URL}/propiedades`, icono: "fas fa-building" },
-        { nombre: "APP Monitorización", url: `${process.env.VUE_APP_API_URL}/app-monitorizacion`, icono: "fas fa-chart-line" },
-        { nombre: "Integración Sistemas FV", url: `${process.env.VUE_APP_API_URL}/integracion-sistemas-fv`, icono: "fas fa-solar-panel" },
+        { nombre: "Comercializadoras", url: `${process.env.VUE_APP_API_URL}/comercializadoras`, icono: "fas fa-building", campos: ['nombre', 'descripcion'] },
+        { nombre: "Gestoras", url: `${process.env.VUE_APP_API_URL}/gestoras`, icono: "fas fa-briefcase", campos: ['nombre', 'descripcion'] },
+        { nombre: "Métodos de Pago", url: `${process.env.VUE_APP_API_URL}/metodos-pago`, icono: "fas fa-credit-card", campos: ['nombre'] },
+        { nombre: "Niveles de Acceso", url: `${process.env.VUE_APP_API_URL}/niveles-acceso`, icono: "fas fa-user-shield", campos: ['nivel', 'descripcion'] },
+        { nombre: "Pago Plazos", url: `${process.env.VUE_APP_API_URL}/pagos-plazos`, icono: "fas fa-calendar-check", campos: ['nombre', 'descripcion', 'numeroCuotas'] },
+        { nombre: "Productos", url: `${process.env.VUE_APP_API_URL}/productos`, icono: "fas fa-box-open", campos: ['nombre', 'descripcion'] },
+        { nombre: "Sectores", url: `${process.env.VUE_APP_API_URL}/sectores`, icono: "fas fa-industry", campos: ['nombre', 'descripcion'] },
+        { nombre: "Subtipologías", url: `${process.env.VUE_APP_API_URL}/subtipologias`, icono: "fas fa-tags", campos: ['nombre', 'descripcion'] },
+        { nombre: "Tarifas Gas", url: `${process.env.VUE_APP_API_URL}/tarifas-gas`, icono: "fas fa-fire", campos: ['nombre', 'descripcion'] },
+        { nombre: "Tarifas Luz", url: `${process.env.VUE_APP_API_URL}/tarifas-luz`, icono: "fas fa-bolt", campos: ['nombre', 'descripcion'] },
+        { nombre: "Usuarios", url: `${process.env.VUE_APP_API_URL}/usuarios`, icono: "fas fa-users", campos: ['nombre', 'email', 'telefono', 'user', 'pass', 'nivelAcceso'] },
+        { nombre: "Distribuidoras", url: `${process.env.VUE_APP_API_URL}/distribuidoras`, icono: "fas fa-truck-moving", campos: ['nombre'], soloLectura: true },
+        { nombre: "Tipos de Contador", url: `${process.env.VUE_APP_API_URL}/tipos-contador`, icono: "fas fa-tachometer-alt", campos: ['descripcion'], soloLectura: true },
+        { nombre: "Tipos de Comunicación", url: `${process.env.VUE_APP_API_URL}/tipos-comunicacion`, icono: "fas fa-wifi", campos: ['nombre'], soloLectura: true },
+        { nombre: "Propiedades", url: `${process.env.VUE_APP_API_URL}/propiedades`, icono: "fas fa-building", campos: ['nombre'], soloLectura: true },
+        { nombre: "APP Monitorización", url: `${process.env.VUE_APP_API_URL}/app-monitorizacion`, icono: "fas fa-chart-line", campos: ['nombre', 'descripcion'] },
+        { nombre: "Integración Sistemas FV", url: `${process.env.VUE_APP_API_URL}/integracion-sistemas-fv`, icono: "fas fa-solar-panel", campos: ['nombre', 'descripcion'] },
         // Tablas del Módulo de Tareas
-        { nombre: "Tareas - Categorías", url: `${process.env.VUE_APP_API_URL}/tarea-categorias`, icono: "fas fa-folder" },
-        { nombre: "Tareas - Subcategorías", url: `${process.env.VUE_APP_API_URL}/tarea-subcategorias`, icono: "fas fa-folder-open" },
+        { nombre: "Tareas - Categorías", url: `${process.env.VUE_APP_API_URL}/tarea-categorias`, icono: "fas fa-folder", campos: ['nombre', 'codigo', 'descripcion', 'activo'] },
+        { nombre: "Tareas - Subcategorías", url: `${process.env.VUE_APP_API_URL}/tarea-subcategorias`, icono: "fas fa-folder-open", campos: ['nombre', 'codigo', 'activo', 'categorias', 'categoriaIds'] },
         // Clientes
-        { nombre: "Cargos de Contacto", url: `${process.env.VUE_APP_API_URL}/cargos-contacto`, icono: "fas fa-id-badge" }
+        { nombre: "Cargos de Contacto", url: `${process.env.VUE_APP_API_URL}/cargos-contacto`, icono: "fas fa-id-badge", campos: ['nombre'] }
       ],
       tablaSeleccionada: null,
       datos: [],
@@ -391,6 +402,19 @@ export default {
     esTablaSubcategorias() {
       return this.tablaSeleccionada?.nombre === 'Tareas - Subcategorías';
     },
+
+    // Catálogos fijos: el servidor solo permite consultarlos
+    tablaSoloLectura() {
+      return this.tablaSeleccionada?.soloLectura === true;
+    },
+
+    // Campo que identifica el registro y es obligatorio (en Niveles de Acceso es «nivel»)
+    campoObligatorio() {
+      const campos = this.columnasFiltradas;
+      if (campos.includes('nombre')) return 'nombre';
+      if (campos.includes('nivel')) return 'nivel';
+      return campos[0] || 'nombre';
+    },
     
     tablasFiltradas() {
       if (!this.globalFilter) return this.tablas;
@@ -416,16 +440,9 @@ export default {
     sortedDatos() {
       if (!this.sortKey) return this.filteredDatos;
       
-      return [...this.filteredDatos].sort((a, b) => {
-        let aValue = a[this.sortKey] ?? '';
-        let bValue = b[this.sortKey] ?? '';
-        
-        if (this.sortOrder === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
-        }
-      });
+      const signo = this.sortOrder === 'asc' ? 1 : -1;
+      return [...this.filteredDatos]
+        .sort((a, b) => compararValores(a[this.sortKey], b[this.sortKey]) * signo);
     },
     
     paginatedDatos() {
@@ -463,7 +480,8 @@ export default {
       try {
         const respuesta = await axios.get(tabla.url);
         this.datos = respuesta.data;
-        this.columnas = Object.keys(this.datos[0] || {});
+        // Sin registros no hay de dónde leer los campos: se usan los de la tabla
+        this.columnas = this.datos.length ? Object.keys(this.datos[0]) : [...(tabla.campos || [])];
         this.tablaSeleccionada = tabla;
         this.registrosCount = { ...this.registrosCount, [tabla.nombre]: this.datos.length };
         if (!esMismaTabla) {
@@ -555,6 +573,14 @@ export default {
       }
       return value;
     },
+
+    // Valor para el Excel: como en la tabla, pero sin recortar
+    valorExportable(value) {
+      if (value === null || value === undefined) return '';
+      if (typeof value === 'boolean') return value ? 'Sí' : 'No';
+      if (Array.isArray(value)) return value.join(', ');
+      return value;
+    },
     
     nuevoRegistro() {
       this.registro = {};
@@ -601,21 +627,17 @@ export default {
       return this.selectedCategoriaIds.includes(categoriaId);
     },
     
-    cerrarModalClick(event) {
-      // Solo cerrar si se hace click en el overlay, no en el contenido del modal
-      if (event.target === event.currentTarget) {
-        this.cerrarFormulario();
-      }
-    },
-    
     async guardarRegistro() {
       this.errorNombre = '';
-      if (!this.registro.nombre || !String(this.registro.nombre).trim()) {
-        this.errorNombre = 'El nombre es obligatorio';
+      const campo = this.campoObligatorio;
+      const valor = this.registro[campo];
+      if (valor === undefined || valor === null || !String(valor).trim()) {
+        const etiqueta = this.formatColumnName(campo);
+        this.errorNombre = `${etiqueta} es obligatorio`;
         this.$swal.fire({
           icon: 'warning',
           title: 'Campo obligatorio',
-          text: 'El campo Nombre es obligatorio'
+          text: `El campo ${etiqueta} es obligatorio`
         });
         return;
       }
@@ -692,10 +714,12 @@ export default {
         }
       } catch (error) {
         console.error("Error al eliminar registro", error);
+        // El servidor explica el motivo (p. ej. el registro se usa en clientes o contratos)
+        const motivo = error.response?.data?.error;
         await this.$swal.fire({
           icon: 'error',
           title: 'Error al eliminar',
-          text: 'No se pudo eliminar el registro.',
+          text: motivo ? `No se pudo eliminar el registro: ${motivo}` : 'No se pudo eliminar el registro.',
         });
       } finally {
         this.loading = false;
@@ -708,20 +732,6 @@ export default {
       this.editando = false;
     },
     
-    sortBy(key) {
-      if (this.sortKey === key) {
-        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
-      } else {
-        this.sortKey = key;
-        this.sortOrder = 'asc';
-      }
-    },
-    
-    getSortIcon(key) {
-      if (this.sortKey !== key) return 'fas fa-sort';
-      return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
-    },
-    
     refreshData() {
       if (this.tablaSeleccionada) {
         this.seleccionarTabla(this.tablaSeleccionada);
@@ -730,14 +740,16 @@ export default {
     
     async exportarExcel() {
       try {
-          const data = this.filteredDatos.map(fila => {
+        // Mismas columnas que la tabla, con el texto completo (en pantalla se recorta a 50 caracteres)
+        const data = this.filteredDatos.map(fila => {
           const row = {};
-          this.columnas.forEach(col => {
-            row[this.formatColumnName(col)] = this.formatCellValue(fila[col]);
+          this.columnasVisibles.forEach(col => {
+            row[this.formatColumnName(col)] = this.valorExportable(fila[col]);
           });
           return row;
         });
 
+        const ExcelJS = await cargarExcelJS();
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet(this.tablaSeleccionada.nombre);
 
@@ -762,15 +774,7 @@ export default {
           fgColor: { argb: 'FFE0E0E0' }
         };
 
-        // Generar buffer y descargar
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${this.tablaSeleccionada.nombre}.xlsx`;
-        link.click();
-        window.URL.revokeObjectURL(url);
+        await descargarLibroExcel(workbook, `${this.tablaSeleccionada.nombre}.xlsx`);
       } catch (error) {
         console.error('Error al exportar a Excel:', error);
         this.$swal.fire({

@@ -3,20 +3,30 @@
     <div v-if="formularioVisible" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cliente-form-title">
     <div class="modal-content">
       <!-- Encabezado del modal -->
-      <div class="modal-header">
-        <h2 id="cliente-form-title" class="modal-title">{{ modoActualizar ? 'Actualizar Cliente' : 'Alta de Cliente' }}</h2>
-        <div class="header-actions">
+      <div class="modal-header aura-modal-header">
+        <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-user-tie"></i></span>
+        <div class="aura-modal-header__titulos">
+          <h2 id="cliente-form-title" class="modal-title">{{ modoActualizar ? 'Modificar cliente' : 'Alta de cliente' }}</h2>
+          <span class="aura-modal-header__subtitulo">
+            <template v-if="modoActualizar">
+              <span v-if="clienteLocal.nombre"><strong>{{ clienteLocal.nombre }}</strong></span>
+              <span v-if="clienteLocal.cif" class="aura-dato"><span class="aura-dato__etiqueta">CIF</span>{{ clienteLocal.cif }}</span>
+            </template>
+            <span v-else>Rellene los datos principales y, si quiere, los contactos</span>
+          </span>
+        </div>
+        <div class="aura-modal-header__acciones">
           <button
             v-if="modoActualizar && clienteLocal.id"
             type="button"
-            class="btn-tareas-actividad"
+            class="aura-modal-header__boton"
             @click="abrirPanelTareas"
-            title="Ver tareas y actividad del cliente"
+            title="Ver tareas, actividad, notas e incidencias del cliente"
           >
             <i class="fas fa-tasks"></i>
-            <span>Tareas/actividad</span>
+            <span>Tareas y actividad</span>
           </button>
-          <button type="button" class="close-button" @click="cancelarFormulario">
+          <button type="button" class="close-button" @click="cancelarFormulario" aria-label="Cerrar">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -25,12 +35,14 @@
       <!-- Formulario principal -->
       <form @submit.prevent="modoActualizar ? actualizarCliente() : crearCliente()" novalidate>
         <!-- Pestañas para organizar el contenido -->        
-        <div class="form-tabs">
-          <button type="button" class="tab-btn" :class="{ active: activeTab === 'principal' }" @click="activeTab = 'principal'">
-            <i class="fas fa-user-tie"></i> <span class="tab-text">Datos Principales</span>
+        <div class="aura-pestanas" role="tablist" aria-label="Secciones del cliente">
+          <button type="button" role="tab" class="aura-pestana" :class="{ 'aura-pestana--activa': activeTab === 'principal' }"
+                  :aria-selected="activeTab === 'principal' ? 'true' : 'false'" @click="activeTab = 'principal'">
+            <span class="aura-pestana__numero">1</span> <span>Datos principales</span>
           </button>
-          <button type="button" class="tab-btn" :class="{ active: activeTab === 'contactos' }" @click="activeTab = 'contactos'">
-            <i class="fas fa-address-book"></i> <span class="tab-text">Contactos & Adicionales</span>
+          <button type="button" role="tab" class="aura-pestana" :class="{ 'aura-pestana--activa': activeTab === 'contactos' }"
+                  :aria-selected="activeTab === 'contactos' ? 'true' : 'false'" @click="activeTab = 'contactos'">
+            <span class="aura-pestana__numero">2</span> <span>Contactos y adicionales</span>
           </button>
         </div>
 
@@ -51,7 +63,7 @@
                     <small v-if="errores.nombre" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.nombre }}</small>
                   </div>
                   <div class="form-group-compact">
-                    <label for="grupoEmpresarial">Grupo Empresarial <span class="required">*</span></label>
+                    <label for="grupoEmpresarial">Grupo empresarial <span class="required">*</span></label>
                     <input type="text" id="grupoEmpresarial" v-model="clienteLocal.grupoEmpresarial" class="form-control-compact" :class="{ 'input-error': errores.grupoEmpresarial }" @input="errores.grupoEmpresarial = ''" maxlength="100" required />
                     <small v-if="errores.grupoEmpresarial" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.grupoEmpresarial }}</small>
                   </div>
@@ -81,7 +93,7 @@
                   <h3>Dirección</h3>
                 </div>
                 <div class="form-group-compact">
-                  <label for="direccionFiscal">Dirección Fiscal <span class="required">*</span></label>
+                  <label for="direccionFiscal">Dirección fiscal <span class="required">*</span></label>
                   <div class="input-with-icon-compact">
                     <i class="fas fa-home icon-prefix"></i>
                     <input type="text" id="direccionFiscal" v-model="clienteLocal.direccion" class="form-control-compact" :class="{ 'input-error': errores.direccion }" @input="errores.direccion = ''" maxlength="200" required />
@@ -110,11 +122,11 @@
                 </div>
               </div>
 
-              <!-- Datos Financieros y Clasificación -->
+              <!-- Datos financieros y Clasificación -->
               <div class="form-section-compact">
                 <div class="section-header-compact">
                   <i class="fas fa-university"></i>
-                  <h3>Datos Financieros</h3>
+                  <h3>Datos financieros</h3>
                 </div>
                 <div class="form-group-compact">
                   <label for="iban">IBAN <span class="required">*</span></label>
@@ -160,7 +172,7 @@
                   </div>
                 </div>                
                 <div class="form-group-compact">
-                  <label for="usuario">Usuario Asignado <span v-if="clienteLocal.id" class="required">*</span></label>
+                  <label for="usuario">Usuario asignado <span v-if="clienteLocal.id" class="required">*</span></label>
                   <div class="select-container-compact" :class="{ 'select-error': errores.idUsuario }">
                     <select 
                       id="usuario" 
@@ -184,11 +196,11 @@
                 </div>
               </div>
 
-              <!-- Persona Autorizada -->
+              <!-- Persona autorizada -->
               <div class="form-section-compact full-width">
                 <div class="section-header-compact">
                   <i class="fas fa-user-check"></i>
-                  <h3>Persona Autorizada</h3>
+                  <h3>Persona autorizada</h3>
                 </div>
                 <div class="form-row-compact">
                   <div class="form-group-compact">
@@ -221,10 +233,10 @@
               </div>
             </div>
 
-            <!-- Servicios del Cliente -->
+            <!-- Servicios del cliente -->
             <div class="services-section">
               <div class="services-header">
-                <h3><i class="fas fa-cog"></i> Servicios del Cliente</h3>
+                <h3><i class="fas fa-cog"></i> Servicios del cliente</h3>
               </div>
               <div class="services-checkboxes">
                 <label class="service-checkbox">
@@ -269,13 +281,13 @@
             <div class="tab-navigation">
               <div></div> <!-- Espacio vacío para alinear -->
               <div class="action-buttons">
-                <!-- Botón Dar de Baja (solo si está activo y en modo actualizar) -->
+                <!-- Botón Dar de baja (solo si está activo y en modo actualizar) -->
                 <button v-if="modoActualizar && clienteLocal.id && !clienteLocal.fechaBaja" type="button" @click="confirmarBajaCliente" class="btn-compact btn-danger">
-                  <i class="fas fa-user-times"></i> Dar de Baja
+                  <i class="fas fa-user-times"></i> Dar de baja
                 </button>
                 <!-- Botón Reactivar (solo si está dado de baja y en modo actualizar) -->
                 <button v-if="modoActualizar && clienteLocal.id && clienteLocal.fechaBaja" type="button" @click="confirmarReactivarCliente" class="btn-compact btn-success">
-                  <i class="fas fa-user-check"></i> Reactivar Cliente
+                  <i class="fas fa-user-check"></i> Reactivar cliente
                 </button>
                 <!-- Mensaje de estado si está dado de baja -->
                 <div v-if="modoActualizar && clienteLocal.id && clienteLocal.fechaBaja" class="status-message status-inactive">
@@ -298,7 +310,7 @@
                 <div class="contact-card">
                   <div class="section-header-compact">
                     <i class="fas fa-user"></i>
-                    <h3>Contacto Principal</h3>
+                    <h3>Contacto principal</h3>
                   </div>
                   <div class="form-group-compact">
                     <label for="nombreContacto1">Nombre</label>
@@ -335,7 +347,7 @@
                 <div class="contact-card">
                   <div class="section-header-compact">
                     <i class="fas fa-user"></i>
-                    <h3>Contacto Secundario</h3>
+                    <h3>Contacto secundario</h3>
                   </div>
                   <div class="form-group-compact">
                     <label for="nombreContacto2">Nombre</label>
@@ -372,7 +384,7 @@
                 <div class="contact-card">
                   <div class="section-header-compact">
                     <i class="fas fa-user"></i>
-                    <h3>Contacto Adicional</h3>
+                    <h3>Contacto adicional</h3>
                   </div>
                   <div class="form-group-compact">
                     <label for="nombreContacto3">Nombre</label>
@@ -437,17 +449,17 @@
 
             <!-- Navegación de pestañas (nuevo) -->
             <div class="tab-navigation">
-              <button type="button" class="btn-compact btn-secondary" @click="activeTab = 'principal'">
+              <button type="button" class="btn-compact btn-back" @click="activeTab = 'principal'">
                 <i class="fas fa-arrow-left"></i> Anterior
               </button>
               <div class="action-buttons">
-                <!-- Botón Dar de Baja (solo si está activo y en modo actualizar) -->
+                <!-- Botón Dar de baja (solo si está activo y en modo actualizar) -->
                 <button v-if="modoActualizar && clienteLocal.id && !clienteLocal.fechaBaja" type="button" @click="confirmarBajaCliente" class="btn-compact btn-danger">
-                  <i class="fas fa-user-times"></i> Dar de Baja
+                  <i class="fas fa-user-times"></i> Dar de baja
                 </button>
                 <!-- Botón Reactivar (solo si está dado de baja y en modo actualizar) -->
                 <button v-if="modoActualizar && clienteLocal.id && clienteLocal.fechaBaja" type="button" @click="confirmarReactivarCliente" class="btn-compact btn-success">
-                  <i class="fas fa-user-check"></i> Reactivar Cliente
+                  <i class="fas fa-user-check"></i> Reactivar cliente
                 </button>
                 <!-- Mensaje de estado si está dado de baja -->
                 <div v-if="modoActualizar && clienteLocal.id && clienteLocal.fechaBaja" class="status-message status-inactive">
@@ -473,13 +485,13 @@
   <!-- Panel Tareas/actividad del cliente -->
   <div v-if="mostrarPanelTareas" class="tareas-panel-overlay" @click.self="cerrarPanelTareas">
     <div class="tareas-panel">
-      <div class="tareas-panel-header">
-        <div class="tareas-panel-title">
-          <i class="fas fa-tasks"></i>
-          <span>Tareas / Actividad</span>
-          <span v-if="clienteLocal.nombre" class="tareas-panel-cliente-nombre">— {{ clienteLocal.nombre }}</span>
+      <div class="tareas-panel-header aura-modal-header">
+        <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-tasks"></i></span>
+        <div class="aura-modal-header__titulos">
+          <h2 class="tareas-panel-title">Tareas y actividad</h2>
+          <span v-if="clienteLocal.nombre" class="aura-modal-header__subtitulo"><span><strong>{{ clienteLocal.nombre }}</strong></span></span>
         </div>
-        <button type="button" class="tareas-panel-close" @click="cerrarPanelTareas">
+        <button type="button" class="close-button" @click="cerrarPanelTareas" aria-label="Cerrar">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -1098,6 +1110,8 @@
 </template>
 
 <script>
+import { descargarRespuesta } from '@/utils/descargas';
+import { textoError } from '@/utils/errores';
 import axios from 'axios';
 import TareaDetalleModal from '@/components/CRM_Module/Tareas/TareaDetalleModal.vue';
 import TareaModalCorporativo from '@/components/CRM_Module/Tareas/TareaModalCorporativo.vue';
@@ -1162,9 +1176,7 @@ export default {
   data() {
     return {
       activeTab: 'principal',
-      showPassword: false,
       darDeBaja: false,
-      expandirNotas: false,
       clienteLocal: this.crearClienteVacio(),
       errores: {},
       // Tareas/actividad
@@ -1305,6 +1317,9 @@ export default {
           ? { ...this.nuevoCliente }
           : this.crearClienteVacio();
         this.activeTab = 'principal';
+        // Sin esto, los avisos de «obligatorio» de un alta cancelada seguían
+        // marcados al abrir después un cliente con todos sus datos
+        this.errores = {};
         // Reset tareas panel state when modal reopens
         this.tareas = [];
         this.actividadCliente = [];
@@ -1461,7 +1476,7 @@ export default {
       // Validación de formato de email
       const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const camposEmail = [
-        { campo: 'emailAutorizado', label: 'Email (Persona Autorizada)', tab: 'contactos' },
+        { campo: 'emailAutorizado', label: 'Email (Persona autorizada)', tab: 'contactos' },
         { campo: 'emailContacto1', label: 'Email (Contacto 1)', tab: 'contactos' },
         { campo: 'emailContacto2', label: 'Email (Contacto 2)', tab: 'contactos' },
         { campo: 'emailContacto3', label: 'Email (Contacto 3)', tab: 'contactos' },
@@ -1568,10 +1583,9 @@ export default {
           icon: 'warning',
           iconColor: '#b56767',
           showCancelButton: true,
-          confirmButtonText: '<i class="fas fa-user-times"></i> Confirmar Baja',
+          confirmButtonText: '<i class="fas fa-user-times"></i> Confirmar baja',
           cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-          confirmButtonColor: '#f5b2b2',
-          cancelButtonColor: '#6b7280',
+          confirmButtonColor: '#d33',
           focusCancel: false,
           customClass: {
             popup: 'swal-baja-cliente'
@@ -1619,10 +1633,9 @@ export default {
           icon: 'success',
           iconColor: '#16a34a',
           showCancelButton: true,
-          confirmButtonText: '<i class="fas fa-user-check"></i> Confirmar Reactivación',
+          confirmButtonText: '<i class="fas fa-user-check"></i> Confirmar reactivación',
           cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-          confirmButtonColor: '#16a34a',
-          cancelButtonColor: '#6b7280',
+          confirmButtonColor: '#fcd700',
           focusCancel: false,
           customClass: {
             popup: 'swal-reactivar-cliente'
@@ -1681,8 +1694,7 @@ export default {
           showCancelButton: true,
           confirmButtonText: '<i class="fas fa-bolt"></i> Reactivar seleccionados',
           cancelButtonText: '<i class="fas fa-times"></i> No reactivar ninguno',
-          confirmButtonColor: '#16a34a',
-          cancelButtonColor: '#6b7280',
+          confirmButtonColor: '#fcd700',
           focusCancel: false,
           preConfirm: () => {
             const checked = document.querySelectorAll('#ps-checkboxes input[type=checkbox]:checked');
@@ -1707,7 +1719,7 @@ export default {
           text: `Se han reactivado ${idsSeleccionados.length} punto(s) de suministro correctamente.`,
           icon: 'success',
           iconColor: '#16a34a',
-          confirmButtonColor: '#16a34a',
+          confirmButtonColor: '#fcd700',
           timer: 3000,
           timerProgressBar: true
         });
@@ -1720,7 +1732,7 @@ export default {
           title: 'Error',
           text: 'Ha ocurrido un error durante la reactivación. Por favor, recarga la página.',
           icon: 'error',
-          confirmButtonColor: '#dc2626'
+          confirmButtonColor: '#fcd700'
         });
       }
     },
@@ -1749,8 +1761,7 @@ export default {
         showCancelButton: true,
         confirmButtonText: '<i class="fas fa-save"></i> Guardar',
         cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-        confirmButtonColor: '#16a34a',
-        cancelButtonColor: '#6b7280',
+        confirmButtonColor: '#fcd700',
         inputAttributes: {
           style: 'height: 300px; font-size: 14px; line-height: 1.5; resize: none;'
         },
@@ -2039,7 +2050,7 @@ export default {
         this.$swal.fire({
           icon: 'error',
           title: 'Error al crear la nota',
-          text: 'No se pudo guardar la nota. Inténtelo de nuevo.'
+          text: textoError(e, 'No se pudo guardar la nota. Inténtelo de nuevo.')
         });
       } finally {
         this.creandoNota = false;
@@ -2100,7 +2111,7 @@ export default {
         this.$swal.fire({
           icon: 'error',
           title: 'Error al actualizar',
-          text: 'No se pudo guardar la nota. Inténtelo de nuevo.'
+          text: textoError(e, 'No se pudo guardar la nota. Inténtelo de nuevo.')
         });
       } finally {
         this.guardandoNota = false;
@@ -2149,7 +2160,7 @@ export default {
         this.$swal.fire({
           icon: 'error',
           title: 'Error al eliminar',
-          text: 'No se pudo eliminar la nota. Inténtelo de nuevo.'
+          text: textoError(e, 'No se pudo eliminar la nota. Inténtelo de nuevo.')
         });
       } finally {
         this.eliminandoNotaId = null;
@@ -2204,16 +2215,7 @@ export default {
       }
     },
     descargarBlob(response, nombreFallback) {
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      const contentDisposition = response.headers['content-disposition'] || '';
-      const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/);
-      link.download = filenameMatch ? filenameMatch[1] : nombreFallback;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      descargarRespuesta(response, nombreFallback);
     },
     async eliminarAdjuntoNota(nota, adjuntoId) {
       const confirmacion = await this.$swal.fire({
@@ -2231,7 +2233,7 @@ export default {
         this.notasCliente = this.notasCliente.map(n => n.comentarioId === nota.comentarioId ? notaActualizada : n);
       } catch (e) {
         console.error('Error eliminando adjunto de nota:', e);
-        this.$swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar el archivo.' });
+        this.$swal.fire({ icon: 'error', title: 'Error', text: textoError(e, 'No se pudo eliminar el archivo.') });
       }
     },
     async toggleFijadaNota(nota) {
@@ -2251,10 +2253,6 @@ export default {
       } catch (e) {
         console.error('Error al cambiar estado fijado de nota:', e);
       }
-    },
-    getColorPrioridad(prioridad) {
-      const mapa = { 0: '#ef4444', 1: '#f97316', 2: '#eab308', 3: '#22c55e' };
-      return mapa[prioridad] || '#94a3b8';
     },
     getPrioridadTexto(prioridad) {
       switch (prioridad) {

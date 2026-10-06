@@ -1,0 +1,394 @@
+/*
+ * Botones e iconos de acción comunes de Aura (estilo Material limpio).
+ *
+ * - Todos los botones de acción miden lo mismo: 38 px de alto, letra de 14 px,
+ *   esquinas de 8 px e icono de 16 px. Sin saltos al pasar el ratón: solo cambia
+ *   el color y, en los rellenos, la sombra.
+ * - Amarillo relleno: la acción principal (Guardar, Crear, Actualizar, Siguiente).
+ * - Blanco con borde gris: Cancelar, Cerrar, Anterior, Volver.
+ * - Tonos suaves: rojo para dar de baja o rechazar, verde para reactivar o renovar,
+ *   ámbar para modificar y gris azulado para acciones secundarias (Instalaciones).
+ * - Iconos de acción de las tablas: cuadrado de 32 px con fondo claro de su color.
+ *
+ * Cada pantalla trae reglas scoped para sus botones (tamaños y colores distintos,
+ * algunas con !important). Para que esta sea la única apariencia, los selectores
+ * llevan :not(#aura-boton), que les da peso de id, y las propiedades visuales van
+ * con !important. Los botones con clases propias (paginación, pestañas, chips...)
+ * no se tocan.
+ */
+
+:root {
+  --aura-btn-alto: 38px;
+  --aura-btn-radio: 8px;
+  --aura-btn-sombra: 0 1px 2px rgba(16, 24, 40, 0.08);
+  --aura-btn-sombra-hover: 0 2px 6px rgba(16, 24, 40, 0.14);
+  --aura-btn-foco: 0 0 0 3px rgba(252, 215, 0, 0.55);
+
+  --aura-btn-principal-fondo: #fcd700;
+  --aura-btn-principal-hover: #f0cb00;
+  --aura-btn-principal-texto: #1f2a36;
+
+  --aura-btn-neutro-fondo: #fff;
+  --aura-btn-neutro-hover: #f4f6f9;
+  --aura-btn-neutro-borde: #c9d1db;
+  --aura-btn-neutro-borde-hover: #aab4c0;
+  --aura-btn-neutro-texto: #2c3e50;
+
+  --aura-btn-peligro-fondo: #fdecec;
+  --aura-btn-peligro-hover: #fbdcdc;
+  --aura-btn-peligro-borde: #f3c4c4;
+  --aura-btn-peligro-texto: #a32d2d;
+
+  --aura-btn-exito-fondo: #eaf3de;
+  --aura-btn-exito-hover: #dcebc9;
+  --aura-btn-exito-borde: #cde0b3;
+  --aura-btn-exito-texto: #2f5a0d;
+
+  --aura-btn-aviso-fondo: #fdf1dc;
+  --aura-btn-aviso-hover: #fae5bf;
+  --aura-btn-aviso-borde: #f2d59e;
+  --aura-btn-aviso-texto: #7a4a06;
+
+  --aura-btn-tono-fondo: #e8eef5;
+  --aura-btn-tono-hover: #dbe4ee;
+  --aura-btn-tono-borde: #d3dde8;
+  --aura-btn-tono-texto: #24374b;
+}
+
+/* ---------------------------------------------------------------------------
+ * Base común de los botones de acción
+ * ------------------------------------------------------------------------- */
+
+:is(.btn, .btn-modern, .btn-compact):is(.btn-primary, .btn-save, .btn-create, .btn-confirm,
+  .btn-cancel, .btn-cancelar, .btn-secondary, .btn-back, .btn-toggle-baja, .btn-toggle-completed,
+  .btn-danger, .btn-danger-soft, .btn-success, .btn-warning, .btn-info, .btn-refresh, .btn-excel):not(#aura-boton) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  height: var(--aura-btn-alto) !important;
+  min-height: var(--aura-btn-alto) !important;
+  padding: 0 16px !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--aura-btn-radio) !important;
+  font-family: inherit !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.2px !important;
+  line-height: 1 !important;
+  text-transform: none !important;
+  white-space: nowrap;
+  box-shadow: var(--aura-btn-sombra) !important;
+  transform: none !important;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact):is(.btn-primary, .btn-save, .btn-create, .btn-confirm,
+  .btn-cancel, .btn-cancelar, .btn-secondary, .btn-back, .btn-toggle-baja, .btn-toggle-completed,
+  .btn-danger, .btn-danger-soft, .btn-success, .btn-warning, .btn-info, .btn-refresh, .btn-excel):not(#aura-boton) i {
+  font-size: 1rem !important;
+  margin: 0 !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact):is(.btn-primary, .btn-save, .btn-create, .btn-confirm,
+  .btn-cancel, .btn-cancelar, .btn-secondary, .btn-back, .btn-toggle-baja, .btn-toggle-completed,
+  .btn-danger, .btn-danger-soft, .btn-success, .btn-warning, .btn-info, .btn-refresh, .btn-excel):not(#aura-boton):hover {
+  transform: none !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact):is(.btn-primary, .btn-save, .btn-create, .btn-confirm,
+  .btn-cancel, .btn-cancelar, .btn-secondary, .btn-back, .btn-toggle-baja, .btn-toggle-completed,
+  .btn-danger, .btn-danger-soft, .btn-success, .btn-warning, .btn-info, .btn-refresh, .btn-excel):not(#aura-boton):focus-visible {
+  outline: none !important;
+  box-shadow: var(--aura-btn-foco) !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact):is(.btn-primary, .btn-save, .btn-create, .btn-confirm,
+  .btn-cancel, .btn-cancelar, .btn-secondary, .btn-back, .btn-toggle-baja, .btn-toggle-completed,
+  .btn-danger, .btn-danger-soft, .btn-success, .btn-warning, .btn-info, .btn-refresh, .btn-excel):not(#aura-boton):disabled {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Variantes
+ * ------------------------------------------------------------------------- */
+
+/* Principal: amarillo de marca */
+:is(.btn, .btn-modern, .btn-compact):is(.btn-primary, .btn-save, .btn-create, .btn-confirm):not(#aura-boton) {
+  background: var(--aura-btn-principal-fondo) !important;
+  border-color: var(--aura-btn-principal-fondo) !important;
+  color: var(--aura-btn-principal-texto) !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact):is(.btn-primary, .btn-save, .btn-create, .btn-confirm):not(#aura-boton):hover:not(:disabled) {
+  background: var(--aura-btn-principal-hover) !important;
+  border-color: var(--aura-btn-principal-hover) !important;
+  box-shadow: var(--aura-btn-sombra-hover) !important;
+}
+
+/* Neutro: Cancelar, Cerrar, Anterior, Volver y conmutadores sin activar */
+:is(.btn, .btn-modern, .btn-compact):is(.btn-cancel, .btn-cancelar, .btn-secondary, .btn-back,
+  .btn-toggle-baja, .btn-toggle-completed):not(#aura-boton) {
+  background: var(--aura-btn-neutro-fondo) !important;
+  border-color: var(--aura-btn-neutro-borde) !important;
+  color: var(--aura-btn-neutro-texto) !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact):is(.btn-cancel, .btn-cancelar, .btn-secondary, .btn-back,
+  .btn-toggle-baja, .btn-toggle-completed):not(#aura-boton):hover:not(:disabled) {
+  background: var(--aura-btn-neutro-hover) !important;
+  border-color: var(--aura-btn-neutro-borde-hover) !important;
+}
+
+/* Peligro en tono suave: dar de baja, rechazar y el conmutador «dados de baja» activo */
+:is(.btn, .btn-modern, .btn-compact):is(.btn-danger, .btn-danger-soft, .btn-toggle-baja.active,
+  .btn-toggle-completed.active):not(#aura-boton) {
+  background: var(--aura-btn-peligro-fondo) !important;
+  border-color: var(--aura-btn-peligro-borde) !important;
+  color: var(--aura-btn-peligro-texto) !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact):is(.btn-danger, .btn-danger-soft, .btn-toggle-baja.active,
+  .btn-toggle-completed.active):not(#aura-boton):hover:not(:disabled) {
+  background: var(--aura-btn-peligro-hover) !important;
+  border-color: var(--aura-btn-peligro-texto) !important;
+}
+
+/* Éxito en tono suave: reactivar, renovar */
+:is(.btn, .btn-modern, .btn-compact).btn-success:not(#aura-boton) {
+  background: var(--aura-btn-exito-fondo) !important;
+  border-color: var(--aura-btn-exito-borde) !important;
+  color: var(--aura-btn-exito-texto) !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact).btn-success:not(#aura-boton):hover:not(:disabled) {
+  background: var(--aura-btn-exito-hover) !important;
+  border-color: var(--aura-btn-exito-texto) !important;
+}
+
+/* Aviso en tono suave: modificar */
+:is(.btn, .btn-modern, .btn-compact).btn-warning:not(#aura-boton) {
+  background: var(--aura-btn-aviso-fondo) !important;
+  border-color: var(--aura-btn-aviso-borde) !important;
+  color: var(--aura-btn-aviso-texto) !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact).btn-warning:not(#aura-boton):hover:not(:disabled) {
+  background: var(--aura-btn-aviso-hover) !important;
+  border-color: var(--aura-btn-aviso-texto) !important;
+}
+
+/* Secundario en tono gris azulado: Instalaciones y similares */
+:is(.btn, .btn-modern, .btn-compact).btn-info:not(#aura-boton) {
+  background: var(--aura-btn-tono-fondo) !important;
+  border-color: var(--aura-btn-tono-borde) !important;
+  color: var(--aura-btn-tono-texto) !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact).btn-info:not(#aura-boton):hover:not(:disabled) {
+  background: var(--aura-btn-tono-hover) !important;
+  border-color: var(--aura-btn-tono-texto) !important;
+}
+
+/* Barra de las tablas: Actualizar (azul oscuro) y Excel (verde), planos */
+:is(.btn, .btn-modern, .btn-compact).btn-refresh:not(#aura-boton) {
+  background: #2c3e50 !important;
+  border-color: #2c3e50 !important;
+  color: #fff !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact).btn-refresh:not(#aura-boton):hover:not(:disabled) {
+  background: #3b5166 !important;
+  border-color: #3b5166 !important;
+  box-shadow: var(--aura-btn-sombra-hover) !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact).btn-excel:not(#aura-boton) {
+  background: #12925f !important;
+  border-color: #12925f !important;
+  color: #fff !important;
+}
+
+:is(.btn, .btn-modern, .btn-compact).btn-excel:not(#aura-boton):hover:not(:disabled) {
+  background: #0d7f52 !important;
+  border-color: #0d7f52 !important;
+  box-shadow: var(--aura-btn-sombra-hover) !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Iconos de acción de las tablas
+ * ------------------------------------------------------------------------- */
+
+.btn-icon:is(.btn-edit, .btn-view, .btn-view-details, .btn-add, .btn-renew, .btn-delete, .btn-reject,
+  .btn-download, .btn-payment, .btn-archive, .btn-approve, .btn-contracts, .btn-services):not(#aura-boton) {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.95rem !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+.btn-icon:is(.btn-edit, .btn-view, .btn-view-details, .btn-add, .btn-renew, .btn-delete, .btn-reject,
+  .btn-download, .btn-payment, .btn-archive, .btn-approve, .btn-contracts, .btn-services):not(#aura-boton):hover:not(:disabled) {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn-icon.btn-edit:not(#aura-boton) { background: #e6f1fb !important; color: #185fa5 !important; }
+.btn-icon.btn-edit:not(#aura-boton):hover:not(:disabled) { background: #cfe3f7 !important; }
+
+.btn-icon:is(.btn-view, .btn-view-details, .btn-approve):not(#aura-boton) { background: #eaf3de !important; color: #3b6d11 !important; }
+.btn-icon:is(.btn-view, .btn-view-details, .btn-approve):not(#aura-boton):hover:not(:disabled) { background: #d8eac2 !important; }
+
+.btn-icon:is(.btn-add, .btn-renew):not(#aura-boton) { background: #faeeda !important; color: #854f0b !important; }
+.btn-icon:is(.btn-add, .btn-renew):not(#aura-boton):hover:not(:disabled) { background: #f6dfb8 !important; }
+
+.btn-icon:is(.btn-delete, .btn-reject):not(#aura-boton) { background: #fcebeb !important; color: #a32d2d !important; }
+.btn-icon:is(.btn-delete, .btn-reject):not(#aura-boton):hover:not(:disabled) { background: #f8d6d6 !important; }
+
+.btn-icon:is(.btn-download, .btn-payment):not(#aura-boton) { background: #e1f5ee !important; color: #0f6e56 !important; }
+.btn-icon:is(.btn-download, .btn-payment):not(#aura-boton):hover:not(:disabled) { background: #c8ebdf !important; }
+
+.btn-icon.btn-archive:not(#aura-boton) { background: #eef1f5 !important; color: #44546a !important; }
+/* Puntos de Suministro: contratos (violeta) y servicios (ámbar), distintos del ojo de consultar */
+.btn-icon.btn-contracts:not(#aura-boton) { background: #eeedfe !important; color: #534ab7 !important; }
+.btn-icon.btn-contracts:not(#aura-boton):hover:not(:disabled) { background: #dcdafb !important; }
+
+.btn-icon.btn-services:not(#aura-boton) { background: #fdf0dd !important; color: #8a520a !important; }
+.btn-icon.btn-services:not(#aura-boton):hover:not(:disabled) { background: #f8e0bb !important; }
+.btn-icon.btn-archive:not(#aura-boton):hover:not(:disabled) { background: #dfe5ec !important; }
+
+.btn-icon:is(.btn-edit, .btn-view, .btn-view-details, .btn-add, .btn-renew, .btn-delete, .btn-reject,
+  .btn-download, .btn-payment, .btn-archive, .btn-approve, .btn-contracts, .btn-services):not(#aura-boton):disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Diálogos de confirmación (SweetAlert): misma forma y letra que los botones
+ * de la aplicación. El color de cada botón lo pone cada diálogo; aquí solo se
+ * ajusta el texto oscuro sobre amarillo y Cancelar pasa a neutro.
+ * ------------------------------------------------------------------------- */
+
+/* Sin tocar display: SweetAlert oculta con estilo en línea los botones que no usa */
+.swal2-popup .swal2-actions .swal2-styled {
+  height: var(--aura-btn-alto);
+  padding: 0 18px !important;
+  line-height: calc(var(--aura-btn-alto) - 2px) !important;
+  border: 1px solid transparent;
+  border-radius: var(--aura-btn-radio) !important;
+  font-family: inherit !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.swal2-popup .swal2-actions .swal2-styled:focus-visible {
+  box-shadow: var(--aura-btn-foco) !important;
+}
+
+.swal2-popup .swal2-actions .swal2-styled.swal2-confirm[style*="252, 215, 0"] {
+  color: var(--aura-btn-principal-texto) !important;
+}
+
+/* El azul #3085d6 de SweetAlert no es de Aura: la confirmación va en amarillo */
+.swal2-popup .swal2-actions .swal2-styled.swal2-confirm[style*="48, 133, 214"] {
+  background-color: var(--aura-btn-principal-fondo) !important;
+  color: var(--aura-btn-principal-texto) !important;
+}
+
+/* Confirmar sin color propio: amarillo de Aura (no el morado de SweetAlert) */
+.swal2-popup .swal2-actions .swal2-styled.swal2-confirm:not([style*="background-color"]) {
+  background-color: var(--aura-btn-principal-fondo) !important;
+  color: var(--aura-btn-principal-texto) !important;
+}
+
+.swal2-popup .swal2-actions .swal2-styled:is(.swal2-cancel, .swal2-deny) {
+  background: var(--aura-btn-neutro-fondo) !important;
+  border: 1px solid var(--aura-btn-neutro-borde) !important;
+  color: var(--aura-btn-neutro-texto) !important;
+}
+
+.swal2-popup .swal2-actions .swal2-styled:is(.swal2-cancel, .swal2-deny):hover {
+  background: var(--aura-btn-neutro-hover) !important;
+  border-color: var(--aura-btn-neutro-borde-hover) !important;
+}
+
+.swal2-popup :is(.swal2-input, .swal2-textarea, .swal2-select) {
+  font-family: inherit;
+}
+
+/* ---------------------------------------------------------------------------
+ * Barra de acciones del detalle de tarea (Completar, Auditoria, Cambiar estado).
+ * Tenia su propio estilo -relleno saturado, texto blanco y salto al pasar el
+ * raton- que era justo el que se sustituyo por el Material limpio.
+ * ------------------------------------------------------------------------- */
+
+.btn-action-compact:not(#aura-boton) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  height: var(--aura-btn-alto) !important;
+  min-height: var(--aura-btn-alto) !important;
+  padding: 0 16px !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--aura-btn-radio) !important;
+  font-family: inherit !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.2px !important;
+  line-height: 1 !important;
+  box-shadow: var(--aura-btn-sombra) !important;
+  transform: none !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease !important;
+}
+
+.btn-action-compact:not(#aura-boton) i {
+  font-size: 1rem !important;
+  margin: 0 !important;
+}
+
+.btn-action-compact:not(#aura-boton):hover {
+  transform: none !important;
+  box-shadow: var(--aura-btn-sombra-hover) !important;
+}
+
+.btn-action-compact:not(#aura-boton):focus-visible {
+  outline: none;
+  box-shadow: var(--aura-btn-foco) !important;
+}
+
+.btn-completar-compact:not(#aura-boton) {
+  background: var(--aura-btn-exito-fondo) !important;
+  border-color: var(--aura-btn-exito-borde) !important;
+  color: var(--aura-btn-exito-texto) !important;
+}
+
+.btn-completar-compact:not(#aura-boton):hover {
+  background: var(--aura-btn-exito-hover) !important;
+}
+
+.btn-auditoria-compact:not(#aura-boton) {
+  background: var(--aura-btn-tono-fondo) !important;
+  border-color: var(--aura-btn-tono-borde) !important;
+  color: var(--aura-btn-tono-texto) !important;
+}
+
+.btn-auditoria-compact:not(#aura-boton):hover {
+  background: var(--aura-btn-tono-hover) !important;
+}

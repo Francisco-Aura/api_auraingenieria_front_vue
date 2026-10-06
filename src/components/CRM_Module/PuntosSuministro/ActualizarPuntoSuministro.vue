@@ -2,12 +2,16 @@
   <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-content">
       <!-- Encabezado del modal -->
-      <div class="modal-header">
-        <div class="header-content">
+      <div class="modal-header aura-modal-header">
+        <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-bolt"></i></span>
+        <div class="aura-modal-header__titulos">
           <h1 id="modal-title" class="modal-title">
-            {{ isCreating ? 'Crear nuevo' : (modoConsulta ? 'Consultar' : 'Actualizar') }} Punto de Suministro
-            {{ puntoLocal.cliente && puntoLocal.cliente.nombre ? ' - ' + puntoLocal.cliente.nombre : '' }}
+            {{ isCreating ? 'Nuevo punto de suministro' : (modoConsulta ? 'Consultar punto de suministro' : 'Modificar punto de suministro') }}
           </h1>
+          <span class="aura-modal-header__subtitulo">
+            <span v-if="puntoLocal.cliente && puntoLocal.cliente.nombre"><strong>{{ puntoLocal.cliente.nombre }}</strong></span>
+            <span v-if="puntoLocal.cupsluz || puntoLocal.cupsgas" class="aura-dato"><span class="aura-dato__etiqueta">CUPS</span>{{ puntoLocal.cupsluz || puntoLocal.cupsgas }}</span>
+          </span>
         </div>
         <button type="button" class="close-button" @click="cerrarModal">
           <i class="fas fa-times"></i>
@@ -17,12 +21,14 @@
       <!-- Formulario compacto para punto de suministro -->
       <form @submit.prevent="actualizarPS" class="compact-form-content" novalidate>
         <!-- Pestañas para organizar el contenido -->        
-        <div class="form-tabs">
-          <button type="button" class="tab-btn" :class="{ active: activeTab === 'principal' }" @click="activeTab = 'principal'">
-            <i class="fas fa-map-marker-alt"></i> <span class="tab-text">Punto de Suministro</span>
+        <div class="aura-pestanas" role="tablist" aria-label="Secciones del punto de suministro">
+          <button type="button" role="tab" class="aura-pestana" :class="{ 'aura-pestana--activa': activeTab === 'principal' }"
+                  :aria-selected="activeTab === 'principal' ? 'true' : 'false'" @click="activeTab = 'principal'">
+            <span class="aura-pestana__numero">1</span> <span>Punto de suministro</span>
           </button>
-          <button type="button" class="tab-btn" :class="{ active: activeTab === 'instalaciones' }" @click="activeTab = 'instalaciones'">
-            <i class="fas fa-tools"></i> <span class="tab-text">Instalaciones</span>
+          <button type="button" role="tab" class="aura-pestana" :class="{ 'aura-pestana--activa': activeTab === 'instalaciones' }"
+                  :aria-selected="activeTab === 'instalaciones' ? 'true' : 'false'" @click="activeTab = 'instalaciones'">
+            <span class="aura-pestana__numero">2</span> <span>Instalaciones</span>
           </button>
         </div>
 
@@ -30,7 +36,7 @@
           <!-- Contenido de la pestaña principal (formulario original completo) -->
           <div v-show="activeTab === 'principal'" class="tab-content" data-active-tab="principal">
             <div class="form-sections-container">
-          <!-- Panel izquierdo - Ubicación, Suministros, Información Adicional -->
+          <!-- Panel izquierdo - Ubicación, Suministros, Información adicional -->
           <div class="panel-left">
             <!-- Sección de Ubicación -->
             <div class="form-section">
@@ -89,14 +95,14 @@
               </div>
               <div class="form-row">
                 <div class="form-compact-group half">
-                  <label for="cupsluz">CUPS Luz</label>
+                  <label for="cupsluz">CUPS luz</label>
                   <div class="input-with-icon">
                     <i class="fas fa-lightbulb icon-prefix"></i>
                     <input type="text" id="cupsluz" v-model="puntoLocal.cupsluz" :readonly="modoConsulta" :class="{ 'input-error': errores.cups }" @input="errores.cups = ''" maxlength="100" />
                   </div>
                 </div>
                 <div class="form-compact-group half">
-                  <label for="cupsgas">CUPS Gas</label>
+                  <label for="cupsgas">CUPS gas</label>
                   <div class="input-with-icon">
                     <i class="fas fa-fire icon-prefix"></i>
                     <input type="text" id="cupsgas" v-model="puntoLocal.cupsgas" :readonly="modoConsulta" :class="{ 'input-error': errores.cups }" @input="errores.cups = ''" maxlength="100" />
@@ -116,15 +122,15 @@
               </div>
             </div>
 
-            <!-- Sección de Información Adicional -->
+            <!-- Sección de Información adicional -->
             <div class="form-section">
               <div class="section-header">
                 <i class="fas fa-info-circle"></i>
-                <h3>Información Adicional</h3>
+                <h3>Información adicional</h3>
               </div>
               <div class="form-row triple">
                 <div class="form-compact-group">
-                  <label for="exencionImpuestoElectrico">Exención Imp. Eléctrico</label>
+                  <label for="exencionImpuestoElectrico">Exención imp. eléctrico</label>
                   <select id="exencionImpuestoElectrico" v-model="puntoLocal.exencionImpuestoElectrico" :disabled="modoConsulta">
                     <option :value="null">Seleccione</option>
                     <option :value="true">SI</option>
@@ -132,11 +138,11 @@
                   </select>
                 </div>
                 <div class="form-compact-group">
-                  <label for="porcentajeConcesion">% Concesión</label>
+                  <label for="porcentajeConcesion">% concesión</label>
                   <input type="number" id="porcentajeConcesion" v-model="puntoLocal.porcentajeConcesion" :readonly="modoConsulta" />
                 </div>
                 <div class="form-compact-group">
-                  <label for="fechaConcesion">F. Concesión</label>
+                  <label for="fechaConcesion">F. concesión</label>
                   <input type="date" id="fechaConcesion" v-model="puntoLocal.fechaConcesion" :readonly="modoConsulta" />
                 </div>
               </div>
@@ -151,28 +157,28 @@
                   </select>
                 </div>
                 <div class="form-compact-group half">
-                  <label for="fechaActivacionVertido">Fecha Activación Vertido</label>
+                  <label for="fechaActivacionVertido">Fecha activación vertido</label>
                   <input type="date" id="fechaActivacionVertido" v-model="puntoLocal.fechaActivacionVertido" :readonly="modoConsulta" />
                 </div>
               </div>
             </div>
           </div>
           
-          <!-- Panel derecho - Equipos de Medida, Monitorización y Potencias -->
+          <!-- Panel derecho - Equipos de medida, Monitorización y Potencias -->
           <div class="panel-right">
             <!-- F. Instalación -->
             <div class="form-section">
               <div class="form-compact-group">
-                <label for="fechaInstalacion">F. Instalación</label>
+                <label for="fechaInstalacion">F. instalación</label>
                 <input type="date" id="fechaInstalacion" v-model="puntoLocal.fechaInstalacion" :readonly="modoConsulta" />
               </div>
             </div>
 
-            <!-- Sección de Equipos de Medida -->
+            <!-- Sección de Equipos de medida -->
             <div class="form-section">
               <div class="section-header">
                 <i class="fas fa-tachometer-alt"></i>
-                <h3>Equipos de Medida</h3>
+                <h3>Equipos de medida</h3>
               </div>
               <div class="form-row">
                 <div class="form-compact-group half">
@@ -184,7 +190,7 @@
                   </div>
                 </div>
                 <div class="form-compact-group half">
-                  <label for="potenciaTecnicaRed">Potencia Técnica Red</label>
+                  <label for="potenciaTecnicaRed">Potencia técnica red</label>
                   <div class="input-with-suffix">
                     <input type="number" id="potenciaTecnicaRed" v-model="puntoLocal.potenciaTecnicaRed" :readonly="modoConsulta" step="0.0001"/>
                     <span class="input-suffix">kW</span>
@@ -192,12 +198,12 @@
                 </div>
               </div>
               <div class="form-compact-group">
-                <label for="apmCentroTransformacion">APM Centro Transformación</label>
+                <label for="apmCentroTransformacion">APM centro transformación</label>
                 <input type="text" id="apmCentroTransformacion" v-model="puntoLocal.apmCentroTransformacion" :readonly="modoConsulta" maxlength="255" />
               </div>
               <div class="form-row">
                 <div class="form-compact-group half">
-                  <label for="tipoContador">Tipo de Contador</label>
+                  <label for="tipoContador">Tipo de contador</label>
                   <div class="input-with-icon">
                     <i class="fas fa-tachometer-alt icon-prefix"></i>
                     <select id="tipoContador" v-model="puntoLocal.tipoContador" :disabled="modoConsulta">
@@ -207,7 +213,7 @@
                   </div>
                 </div>
                 <div class="form-compact-group half">
-                  <label for="tipoComunicacion">Tipo de Comunicación</label>
+                  <label for="tipoComunicacion">Tipo de comunicación</label>
                   <div class="input-with-icon">
                     <i class="fas fa-broadcast-tower icon-prefix"></i>
                     <select id="tipoComunicacion" v-model="puntoLocal.tipoComunicacion" :disabled="modoConsulta">
@@ -219,21 +225,21 @@
               </div>
               <div class="form-row triple">
                 <div class="form-compact-group">
-                  <label for="numeroContador">Nº Contador</label>
+                  <label for="numeroContador">Nº contador</label>
                   <input type="text" id="numeroContador" v-model="puntoLocal.numeroContador" :readonly="modoConsulta" maxlength="255" />
                 </div>
                 <div class="form-compact-group">
-                  <label for="numeroTelefono">Nº Teléfono/IP</label>
+                  <label for="numeroTelefono">Nº teléfono/IP</label>
                   <input type="tel" id="numeroTelefono" v-model="puntoLocal.numeroTelefono" :readonly="modoConsulta" />
                 </div>
                 <div class="form-compact-group">
-                  <label for="direccionEnlace">Dir. Enlace</label>
+                  <label for="direccionEnlace">Dir. enlace</label>
                   <input type="text" id="direccionEnlace" v-model="puntoLocal.direccionEnlace" :readonly="modoConsulta" maxlength="255" />
                 </div>
               </div>
               <div class="form-row triple">
                 <div class="form-compact-group">
-                  <label for="puntoMedida">Punto Medida</label>
+                  <label for="puntoMedida">Punto medida</label>
                   <input type="text" id="puntoMedida" v-model="puntoLocal.puntoMedida" :readonly="modoConsulta" maxlength="255" />
                 </div>
                 <div class="form-compact-group">
@@ -261,14 +267,14 @@
               </div>
               <div class="form-row">
                 <div class="form-compact-group half">
-                  <label for="usuarioMonitorizacion">Usuario Monitorización</label>
+                  <label for="usuarioMonitorizacion">Usuario monitorización</label>
                   <div class="input-with-icon">
                     <i class="fas fa-user icon-prefix"></i>
                     <input type="text" id="usuarioMonitorizacion" v-model="puntoLocal.usuarioMonitorizacion" :readonly="modoConsulta" maxlength="255" />
                   </div>
                 </div>
                 <div class="form-compact-group half">
-                  <label for="passMonitorizacion">Contraseña Monitorización</label>
+                  <label for="passMonitorizacion">Contraseña monitorización</label>
                   <div class="input-with-icon">
                     <i class="fas fa-lock icon-prefix"></i>
                     <input type="text" id="passMonitorizacion" v-model="puntoLocal.passMonitorizacion" :readonly="modoConsulta" maxlength="255" />
@@ -279,11 +285,11 @@
           </div>
             </div>
 
-            <!-- Potencias Contratadas - ancho completo -->
+            <!-- Potencias contratadas - ancho completo -->
             <div v-if="modoConsulta && tienePotenciasContratadas" class="form-section potencias-fullwidth">
               <div class="section-header">
                 <i class="fas fa-battery-three-quarters"></i>
-                <h3>Potencias Contratadas</h3>
+                <h3>Potencias contratadas</h3>
               </div>
               <div class="potencias-grid">
                 <div 
@@ -313,13 +319,13 @@
             <div class="modal-footer">
               <div class="required-note" v-if="!modoConsulta"><span class="required">*</span> Campos obligatorios</div>
               <div class="action-buttons">
-                <!-- Botón Dar de Baja (solo si está activo y en modo actualizar) -->
+                <!-- Botón Dar de baja (solo si está activo y en modo actualizar) -->
                 <button v-if="!modoConsulta && !isCreating && puntoLocal.id && !puntoLocal.fechaBaja" type="button" @click="confirmarBajaPunto" class="btn-compact btn-danger">
-                  <i class="fas fa-map-marker-alt"></i> Dar de Baja
+                  <i class="fas fa-map-marker-alt"></i> Dar de baja
                 </button>
                 <!-- Botón Reactivar (solo si está dado de baja y en modo actualizar) -->
                 <button v-if="!modoConsulta && !isCreating && puntoLocal.id && puntoLocal.fechaBaja" type="button" @click="confirmarReactivarPunto" class="btn-compact btn-success">
-                  <i class="fas fa-map-marker-alt"></i> Reactivar Punto
+                  <i class="fas fa-map-marker-alt"></i> Reactivar punto
                 </button>
                 <!-- Mensaje de estado si está dado de baja -->
                 <div v-if="!modoConsulta && !isCreating && puntoLocal.id && puntoLocal.fechaBaja" class="status-message status-inactive">
@@ -344,14 +350,14 @@
             <div class="form-grid-compact">
               <!-- Tres secciones de instalaciones en una fila -->
               <div class="installations-row">
-                <!-- Batería de Condensadores -->
+                <!-- Batería de condensadores -->
                 <div class="installation-card">
                   <div class="section-header-compact">
                     <i class="fas fa-battery-full"></i>
-                    <h3>Batería de Condensadores</h3>
+                    <h3>Batería de condensadores</h3>
                   </div>
                   <div class="form-group-compact">
-                    <label for="bateriaCondensadores">Batería de Condensadores</label>
+                    <label for="bateriaCondensadores">Batería de condensadores</label>
                     <div class="select-container-compact">
                       <select id="bateriaCondensadores" v-model="puntoLocal.bateriaCondensadores" class="form-select-compact">
                         <option value="">Seleccione...</option>
@@ -362,7 +368,7 @@
                     </div>
                   </div>
                   <div class="form-group-compact">
-                    <label for="potenciaBateria">Potencia Batería</label>
+                    <label for="potenciaBateria">Potencia batería</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-bolt icon-prefix"></i>
                       <input type="text" id="potenciaBateria" v-model="puntoLocal.potenciaBateria" class="form-control-compact" maxlength="100" />
@@ -377,11 +383,11 @@
                   </div>
                 </div>
 
-                <!-- Instalación Fotovoltaica -->
+                <!-- Instalación fotovoltaica -->
                 <div class="installation-card">
                   <div class="section-header-compact">
                     <i class="fas fa-solar-panel"></i>
-                    <h3>Instalación Fotovoltaica</h3>
+                    <h3>Instalación fotovoltaica</h3>
                   </div>
                   <div class="form-group-compact">
                     <label for="instalacionFV">Instalación FV</label>
@@ -395,21 +401,21 @@
                     </div>
                   </div>
                   <div class="form-group-compact">
-                    <label for="kwInversor">KW Inversor</label>
+                    <label for="kwInversor">KW inversor</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-microchip icon-prefix"></i>
                       <input type="text" id="kwInversor" v-model="puntoLocal.kwInversor" class="form-control-compact" maxlength="100" />
                     </div>
                   </div>
                   <div class="form-group-compact">
-                    <label for="kwPanelesSolares">KW Paneles Solares</label>
+                    <label for="kwPanelesSolares">KW paneles solares</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-sun icon-prefix"></i>
                       <input type="text" id="kwPanelesSolares" v-model="puntoLocal.kwPanelesSolares" class="form-control-compact" maxlength="100" />
                     </div>
                   </div>
                   <div class="form-group-compact">
-                    <label for="appMonitorizacion">APP Monitorización</label>
+                    <label for="appMonitorizacion">APP monitorización</label>
                     <div class="select-container-compact">
                       <select id="appMonitorizacion" v-model="puntoLocal.appMonitorizacionId" class="form-select-compact">
                         <option value="">Seleccione...</option>
@@ -461,11 +467,11 @@
                   </div>
                 </div>
 
-                <!-- Almacenamiento Energético -->
+                <!-- Almacenamiento energético -->
                 <div class="installation-card">
                   <div class="section-header-compact">
                     <i class="fas fa-warehouse"></i>
-                    <h3>Almacenamiento Energético</h3>
+                    <h3>Almacenamiento energético</h3>
                   </div>
                   <div class="form-group-compact">
                     <label for="bateriaAlmacenamiento">Batería</label>
@@ -479,7 +485,7 @@
                     </div>
                   </div>
                   <div class="form-group-compact">
-                    <label for="potenciaBateriaAlmacenamiento">Potencia Batería</label>
+                    <label for="potenciaBateriaAlmacenamiento">Potencia batería</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-bolt icon-prefix"></i>
                       <input type="text" id="potenciaBateriaAlmacenamiento" v-model="puntoLocal.potenciaBateriaAlmacenamiento" class="form-control-compact" maxlength="100" />
@@ -508,7 +514,7 @@
                     </div>
                   </div>
                   <div class="form-group-compact">
-                    <label for="integracionSistemasFV">Integración con Sistemas Fotovoltaicos</label>
+                    <label for="integracionSistemasFV">Integración con sistemas fotovoltaicos</label>
                     <div class="select-container-compact">
                       <select id="integracionSistemasFV" v-model="puntoLocal.integracionSistemasFVId" class="form-select-compact">
                         <option value="">Seleccione...</option>
@@ -525,21 +531,21 @@
 
             <!-- Navegación y botones de acción -->
             <div class="tab-navigation">
-              <button type="button" class="btn-compact btn-secondary" @click="activeTab = 'principal'">
+              <button type="button" class="btn-compact btn-back" @click="activeTab = 'principal'">
                 <i class="fas fa-arrow-left"></i> Anterior
               </button>
               <div class="action-buttons">
-                <!-- Botón Dar de Baja (solo si está activo y en modo actualizar) -->
+                <!-- Botón Dar de baja (solo si está activo y en modo actualizar) -->
                 <button v-if="!modoConsulta && !isCreating && puntoLocal.id && !puntoLocal.fechaBaja" type="button" @click="confirmarBajaPunto" class="btn-compact btn-danger">
-                  <i class="fas fa-map-marker-times"></i> Dar de Baja
+                  <i class="fas fa-map-marker-alt"></i> Dar de baja
                 </button>
                 <!-- Botón Reactivar (solo si está dado de baja y en modo actualizar) -->
                 <button v-if="!modoConsulta && !isCreating && puntoLocal.id && puntoLocal.fechaBaja" type="button" @click="confirmarReactivarPunto" class="btn-compact btn-success">
-                  <i class="fas fa-map-marker-alt"></i> Reactivar Punto
+                  <i class="fas fa-map-marker-alt"></i> Reactivar punto
                 </button>
                 <!-- Mensaje de estado si está dado de baja -->
                 <div v-if="!modoConsulta && !isCreating && puntoLocal.id && puntoLocal.fechaBaja" class="status-message status-inactive">
-                  <i class="fas fa-map-marker-times"></i>
+                  <i class="fas fa-map-marker-alt"></i>
                   <span>Punto dado de baja el {{ formatFecha(puntoLocal.fechaBaja) }}</span>
                 </div>
                 <button type="button" class="btn-compact btn-secondary" @click="cerrarModal">
@@ -580,7 +586,6 @@ export default {
   data() {
     return {
       activeTab: 'principal',
-      darDeBaja: false,
       isSubmitting: false,
       errores: {},
       puntoLocal: { 
@@ -614,7 +619,9 @@ export default {
       tiposComunicacion: [],
       propiedades: [],
       appMonitorizacion: [],
-      integracionSistemasFV: []
+      integracionSistemasFV: [],
+      // Petición de datos maestros en curso, para que el watcher y created() la compartan.
+      cargaMaestros: null
     };
   },
   computed: {
@@ -635,21 +642,7 @@ export default {
   },
   async created() {
     try {
-      const [distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes, appMonitorizacionRes, integracionSistemasFVRes] = await Promise.all([
-        axios.get(`${process.env.VUE_APP_API_URL}/distribuidoras`),
-        axios.get(`${process.env.VUE_APP_API_URL}/tipos-contador`),
-        axios.get(`${process.env.VUE_APP_API_URL}/tipos-comunicacion`),
-        axios.get(`${process.env.VUE_APP_API_URL}/propiedades`),
-        axios.get(`${process.env.VUE_APP_API_URL}/app-monitorizacion`),
-        axios.get(`${process.env.VUE_APP_API_URL}/integracion-sistemas-fv`)
-      ]);
-
-      this.distribuidoras = distribuidorasRes.data;
-      this.tiposContador = tiposContadorRes.data;
-      this.tiposComunicacion = tiposComunicacionRes.data;
-      this.propiedades = propiedadesRes.data;
-      this.appMonitorizacion = appMonitorizacionRes.data;
-      this.integracionSistemasFV = integracionSistemasFVRes.data;
+      await this.loadMasterData();
 
       if (this.modificarPunto && Object.keys(this.modificarPunto).length > 0) {
         this.initializePuntoLocal(this.modificarPunto);
@@ -684,7 +677,7 @@ export default {
           icon: 'error',
           title: titulo,
           text: mensaje,
-          confirmButtonColor: '#3085d6',
+          confirmButtonColor: '#fcd700',
           confirmButtonText: 'Entendido',
           allowOutsideClick: false,
           allowEscapeKey: false,
@@ -737,21 +730,35 @@ export default {
       return cupsStr;
     },
 
-    async loadMasterData() {
-      try {
-        const [distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes] = await Promise.all([
-          axios.get(`${process.env.VUE_APP_API_URL}/distribuidoras`),
-          axios.get(`${process.env.VUE_APP_API_URL}/tipos-contador`),
-          axios.get(`${process.env.VUE_APP_API_URL}/tipos-comunicacion`),
-          axios.get(`${process.env.VUE_APP_API_URL}/propiedades`)
-        ]);
+    /**
+     * Carga las seis listas de los desplegables. El watcher `immediate` y `created`
+     * se llaman los dos nada más abrir el modal, así que comparten la misma petición
+     * en lugar de duplicarla. Si falla, se olvida para poder reintentar.
+     */
+    loadMasterData() {
+      if (this.cargaMaestros) return this.cargaMaestros;
+
+      this.cargaMaestros = Promise.all([
+        axios.get(`${process.env.VUE_APP_API_URL}/distribuidoras`),
+        axios.get(`${process.env.VUE_APP_API_URL}/tipos-contador`),
+        axios.get(`${process.env.VUE_APP_API_URL}/tipos-comunicacion`),
+        axios.get(`${process.env.VUE_APP_API_URL}/propiedades`),
+        axios.get(`${process.env.VUE_APP_API_URL}/app-monitorizacion`),
+        axios.get(`${process.env.VUE_APP_API_URL}/integracion-sistemas-fv`)
+      ]).then(([distribuidorasRes, tiposContadorRes, tiposComunicacionRes, propiedadesRes,
+        appMonitorizacionRes, integracionSistemasFVRes]) => {
         this.distribuidoras = distribuidorasRes.data;
         this.tiposContador = tiposContadorRes.data;
         this.tiposComunicacion = tiposComunicacionRes.data;
         this.propiedades = propiedadesRes.data;
-      } catch (error) {
-        console.error('Error al recargar datos maestros:', error);
-      }
+        this.appMonitorizacion = appMonitorizacionRes.data;
+        this.integracionSistemasFV = integracionSistemasFVRes.data;
+      }).catch((error) => {
+        this.cargaMaestros = null;
+        throw error;
+      });
+
+      return this.cargaMaestros;
     },
     async initializePuntoLocal(newVal) {
 
@@ -796,7 +803,11 @@ export default {
       };
 
       if (this.distribuidoras.length === 0) {
-        await this.loadMasterData(); 
+        try {
+          await this.loadMasterData();
+        } catch (error) {
+          console.error('Error al recargar datos maestros:', error);
+        }
       }
 
       // Mapear objetos relacionados
@@ -949,10 +960,9 @@ export default {
           icon: 'warning',
           iconColor: '#b56767',
           showCancelButton: true,
-          confirmButtonText: '<i class="fas fa-map-marker-times"></i> Confirmar Baja',
+          confirmButtonText: '<i class="fas fa-map-marker-alt"></i> Confirmar baja',
           cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-          confirmButtonColor: '#f5b2b2',
-          cancelButtonColor: '#6b7280',
+          confirmButtonColor: '#d33',
           focusCancel: false,
           customClass: {
             popup: 'swal-baja-punto'
@@ -1039,7 +1049,7 @@ export default {
             title: 'No se puede reactivar',
             text: 'El cliente asociado a este punto de suministro está dado de baja. Debe reactivar el cliente primero.',
             icon: 'error',
-            confirmButtonColor: '#dc2626'
+            confirmButtonColor: '#fcd700'
           });
           return;
         }
@@ -1060,10 +1070,9 @@ export default {
           icon: 'success',
           iconColor: '#16a34a',
           showCancelButton: true,
-          confirmButtonText: '<i class="fas fa-map-marker-alt"></i> Confirmar Reactivación',
+          confirmButtonText: '<i class="fas fa-map-marker-alt"></i> Confirmar reactivación',
           cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-          confirmButtonColor: '#16a34a',
-          cancelButtonColor: '#6b7280',
+          confirmButtonColor: '#fcd700',
           focusCancel: false,
           customClass: {
             popup: 'swal-reactivar-punto'

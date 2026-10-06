@@ -69,6 +69,14 @@
   gap: 0.4rem;
 }
 
+/* Pestañas a todo el ancho, pegadas a la cabecera y visibles al desplazarse */
+.compact-form-content > .aura-pestanas {
+  position: sticky;
+  top: -0.5rem;
+  z-index: 3;
+  margin: -0.5rem -0.5rem 0.2rem;
+}
+
 .form-sections-container {
   display: flex;
   gap: 0.5rem;
@@ -90,13 +98,6 @@
   padding: 0.4rem;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
   border: 1px solid var(--border-color);
-}
-
-.form-section.full-width-observaciones {
-  width: 100%;
-  margin-top: 0.3rem;
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
 }
 
 .observaciones-fullwidth {
@@ -252,18 +253,6 @@
   margin-left: 2px;
 }
 
-/* Validación de errores */
-/* Estilos elegantes para las potencias en el panel derecho */
-.potencias-section {
-  border-radius: 0.4rem;
-  overflow: hidden;
-}
-
-.potencias-section .section-header {
-  border-radius: 0;
-  border-bottom: none;
-}
-
 .potencias-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -375,6 +364,11 @@
   .compact-form-content {
     padding: 0.6rem;
   }
+
+  .compact-form-content > .aura-pestanas {
+    top: -0.6rem;
+    margin: -0.6rem -0.6rem 0.2rem;
+  }
   
   .form-row {
     flex-direction: column;
@@ -441,10 +435,6 @@
   font-weight: 600;
   box-shadow: 0 -2px 0 0 #f5c900;
   z-index: 1;
-}
-
-.tab-text {
-  font-size: 0.9rem;
 }
 
 .tab-container {
@@ -516,18 +506,40 @@
   color: black;
 }
 
+/* «Ejecutado por Aura»: casilla y texto en una fila, con el mismo alto que los campos */
 .checkbox-label-fv {
   display: flex !important;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
   margin: 0;
+  margin-top: 0 !important;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--color-text-dark);
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.2;
 }
 
+.checkbox-label-fv:hover {
+  border-color: #c9d1db;
+  background: #fafbfc;
+}
+
+/* styles.css da margen superior y 98 % de ancho a todo input: aquí se anulan */
 .checkbox-label-fv input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+  width: 16px !important;
+  height: 16px;
+  flex: 0 0 16px;
+  margin: 0 !important;
   accent-color: #f0c808;
+  cursor: pointer;
 }
 
 .form-control-compact {
@@ -722,9 +734,6 @@
 }
 
 @media (max-width: 900px) {
-  .tab-text {
-    display: none;
-  }
 
   .tab-btn {
     padding: 0.4rem 0.6rem;
@@ -791,115 +800,6 @@
   font-size: 0.9rem;
   color: #333;
   font-weight: 500;
-}
-
-/* Estilos elegantes para la sección de baja con tonos rojos */
-.baja-compacta {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 0.3rem;
-  padding: 0.6rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-}
-
-.baja-compacta:hover {
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
-  border-color: #fca5a5;
-}
-
-.baja-checkbox-compacta {
-  display: flex;
-  align-items: center;
-}
-
-.baja-label-compacta {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #dc2626;
-  user-select: none;
-  transition: all 0.2s ease;
-}
-
-.baja-label-compacta:hover {
-  color: #b91c1c;
-}
-
-.baja-input {
-  display: none;
-}
-
-.baja-checkmark {
-  height: 18px;
-  width: 18px;
-  background-color: white;
-  border: 2px solid #dc2626;
-  border-radius: 3px;
-  position: relative;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  display: inline-block;
-  cursor: pointer;
-}
-
-.baja-label-compacta:hover .baja-checkmark {
-  border-color: #b91c1c;
-  box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.1);
-}
-
-.baja-input:checked ~ .baja-checkmark {
-  background-color: #dc2626;
-  border-color: #dc2626;
-  transform: scale(1.1);
-}
-
-.baja-checkmark:after {
-  content: "";
-  position: absolute;
-  display: none;
-}
-
-.baja-input:checked ~ .baja-checkmark:after {
-  display: block;
-}
-
-.baja-checkmark:after {
-  left: 5px;
-  top: 2px;
-  width: 4px;
-  height: 8px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.baja-text {
-  color: #dc2626;
-  font-weight: 500;
-  padding: 5px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.baja-text i {
-  font-size: 0.9rem;
-}
-
-.fecha-baja-inline {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  padding-top: 0.3rem;
-  border-top: 1px solid #fecaca;
-  margin-top: 0.3rem;
-  animation: slideInBaja 0.3s ease-out;
 }
 
 .fecha-label-compacta {
@@ -1016,4 +916,33 @@
   font-size: 0.72rem;
   margin-top: 2px;
   line-height: 1.2;
+}
+
+/* Pie de cada pestaña: fijo abajo y siempre visible, aunque el contenido tenga scroll */
+.tab-container > .tab-content {
+  padding-bottom: 0;
+}
+
+.tab-content > .tab-navigation,
+.tab-content > .modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin: auto -0.5rem 0;
+  padding: 0.6rem 0.75rem;
+  background: #fff;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+  box-shadow: 0 -6px 12px -10px rgba(16, 24, 40, 0.35);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.tab-content > .tab-navigation .action-buttons,
+.tab-content > .modal-footer .action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }

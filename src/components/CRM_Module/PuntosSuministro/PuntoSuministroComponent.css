@@ -198,11 +198,6 @@
   from { opacity: 0; transform: translateX(-8px); }
   to { opacity: 1; transform: translateX(0); }
 }
-
-/* Highlight flash for recently updated rows */
-.row-highlight {
-  animation: highlightFlash 1.5s ease;
-}
 @keyframes highlightFlash {
   0% { background-color: rgba(76, 175, 80, 0.3); }
   100% { background-color: transparent; }
@@ -245,10 +240,6 @@
   padding: 0.2rem;
   border-radius: var(--radius-sm);
   transition: background-color 0.2s ease;
-}
-
-.column-title:hover {
-  background-color: var(--hover-color);
 }
 
 .column-filter-container {
@@ -503,23 +494,12 @@
   user-select: none;
 }
 
-.sortable:hover {
-  background-color: var(--hover-color);
-}
+/* El efecto del ratón en las cabeceras es común a todas las tablas: shared-ui.css */
 
 .data-table th i {
   margin-left: 4px;
   font-size: 1em;
   color: var(--text-secondary);
-}
-
-.sortable .column-title {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.sortable .column-title:hover {
-  color: var(--primary-color);
 }
 
 .cliente-cell {
@@ -593,23 +573,6 @@
   min-width: auto;
 }
 
-.minimal-filter {
-  margin-top: 4px !important;
-  min-width: 40px;
-}
-
-.minimal-select {
-  width: 100% !important;
-  padding: 4px !important;
-  height: 28px !important;
-  font-size: 0.8rem !important;
-}
-
-.column-filter-select {
-  padding: 0.4rem 0.5rem !important;
-  height: 32px !important;
-}
-
 /* Estilos para los controles de filtro */
 .table-controls {
   padding: 15px 20px;
@@ -618,12 +581,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.filters-container {
-  display: flex;
-  align-items: center;
-  gap: 20px;
 }
 
 /* Estilos para la columna de fecha fin del último contrato */
@@ -709,19 +666,6 @@
   font-size: 1.1em;
 }
 
-/* Botón PDF */
-.btn-pdf {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1);
-}
-
-.btn-pdf:hover {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15);
-}
-
 /* Botón Toggle Baja (Mostrar/Ocultar dados de baja) */
 .btn-toggle-baja {
   background: #f3f4f6;
@@ -768,5 +712,4 @@
 .btn-export i {
   font-size: 1.2em;
 }
-
 

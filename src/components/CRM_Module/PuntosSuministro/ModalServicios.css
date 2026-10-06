@@ -72,12 +72,6 @@
   gap: 10px;
 }
 
-/* Tabla del histórico */
-.main-content-skeleton .client-banner .skeleton-line {
-  height: 20px;
-  margin: 4px 0;
-}
-
 .history-table-container {
   overflow: visible;
   border-radius: var(--radius-md);
@@ -361,49 +355,6 @@
   flex-grow: 1;
 }
 
-/* Banner del cliente compacto */
-.client-banner {
-  background: linear-gradient(135deg, #fff3cd 0%, #fffbe6 100%);
-  border-radius: 0.3rem;
-  padding: 0.6rem 0.8rem;
-  margin-bottom: 0.8rem;
-  border: 1px solid #ffe082;
-}
-
-.client-info h4 {
-  margin: 0 0 2px 0;
-  color: #333;
-  font-size: 1rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.client-header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.client-info span {
-  color: #666;
-  font-size: 0.85rem;
-}
-
-.client-details {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.client-details span {
-  color: #666;
-  font-size: 0.85rem;
-}
-
 /* Formulario compacto */
 .modern-form {
   flex: 1;
@@ -466,24 +417,7 @@
 }
 
 /* Selectores compactos */
-.form-select-modern {
-  width: 100%;
-  padding: 0.25rem 0.4rem;
-  border: 1px solid #ddd;
-  border-radius: 0.2rem;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-  color: var(--text-primary);
-  background-color: white;
-  height: 28px;
-  cursor: pointer;
-}
-
-.form-select-modern:focus {
-  border-color: var(--primary-color);
-  box-shadow: var(--focus-ring);
-  outline: none;
-}
+/* .form-select-modern vive en styles/shared-modern-forms.css */
 
 .select-container-modern {
   position: relative;
@@ -495,6 +429,13 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* styles.css da margen superior a todo input: sin quitarlo, el «€» queda más alto que la cifra */
+.input-euro-inline > input,
+.input-euro-compact > input,
+.cuotas-table input {
+  margin-top: 0;
 }
 
 .euro-inline {
@@ -540,102 +481,6 @@
   gap: 0.6rem;
 }
 
-/* Estilos para cuotas compactas */
-.cuotas-grid-compact {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.cuota-card-compact {
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
-  background: white;
-  overflow: hidden;
-  transition: all 0.2s;
-  min-height: 120px;
-}
-
-.cuota-card-compact:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-
-.cuota-card-compact.pagada {
-  border-color: #c6ebd9;
-  background: #f0fff7;
-}
-
-.cuota-header-compact {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.cuota-card-compact.pagada .cuota-header-compact {
-  background: #d9f3e7;
-}
-
-.cuota-numero-compact {
-  font-weight: 600;
-  color: #495057;
-  font-size: 0.8rem;
-}
-
-.cuota-estado-compact {
-  font-size: 0.7rem;
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-weight: 500;
-  background: #ffe9e9;
-  color: var(--color-danger);
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.cuota-estado-compact.pagado {
-  background: #d1f0d9;
-  color: var(--color-success);
-}
-
-.cuota-estado-compact i {
-  font-size: 0.65rem;
-}
-
-.cuota-contenido-compact {
-  padding: 6px 8px;
-  overflow: hidden; /* Evita que el contenido se desborde */
-}
-
-.cuota-fila {
-  display: flex;
-  gap: 4px; /* Gap reducido para ahorrar espacio */
-  margin-bottom: 6px;
-  align-items: flex-end; /* Alinea los campos por la parte inferior */
-}
-
-.cuota-campo-compact {
-  flex: 1;
-}
-
-/* Campo de importe más ancho que el de fecha */
-.cuota-campo-importe {
-  flex: 1.3 !important; /* 30% más ancho que el campo de fecha (más conservador) */
-  min-width: 80px !important; /* Ancho mínimo reducido para que quepa mejor */
-}
-
-.cuota-campo-compact label {
-  display: block;
-  font-size: 0.7rem;
-  margin-bottom: 2px;
-  color: var(--color-secondary-gray);
-  font-weight: 500;
-}
-
 .form-control-compact {
   width: 100%;
   padding: 3px 6px;
@@ -643,46 +488,6 @@
   border-radius: 3px;
   font-size: 0.75rem;
   height: 24px;
-}
-
-.input-euro-compact {
-  display: flex;
-  align-items: center;
-}
-
-.input-euro-compact input {
-  flex: 1;
-  min-width: 70px; /* Ancho mínimo reducido para que quepa mejor */
-  padding: 3px 6px; /* Padding reducido para ahorrar espacio */
-}
-
-.euro-symbol {
-  margin-left: 2px;
-  color: var(--color-secondary-gray);
-  font-size: 0.7rem;
-}
-
-.cuota-acciones {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
-  gap: 8px;
-}
-
-.checkbox-label-compact {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  font-size: 0.75rem;
-  color: #495057;
-}
-
-.checkbox-label-compact input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
-  margin: 0;
 }
 
 .btn-guardar-compact {
@@ -712,95 +517,12 @@
   cursor: not-allowed;
 }
 
-/* Mantener estilos antiguos para compatibilidad */
-.cuotas-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.cuota-card {
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  background: white;
-  overflow: hidden;
-  transition: all 0.2s;
-}
-
-.cuota-card:hover {
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-}
-
-.cuota-card.pagada {
-  border-color: #c6ebd9;
-  background: #f0fff7;
-}
-
-.cuota-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.cuota-card.pagada .cuota-header {
-  background: #d9f3e7;
-}
-
-.cuota-numero {
-  font-weight: 600;
-  color: #495057;
-  font-size: 0.9rem;
-}
-
-.cuota-estado {
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 500;
-  background: #ffe9e9;
-  color: var(--color-danger);
-}
-
-.cuota-estado.pagado {
-  background: #d1f0d9;
-  color: var(--color-success);
-}
-
-.cuota-contenido {
-  padding: 10px;
-}
-
-.cuota-campo {
-  margin-bottom: 8px;
-}
-
-.cuota-campo label {
-  display: block;
-  font-size: 0.8rem;
-  margin-bottom: 3px;
-  color: var(--color-secondary-gray);
-}
-
-.checkbox-field {
-  margin-top: 10px;
-}
-
 .checkbox-label {
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
   font-size: 0.85rem;
-}
-
-.cuota-footer {
-  padding: 8px;
-  border-top: 1px solid #e9ecef;
-  text-align: center;
 }
 
 .btn-guardar {
@@ -1085,14 +807,6 @@
   .form-grid-modern {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  
-  .cuotas-grid-compact {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  
-  .cuotas-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 @media (max-width: 992px) {
@@ -1119,14 +833,6 @@
   .detalle-contrato-content {
     width: 95%;
     max-width: 95%;
-  }
-  
-  .cuotas-grid-compact {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .cuotas-grid {
-    grid-template-columns: 1fr;
   }
   
   .modal-content {
@@ -1169,15 +875,6 @@
   .btn-modern {
     padding: 0.4rem 0.8rem;
     font-size: 0.8rem;
-  }
-  
-  .cuotas-grid-compact {
-    grid-template-columns: 1fr;
-  }
-  
-  .cuota-fila {
-    flex-direction: column;
-    gap: 4px;
   }
 }
 

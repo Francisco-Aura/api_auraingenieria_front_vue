@@ -240,13 +240,6 @@
   background-color: rgba(67,160,71,0.1);
 }
 
-.btn-icon.btn-complete {
-  color: var(--color-success);
-}
-.btn-icon.btn-complete:hover {
-  background-color: rgba(40,167,69,0.1);
-}
-
 .btn-icon.btn-delete {
   color: var(--color-danger);
 }
@@ -281,9 +274,7 @@
   user-select: none;
 }
 
-.sortable:hover {
-  background-color: var(--hover-color);
-}
+/* El efecto del ratón en las cabeceras es común a todas las tablas: shared-ui.css */
 
 .page-info {
   color: var(--text-primary);
@@ -338,8 +329,10 @@
   vertical-align: top;
 }
 
-.th-col-titulo { width: 22%; }
-.th-col-cliente { width: 24%; }
+/* El título es lo que identifica la tarea: se le reserva un mínimo para que no
+   quede en dos palabras cortadas cuando el nombre del cliente es largo. */
+.th-col-titulo { width: 18%; min-width: 155px; }
+.th-col-cliente { width: 20%; }
 .th-col-asignado { width: 5%; }
 .th-col-estado { width: 12%; }
 .th-col-prioridad { width: 10%; }
@@ -393,19 +386,6 @@
   padding: 4px;
   border-radius: 4px;
   transition: background-color 0.2s ease;
-}
-
-.column-title:hover {
-  background-color: var(--hover-color);
-}
-
-.sortable .column-title {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.sortable .column-title:hover {
-  color: var(--primary-color);
 }
 
 .column-filter-container {
@@ -575,10 +555,22 @@
   font-weight: 600;
 }
 
+/* min-width:0 para que el texto de dentro pueda recortarse: si no, el <td>
+   con text-truncate corta el título a medias y sin puntos suspensivos. */
 .titulo-container {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.titulo-texto {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .btn-pin {

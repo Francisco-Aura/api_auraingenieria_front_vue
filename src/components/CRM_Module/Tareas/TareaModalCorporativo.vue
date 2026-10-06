@@ -3,8 +3,12 @@
   <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tarea-modal-title" @mousedown="iniciarSeleccion" @mouseup="finalizarSeleccion">
     <div class="modal-content modal-tarea" @click.stop @input.stop @mousedown.stop @mouseup.stop @dragover.prevent @drop.prevent>
       <!-- Header del modal -->
-      <div class="modal-header">
-        <h2 id="tarea-modal-title" class="modal-title">{{ esEdicion ? 'Editar tarea' : 'Crear tarea' }}</h2>
+      <div class="modal-header aura-modal-header">
+        <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-tasks"></i></span>
+        <div class="aura-modal-header__titulos">
+          <h2 id="tarea-modal-title" class="modal-title">{{ esEdicion ? 'Editar tarea' : 'Crear tarea' }}</h2>
+          <span v-if="esEdicion && formulario.titulo" class="aura-modal-header__subtitulo">{{ formulario.titulo }}</span>
+        </div>
         <button type="button" class="close-button" @click="cerrar">
           <i class="fas fa-times"></i>
         </button>
@@ -289,7 +293,9 @@
 </template>
 
 <script>
+import { textoError } from '@/utils/errores';
 import tareasApi from '@/services/tareasApi'
+import { fechaLocalISO } from '@/utils/fechas'
 
 export default {
   name: 'TareaModalCorporativo',
@@ -423,15 +429,16 @@ export default {
         // Detectar si es cliente potencial al editar
         this.esPotencial = !this.tarea.clienteRelacionadoId && !!this.tarea.clientePotencialNombre
         
-        // Formatear fechas para los inputs
+        // Formatear fechas para los inputs (día y hora locales: la fecha del
+        // servidor no lleva zona horaria y no debe pasarse a UTC)
         if (this.tarea.fechaInicio) {
           const fechaIni = new Date(this.tarea.fechaInicio)
-          this.fechaInicio = fechaIni.toISOString().split('T')[0]
+          this.fechaInicio = fechaLocalISO(fechaIni)
           this.horaInicio = fechaIni.toTimeString().slice(0, 5)
         }
         if (this.tarea.fechaVencimiento) {
           const fecha = new Date(this.tarea.fechaVencimiento)
-          this.fechaVencimiento = fecha.toISOString().split('T')[0]
+          this.fechaVencimiento = fechaLocalISO(fecha)
           this.horaVencimiento = fecha.toTimeString().slice(0, 5)
         }
         
@@ -481,10 +488,10 @@ export default {
           this.formulario.estadoId = estadoPendiente.id
         }
         
-        // Fechas por defecto
-        const hoy = new Date()
-        this.fechaInicio = hoy.toISOString().split('T')[0]
-        this.fechaVencimiento = hoy.toISOString().split('T')[0]
+        // Fechas por defecto: hoy, o el día elegido en el calendario («Nueva tarea»)
+        const diaPropuesto = fechaLocalISO(this.tarea?.fechaVencimiento || new Date()) || fechaLocalISO(new Date())
+        this.fechaInicio = diaPropuesto
+        this.fechaVencimiento = diaPropuesto
         this.horaInicio = '09:00'
         this.horaVencimiento = '18:00'
         
@@ -617,7 +624,6 @@ export default {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
         confirmButtonText: 'Eliminar',
         cancelButtonText: 'Cancelar'
       })
@@ -635,7 +641,7 @@ export default {
         this.$swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'No se pudo eliminar el adjunto'
+          text: textoError(error, 'No se pudo eliminar el adjunto')
         })
       } finally {
         this.eliminandoAdjuntoId = null
@@ -686,10 +692,9 @@ export default {
       }
     },
 
-    formatDate(date) {
-      if (!date) return ''
-      const d = new Date(date)
-      return d.toLocaleDateString('es-ES')
+    usuarioActualId() {
+      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+      return usuario.id ? parseInt(usuario.id) : null
     },
 
     guardar() {
@@ -744,6 +749,8 @@ export default {
         estadoId: this.formulario.estadoId || null,
         usuarioAsignadoId: this.formulario.usuarioAsignadoId || null,
         usuarioCreadorId: this.formulario.usuarioCreadorId || null,
+        // Quién crea o edita (para no notificarle sus propios cambios)
+        usuarioAccionId: this.usuarioActualId(),
         clienteRelacionadoId: this.formulario.clienteRelacionadoId || null,
         clientePotencialNombre: this.esPotencial ? (this.formulario.clientePotencialNombre || null) : null,
         cups: (!this.esPotencial && this.formulario.clienteRelacionadoId && this.formulario.cups) ? this.formulario.cups : null,
