@@ -33,11 +33,11 @@
           <div v-if="sidebarCollapsed" class="tooltip">Informes</div>
         </router-link>
 
-         <a href="/planificador/" class="menu-item">
+        <router-link to="/dashboard/planificador" class="menu-item" active-class="active">
           <i class="fas fa-project-diagram menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Planificador</span>
           <div v-if="sidebarCollapsed" class="tooltip">Planificador</div>
-        </a>
+        </router-link>
 
         <router-link v-if="moduloTareasActivo" to="/dashboard/tareas" class="menu-item" active-class="active">
           <i class="fas fa-tasks menu-icon"></i>
@@ -117,7 +117,8 @@ export default {
         '/dashboard/puntos-suministro': 'Puntos de Suministro',
         '/dashboard/informes': 'Informes',
         '/dashboard/administracion': 'Administración',
-        '/dashboard/tareas': 'Gestión de Tareas'
+        '/dashboard/tareas': 'Gestión de Tareas',
+        '/dashboard/planificador': 'Planificador'
       },
       moduloTareasActivo: false
     };
