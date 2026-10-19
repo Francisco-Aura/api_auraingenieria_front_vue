@@ -33,6 +33,12 @@
           <div v-if="sidebarCollapsed" class="tooltip">Informes</div>
         </router-link>
 
+         <a href="/planificador/" class="menu-item">
+          <i class="fas fa-project-diagram menu-icon"></i>
+          <span v-if="!sidebarCollapsed" class="menu-text">Planificador</span>
+          <div v-if="sidebarCollapsed" class="tooltip">Planificador</div>
+        </a>
+
         <router-link v-if="moduloTareasActivo" to="/dashboard/tareas" class="menu-item" active-class="active">
           <i class="fas fa-tasks menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Gestión de Tareas</span>
