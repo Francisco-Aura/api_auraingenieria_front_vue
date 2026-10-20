@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard-wrapper">
+  <div class="dashboard-wrapper" :class="{ 'dashboard-wrapper--app': esAplicacionIncrustada }">
     <!-- Sidebar -->
     <aside class="sidebar" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <!-- Logo container -->
@@ -87,7 +87,7 @@
       </header>
 
       <!-- Main view area -->
-      <main class="content-wrapper">
+      <main class="content-wrapper" :class="{ 'content-wrapper--app': esAplicacionIncrustada }">
         <div class="content-container">
           <router-view></router-view>
         </div>
@@ -127,6 +127,10 @@ export default {
     pageTitle() {
       // Retorna el título basado en la ruta actual
       return this.routes[this.$route.path] || 'Dashboard';
+    },
+    // Aplicaciones que se muestran dentro de la página (iframe) y gestionan su propio desplazamiento
+    esAplicacionIncrustada() {
+      return this.$route.path === '/dashboard/planificador';
     }
   },
   methods: {

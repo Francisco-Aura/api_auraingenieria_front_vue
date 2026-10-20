@@ -32,7 +32,7 @@ export default {
 <style scoped>
 .planificador-wrapper {
   position: relative;
-  height: calc(100vh - 70px); /* 70px = cabecera del dashboard */
+  height: 100%; /* el dashboard le da exactamente el alto que queda bajo la cabecera */
 }
 
 .planificador-frame {
