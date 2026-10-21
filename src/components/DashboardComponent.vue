@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard-wrapper">
+  <div class="dashboard-wrapper" :class="{ 'dashboard-wrapper--app': esAplicacionIncrustada }">
     <!-- Sidebar -->
     <aside class="sidebar" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <!-- Logo container -->
@@ -31,6 +31,12 @@
           <i class="fas fa-chart-bar menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Informes</span>
           <div v-if="sidebarCollapsed" class="tooltip">Informes</div>
+        </router-link>
+
+        <router-link to="/dashboard/planificador" class="menu-item" active-class="active">
+          <i class="fas fa-project-diagram menu-icon"></i>
+          <span v-if="!sidebarCollapsed" class="menu-text">Planificador</span>
+          <div v-if="sidebarCollapsed" class="tooltip">Planificador</div>
         </router-link>
 
         <router-link v-if="moduloTareasActivo" to="/dashboard/tareas" class="menu-item" active-class="active">
@@ -81,7 +87,7 @@
       </header>
 
       <!-- Main view area -->
-      <main class="content-wrapper">
+      <main class="content-wrapper" :class="{ 'content-wrapper--app': esAplicacionIncrustada }">
         <div class="content-container">
           <router-view></router-view>
         </div>
@@ -111,7 +117,8 @@ export default {
         '/dashboard/puntos-suministro': 'Puntos de Suministro',
         '/dashboard/informes': 'Informes',
         '/dashboard/administracion': 'Administración',
-        '/dashboard/tareas': 'Gestión de Tareas'
+        '/dashboard/tareas': 'Gestión de Tareas',
+        '/dashboard/planificador': 'Planificador'
       },
       moduloTareasActivo: false
     };
@@ -120,6 +127,10 @@ export default {
     pageTitle() {
       // Retorna el título basado en la ruta actual
       return this.routes[this.$route.path] || 'Dashboard';
+    },
+    // Aplicaciones que se muestran dentro de la página (iframe) y gestionan su propio desplazamiento
+    esAplicacionIncrustada() {
+      return this.$route.path === '/dashboard/planificador';
     }
   },
   methods: {

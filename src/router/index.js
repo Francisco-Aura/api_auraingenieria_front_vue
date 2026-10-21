@@ -10,6 +10,7 @@ const PuntosSuministroComponent = () => import('@/components/CRM_Module/PuntosSu
 const InformesComponent = () => import('@/components/CRM_Module/Informes/InformesComponent.vue');
 const AdministracionComponent = () => import('@/components/CRM_Module/Administracion/AdministracionComponent.vue');
 const TareasComponent = () => import('@/components/CRM_Module/Tareas/TareasComponent.vue');
+const PlanificadorComponent = () => import('@/components/PlanificadorComponent.vue');
 
 // Define las rutas
 const routes = [
@@ -45,6 +46,11 @@ const routes = [
       {
         path: 'tareas',
         component: TareasComponent,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'planificador',
+        component: PlanificadorComponent,
         meta: { requiresAuth: true }
       }
     ]
