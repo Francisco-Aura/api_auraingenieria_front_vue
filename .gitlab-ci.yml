@@ -9,11 +9,43 @@ stages:
   before_script:
     - apt-get update -y
     - apt-get install -y openssh-client rsync
-    - eval "$(ssh-agent -s)"
-    - printf '%s\n' "$DEPLOY_PRIVATE_KEY" | ssh-add -
+
     - mkdir -p ~/.ssh
-    - ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+    - chmod 700 ~/.ssh
+
+    - |
+      if [ -f "$DEPLOY_PRIVATE_KEY" ]; then
+        echo "Usando clave SSH desde variable GitLab tipo File"
+        cp "$DEPLOY_PRIVATE_KEY" ~/.ssh/id_rsa_gitlab
+      else
+        echo "Usando clave SSH desde variable GitLab normal"
+        printf '%s\n' "$DEPLOY_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_gitlab
+      fi
+
+    - chmod 600 ~/.ssh/id_rsa_gitlab
+
+    - |
+      echo "=== Validando clave SSH ==="
+      ssh-keygen -y -f ~/.ssh/id_rsa_gitlab > /dev/null || {
+        echo "ERROR: La clave privada SSH no es valida"
+        exit 1
+      }
+
+    - |
+      echo "=== Registrando host SSH ==="
+      ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
     - chmod 600 ~/.ssh/known_hosts
+
+    - |
+      echo "=== Probando conexion SSH ==="
+      ssh \
+        -p "$DEPLOY_PORT" \
+        -i ~/.ssh/id_rsa_gitlab \
+        -o BatchMode=yes \
+        -o ConnectTimeout=10 \
+        "babenza@${DEPLOY_HOST}" \
+        "echo SSH_OK && hostname"
 
   script:
     - set -eo pipefail
@@ -31,31 +63,40 @@ stages:
     - echo "=== Compilando frontend ==="
     - npm run build
 
+    - echo "=== Verificando build ==="
     - test -f dist/index.html
 
     - echo "=== Preparando despliegue remoto ==="
-    - ssh
-      -p "$DEPLOY_PORT"
-      "babenza@${DEPLOY_HOST}"
-      "rm -rf /tmp/aura-frontend && mkdir -p /tmp/aura-frontend"
+    - |
+      ssh \
+        -p "$DEPLOY_PORT" \
+        -i ~/.ssh/id_rsa_gitlab \
+        "babenza@${DEPLOY_HOST}" \
+        "rm -rf /tmp/aura-frontend && mkdir -p /tmp/aura-frontend"
 
     - echo "=== Enviando frontend ==="
-    - rsync
-      -avz
-      --delete
-      -e "ssh -p ${DEPLOY_PORT}"
-      dist/
-      "babenza@${DEPLOY_HOST}:/tmp/aura-frontend/"
+    - |
+      rsync \
+        -avz \
+        --delete \
+        -e "ssh -p ${DEPLOY_PORT} -i /root/.ssh/id_rsa_gitlab" \
+        dist/ \
+        "babenza@${DEPLOY_HOST}:/tmp/aura-frontend/"
 
     - echo "=== Instalando frontend ==="
-    - ssh
-      -p "$DEPLOY_PORT"
-      "babenza@${DEPLOY_HOST}"
-      "bash /home/babenza/deploy_frontend.sh"
+    - |
+      ssh \
+        -p "$DEPLOY_PORT" \
+        -i ~/.ssh/id_rsa_gitlab \
+        "babenza@${DEPLOY_HOST}" \
+        "bash /home/babenza/deploy_frontend.sh"
 
 
 # ======================================================
 # DES
+# develop -> Raspberry DES
+# SSH -> 5.34.148.92:2223
+# WEB -> http://5.34.148.92:8081
 # ======================================================
 
 deploy_frontend_DES:
@@ -72,6 +113,8 @@ deploy_frontend_DES:
 
 # ======================================================
 # PRE
+# release -> Raspberry PRE
+# SSH -> 5.34.148.92:2222
 # ======================================================
 
 deploy_frontend_PRE:
@@ -88,6 +131,8 @@ deploy_frontend_PRE:
 
 # ======================================================
 # PRO
+# main -> Raspberry PRO
+# SSH -> 5.34.148.92:22
 # ======================================================
 
 deploy_frontend_PRO:
