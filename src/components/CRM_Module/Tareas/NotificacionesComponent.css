@@ -185,8 +185,9 @@
 }
 
 .notificaciones-header {
-  background: linear-gradient(135deg, var(--color-notification-orange) 0%, var(--color-notification-orange-light) 100%);
-  color: white;
+  background: linear-gradient(135deg, #2c3e50, #1f2d3d);
+  color: #fff;
+  font-weight: 600;
   padding: 1rem 1.2rem;
   border-radius: 12px 12px 0 0;
   display: flex;
@@ -211,24 +212,18 @@
 }
 
 .filtro-select {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  color: white;
-  padding: 0.5rem 0.8rem;
+  background: #fff;
+  color: #2c3e50;
+  border: 1px solid transparent;
   border-radius: 8px;
-  font-size: 0.8rem;
-  cursor: pointer;
+  font-family: inherit;
   font-weight: 500;
-  transition: all 0.2s ease;
-  min-width: 100px;
-  backdrop-filter: blur(10px);
 }
 
 .filtro-select:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+  border-color: #fcd700;
+  box-shadow: 0 0 0 3px rgba(252, 215, 0, 0.25);
 }
 
 .filtro-select:hover {
@@ -720,10 +715,22 @@
     gap: 0.8rem;
   }
   
-  .header-actions {
-    justify-content: space-between;
-    width: 100%;
-  }
+  .header-actions button {
+  background: #fcd700;
+  color: #000;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: filter 0.2s ease;
+}
+
+.header-actions button:hover:not(:disabled) {
+  filter: brightness(0.94);
+}
+
+.header-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
   
   .filtro-select {
     min-width: 80px;
