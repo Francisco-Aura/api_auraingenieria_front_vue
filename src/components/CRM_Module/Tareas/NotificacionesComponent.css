@@ -11,7 +11,7 @@
 .notification-btn {
   background: #2c3e50;
   border: none;
-  color: #fcd700;
+  color: #fcd700 !important;
   font-size: 1.1rem;
   cursor: pointer;
   padding: 0.5rem;
@@ -181,6 +181,10 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.fa-bell {
+  color: #fcd700 !important;
 }
 
 .notificaciones-header {
