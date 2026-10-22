@@ -9,9 +9,9 @@
 }
 
 .notification-btn {
-  background: transparent;
+  background: #2c3e50;
   border: none;
-  color: var(--text-primary);
+  color: #fcd700;
   font-size: 1.1rem;
   cursor: pointer;
   padding: 0.5rem;
@@ -21,8 +21,7 @@
 }
 
 .notification-btn:hover {
-  background-color: rgba(var(--color-notification-orange-rgb), 0.1);
-  color: var(--color-notification-orange);
+  background: #1f2d3d;
 }
 
 .notification-badge {
