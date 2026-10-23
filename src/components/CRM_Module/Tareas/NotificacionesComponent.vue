@@ -4,7 +4,7 @@
     <div class="notificaciones-trigger" @click="toggleMenu">
       <button class="btn-icon notification-btn" :class="{ 'campana-urgente': tareasVenciendoHoyLista.length > 0 }" aria-label="Notificaciones">
         <i class="fas fa-bell"></i>
-        <span v-if="contadorNoLeidas > 0" class="notification-badge">{{ contadorNoLeidas }}</span>
+        <span v-if="contadorNoLeidas > 0" class="notification-badge">{{ contadorNoLeidas > 99 ? '99+' : contadorNoLeidas }}</span>
         <span v-if="tareasVenciendoHoyLista.length > 0" class="vencimiento-badge-urgente" :title="`${tareasVenciendoHoyLista.length} tarea(s) vence(n) hoy`">!</span>
       </button>
     </div>
