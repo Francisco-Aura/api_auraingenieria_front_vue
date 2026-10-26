@@ -13,7 +13,7 @@
     <iframe
       class="planificador-frame"
       :class="{ 'planificador-oculto': cargando }"
-      src="/planificador/"
+      :src="src"
       title="Planificador de proyectos"
       @load="cargando = false"
     ></iframe>
@@ -25,6 +25,22 @@ export default {
   name: 'Planificador-Component',
   data() {
     return { cargando: true };
+  },
+  computed: {
+    // Un aviso de la intranet abre el planificador en su proyecto y su tarea (?proyecto=ID&tarea=ID)
+    src() {
+      const params = new URLSearchParams();
+      const { proyecto, tarea } = this.$route.query;
+      if (proyecto) params.set('proyecto', String(proyecto));
+      if (tarea) params.set('tarea', String(tarea));
+      const query = params.toString();
+      return '/planificador/' + (query ? '?' + query : '');
+    }
+  },
+  watch: {
+    src() {
+      this.cargando = true;
+    }
   }
 };
 </script>

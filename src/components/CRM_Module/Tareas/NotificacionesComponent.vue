@@ -23,6 +23,7 @@
               <option value="COMENTARIO">Comentarios</option>
               <option value="COMPLETADA">Completadas</option>
               <option value="MENCION">Menciones</option>
+              <option value="PLANIFICADOR">Planificador</option>
             </select>
           </div>
           <button 
@@ -186,7 +187,7 @@
                     {{ formatearFecha(notificacion.fechaCreacion) }}
                   </small>
                   <small class="notificacion-tarea">
-                    Tarea: {{ notificacion.tareaTitulo }}
+                    {{ notificacion.tipo === 'PLANIFICADOR' ? '' : 'Tarea: ' }}{{ notificacion.tareaTitulo }}
                   </small>
                 </div>
               </div>
@@ -488,6 +489,17 @@ export default {
         this.marcarComoLeida(notificacion.id)
       }
       
+      // Avisos del planificador: abrir el planificador en su proyecto y su tarea ("proyecto=ID&tarea=ID")
+      if (notificacion.tipo === 'PLANIFICADOR') {
+        const enlace = new URLSearchParams(notificacion.enlace || '')
+        const query = {}
+        if (enlace.get('proyecto')) query.proyecto = enlace.get('proyecto')
+        if (enlace.get('tarea')) query.tarea = enlace.get('tarea')
+        this.$router.push({ path: '/dashboard/planificador', query })
+        this.menuAbierto = false
+        return
+      }
+
       // Navegar a la tarea si es posible
       if (notificacion.tareaId) {
         this.$router.push({
@@ -512,6 +524,7 @@ export default {
         case 'COMENTARIO': return 'fa-comment-dots'
         case 'COMPLETADA': return 'fa-check-double'
         case 'MENCION': return 'fa-at'
+        case 'PLANIFICADOR': return 'fa-project-diagram'
         default: return 'fa-bell'
       }
     },
@@ -524,6 +537,7 @@ export default {
         case 'COMENTARIO': return 'tipo-color-comentario' // Púrpura - comentario
         case 'COMPLETADA': return 'tipo-color-completada' // Verde teal - completada
         case 'MENCION': return 'tipo-color-mencion' // Azul oscuro - mención
+        case 'PLANIFICADOR': return 'tipo-color-planificador' // Azul oscuro - planificador
         default: return 'tipo-color-general' // Naranja - general
       }
     },
