@@ -127,6 +127,7 @@
 .tipo-color-comentario { color: #9C27B0; }
 .tipo-color-completada { color: #00897B; }
 .tipo-color-mencion { color: #1565C0; }
+.tipo-color-planificador { color: #2c3e50; }
 .tipo-color-general { color: #FF9800; }
 
 .vencimiento-banner-dismiss {
@@ -623,12 +624,19 @@
 }
 
 .notification-badge {
-  top: -3px; 
-  right: -3px; 
-  width: 18px;
+  top: -3px;
+  right: -3px;
+  box-sizing: border-box;
+  width: auto;
+  min-width: 18px;
   height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  border-color: #2c3e50;
+  color: #2c3e50;
   font-size: 0.7rem;
-  outline: 2px solid white;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .sonido-activo {

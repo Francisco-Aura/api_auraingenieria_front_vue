@@ -179,7 +179,9 @@ export default {
     if (usuario) {
       this.nivelAcceso = usuario.nivelAcceso;
       this.userName = usuario.nombre || 'Usuario';
-      this.userRole = usuario.nivelAcceso === 1 ? 'Administrador' : 'Usuario';
+      // Bajo el nombre se muestra su grupo de trabajo; sin grupo (o con una sesión anterior al grupo), su nivel de acceso
+      const grupos = { comercial: 'Comercial', ingenieria: 'Ingeniería', administracion: 'Administración', coordinacion: 'Coordinación' };
+      this.userRole = grupos[usuario.grupo] || (usuario.nivelAcceso === 1 ? 'Administrador' : 'Usuario');
     } else {
       // Si no hay usuario autenticado, redirigir al login
       this.$router.push('/');
