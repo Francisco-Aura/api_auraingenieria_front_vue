@@ -524,7 +524,7 @@ export default {
         case 'COMENTARIO': return 'fa-comment-dots'
         case 'COMPLETADA': return 'fa-check-double'
         case 'MENCION': return 'fa-at'
-        case 'PLANIFICADOR': return 'fa-project-diagram'
+        case 'PLANIFICADOR': return 'fa-solar-panel'
         default: return 'fa-bell'
       }
     },
