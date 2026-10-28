@@ -327,3 +327,26 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* Modo oscuro: se invierten los colores de toda la página (el planificador, que va en un iframe, se invierte con ella) */
+html.tema-oscuro { filter: invert(0.92) hue-rotate(180deg); background: #fff; }
+html.tema-oscuro img,
+html.tema-oscuro video,
+html.tema-oscuro canvas,
+html.tema-oscuro picture { filter: invert(1) hue-rotate(180deg); }
+
+.boton-tema {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: var(--z-toast, 9999);
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 50%;
+  background: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+}
