@@ -1,12 +1,7 @@
+
 .notificaciones-container {
   position: relative;
-  --color-notification-orange: #fcd700;
-  --color-notification-orange-light: #ffe44d;
-  --color-notification-orange-rgb: 252, 215, 0;
 }
-
-.btn-link { color: #2c3e50; }
-.notification-badge { color: #000; }
 
 /* Trigger de notificaciones */
 .notificaciones-trigger {
@@ -14,28 +9,20 @@
 }
 
 .notification-btn {
-  background: #2c3e50 !important;
-  color: #fcd700 !important;
+  background: transparent;
   border: none;
-  border-radius: 50% !important;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  color: var(--text-primary);
+  font-size: 1.1rem;
   cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
   transition: var(--aura-transicion);
   position: relative;
 }
 
 .notification-btn:hover {
-  background: #1f2d3d !important;
-}
-
-.notification-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #2c3e50;
+  background-color: rgba(var(--color-notification-orange-rgb), 0.1);
+  color: var(--color-notification-orange);
 }
 
 /* Naranja oscuro: el blanco sobre el naranja claro de antes no llegaba a 3:1.
@@ -226,14 +213,12 @@
   overflow: hidden;
 }
 
-.fa-bell {
-  color: #fcd700 !important;
-}
-
+/* Misma cabecera que los modales de Aura (azul del menú y línea amarilla de
+   marca); antes era un bloque naranja que no se parecía a ninguna otra. */
 .notificaciones-header {
-  background: linear-gradient(135deg, #2c3e50, #1f2d3d);
-  color: #fff;
-  font-weight: 600;
+  background: linear-gradient(135deg, var(--color-text-dark) 0%, #1a252f 100%);
+  border-bottom: 3px solid var(--color-brand-yellow-hex);
+  color: white;
   padding: 1rem 1.2rem;
   border-radius: 12px 12px 0 0;
   display: flex;
@@ -257,18 +242,23 @@
 }
 
 .filtro-select {
-  background: #fff;
-  color: #2c3e50;
-  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  padding: 0.5rem 0.8rem;
   border-radius: 8px;
-  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
   font-weight: 500;
+  transition: var(--aura-transicion);
+  min-width: 100px;
 }
 
 .filtro-select:focus {
   outline: none;
-  border-color: #fcd700;
-  box-shadow: 0 0 0 3px rgba(252, 215, 0, 0.25);
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
 }
 
 .filtro-select:hover {
@@ -282,9 +272,9 @@
 }
 
 .btn-icon {
-  background: #fcd700;
-  border: 1px solid transparent;
-  color: #000;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: inherit;
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 8px;
@@ -299,9 +289,9 @@
 /* Sin subir 1 px al pasar el ratón, como el resto de botones (y sin el desenfoque de
    fondo, que sobre la cabecera opaca no se veía y obligaba a recomponer la capa) */
 .btn-icon:hover:not(:disabled) {
-  background-color: #fcd700;
-  filter: brightness(0.94);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* La campana también es .btn-icon: sobre la cabecera blanca de la página se queda con
@@ -313,9 +303,9 @@
 }
 
 .btn-icon:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
-  background: #fcd700;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Al actualizar gira solo el icono, no el botón cuadrado entero */
@@ -361,9 +351,9 @@
 
 .sin-notificaciones i {
   margin-bottom: 0.6rem;
-  opacity: 0.9;
+  opacity: 0.6;
   font-size: 2rem;
-  color: #fcd700;
+  color: var(--color-notification-orange);
 }
 
 /* Fallo al cargar: aviso en rojo con botón para reintentar */
@@ -696,27 +686,23 @@
 }
 
 .notification-badge {
-  top: -3px;
-  right: -3px;
-  box-sizing: border-box;
-  width: auto;
+  top: -3px; 
+  right: -3px; 
   min-width: 18px;
   height: 18px;
-  padding: 0 4px;
   border-radius: 9px;
-  border-color: #2c3e50;
-  color: #2c3e50;
   font-size: 0.7rem;
-  line-height: 1;
-  white-space: nowrap;
+  outline: 2px solid white;
 }
 
+/* Estilos para botón de sonido */
 .sonido-activo {
-  color: #000;
+  color: white;
+  transition: var(--aura-transicion);
 }
 
 .sonido-activo:hover {
-  color: #2c3e50;
+  color: var(--color-brand-yellow-hex);
 }
 
 .sonido-inactivo {
@@ -801,22 +787,10 @@
     gap: 0.8rem;
   }
   
-  .header-actions button {
-  background: #fcd700;
-  color: #000;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  transition: filter 0.2s ease;
-}
-
-.header-actions button:hover:not(:disabled) {
-  filter: brightness(0.94);
-}
-
-.header-actions button:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
+  .header-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
   
   .filtro-select {
     min-width: 80px;

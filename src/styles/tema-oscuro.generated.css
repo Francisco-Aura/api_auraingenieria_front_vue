@@ -1918,12 +1918,6 @@ html.tema-oscuro .metrica-descripcion {
 }
 
 /* ---- components/CRM_Module/Tareas/NotificacionesComponent.css ---- */
-html.tema-oscuro .btn-link {
-  color: #c5d0db;
-}
-html.tema-oscuro .notification-badge {
-  color: #f1f2f4;
-}
 html.tema-oscuro .notification-badge {
   border: 2px solid #2f3741;
 }
@@ -1971,9 +1965,8 @@ html.tema-oscuro .notificaciones-menu {
   background: #1b2127;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
-html.tema-oscuro .filtro-select {
-  background: #1b2127;
-  color: #c5d0db;
+html.tema-oscuro .filtro-select:focus {
+  border-color: rgba(47, 55, 65, 0.8);
 }
 html.tema-oscuro .filtro-select option {
   background: #1b2127;
@@ -2016,13 +2009,7 @@ html.tema-oscuro .notificacion-item-completa {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 html.tema-oscuro .notification-badge {
-  color: #c5d0db;
-}
-html.tema-oscuro .sonido-activo {
-  color: #f1f2f4;
-}
-html.tema-oscuro .sonido-activo:hover {
-  color: #c5d0db;
+  outline: 2px solid #2f3741;
 }
 
 /* ---- components/CRM_Module/Tareas/TareaAuditoriaModal.css ---- */
