@@ -13,6 +13,7 @@
 </template>
 
 <script>
+
 import { alternarTema, temaActual } from './modo-oscuro';
 
 export default {
