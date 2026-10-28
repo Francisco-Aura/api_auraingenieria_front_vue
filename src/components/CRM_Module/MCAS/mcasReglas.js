@@ -444,7 +444,7 @@ export function resumenRegla({ metodo, condiciones, calculo, motivo, numeroPagos
     case 'FEE_PERCENTAGE':
       calcula = `Comisión = consumo anual (MWh) × FEE del contrato (€/MWh) × ${numero(c.porcentaje) === null ? '…' : dec(numero(c.porcentaje))} %.`
       if (numero(c.feeMinimo) !== null)
-        calcula += ` Si el FEE del contrato es inferior a ${dec(numero(c.feeMinimo))} €/MWh no se calcula y la propuesta queda en «Error de cálculo».`
+        calcula += ` Si el FEE del contrato es inferior a ${dec(numero(c.feeMinimo))} €/MWh no se calcula y la propuesta queda en «Revisión manual».`
       if (numero(c.porcentaje) !== null)
         ejemplo = `Con ${dec(EJEMPLO_MWH)} MWh al año y FEE de ${dec(fee)} €/MWh → ${euros(EJEMPLO_MWH * fee * numero(c.porcentaje) / 100)}.`
       break

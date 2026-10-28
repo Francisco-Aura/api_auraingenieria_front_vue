@@ -258,24 +258,29 @@ test('los sonidos reutilizan un único contexto de audio', async () => {
   assert.equal(contextos, 1);
 });
 
-function cargarServicioNotificaciones(temporizadores) {
+function cargarServicioNotificaciones(temporizadores, tareasApi = { obtenerNotificacionesNoLeidas: async () => [] }) {
   const fuente = leer('src/services/notificacionesPolling.js')
     .replace(/^import\s+.*$/gm, '')
     .replace(/^export const notificacionesPolling = .*$/m, '')
     .replace(/^export default .*$/m, '');
   let config;
+  let conexiones = 0;
   class ClienteStomp {
-    constructor(opciones) { config = opciones; }
+    constructor(opciones) { config = opciones; conexiones += 1; }
     activate() {}
     deactivate() {}
     subscribe() {}
   }
-  const Servicio = Function('Client', 'SockJS', 'tareasApi', 'setInterval', 'clearInterval', `${fuente}\nreturn NotificacionesService;`)(
-    ClienteStomp, class {}, { obtenerNotificacionesNoLeidas: async () => [] }, temporizadores.setInterval, temporizadores.clearInterval);
-  return { servicio: new Servicio(), config: () => config };
+  const Servicio = Function('tareasApi', 'setInterval', 'clearInterval', `${fuente}\nreturn NotificacionesService;`)(
+    tareasApi, temporizadores.setInterval, temporizadores.clearInterval);
+  // Las librerías del WebSocket se cargan bajo demanda: aquí, las de mentira
+  const servicio = new Servicio(async () => ({ Client: ClienteStomp, SockJS: class {} }));
+  return { servicio, config: () => config, conexiones: () => conexiones };
 }
 
-test('al reconectar el WebSocket se detiene el sondeo de respaldo', () => {
+const esperarTareas = () => new Promise((resolver) => setImmediate(resolver));
+
+test('al reconectar el WebSocket se detiene el sondeo de respaldo', async () => {
   const activos = new Set();
   let siguiente = 1;
   const temporizadores = {
@@ -285,6 +290,7 @@ test('al reconectar el WebSocket se detiene el sondeo de respaldo', () => {
   const { servicio, config } = cargarServicioNotificaciones(temporizadores);
 
   servicio.iniciar(1);
+  await esperarTareas();
   config().onWebSocketError(new Error('servidor reiniciado'));
   assert.equal(activos.size, 1);
 
@@ -328,9 +334,11 @@ const desplazar = (dias) => new Date(hoy.getTime() + dias * 86400000).toISOStrin
 test('tras guardar un contrato, el contrato vigente del modal se actualiza', async () => {
   const vigenteNuevo = { id: 2, contrato: 'NUEVO', fechaInicio: desplazar(-5), fechaFin: desplazar(360) };
   const anterior = { id: 1, contrato: 'ANTERIOR', fechaInicio: desplazar(-400), fechaFin: desplazar(-6) };
+  const { fechaLocalISO, enVigorHoy, terminadoHoy } = await importar('src/utils/fechas.js');
   const componente = cargarComponente('src/components/CRM_Module/PuntosSuministro/PuntoSuministroComponent.vue', {
     axios: { get: async () => ({ data: [vigenteNuevo, anterior] }) },
     cargarExcelJS: async () => ({}), descargarLibroExcel: async () => {},
+    fechaLocalISO, enVigorHoy, terminadoHoy,
   });
   const ctx = crearContexto(componente, {
     modalPuntoSuministro: { id: 9 },
@@ -461,4 +469,33 @@ test('el título de la auditoría de una tarea se lee sobre su cabecera oscura',
   const regla = css.match(/div\.aura-modal-header\.aura-modal-header :is\(h1, h2, h3, \.modal-title\) \{([^}]*)\}/);
   assert.ok(regla, 'falta la regla de títulos de la cabecera común');
   assert.match(regla[1], /color:\s*#fff !important/);
+});
+
+test('pulsar una notificación abre el detalle de su tarea', () => {
+  const componente = cargarComponente('src/components/CRM_Module/Tareas/NotificacionesComponent.vue', {});
+  const rutas = [];
+  const ctx = crearContexto(componente, { $router: { push: (r) => rutas.push(r) }, menuAbierto: true });
+  ctx.marcarComoLeida = () => {};
+  componente.methods.handleClickNotificacion.call(ctx, { id: 1, tareaId: 42, leida: false });
+  assert.equal(rutas.length, 1);
+  assert.equal(rutas[0].path, '/dashboard/tareas');
+  assert.equal(String(rutas[0].query.abrirDetalle), '42');
+  assert.equal(ctx.menuAbierto, false);
+});
+
+test('una tarea de la notificación que no está en la lista se pide aparte y se abre', async () => {
+  const pedidas = [];
+  const componente = cargarComponente('src/components/CRM_Module/Tareas/TareasComponent.vue', {
+    tareasApi: { obtenerTareaPorId: async (id) => { pedidas.push(id); return { id: 77, titulo: 'De otro' }; } },
+  });
+  const ctx = crearContexto(componente, { tareas: [{ id: 5, titulo: 'Mía' }], $route: { query: { abrirDetalle: '77' } } });
+  await componente.methods.abrirDetalleDesdeRuta.call(ctx, '77');
+  assert.deepEqual(pedidas, ['77']);
+  assert.equal(ctx.mostrarModalDetalle, true);
+  assert.equal(ctx.tareaDetalle.titulo, 'De otro');
+
+  const ctx2 = crearContexto(componente, { tareas: [{ id: 5, titulo: 'Mía' }], $route: { query: { abrirDetalle: '5' } } });
+  await componente.methods.abrirDetalleDesdeRuta.call(ctx2, '5');
+  assert.deepEqual(pedidas, ['77'], 'si está en la lista no se pide');
+  assert.equal(ctx2.tareaDetalle.titulo, 'Mía');
 });

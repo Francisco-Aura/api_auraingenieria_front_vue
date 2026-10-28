@@ -45,7 +45,7 @@
                 <h3>Ubicación</h3>
               </div>
               <div class="form-compact-group">
-                <label for="direccion">Dirección <span class="required">*</span></label>
+                <label for="direccion">Dirección <span v-if="!modoConsulta" class="required">*</span></label>
                 <div class="input-with-icon">
                   <i class="fas fa-home icon-prefix"></i>
                   <input type="text" id="direccion" v-model="puntoLocal.direccion" :readonly="modoConsulta" :class="{ 'input-error': errores.direccion }" @input="errores.direccion = ''" maxlength="100" required />
@@ -54,17 +54,17 @@
               </div>
               <div class="form-row triple">
                 <div class="form-compact-group">
-                  <label for="codigoPostal">CP <span class="required">*</span></label>
+                  <label for="codigoPostal">CP <span v-if="!modoConsulta" class="required">*</span></label>
                   <input type="text" id="codigoPostal" v-model="puntoLocal.codigoPostal" :readonly="modoConsulta" :class="{ 'input-error': errores.codigoPostal }" @input="errores.codigoPostal = ''" maxlength="10" required />
                   <small v-if="errores.codigoPostal" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.codigoPostal }}</small>
                 </div>
                 <div class="form-compact-group">
-                  <label for="poblacion">Población <span class="required">*</span></label>
+                  <label for="poblacion">Población <span v-if="!modoConsulta" class="required">*</span></label>
                   <input type="text" id="poblacion" v-model="puntoLocal.poblacion" :readonly="modoConsulta" :class="{ 'input-error': errores.poblacion }" @input="errores.poblacion = ''" maxlength="100" required />
                   <small v-if="errores.poblacion" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.poblacion }}</small>
                 </div>
                 <div class="form-compact-group">
-                  <label for="provincia">Provincia <span class="required">*</span></label>
+                  <label for="provincia">Provincia <span v-if="!modoConsulta" class="required">*</span></label>
                   <input type="text" id="provincia" v-model="puntoLocal.provincia" :readonly="modoConsulta" :class="{ 'input-error': errores.provincia }" @input="errores.provincia = ''" maxlength="100" required />
                   <small v-if="errores.provincia" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.provincia }}</small>
                 </div>
@@ -109,13 +109,13 @@
                   </div>
                 </div>
               </div>
-              <small v-if="errores.cups" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.cups }}</small>
+              <small v-if="errores.cups" class="error-text error-text--bloque"><i class="fas fa-exclamation-circle"></i> {{ errores.cups }}</small>
               <div class="form-compact-group">
                 <label for="distribuidora">Distribuidora</label>
                 <div class="input-with-icon">
                   <i class="fas fa-building icon-prefix"></i>
                   <select id="distribuidora" v-model="puntoLocal.distribuidora" :disabled="modoConsulta">
-                    <option :value="null">Seleccione una distribuidora</option>
+                    <option :value="null">Seleccione...</option>
                     <option v-for="d in distribuidoras" :key="d.id" :value="d">{{ d.nombre }}</option>
                   </select>
                 </div>
@@ -132,7 +132,7 @@
                 <div class="form-compact-group">
                   <label for="exencionImpuestoElectrico">Exención imp. eléctrico</label>
                   <select id="exencionImpuestoElectrico" v-model="puntoLocal.exencionImpuestoElectrico" :disabled="modoConsulta">
-                    <option :value="null">Seleccione</option>
+                    <option :value="null">Seleccione...</option>
                     <option :value="true">SI</option>
                     <option :value="false">NO</option>
                   </select>
@@ -207,7 +207,7 @@
                   <div class="input-with-icon">
                     <i class="fas fa-tachometer-alt icon-prefix"></i>
                     <select id="tipoContador" v-model="puntoLocal.tipoContador" :disabled="modoConsulta">
-                      <option :value="null">Seleccione</option>
+                      <option :value="null">Seleccione...</option>
                       <option v-for="tc in tiposContador" :key="tc.id" :value="tc">{{ tc.nombre || tc.descripcion }}</option>
                     </select>
                   </div>
@@ -217,7 +217,7 @@
                   <div class="input-with-icon">
                     <i class="fas fa-broadcast-tower icon-prefix"></i>
                     <select id="tipoComunicacion" v-model="puntoLocal.tipoComunicacion" :disabled="modoConsulta">
-                      <option :value="null">Seleccione</option>
+                      <option :value="null">Seleccione...</option>
                       <option v-for="tcom in tiposComunicacion" :key="tcom.id" :value="tcom">{{ tcom.nombre || tcom.descripcion }}</option>
                     </select>
                   </div>
@@ -251,7 +251,7 @@
                   <div class="input-with-icon">
                     <i class="fas fa-key icon-prefix"></i>
                     <select id="propiedad" v-model="puntoLocal.propiedad" :disabled="modoConsulta">
-                      <option :value="null">Seleccione</option>
+                      <option :value="null">Seleccione...</option>
                       <option v-for="p in propiedades" :key="p.id" :value="p">{{ p.nombre }}</option>
                     </select>
                   </div>
@@ -321,7 +321,7 @@
               <div class="action-buttons">
                 <!-- Botón Dar de baja (solo si está activo y en modo actualizar) -->
                 <button v-if="!modoConsulta && !isCreating && puntoLocal.id && !puntoLocal.fechaBaja" type="button" @click="confirmarBajaPunto" class="btn-compact btn-danger">
-                  <i class="fas fa-map-marker-alt"></i> Dar de baja
+                  <i class="fas fa-ban"></i> Dar de baja
                 </button>
                 <!-- Botón Reactivar (solo si está dado de baja y en modo actualizar) -->
                 <button v-if="!modoConsulta && !isCreating && puntoLocal.id && puntoLocal.fechaBaja" type="button" @click="confirmarReactivarPunto" class="btn-compact btn-success">
@@ -338,7 +338,7 @@
                 <button type="button" class="btn btn-info" @click="activeTab = 'instalaciones'">
                   <i class="fas fa-tools"></i> Instalaciones
                 </button>
-                <button v-if="!modoConsulta" type="submit" class="btn btn-primary">
+                <button v-if="!modoConsulta" type="submit" :disabled="isSubmitting" class="btn btn-primary">
                   <i class="fas fa-save"></i> {{ isCreating ? 'Crear' : 'Actualizar' }}
                 </button>
               </div>
@@ -359,7 +359,7 @@
                   <div class="form-group-compact">
                     <label for="bateriaCondensadores">Batería de condensadores</label>
                     <div class="select-container-compact">
-                      <select id="bateriaCondensadores" v-model="puntoLocal.bateriaCondensadores" class="form-select-compact">
+                      <select id="bateriaCondensadores" v-model="puntoLocal.bateriaCondensadores" class="form-select-compact" :disabled="modoConsulta">
                         <option value="">Seleccione...</option>
                         <option value="SI">SI</option>
                         <option value="NO">NO</option>
@@ -371,14 +371,14 @@
                     <label for="potenciaBateria">Potencia batería</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-bolt icon-prefix"></i>
-                      <input type="text" id="potenciaBateria" v-model="puntoLocal.potenciaBateria" class="form-control-compact" maxlength="100" />
+                      <input type="text" id="potenciaBateria" v-model="puntoLocal.potenciaBateria" class="form-control-compact" maxlength="100" :readonly="modoConsulta" />
                     </div>
                   </div>
                   <div class="form-group-compact">
                     <label for="modeloBateria">Modelo</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-tag icon-prefix"></i>
-                      <input type="text" id="modeloBateria" v-model="puntoLocal.modeloBateria" class="form-control-compact" maxlength="100" />
+                      <input type="text" id="modeloBateria" v-model="puntoLocal.modeloBateria" class="form-control-compact" maxlength="100" :readonly="modoConsulta" />
                     </div>
                   </div>
                 </div>
@@ -392,7 +392,7 @@
                   <div class="form-group-compact">
                     <label for="instalacionFV">Instalación FV</label>
                     <div class="select-container-compact">
-                      <select id="instalacionFV" v-model="puntoLocal.instalacionFV" class="form-select-compact">
+                      <select id="instalacionFV" v-model="puntoLocal.instalacionFV" class="form-select-compact" :disabled="modoConsulta">
                         <option value="">Seleccione...</option>
                         <option value="SI">SI</option>
                         <option value="NO">NO</option>
@@ -404,21 +404,21 @@
                     <label for="kwInversor">KW inversor</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-microchip icon-prefix"></i>
-                      <input type="text" id="kwInversor" v-model="puntoLocal.kwInversor" class="form-control-compact" maxlength="100" />
+                      <input type="text" id="kwInversor" v-model="puntoLocal.kwInversor" class="form-control-compact" maxlength="100" :readonly="modoConsulta" />
                     </div>
                   </div>
                   <div class="form-group-compact">
                     <label for="kwPanelesSolares">KW paneles solares</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-sun icon-prefix"></i>
-                      <input type="text" id="kwPanelesSolares" v-model="puntoLocal.kwPanelesSolares" class="form-control-compact" maxlength="100" />
+                      <input type="text" id="kwPanelesSolares" v-model="puntoLocal.kwPanelesSolares" class="form-control-compact" maxlength="100" :readonly="modoConsulta" />
                     </div>
                   </div>
                   <div class="form-group-compact">
                     <label for="appMonitorizacion">APP monitorización</label>
                     <div class="select-container-compact">
-                      <select id="appMonitorizacion" v-model="puntoLocal.appMonitorizacionId" class="form-select-compact">
-                        <option value="">Seleccione...</option>
+                      <select id="appMonitorizacion" v-model="puntoLocal.appMonitorizacionId" class="form-select-compact" :disabled="modoConsulta">
+                        <option :value="null">Seleccione...</option>
                         <option v-for="app in appMonitorizacion" :key="app.id" :value="app.id">
                           {{ app.nombre }}
                         </option>
@@ -476,7 +476,7 @@
                   <div class="form-group-compact">
                     <label for="bateriaAlmacenamiento">Batería</label>
                     <div class="select-container-compact">
-                      <select id="bateriaAlmacenamiento" v-model="puntoLocal.bateriaAlmacenamiento" class="form-select-compact">
+                      <select id="bateriaAlmacenamiento" v-model="puntoLocal.bateriaAlmacenamiento" class="form-select-compact" :disabled="modoConsulta">
                         <option value="">Seleccione...</option>
                         <option value="SI">SI</option>
                         <option value="NO">NO</option>
@@ -488,13 +488,13 @@
                     <label for="potenciaBateriaAlmacenamiento">Potencia batería</label>
                     <div class="input-with-icon-compact">
                       <i class="fas fa-bolt icon-prefix"></i>
-                      <input type="text" id="potenciaBateriaAlmacenamiento" v-model="puntoLocal.potenciaBateriaAlmacenamiento" class="form-control-compact" maxlength="100" />
+                      <input type="text" id="potenciaBateriaAlmacenamiento" v-model="puntoLocal.potenciaBateriaAlmacenamiento" class="form-control-compact" maxlength="100" :readonly="modoConsulta" />
                     </div>
                   </div>
                   <div class="form-group-compact">
                     <label for="backup">Backup</label>
                     <div class="select-container-compact">
-                      <select id="backup" v-model="puntoLocal.backup" class="form-select-compact">
+                      <select id="backup" v-model="puntoLocal.backup" class="form-select-compact" :disabled="modoConsulta">
                         <option value="">Seleccione...</option>
                         <option value="SI">SI</option>
                         <option value="NO">NO</option>
@@ -505,7 +505,7 @@
                   <div class="form-group-compact">
                     <label for="peaksaving">Peaksaving</label>
                     <div class="select-container-compact">
-                      <select id="peaksaving" v-model="puntoLocal.peaksaving" class="form-select-compact">
+                      <select id="peaksaving" v-model="puntoLocal.peaksaving" class="form-select-compact" :disabled="modoConsulta">
                         <option value="">Seleccione...</option>
                         <option value="SI">SI</option>
                         <option value="NO">NO</option>
@@ -516,8 +516,8 @@
                   <div class="form-group-compact">
                     <label for="integracionSistemasFV">Integración con sistemas fotovoltaicos</label>
                     <div class="select-container-compact">
-                      <select id="integracionSistemasFV" v-model="puntoLocal.integracionSistemasFVId" class="form-select-compact">
-                        <option value="">Seleccione...</option>
+                      <select id="integracionSistemasFV" v-model="puntoLocal.integracionSistemasFVId" class="form-select-compact" :disabled="modoConsulta">
+                        <option :value="null">Seleccione...</option>
                         <option v-for="sistema in integracionSistemasFV" :key="sistema.id" :value="sistema.id">
                           {{ sistema.nombre }}
                         </option>
@@ -537,7 +537,7 @@
               <div class="action-buttons">
                 <!-- Botón Dar de baja (solo si está activo y en modo actualizar) -->
                 <button v-if="!modoConsulta && !isCreating && puntoLocal.id && !puntoLocal.fechaBaja" type="button" @click="confirmarBajaPunto" class="btn-compact btn-danger">
-                  <i class="fas fa-map-marker-alt"></i> Dar de baja
+                  <i class="fas fa-ban"></i> Dar de baja
                 </button>
                 <!-- Botón Reactivar (solo si está dado de baja y en modo actualizar) -->
                 <button v-if="!modoConsulta && !isCreating && puntoLocal.id && puntoLocal.fechaBaja" type="button" @click="confirmarReactivarPunto" class="btn-compact btn-success">
@@ -549,7 +549,7 @@
                   <span>Punto dado de baja el {{ formatFecha(puntoLocal.fechaBaja) }}</span>
                 </div>
                 <button type="button" class="btn-compact btn-secondary" @click="cerrarModal">
-                  <i class="fas fa-times"></i> Cancelar
+                  <i class="fas fa-times"></i> {{ modoConsulta ? 'Cerrar' : 'Cancelar' }}
                 </button>
                 <button v-if="!modoConsulta" type="submit" :disabled="isSubmitting" class="btn-compact btn-primary">
                   <i class="fas fa-save"></i> {{ isCreating ? 'Crear' : 'Actualizar' }}
@@ -566,6 +566,7 @@
 
 <script>
 import axios from 'axios';
+import { fechaES } from '@/utils/fechas';
 
 export default {
   name: 'ModalActualizarPunto',
@@ -581,12 +582,16 @@ export default {
     isCreating: {
       type: Boolean,
       default: false
+    },
+    // El padre lo activa mientras guarda: evita crear el mismo punto dos veces con un doble clic
+    isSubmitting: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
       activeTab: 'principal',
-      isSubmitting: false,
       errores: {},
       puntoLocal: { 
         autoconsumo: null,
@@ -672,43 +677,39 @@ export default {
         modalOverlay.style.zIndex = '1000';
       }
 
-      if (this.$swal) {
-        this.$swal.fire({
-          icon: 'error',
-          title: titulo,
-          text: mensaje,
-          confirmButtonColor: '#fcd700',
-          confirmButtonText: 'Entendido',
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-          zIndex: 10000,
-          backdrop: `
-            rgba(0,0,0,0.8)
-          `,
-          customClass: {
-            container: 'swal2-top-container'
-          }
-        }).then(() => {
-          // Restaurar el z-index del modal después de cerrar el alert
-          if (modalOverlay) {
-            modalOverlay.style.zIndex = '9999';
-          }
-        });
-      } else {
-        // Fallback si no hay SweetAlert2
-        this.$swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: mensaje
-        }).then(() => {
-          if (modalOverlay) {
-            modalOverlay.style.zIndex = '9999';
-          }
-        })
-      }
+      this.$swal.fire({
+        icon: 'error',
+        title: titulo,
+        text: mensaje,
+        confirmButtonColor: '#fcd700',
+        confirmButtonText: 'Entendido',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        zIndex: 10000,
+        backdrop: `
+          rgba(0,0,0,0.8)
+        `,
+        customClass: {
+          container: 'swal2-top-container'
+        }
+      }).then(() => {
+        // Restaurar el z-index del modal después de cerrar el alert
+        if (modalOverlay) {
+          modalOverlay.style.zIndex = '9999';
+        }
+      });
     },
 
-    // Método para normalizar valores CUPS antes del envío
+    // Lleva a la vista el primer campo en rojo: si el formulario estaba desplazado hacia
+    // abajo (o se guardó desde «Instalaciones»), el aviso pedía revisar campos que no se veían
+    irAlPrimerError() {
+      this.$nextTick(() => {
+        const campo = this.$el?.querySelector?.('.tab-content[data-active-tab="principal"] .input-error');
+        if (campo && campo.scrollIntoView) campo.scrollIntoView({ block: 'center' });
+      });
+    },
+
+        // Método para normalizar valores CUPS antes del envío
     normalizarCups(cups) {
       
       // Manejar todos los casos problemáticos
@@ -810,23 +811,27 @@ export default {
         }
       }
 
-      // Mapear objetos relacionados
+      // Mapear objetos relacionados. Si una lista no se pudo cargar (vacía) se conserva el
+      // valor que ya tenía el punto: con null, al guardar se borraba en la base de datos
+      const enLista = (lista, actual, coincide) =>
+        lista.length ? (lista.find(coincide) || null) : actual;
+
       if (typeof newVal.distribuidora === 'string') {
         this.puntoLocal.distribuidora = this.distribuidoras.find(d => d.nombre === newVal.distribuidora) || null;
       } else if (newVal.distribuidora && newVal.distribuidora.id) {
-        this.puntoLocal.distribuidora = this.distribuidoras.find(d => d.id === newVal.distribuidora.id) || null;
+        this.puntoLocal.distribuidora = enLista(this.distribuidoras, newVal.distribuidora, d => d.id === newVal.distribuidora.id);
       }
 
       if (newVal.tipoContador && newVal.tipoContador.id) {
-        this.puntoLocal.tipoContador = this.tiposContador.find(tc => tc.id === newVal.tipoContador.id) || null;
+        this.puntoLocal.tipoContador = enLista(this.tiposContador, newVal.tipoContador, tc => tc.id === newVal.tipoContador.id);
       }
 
       if (newVal.tipoComunicacion && newVal.tipoComunicacion.id) {
-        this.puntoLocal.tipoComunicacion = this.tiposComunicacion.find(tcom => tcom.id === newVal.tipoComunicacion.id) || null;
+        this.puntoLocal.tipoComunicacion = enLista(this.tiposComunicacion, newVal.tipoComunicacion, tcom => tcom.id === newVal.tipoComunicacion.id);
       }
 
       if (newVal.propiedad && newVal.propiedad.id) {
-        this.puntoLocal.propiedad = this.propiedades.find(p => p.id === newVal.propiedad.id) || null;
+        this.puntoLocal.propiedad = enLista(this.propiedades, newVal.propiedad, p => p.id === newVal.propiedad.id);
       }
     },
     cerrarModal() {
@@ -866,6 +871,7 @@ export default {
       if (!valido) {
         this.activeTab = 'principal';
         this.mostrarError('Revise los campos marcados en rojo.', 'Campos obligatorios');
+        this.irAlPrimerError();
         return;
       }
 
@@ -960,7 +966,7 @@ export default {
           icon: 'warning',
           iconColor: '#b56767',
           showCancelButton: true,
-          confirmButtonText: '<i class="fas fa-map-marker-alt"></i> Confirmar baja',
+          confirmButtonText: '<i class="fas fa-ban"></i> Confirmar baja',
           cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
           confirmButtonColor: '#d33',
           focusCancel: false,
@@ -978,8 +984,10 @@ export default {
         });
 
         if (isConfirmed && fechaBaja) {
-          this.puntoLocal.fechaBaja = fechaBaja;
-          
+          // La fecha va en el envío; el formulario no se marca como dado de baja hasta que
+          // el servidor lo confirme (si fallaba, quedaba «de baja» y un Guardar posterior
+          // lo daba de baja sin querer)
+
           // Normalizar CUPS antes del envío
           const cupsLuzNormalizado = this.normalizarCups(this.puntoLocal.cupsluz);
           const cupsGasNormalizado = this.normalizarCups(this.puntoLocal.cupsgas);
@@ -1142,13 +1150,7 @@ export default {
     },
 
     formatFecha(fecha) {
-      if (!fecha) return '';
-      const fechaObj = new Date(fecha);
-      return fechaObj.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
+      return fechaES(fecha, '');
     }
   }
 };

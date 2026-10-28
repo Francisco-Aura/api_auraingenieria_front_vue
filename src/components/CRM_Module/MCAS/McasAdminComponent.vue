@@ -56,9 +56,11 @@
     <div class="estado-modulo" :class="moduloListo ? 'estado-modulo--listo' : 'estado-modulo--pendiente'" role="status">
       <div class="estado-modulo-cabecera">
         <i :class="moduloListo ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'" aria-hidden="true"></i>
-        <strong>{{ moduloListo
-          ? 'MCAS está listo: al guardar un contrato se calcula su propuesta de comisión'
-          : 'MCAS todavía no puede calcular todas las comisiones: revise lo marcado en naranja' }}</strong>
+        <strong>{{ estadoModuloSinDatos
+          ? 'No se ha podido comprobar si MCAS puede calcular las comisiones'
+          : moduloListo
+            ? 'MCAS está listo: al guardar un contrato se calcula su propuesta de comisión'
+            : 'MCAS todavía no puede calcular todas las comisiones: revise lo marcado en naranja' }}</strong>
       </div>
       <div class="estado-modulo-lista">
         <div v-for="c in estadoModulo" :key="c.id" class="estado-modulo-item" :class="c.ok ? 'is-ok' : 'is-pendiente'">
@@ -287,8 +289,8 @@
         </div>
       </div>
 
-      <div class="table-responsive">
-        <table class="data-table">
+      <div class="table-responsive" v-desborde-tabla>
+        <table class="data-table data-table--compacta data-table--acciones-fijas">
           <thead>
             <tr>
               <th v-if="tabActivo === 'conjuntos'" class="th-col-seleccion">
@@ -466,7 +468,7 @@
                   <td><span class="badge badge--neutral">{{ r.prioridad ?? '—' }}</span></td>
                   <td class="celda-regla" :title="[nombreRegla(r), resumenesReglas[r.id].aplica, resumenesReglas[r.id].calcula].join('\n')">
                     <span class="regla-nombre">
-                      {{ nombreRegla(r) }}
+                      <span class="regla-nombre-texto">{{ nombreRegla(r) }}</span>
                       <span v-if="r.nombre" class="celda-codigo celda-codigo--secundario">{{ r.codigo }}</span>
                     </span>
                     <span class="celda-secundaria regla-resumen"><strong>Se aplica a:</strong> {{ resumenesReglas[r.id].aplica }}</span>
@@ -672,7 +674,8 @@
     =================================================== -->
 
     <!-- Modal Producto Comercial -->
-    <div v-if="modalProducto" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-producto-titulo" @click.self="cerrarModales">
+    <!-- Los formularios no se cierran al pulsar fuera: se perdería lo escrito (solo con Cancelar, la X o Esc) -->
+    <div v-if="modalProducto" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-producto-titulo">
       <div class="mcas-modal">
         <div class="mcas-modal-header aura-modal-header">
           <div class="mcas-modal-title">
@@ -711,12 +714,12 @@
                     Código <span class="required-asterisk">*</span>
                     <i class="fas fa-info-circle help-icon" title="Código interno único. El motor lo usa para emparejar con las condiciones de la regla."></i>
                   </label>
-                  <input id="mcas-prod-codigo" v-model="formProducto.codigo" class="mcas-input mcas-input--codigo" :class="claseError('codigo')" placeholder="PLAN_PERSONALIZADO">
+                  <input id="mcas-prod-codigo" v-model="formProducto.codigo" class="mcas-input mcas-input--codigo" :class="claseError('codigo')" placeholder="Ej: PLAN_PERSONALIZADO">
                   <small v-if="erroresForm.codigo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.codigo }}</small>
                 </div>
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-prod-nombre">Nombre <span class="required-asterisk">*</span></label>
-                  <input id="mcas-prod-nombre" v-model="formProducto.nombre" class="mcas-input" :class="claseError('nombre')" placeholder="Plan Personalizado">
+                  <input id="mcas-prod-nombre" v-model="formProducto.nombre" class="mcas-input" :class="claseError('nombre')" placeholder="Ej: Plan Personalizado">
                   <small v-if="erroresForm.nombre" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.nombre }}</small>
                 </div>
               </div>
@@ -742,7 +745,7 @@
                     Código de zona
                     <i class="fas fa-info-circle help-icon" title="Ej: ZBR, ZAR (Iberdrola)"></i>
                   </label>
-                  <input id="mcas-prod-zona" v-model="formProducto.codigoZona" class="mcas-input" placeholder="ZBR, ZAR...">
+                  <input id="mcas-prod-zona" v-model="formProducto.codigoZona" class="mcas-input" placeholder="Ej: ZBR, ZAR">
                 </div>
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-prod-go">Código GO/OC</label>
@@ -792,7 +795,7 @@
     </div>
 
     <!-- Modal Tabla de comisiones -->
-    <div v-if="modalConjunto" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-conjunto-titulo" @click.self="cerrarModales">
+    <div v-if="modalConjunto" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-conjunto-titulo">
       <div class="mcas-modal">
         <div class="mcas-modal-header aura-modal-header">
           <div class="mcas-modal-title">
@@ -829,7 +832,7 @@
                 </div>
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-conj-version">Versión</label>
-                  <input id="mcas-conj-version" v-model="formConjunto.version" class="mcas-input" placeholder="1.0">
+                  <input id="mcas-conj-version" v-model="formConjunto.version" class="mcas-input" placeholder="Ej: 1.0">
                 </div>
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-conj-comercializadora">Comercializadora <span class="required-asterisk">*</span></label>
@@ -893,11 +896,11 @@
                     Archivo origen
                     <i class="fas fa-info-circle help-icon" title="Nombre del fichero Excel del que provienen las reglas (solo referencia documental)"></i>
                   </label>
-                  <input id="mcas-conj-archivo" v-model="formConjunto.archivoOrigen" class="mcas-input" placeholder="COMISIONES NEXO A 16032026.xlsx">
+                  <input id="mcas-conj-archivo" v-model="formConjunto.archivoOrigen" class="mcas-input" placeholder="Ej: COMISIONES NEXO A 16032026.xlsx">
                 </div>
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-conj-hoja">Hoja origen</label>
-                  <input id="mcas-conj-hoja" v-model="formConjunto.hojaOrigen" class="mcas-input" placeholder="ENDESA">
+                  <input id="mcas-conj-hoja" v-model="formConjunto.hojaOrigen" class="mcas-input" placeholder="Ej: ENDESA">
                 </div>
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-conj-fecha-origen">
@@ -932,7 +935,7 @@
     </div>
 
     <!-- Modal Regla de Comisión -->
-    <div v-if="modalRegla" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-regla-titulo" @click.self="cerrarModales">
+    <div v-if="modalRegla" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-regla-titulo" @click.self="soloLecturaRegla && cerrarModales()">
       <div class="mcas-modal mcas-modal--ancho">
         <div class="mcas-modal-header aura-modal-header">
           <div class="mcas-modal-title">
@@ -1365,7 +1368,7 @@
     </div>
 
     <!-- Modal Fila de la tabla (vista avanzada) -->
-    <div v-if="modalRango" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-rango-titulo" @click.self="cerrarModales">
+    <div v-if="modalRango" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-rango-titulo">
       <div class="mcas-modal">
         <div class="mcas-modal-header aura-modal-header">
           <div class="mcas-modal-title">
@@ -1389,7 +1392,7 @@
                     Dimensión <span class="required-asterisk">*</span>
                     <i class="fas fa-info-circle help-icon" title="consumo_kwh, consumo_mwh, potencia_kw, tarifa_acceso..."></i>
                   </label>
-                  <input id="mcas-rango-dimension" v-model="formRango.dimension" class="mcas-input mcas-input--codigo" :class="claseError('dimension')" list="dimensiones-list" placeholder="consumo_kwh" data-autofocus>
+                  <input id="mcas-rango-dimension" v-model="formRango.dimension" class="mcas-input mcas-input--codigo" :class="claseError('dimension')" list="dimensiones-list" placeholder="Ej: consumo_kwh" data-autofocus>
                   <datalist id="dimensiones-list">
                     <option value="consumo_kwh"/>
                     <option value="consumo_mwh"/>
@@ -1630,7 +1633,7 @@
     </div>
 
     <!-- Modal Política de retrocesión -->
-    <div v-if="modalRetrocesion" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-retro-titulo" @click.self="cerrarModales">
+    <div v-if="modalRetrocesion" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-retro-titulo" @click.self="soloLecturaRetrocesion && cerrarModales()">
       <div class="mcas-modal mcas-modal--ancho">
         <div class="mcas-modal-header aura-modal-header">
           <div class="mcas-modal-title">
@@ -1666,7 +1669,7 @@
                   </div>
                   <div class="form-group">
                     <label class="mcas-label" for="mcas-retro-version">Versión <span class="required-asterisk">*</span></label>
-                    <input id="mcas-retro-version" v-model="formRetrocesion.version" class="mcas-input" :class="claseError('version')" placeholder="1.0">
+                    <input id="mcas-retro-version" v-model="formRetrocesion.version" class="mcas-input" :class="claseError('version')" placeholder="Ej: 1.0">
                     <small v-if="erroresForm.version" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.version }}</small>
                   </div>
                   <div class="form-group">
@@ -1843,7 +1846,7 @@
     </div>
 
     <!-- Modal Nueva versión de una tabla de comisiones -->
-    <div v-if="modalNuevaVersion" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-version-titulo" @click.self="cerrarModales">
+    <div v-if="modalNuevaVersion" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-version-titulo">
       <div class="mcas-modal">
         <div class="mcas-modal-header aura-modal-header">
           <div class="mcas-modal-title">
@@ -2018,6 +2021,7 @@ import { COLORES_DIALOGO, confirmar, mostrarAviso, mostrarError, mostrarExito, t
 // En una sola línea: los tests cargan este <script> en Node (tests/unit/helpers/sfc.js) y solo reconocen import de una línea.
 import { OPCIONES_CONDICION, TIPOS_LINEA, condicionesVacias, leerCondiciones, escribirCondiciones, normalizarCondiciones, validarCondiciones, calculoVacio, leerCalculo, escribirCalculo, validarCalculo, lineaVacia, leerPago, escribirPago, resumenRegla, resumenDeRegla, NOMBRES_METODO, aFactor, aPorcentaje } from './mcasReglas'
 import { fechaLocalISO } from '@/utils/fechas'
+import { escaparHtml } from '@/utils/html'
 import { comprobacionesModulo } from './mcasEstados'
 import { estadoPorComercializadora, comprobacionActivacion, propuestaNuevaVersion, agruparIncidencias, nombreConjunto, nombreRegla } from './mcasActivacion'
 import McasMatrizEditor from './McasMatrizEditor.vue'
@@ -2134,8 +2138,8 @@ const COLUMNAS = {
     { key: 'comercializadora', label: 'Comercializadora', icono: 'fas fa-building', ancho: '17%', filtro: 'texto',
       valor: (c, vm) => [vm.nombreComercializadora(c.idComercializadora), vm.nombreGestora(c.idGestora)].filter(Boolean).join(' '),
       orden: (c, vm) => vm.nombreComercializadora(c.idComercializadora) },
-    { key: 'fase', label: 'Fase', icono: 'fas fa-tag', ancho: '9%', filtro: 'select', opciones: FASES, valor: c => c.fasePrecio },
-    { key: 'vigencia', label: 'Vigencia', icono: 'fas fa-calendar-alt', ancho: '17%', filtro: 'texto',
+    { key: 'fase', label: 'Fase', icono: 'fas fa-tag', ancho: '10%', filtro: 'select', opciones: FASES, valor: c => c.fasePrecio },
+    { key: 'vigencia', label: 'Vigencia', icono: 'fas fa-calendar-alt', ancho: '16%', filtro: 'texto',
       valor: (c, vm) => vm.formatVigencia(c.vigenciaDesde, c.vigenciaHasta), orden: c => c.vigenciaDesde },
     { key: 'estado', label: 'Estado', icono: 'fas fa-tasks', ancho: '10%', filtro: 'select', opciones: ESTADOS_CONJUNTO, valor: c => c.estado },
     { key: 'origen', label: 'Origen', icono: 'fas fa-file-excel', ancho: '14%', filtro: 'texto',
@@ -2201,10 +2205,6 @@ function jsonValido(texto) {
   } catch {
     return false
   }
-}
-
-function escaparHtml(texto) {
-  return String(texto ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 }
 
 /** Lo que, si cambia, obliga a volver a pedir las reglas de una tabla para el panel. */
@@ -2428,7 +2428,8 @@ export default {
       reglasPanelFirmas: {},
       reglasPanelSecuencia: 0,
       reglasPanelMarcas: {},
-      panelComercializadoras: true,
+      // Plegado: el resumen de la cabecera ya da las cifras y así la tabla queda a la vista
+      panelComercializadoras: false,
       // Activación, nueva versión y menú «Más acciones»
       seleccionActivar: [],
       menuConjunto: null,
@@ -2568,7 +2569,17 @@ export default {
       if (actual && !unicos.includes(actual)) unicos.push(actual)
       return unicos.map(n => ({ value: n, label: n }))
     },
+    /** Sin los interruptores o sin las tablas no se puede saber qué falta: no se dan por buenas ni por malas. */
+    estadoModuloSinDatos() {
+      return this.flagsError === true || this.errorConjuntos === true
+    },
     estadoModulo() {
+      if (this.estadoModuloSinDatos) {
+        return [{
+          id: 'sin-datos', ok: false, titulo: 'No se pudo comprobar el estado',
+          detalle: 'No se pudieron cargar los interruptores o las tablas de comisiones. Pulse «Actualizar» para volver a intentarlo.',
+        }]
+      }
       // «Listo» exige además que ninguna comercializadora tenga un borrador sin versión vigente.
       return [
         ...comprobacionesModulo({
@@ -3071,7 +3082,9 @@ export default {
     },
     onKeydown(e) {
       if (e.key !== 'Escape' || this.$swal.isVisible()) return
+      // Lo que se atiende aquí no lo repite el Esc general de los modales (services/capasModales.js)
       if (this.menuConjunto !== null) {
+        e.preventDefault()
         this.cerrarMenu()
         return
       }
@@ -3079,6 +3092,7 @@ export default {
       if (this.modalMatriz) return
       if (this.modalProducto || this.modalConjunto || this.modalRegla || this.modalRango || this.modalSimulacion
         || this.modalRetrocesion || this.modalNuevaVersion || this.modalActivacion) {
+        e.preventDefault()
         this.cerrarModales()
       }
     },

@@ -54,7 +54,7 @@
                 <input 
                   type="text" 
                   v-model="busquedaCliente"
-                  @input="buscarClientes"
+                  @input="alEscribirCliente"
                   @focus="mostrarDropdownClientes = true"
                   class="form-control"
                   placeholder="Escribe el nombre del cliente..."
@@ -399,9 +399,13 @@ export default {
   },
   beforeUnmount() {
     document.removeEventListener('click', this.handleClickOutside)
+    clearTimeout(this.temporizadorBusquedaCliente)
   },
   methods: {
     inicializarFormulario() {
+      // El modal no se desmonta entre aperturas: nada de la anterior (avisos en rojo,
+      // fechas, cliente) puede quedarse en esta
+      this.errores = {}
 
       if (this.tarea && this.tarea.id) {
 
@@ -431,15 +435,23 @@ export default {
         
         // Formatear fechas para los inputs (día y hora locales: la fecha del
         // servidor no lleva zona horaria y no debe pasarse a UTC)
+        // Una tarea sin fechas se edita sin fechas (antes salían las de la tarea abierta
+        // antes y se guardaban en esta)
         if (this.tarea.fechaInicio) {
           const fechaIni = new Date(this.tarea.fechaInicio)
           this.fechaInicio = fechaLocalISO(fechaIni)
           this.horaInicio = fechaIni.toTimeString().slice(0, 5)
+        } else {
+          this.fechaInicio = ''
+          this.horaInicio = '09:00'
         }
         if (this.tarea.fechaVencimiento) {
           const fecha = new Date(this.tarea.fechaVencimiento)
           this.fechaVencimiento = fechaLocalISO(fecha)
           this.horaVencimiento = fecha.toTimeString().slice(0, 5)
+        } else {
+          this.fechaVencimiento = ''
+          this.horaVencimiento = '18:00'
         }
         
         // Cliente relacionado
@@ -453,6 +465,11 @@ export default {
         } else if (this.tarea.clientePotencialNombre) {
           this.busquedaCliente = ''
           this.esPotencial = true
+          this.puntosSuministroCliente = []
+        } else {
+          // Sin cliente: no se queda a la vista el de la tarea anterior
+          this.busquedaCliente = ''
+          this.clientesFiltrados = []
           this.puntosSuministroCliente = []
         }
 
@@ -508,7 +525,30 @@ export default {
       
     },
 
+    // Se busca cuando se deja de teclear un momento (antes, una petición por tecla); quitar
+    // el cliente ligado o vaciar la lista es inmediato
+    alEscribirCliente() {
+      clearTimeout(this.temporizadorBusquedaCliente)
+      if (this.busquedaCliente.trim().length === 0) {
+        this.buscarClientes()
+        return
+      }
+      this.temporizadorBusquedaCliente = setTimeout(() => this.buscarClientes(), 250)
+    },
+
     async buscarClientes() {
+      // Se busca a cada tecla: solo vale la respuesta de la última búsqueda (una
+      // anterior que llegue tarde no puede sustituir a la lista buena)
+      this.peticionClientes = (this.peticionClientes || 0) + 1
+      const peticion = this.peticionClientes
+      // Al vaciar «Dirigido a», la tarea deja de estar ligada al cliente que tenía (antes se
+      // seguía guardando con él aunque no se viera). Escribir sin vaciarlo no lo quita, como
+      // siempre: una tecla de más y su borrado no pueden dejar la tarea sin cliente ni CUPS
+      if (this.formulario.clienteRelacionadoId && this.busquedaCliente.trim().length === 0) {
+        this.formulario.clienteRelacionadoId = null
+        this.formulario.cups = null
+        this.puntosSuministroCliente = []
+      }
       if (this.busquedaCliente.length === 0) {
         this.clientesFiltrados = []
         this.mostrarDropdownClientes = false
@@ -520,6 +560,7 @@ export default {
 
       try {
         const data = await tareasApi.buscarClientes({ q: this.busquedaCliente, page: 0, size: 10 })
+        if (peticion !== this.peticionClientes) return
         if (data) {
           this.clientesFiltrados = Array.isArray(data?.content) ? data.content : []
         } else {
@@ -527,6 +568,7 @@ export default {
         }
 
       } catch (error) {
+        if (peticion !== this.peticionClientes) return
         console.error('Error buscando clientes:', error)
         this.clientesFiltrados = []
       }
@@ -658,12 +700,16 @@ export default {
     },
 
     async cargarPuntosSuministroCliente(clienteId) {
+      // Si se cambia de cliente rápido, los CUPS del anterior no pueden llegar después
+      this.peticionCups = (this.peticionCups || 0) + 1
+      const peticion = this.peticionCups
       if (!clienteId) {
         this.puntosSuministroCliente = []
         return
       }
       try {
         const data = await tareasApi.obtenerCarteraCupsCliente(clienteId)
+        if (peticion !== this.peticionCups) return
         if (data) {
           // Construir lista con el CUPS luz y gas no vacíos
           const lista = []
@@ -676,6 +722,7 @@ export default {
           this.puntosSuministroCliente = []
         }
       } catch (e) {
+        if (peticion !== this.peticionCups) return
         console.error('Error cargando puntos de suministro del cliente:', e)
         this.puntosSuministroCliente = []
       }

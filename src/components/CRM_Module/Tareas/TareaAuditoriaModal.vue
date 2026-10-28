@@ -1,5 +1,5 @@
 <template>
-  <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="auditoria-modal-title" @click="cerrar">
+  <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="auditoria-modal-title" @click.stop="cerrar">
     <div class="modal-auditoria" @click.stop>
       <!-- Header -->
       <div class="modal-header aura-modal-header">
@@ -147,7 +147,7 @@
               
               <div class="timeline-content">
                 <div class="timeline-header">
-                  <span class="estado-badge" :style="{ backgroundColor: evento.estadoColor || '#6c757d' }">
+                  <span class="estado-badge" :style="{ backgroundColor: evento.estadoColor || '#6c757d', color: colorTextoSobre(evento.estadoColor || '#6c757d') }">
                     {{ formatearEstadoNombre(evento.estadoNombre) }}
                   </span>
                   <span class="timeline-fecha">
@@ -294,7 +294,9 @@
 <script>
 import { tareasApi } from '@/services/tareasApi'
 import { cargarExcelJS, descargarLibroExcel } from '@/utils/excel'
-import { fechaLocalISO } from '@/utils/fechas'
+import { fechaLocalISO, fechaHoraES } from '@/utils/fechas'
+import { nombreEstado } from '@/utils/tareas'
+import { colorTextoSobre } from '@/utils/colores'
 
 export default {
   name: 'TareaAuditoriaModal',
@@ -342,6 +344,7 @@ export default {
     }
   },
   methods: {
+    colorTextoSobre,
     async cargarAuditoria() {
       this.cargando = true
       try {
@@ -384,14 +387,7 @@ export default {
     },
 
     formatearFecha(fecha) {
-      if (!fecha) return '-'
-      return new Date(fecha).toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      return fechaHoraES(fecha)
     },
 
     formatearFechaCompleta(fecha) {
@@ -407,8 +403,7 @@ export default {
     },
 
     formatearEstadoNombre(nombre) {
-      if (!nombre) return ''
-      return nombre.replace(/_/g, ' ').toLowerCase().replace(/(^|\s)\S/g, t => t.toUpperCase())
+      return nombreEstado(nombre)
     },
 
     calcularDuracionEvento(evento) {
@@ -602,8 +597,8 @@ export default {
             duracion = this.formatearDuracion(h.duracionActivaSegundos)
           } 
           // Si es un estado bloqueado
-          else if (h.tiempoBloqueadoSegundos && h.tiempoBloqueadoSegundos > 0) {
-            duracion = this.formatearDuracion(h.tiempoBloqueadoSegundos)
+          else if (h.tiempoBloqueoSegundos && h.tiempoBloqueoSegundos > 0) {
+            duracion = this.formatearDuracion(h.tiempoBloqueoSegundos)
           }
           // Si no tiene duraciones específicas, intentar calcular desde las fechas
           else if (h.fechaFin && h.fechaInicio) {

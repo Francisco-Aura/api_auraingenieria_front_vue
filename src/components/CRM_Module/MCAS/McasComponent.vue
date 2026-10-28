@@ -98,8 +98,8 @@
         </div>
       </div>
 
-      <div class="table-responsive">
-        <table class="data-table data-table--acciones-fijas">
+      <div class="table-responsive" v-desborde-tabla>
+        <table class="data-table data-table--compacta data-table--acciones-fijas">
           <thead>
             <tr>
               <th class="th-col-seleccion">
@@ -120,7 +120,7 @@
               </th>
               <th class="sortable th-col-cliente">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('nombreCliente')">
+                  <div class="column-title" @click="sortBy('nombreCliente')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('nombreCliente')" @keydown.space.prevent="sortBy('nombreCliente')">
                     <i class="fas fa-user mr-2"></i>Cliente / CUPS
                     <i :class="getSortIcon('nombreCliente')"></i>
                   </div>
@@ -131,7 +131,7 @@
               </th>
               <th class="sortable th-col-contrato">
                 <div class="column-header">
-                  <div class="column-title" title="Número de contrato y comercializadora" @click="sortBy('numeroContrato')">
+                  <div class="column-title" title="Número de contrato y comercializadora" @click="sortBy('numeroContrato')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('numeroContrato')" @keydown.space.prevent="sortBy('numeroContrato')">
                     <i class="fas fa-file-contract mr-2"></i>Contrato · Comercializadora
                     <i :class="getSortIcon('numeroContrato')"></i>
                   </div>
@@ -142,7 +142,7 @@
               </th>
               <th class="sortable th-col-importe">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('importe')">
+                  <div class="column-title" @click="sortBy('importe')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('importe')" @keydown.space.prevent="sortBy('importe')">
                     <i class="fas fa-euro-sign mr-2"></i>Importe
                     <i :class="getSortIcon('importe')"></i>
                   </div>
@@ -153,7 +153,7 @@
               </th>
               <th class="sortable th-col-estado">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('estado')">
+                  <div class="column-title" @click="sortBy('estado')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('estado')" @keydown.space.prevent="sortBy('estado')">
                     <i class="fas fa-tasks mr-2"></i>Estado
                     <i :class="getSortIcon('estado')"></i>
                   </div>
@@ -167,7 +167,7 @@
               </th>
               <th class="sortable th-col-fecha">
                 <div class="column-header">
-                  <div class="column-title" title="Fecha en que se creó la propuesta" @click="sortBy('creadoEn')">
+                  <div class="column-title" title="Fecha en que se creó la propuesta" @click="sortBy('creadoEn')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('creadoEn')" @keydown.space.prevent="sortBy('creadoEn')">
                     <i class="fas fa-calendar-alt mr-2"></i>Fecha
                     <i :class="getSortIcon('creadoEn')"></i>
                   </div>
@@ -318,7 +318,7 @@
       role="dialog"
       aria-modal="true"
       aria-labelledby="mcas-detalle-titulo"
-      @click.self="cerrarDetalle"
+      @click.self="propuestaDetalle.estado !== 'EN_EDICION' && cerrarDetalle()"
     >
       <div class="mcas-modal mcas-modal--ancho">
         <div class="mcas-modal-header aura-modal-header">
@@ -636,7 +636,7 @@
             </button>
             <button
               v-if="admiteNoProcede(propuestaDetalle)"
-              class="btn btn-secondary"
+              class="btn btn-secondary btn-no-procede"
               :disabled="accionando || cargandoDetalle"
               title="Cerrar la comisión sin crear ningún servicio"
               @click="descartar(propuestaDetalle)"
@@ -709,6 +709,9 @@ import { COLORES_DIALOGO, confirmar, mostrarError, mostrarExito, textoError } fr
 import { NOMBRES_METODO } from './mcasReglas'
 import { ESTADOS_PROPUESTA, GRUPOS_ESTADO, grupoEstadoMcas } from './mcasEstados'
 import { avisarPropuestasCambiadas } from '@/services/mcasPendientes'
+import { fechaES, fechaHoraES } from '@/utils/fechas'
+import { leerDecimal } from '@/utils/numeros'
+import { escaparHtml } from '@/utils/html'
 
 // Catálogo de estados de propuesta (compartido con el formulario de contrato).
 const ESTADOS = ESTADOS_PROPUESTA
@@ -766,19 +769,19 @@ const ETIQUETAS_EVENTO = {
   EDICION_ABIERTA: 'Edición abierta', PROPUESTA_APROBADA: 'Aprobada y servicio creado',
   PROPUESTA_FINALIZADA_EDITADA: 'Servicio creado con edición',
   PROPUESTA_DESCARTADA: 'No procede: cerrada sin comisión',
+  PROPUESTA_REABIERTA: 'Reabierta con Recalcular', PROPUESTA_SUPERADA: 'Sustituida por un cálculo nuevo',
+  COMISION_SIN_SERVICIO: 'Su servicio ya no existe: el contrato se puede volver a comisionar',
 }
 
 const AVISO_RECHAZO = 'Propuesta rechazada: corrija los valores y guarde para crear el servicio'
 const AVISO_NO_PROCEDE = 'La comisión se cerrará sin crear ningún servicio. Podrá reabrirla con Recalcular.'
 
-const FORMATO_FECHA = { day: '2-digit', month: '2-digit', year: 'numeric' }
+// Formateador creado una vez: toLocaleString con opciones crea uno nuevo en cada llamada
+// y el filtro de importe de la tabla lo pedía por cada propuesta (las fechas: utils/fechas).
+const IMPORTE_ES = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 /** Texto comparable en los filtros: sin tildes, sin mayúsculas y sin espacios a los lados. */
 const normalizar = (valor) => String(valor ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
-
-/** Texto seguro dentro del HTML de un diálogo (nombres de cliente, mensajes del servidor...). */
-const ENTIDADES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
-const escaparHtml = (valor) => String(valor ?? '').replace(/[&<>"']/g, (c) => ENTIDADES[c])
 
 
 export default {
@@ -1474,7 +1477,11 @@ export default {
       return (grupo < 0 ? GRUPOS_ESTADO.length : grupo) * 100 + Math.max(detalle, 0)
     },
     onKeydown(e) {
-      if (e.key === 'Escape' && this.propuestaDetalle && !this.$swal.isVisible()) this.cerrarDetalle()
+      if (e.key === 'Escape' && this.propuestaDetalle && !this.$swal.isVisible()) {
+        // Atendido aquí: el Esc general de los modales (services/capasModales.js) no actúa
+        e.preventDefault()
+        this.cerrarDetalle()
+      }
     },
 
     // ---- estados ----
@@ -1561,7 +1568,7 @@ export default {
     },
     formatImporte(v) {
       return v != null && v !== ''
-        ? Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+        ? IMPORTE_ES.format(Number(v)) + ' €'
         : '—'
     },
     formatFee(v) {
@@ -1584,16 +1591,16 @@ export default {
       const origen = ORIGEN_POTENCIA[p.potenciaOrigen]
       return origen ? `${kw} (${origen})` : kw
     },
+    // Mismo criterio que el FEE del contrato (ModalContratos.normalizarDecimalMcas): con
+    // coma y punto a la vez, el primero es el de miles («1.234,56» se rechazaba aquí)
     normalizarDecimal(v) {
-      if (v === null || v === undefined || String(v).trim() === '') return null
-      const n = Number(String(v).trim().replace(/\s/g, '').replace(',', '.'))
-      return Number.isFinite(n) ? n : null
+      return leerDecimal(v)
     },
     formatFecha(v) {
-      return v ? new Date(v).toLocaleDateString('es-ES', FORMATO_FECHA) : '—'
+      return fechaES(v, '—')
     },
     formatFechaHora(v) {
-      return v ? new Date(v).toLocaleString('es-ES', { ...FORMATO_FECHA, hour: '2-digit', minute: '2-digit' }) : '—'
+      return fechaHoraES(v, '—')
     },
   },
 }

@@ -125,7 +125,7 @@
 
 .status-vigente i {
   color: var(--color-success);
-  animation: pulse 2s infinite;
+  animation: pulse 2s 3; /* tres pulsos y quieto */
 }
 
 .status-pendiente {
@@ -138,7 +138,16 @@
 
 .status-pendiente i {
   color: var(--color-success);
-  animation: pulseWarning 2s infinite;
+  animation: pulseWarning 2s 3; /* tres pulsos y quieto */
+}
+
+/* Servicio que todavía no ha empezado (solo la etiqueta de la tabla) */
+.status-proximo {
+  color: #1d4ed8;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .status-historico {
@@ -182,7 +191,7 @@
   align-items: center;
   justify-content: center;
   font-size: 1rem;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   position: relative;
   background: #fff;
   border: 1px solid var(--border-color);
@@ -194,7 +203,6 @@
   background: #f8f9fa;
   border-color: #ffd600;
   color: #ffd600;
-  transform: scale(1.12);
 }
 
 .btn-icon:disabled {
@@ -311,8 +319,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: var(--backdrop-color);
+  backdrop-filter: var(--backdrop-blur);
   z-index: var(--z-overlay);
   display: flex;
   align-items: center;
@@ -498,7 +506,7 @@
   background: var(--color-brand-yellow-hex);
   color: var(--color-text-dark);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--aura-transicion);
   font-size: 0.75rem;
   font-weight: 600;
   display: flex;
@@ -509,7 +517,6 @@
 
 .btn-guardar-compact:hover:not(:disabled) {
   background: #ecc800;
-  transform: scale(1.1);
 }
 
 .btn-guardar-compact:disabled {
@@ -534,7 +541,7 @@
   color: black;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--aura-transicion);
   font-size: 0.85rem;
 }
 
@@ -615,7 +622,7 @@
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
   position: relative;
-  animation: modalFadeIn 0.3s;
+  /* Entrada y esquinas: las comunes de los modales (shared-motion.css, shared-modal-header.css) */
 }
 
 .detalle-contrato-content .modal-header {
@@ -639,16 +646,6 @@
 
 .detalle-contrato-content .modal-header h2 i {
   color: var(--color-text-dark);
-}
-
-.detalle-contrato-content .modal-header .close-button {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  align-self: auto;
-  border: none;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
 }
 
 .detalle-contrato-pdf {
@@ -751,17 +748,6 @@
   border: 1px solid #e0e0e0;
   color: black;
   line-height: 1.5;
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* Estilos para campo CUPS readonly */
@@ -1006,6 +992,13 @@
   font-size: 0.7rem;
 }
 
+/* Cuota cambiada pero aún sin guardar */
+.ct-pill--sin-guardar {
+  background: #fff4d6;
+  color: #8a5a00;
+  border: 1px dashed #e0a800;
+}
+
 /* Inputs dentro de la tabla */
 .ct-input {
   width: 100%;
@@ -1044,8 +1037,13 @@
 
 /* Checkbox centrado */
 .ct-checkbox {
+  /* En bloque y centrado: en línea quedaba un par de píxeles por encima del
+     centro de la fila (se alineaba con la línea base del texto) */
+  display: block;
   width: 16px;
   height: 16px;
+  margin: 0 auto;
+  padding: 0;
   cursor: pointer;
   accent-color: var(--color-success);
 }
@@ -1055,4 +1053,60 @@
   .ct-estado { display: none; }
   .ct-fecha { min-width: 120px; }
   .ct-importe { width: 110px; }
+}
+
+/* La celda de acciones sigue siendo celda de tabla (con display:flex perdía el
+   fondo y el borde de la fila); los iconos van en línea con un hueco fijo */
+.history-table td.action-buttons {
+  display: table-cell;
+  white-space: nowrap;
+}
+
+.history-table td.action-buttons > .btn-icon {
+  vertical-align: middle;
+}
+
+.history-table td.action-buttons > .btn-icon + .btn-icon {
+  margin-left: 4px;
+}
+
+/* Pie del formulario: Cancelar y Guardar separados */
+.modal-footer-modern .action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Formulario de servicio con la misma estructura que el de contratos: cuerpo gris
+   con desplazamiento propio y pie blanco a todo el ancho, pegado abajo */
+.form-content {
+  padding: 0;
+}
+
+.modern-form {
+  padding: 0;
+  gap: 0;
+}
+
+.form-grid-modern {
+  padding: 14px 16px;
+  background: #f8f9fa;
+}
+
+/* Neutraliza los márgenes globales de label/input (assets/styles.css), que
+   descentraban los iconos de los campos */
+.modern-form .form-group-modern label {
+  margin-top: 0;
+}
+
+.modern-form .form-group-modern :is(input, select, textarea) {
+  margin-top: 0;
+}
+
+/* Las cabeceras de dos palabras pueden partirse en dos líneas: así la tabla cabe
+   en pantallas de 1280 px sin que la columna Acciones quede fuera del modal */
+.history-table th {
+  white-space: normal;
+  vertical-align: bottom;
+  line-height: 1.3;
 }

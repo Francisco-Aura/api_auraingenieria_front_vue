@@ -5,7 +5,8 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "build:analyze": "vue-cli-service build && ANALYZE=true vue-cli-service build",
+    "build:analyze": "vue-cli-service build --report",
+    "test": "node --test tests/unit/*.spec.js",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
@@ -50,11 +51,6 @@
     "not dead",
     "not ie 11"
   ],
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
-  },
   "overrides": {
     "cross-spawn": "^7.0.3",
     "postcss": "^8.4.31",

@@ -19,7 +19,6 @@ const VISTAS = [
   MCAS, MCAS_ADMIN, CONTRATOS, SERVICIOS,
   'src/components/CRM_Module/PuntosSuministro/PuntoSuministroComponent.vue',
   'src/components/CRM_Module/Tareas/TareasComponent.vue',
-  'src/components/CRM_Module/Tareas/TareaCard.vue',
 ];
 
 const contratoMinimo = (extra = {}) => ({
@@ -258,4 +257,18 @@ test('los botones del detalle de tarea usan el mismo estilo que el resto de la a
   const modal = leer('src/components/CRM_Module/Tareas/TareaDetalleModal.css');
   assert.doesNotMatch(modal, /\.btn-completar-compact \{[^}]*background: *var\(--color-success\)/,
     'el color lo pone la hoja compartida');
+});
+
+test('Comisiones MCAS lee los importes con separador de miles igual que el FEE del contrato', () => {
+  const mcas = cargarComponente(MCAS, {});
+  const contratos = cargarComponente(CONTRATOS, {});
+  const leer = (v) => mcas.methods.normalizarDecimal.call({}, v);
+  const fee = (v) => contratos.methods.normalizarDecimalMcas.call({}, v);
+  for (const [entrada, esperado] of [['1.234,56', 1234.56], ['1,234.56', 1234.56], ['7,25', 7.25], ['1.500', 1.5], [' 12 ', 12]]) {
+    assert.equal(leer(entrada), esperado, entrada);
+    assert.equal(fee(entrada), esperado, entrada);
+  }
+  assert.equal(leer(''), null);
+  assert.equal(leer('abc'), null);
+  assert.equal(leer('-3,5'), -3.5, 'el signo lo valida quien llama, como antes');
 });

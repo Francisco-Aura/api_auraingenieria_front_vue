@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="formularioVisible" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cliente-form-title">
-    <div class="modal-content">
+    <div class="modal-content modal-content--cliente">
       <!-- Encabezado del modal -->
       <div class="modal-header aura-modal-header">
         <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-user-tie"></i></span>
@@ -11,6 +11,8 @@
             <template v-if="modoActualizar">
               <span v-if="clienteLocal.nombre"><strong>{{ clienteLocal.nombre }}</strong></span>
               <span v-if="clienteLocal.cif" class="aura-dato"><span class="aura-dato__etiqueta">CIF</span>{{ clienteLocal.cif }}</span>
+              <!-- La baja se ve en la cabecera, como dato del cliente (antes era una pastilla roja junto a los botones) -->
+              <span v-if="clienteLocal.id && clienteLocal.fechaBaja" class="aura-dato aura-dato--baja"><span class="aura-dato__etiqueta">Baja</span>{{ formatFecha(clienteLocal.fechaBaja) }}</span>
             </template>
             <span v-else>Rellene los datos principales y, si quiere, los contactos</span>
           </span>
@@ -36,11 +38,11 @@
       <form @submit.prevent="modoActualizar ? actualizarCliente() : crearCliente()" novalidate>
         <!-- Pestañas para organizar el contenido -->        
         <div class="aura-pestanas" role="tablist" aria-label="Secciones del cliente">
-          <button type="button" role="tab" class="aura-pestana" :class="{ 'aura-pestana--activa': activeTab === 'principal' }"
+          <button type="button" role="tab" class="aura-pestana" :class="{ 'aura-pestana--activa': activeTab === 'principal', 'aura-pestana--error': pestanaConErrores('principal') }"
                   :aria-selected="activeTab === 'principal' ? 'true' : 'false'" @click="activeTab = 'principal'">
             <span class="aura-pestana__numero">1</span> <span>Datos principales</span>
           </button>
-          <button type="button" role="tab" class="aura-pestana" :class="{ 'aura-pestana--activa': activeTab === 'contactos' }"
+          <button type="button" role="tab" class="aura-pestana" :class="{ 'aura-pestana--activa': activeTab === 'contactos', 'aura-pestana--error': pestanaConErrores('contactos') }"
                   :aria-selected="activeTab === 'contactos' ? 'true' : 'false'" @click="activeTab = 'contactos'">
             <span class="aura-pestana__numero">2</span> <span>Contactos y adicionales</span>
           </button>
@@ -149,6 +151,7 @@
                     <div class="select-container-compact" :class="{ 'select-error': errores.codigoSector }">
                       <select id="codigoSector" v-model="clienteLocal.codigoSector" class="form-select-compact" @change="errores.codigoSector = ''" required>
                         <option value="">Seleccione...</option>
+                        <option :value="null" disabled hidden>Seleccione...</option>
                         <option v-for="sector in sectores" :key="sector.id" :value="sector.id">
                           {{ sector.nombre }}
                         </option>
@@ -162,6 +165,7 @@
                     <div class="select-container-compact" :class="{ 'select-error': errores.codigoSubtipologia }">
                       <select id="codigoSubtipologia" v-model="clienteLocal.codigoSubtipologia" class="form-select-compact" @change="errores.codigoSubtipologia = ''" required>
                         <option value="">Seleccione...</option>
+                        <option :value="null" disabled hidden>Seleccione...</option>
                         <option v-for="subtipologia in subtipologias" :key="subtipologia.id" :value="subtipologia.id">
                           {{ subtipologia.nombre }}
                         </option>
@@ -172,7 +176,7 @@
                   </div>
                 </div>                
                 <div class="form-group-compact">
-                  <label for="usuario">Usuario asignado <span v-if="clienteLocal.id" class="required">*</span></label>
+                  <label for="usuario">Usuario asignado <span v-if="clienteLocal.id && isAdvancedUser" class="required">*</span></label>
                   <div class="select-container-compact" :class="{ 'select-error': errores.idUsuario }">
                     <select 
                       id="usuario" 
@@ -180,9 +184,10 @@
                       class="form-select-compact" 
                       :disabled="!isAdvancedUser"
                       @change="errores.idUsuario = ''"
-                      :required="!!clienteLocal.id"
+                      :required="!!clienteLocal.id && isAdvancedUser"
                     >
                       <option value="">Seleccione...</option>
+                      <option :value="null" disabled hidden>Seleccione...</option>
                       <option v-for="usuario in usuarios" :key="usuario.id" :value="usuario.id">
                         {{ usuario.nombre }}
                       </option>
@@ -289,11 +294,15 @@
                 <button v-if="modoActualizar && clienteLocal.id && clienteLocal.fechaBaja" type="button" @click="confirmarReactivarCliente" class="btn-compact btn-success">
                   <i class="fas fa-user-check"></i> Reactivar cliente
                 </button>
-                <!-- Mensaje de estado si está dado de baja -->
+                <!-- Mensaje de estado si está dado de baja: texto, no un botón -->
                 <div v-if="modoActualizar && clienteLocal.id && clienteLocal.fechaBaja" class="status-message status-inactive">
                   <i class="fas fa-user-times"></i>
                   <span>Cliente dado de baja el {{ formatFecha(clienteLocal.fechaBaja) }}</span>
                 </div>
+                <!-- Cancelar también aquí: antes solo se podía salir con la X -->
+                <button type="button" class="btn-compact btn-secondary" @click="cancelarFormulario">
+                  <i class="fas fa-times"></i> Cancelar
+                </button>
                 <button type="button" class="btn-compact btn-primary" @click="activeTab = 'contactos'">
                   <i class="fas fa-arrow-right"></i> Siguiente
                 </button>
@@ -321,6 +330,7 @@
                     <div class="select-container-compact">
                       <select id="cargoContacto1" v-model="clienteLocal.cargoContacto1" class="form-select-compact">
                         <option value="">Seleccione...</option>
+                        <option :value="null" disabled hidden>Seleccione...</option>
                         <option v-for="cargo in cargosContacto" :key="cargo.id" :value="cargo.nombre">{{ cargo.nombre }}</option>
                       </select>
                       <i class="fas fa-chevron-down select-icon"></i>
@@ -358,6 +368,7 @@
                     <div class="select-container-compact">
                       <select id="cargoContacto2" v-model="clienteLocal.cargoContacto2" class="form-select-compact">
                         <option value="">Seleccione...</option>
+                        <option :value="null" disabled hidden>Seleccione...</option>
                         <option v-for="cargo in cargosContacto" :key="cargo.id" :value="cargo.nombre">{{ cargo.nombre }}</option>
                       </select>
                       <i class="fas fa-chevron-down select-icon"></i>
@@ -395,6 +406,7 @@
                     <div class="select-container-compact">
                       <select id="cargoContacto3" v-model="clienteLocal.cargoContacto3" class="form-select-compact">
                         <option value="">Seleccione...</option>
+                        <option :value="null" disabled hidden>Seleccione...</option>
                         <option v-for="cargo in cargosContacto" :key="cargo.id" :value="cargo.nombre">{{ cargo.nombre }}</option>
                       </select>
                       <i class="fas fa-chevron-down select-icon"></i>
@@ -461,7 +473,7 @@
                 <button v-if="modoActualizar && clienteLocal.id && clienteLocal.fechaBaja" type="button" @click="confirmarReactivarCliente" class="btn-compact btn-success">
                   <i class="fas fa-user-check"></i> Reactivar cliente
                 </button>
-                <!-- Mensaje de estado si está dado de baja -->
+                <!-- Mensaje de estado si está dado de baja: texto, no un botón -->
                 <div v-if="modoActualizar && clienteLocal.id && clienteLocal.fechaBaja" class="status-message status-inactive">
                   <i class="fas fa-user-times"></i>
                   <span>Cliente dado de baja el {{ formatFecha(clienteLocal.fechaBaja) }}</span>
@@ -523,9 +535,9 @@
           <div v-if="cargandoTareas" class="tareas-loading">
             <i class="fas fa-spinner fa-spin"></i> Cargando tareas...
           </div>
-          <div v-else-if="tareas.length === 0" class="tareas-empty-state">
-            <i class="fas fa-clipboard-list fa-3x text-muted"></i>
-            <p>No hay tareas para este cliente</p>
+          <div v-else-if="tareas.length === 0" class="tareas-empty-state" :class="{ 'tareas-empty-state--error': fallosPanel.tareas }">
+            <i class="fas fa-3x text-muted" :class="fallosPanel.tareas ? 'fa-exclamation-triangle' : 'fa-clipboard-list'"></i>
+            <p>{{ fallosPanel.tareas ? 'No se pudieron cargar las tareas' : 'No hay tareas para este cliente' }}</p>
           </div>
           <template v-else>
             <div class="tp-toolbar">
@@ -572,8 +584,8 @@
                       </span>
                     </td>
                     <td>
-                      <span class="tp-estado-badge" :style="{ backgroundColor: tarea.estadoColor }">
-                        <i :class="getEstadoIcon(tarea.estadoNombre)"></i>
+                      <span class="tp-estado-badge" :style="{ backgroundColor: tarea.estadoColor, color: colorTextoSobre(tarea.estadoColor) }">
+                        <i :class="getEstadoIcon(formatearEstadoNombre(tarea.estadoNombre))"></i>
                         {{ tarea.estadoNombre }}
                       </span>
                     </td>
@@ -582,11 +594,11 @@
                         {{ getPrioridadTexto(tarea.prioridad) }}
                       </span>
                     </td>
-                    <td class="tp-td-truncate">
+                    <td class="tp-td-truncate" :title="tarea.categoriaNombre || ''">
                       <span v-if="tarea.categoriaNombre" class="tp-categoria-badge">{{ tarea.categoriaNombre }}</span>
                       <span v-else class="text-muted">-</span>
                     </td>
-                    <td class="tp-td-truncate">{{ tarea.usuarioAsignadoNombre || '-' }}</td>
+                    <td class="tp-td-truncate" :title="tarea.usuarioAsignadoNombre || ''">{{ tarea.usuarioAsignadoNombre || '-' }}</td>
                     <td class="tp-td-truncate" :title="tarea.cups || 'GENERAL'">
                       <span v-if="tarea.cups" class="tp-cups-badge">{{ tarea.cups }}</span>
                       <span v-else class="tp-cups-general">GENERAL</span>
@@ -638,9 +650,9 @@
           <div v-if="cargandoActividad" class="tareas-loading">
             <i class="fas fa-spinner fa-spin"></i> Cargando actividad...
           </div>
-          <div v-else-if="actividadCliente.length === 0" class="tareas-empty-state">
-            <i class="fas fa-stream fa-3x text-muted"></i>
-            <p>No hay actividad registrada para este cliente</p>
+          <div v-else-if="actividadCliente.length === 0" class="tareas-empty-state" :class="{ 'tareas-empty-state--error': fallosPanel.actividad }">
+            <i class="fas fa-3x text-muted" :class="fallosPanel.actividad ? 'fa-exclamation-triangle' : 'fa-stream'"></i>
+            <p>{{ fallosPanel.actividad ? 'No se pudo cargar la actividad' : 'No hay actividad registrada para este cliente' }}</p>
           </div>
           <template v-else>
             <div class="tp-timeline-list">
@@ -804,9 +816,9 @@
               <div v-if="cargandoNotas" class="tareas-loading">
                 <i class="fas fa-spinner fa-spin"></i> Cargando notas...
               </div>
-              <div v-else-if="notasCliente.length === 0" class="tareas-empty-state">
-                <i class="fas fa-sticky-note fa-3x text-muted"></i>
-                <p>No hay notas para este cliente</p>
+              <div v-else-if="notasCliente.length === 0" class="tareas-empty-state" :class="{ 'tareas-empty-state--error': fallosPanel.notas }">
+                <i class="fas fa-3x text-muted" :class="fallosPanel.notas ? 'fa-exclamation-triangle' : 'fa-sticky-note'"></i>
+                <p>{{ fallosPanel.notas ? 'No se pudieron cargar las notas' : 'No hay notas para este cliente' }}</p>
               </div>
               <div v-else class="tp-notas-list">
                 <article v-for="nota in notasPaginadas" :key="nota.comentarioId" class="tp-nota-item" :class="{ 'tp-nota-fijada-highlight': nota.fijado }">
@@ -998,9 +1010,9 @@
           <div v-if="cargandoIncidencias" class="tareas-loading">
             <i class="fas fa-spinner fa-spin"></i> Cargando incidencias...
           </div>
-          <div v-else-if="incidenciasFiltradas.length === 0" class="tareas-empty-state">
-            <i class="fas fa-exclamation-circle fa-3x text-muted"></i>
-            <p>No hay incidencias para este cliente</p>
+          <div v-else-if="incidenciasFiltradas.length === 0" class="tareas-empty-state" :class="{ 'tareas-empty-state--error': fallosPanel.incidencias }">
+            <i class="fas fa-3x text-muted" :class="fallosPanel.incidencias ? 'fa-exclamation-triangle' : 'fa-exclamation-circle'"></i>
+            <p>{{ fallosPanel.incidencias ? 'No se pudieron cargar las incidencias' : (incidenciasBusqueda ? `Sin resultados para "${incidenciasBusqueda}"` : 'No hay incidencias para este cliente') }}</p>
           </div>
           <template v-else>
             <div class="tp-table-wrapper">
@@ -1020,8 +1032,8 @@
                   <tr v-for="incidencia in incidenciasPaginadas" :key="incidencia.id" :class="{ 'tp-row-vencida': incidencia.vencida, 'tp-row-fijada': incidencia.fijada }">
                     <td class="tp-td-truncate" :title="incidencia.titulo">{{ incidencia.titulo }}</td>
                     <td>
-                      <span class="tp-estado-badge" :style="{ backgroundColor: incidencia.estadoColor }">
-                        <i :class="getEstadoIcon(incidencia.estadoNombre)"></i>
+                      <span class="tp-estado-badge" :style="{ backgroundColor: incidencia.estadoColor, color: colorTextoSobre(incidencia.estadoColor) }">
+                        <i :class="getEstadoIcon(formatearEstadoNombre(incidencia.estadoNombre))"></i>
                         {{ incidencia.estadoNombre }}
                       </span>
                     </td>
@@ -1088,11 +1100,11 @@
     :value="true"
     :tarea="tareaSeleccionada"
     :estados="estadosTareas"
+    :guardando="cambiandoEstadoTarea"
     @cerrar="cerrarTarea"
     @actualizar="handleActualizarTarea"
     @cambiar-estado="handleCambiarEstado"
     @completar-con-comentario="handleCompletarConComentario"
-    @crear-comentario-estado="handleCrearComentarioEstado"
   />
 
   <TareaModalCorporativo
@@ -1112,6 +1124,10 @@
 <script>
 import { descargarRespuesta } from '@/utils/descargas';
 import { textoError } from '@/utils/errores';
+import { escaparHtml } from '@/utils/html';
+import { fechaCortaES, fechaES, fechaHoraES } from '@/utils/fechas';
+import { iconoEstadoTarea, nombreEstado, textoPrioridad } from '@/utils/tareas';
+import { colorTextoSobre } from '@/utils/colores';
 import axios from 'axios';
 import TareaDetalleModal from '@/components/CRM_Module/Tareas/TareaDetalleModal.vue';
 import TareaModalCorporativo from '@/components/CRM_Module/Tareas/TareaModalCorporativo.vue';
@@ -1188,6 +1204,7 @@ export default {
       tareaEnEdicion: null,
       categoriasTareas: [],
       guardandoTareaEdicion: false,
+      cambiandoEstadoTarea: false, // Cambio de estado/completado en curso (evita el doble clic)
       estadosTareas: [],
       tareasPanelBusqueda: '',
       tareasPanelPagina: 1,
@@ -1205,6 +1222,8 @@ export default {
       cargandoActividad: false,
       cargandoNotas: false,
       cargandoIncidencias: false,
+      // Secciones del panel cuya carga ha fallado: su aviso dice «no se pudo cargar», no «no hay»
+      fallosPanel: { tareas: false, actividad: false, notas: false, incidencias: false },
       cupsOpcionesNotas: [],
       nuevaNota: {
         cups: '',
@@ -1325,6 +1344,7 @@ export default {
         this.actividadCliente = [];
         this.notasCliente = [];
         this.incidenciasCliente = [];
+        this.fallosPanel = { tareas: false, actividad: false, notas: false, incidencias: false };
         this.cupsOpcionesNotas = [];
         this.nuevaNota = { cups: '', comentario: '', fijada: false, archivos: [] };
         this.editandoNotaId = null;
@@ -1387,6 +1407,7 @@ export default {
     }
   },
   methods: {
+    colorTextoSobre,
     crearClienteVacio() {
       return {
         nombre: "",
@@ -1433,6 +1454,12 @@ export default {
     cancelarFormulario() {
       this.$emit("cancelar-formulario");
     },
+    // La pestaña tiene algún campo marcado en rojo (los emails de contacto son de la 2; el resto, de la 1)
+    pestanaConErrores(pestana) {
+      const deContactos = (campo) => /^emailContacto\d$/.test(campo);
+      return Object.entries(this.errores || {})
+        .some(([campo, mensaje]) => !!mensaje && (pestana === 'contactos') === deContactos(campo));
+    },
     validarFormulario() {
       this.errores = {};
       const campos = [
@@ -1448,7 +1475,10 @@ export default {
         { campo: 'codigoSubtipologia', label: 'Subtipología', tab: 'principal' },
       ];
 
-      if (this.clienteLocal.id && !this.clienteLocal.idUsuario) {
+      // Solo lo exige a quien puede elegirlo: para el resto el campo está bloqueado y el
+      // servidor conserva el usuario que ya tiene el cliente (antes no podían guardar
+      // ningún cliente sin usuario asignado, como los que ellos mismos dan de alta)
+      if (this.clienteLocal.id && this.isAdvancedUser && !this.clienteLocal.idUsuario) {
         this.errores.idUsuario = 'Usuario Asignado es obligatorio';
       }
 
@@ -1476,7 +1506,7 @@ export default {
       // Validación de formato de email
       const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const camposEmail = [
-        { campo: 'emailAutorizado', label: 'Email (Persona autorizada)', tab: 'contactos' },
+        { campo: 'emailAutorizado', label: 'Email (Persona autorizada)', tab: 'principal' }, // está en «Datos principales»
         { campo: 'emailContacto1', label: 'Email (Contacto 1)', tab: 'contactos' },
         { campo: 'emailContacto2', label: 'Email (Contacto 2)', tab: 'contactos' },
         { campo: 'emailContacto3', label: 'Email (Contacto 3)', tab: 'contactos' },
@@ -1528,7 +1558,7 @@ export default {
         });
         return;
       }
-      if (!this.clienteLocal.idUsuario) {
+      if (this.isAdvancedUser && !this.clienteLocal.idUsuario) {
         this.$swal.fire({
           icon: 'warning',
           title: 'Usuario asignado requerido',
@@ -1601,7 +1631,7 @@ export default {
         });
 
         if (isConfirmed && fechaBaja) {
-          this.clienteLocal.fechaBaja = fechaBaja;
+          // La fecha va en el envío; en pantalla no sale «dado de baja» hasta que se guarda
           const clienteParaEnviar = {
             ...this.clienteLocal,
             nombreComercial: this.clienteLocal.grupoEmpresarial,
@@ -1615,6 +1645,7 @@ export default {
       }
     },
     async confirmarReactivarCliente() {
+      let clienteReactivado = false;
       try {
         // Paso 1: confirmar reactivación del cliente
         const { isConfirmed } = await this.$swal.fire({
@@ -1652,6 +1683,8 @@ export default {
         };
         await axios.put(`${process.env.VUE_APP_API_URL}/clientes/${clienteParaEnviar.id}`, clienteParaEnviar);
         this.clienteLocal.fechaBaja = null;
+        this.darDeBaja = false;
+        clienteReactivado = true;
 
         // Paso 2: obtener PS dados de baja de este cliente
         const clienteId = this.clienteLocal.id;
@@ -1671,11 +1704,11 @@ export default {
 
         // Paso 3: mostrar diálogo de selección de PS a reactivar
         const checkboxesHtml = psDadosDeBaja.map(ps => {
-          const cups = ps.CUPSluz || ps.CUPSgas || '';
+          const cups = ps.cupsluz || ps.cupsgas || ps.CUPSluz || ps.CUPSgas || '';
           const etiqueta = [ps.direccion, cups].filter(Boolean).join(' — ');
           return `<label class="swal-reactivar-ps-item">
-            <input type="checkbox" value="${ps.id}" checked>
-            <span>${etiqueta || 'PS #' + ps.id}</span>
+            <input type="checkbox" value="${escaparHtml(ps.id)}" checked>
+            <span>${escaparHtml(etiqueta || 'PS #' + ps.id)}</span>
           </label>`;
         }).join('');
 
@@ -1734,16 +1767,14 @@ export default {
           icon: 'error',
           confirmButtonColor: '#fcd700'
         });
+        // El cliente sí quedó reactivado (falló algún punto): la lista lo tiene que reflejar
+        if (clienteReactivado) {
+          this.$emit("cliente-reactivado");
+        }
       }
     },
     formatFecha(fecha) {
-      if (!fecha) return '';
-      const fechaObj = new Date(fecha);
-      return fechaObj.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
+      return fechaES(fecha, '');
     },
     autoResizeNotas() {
       const textarea = this.$refs.notasTextarea;
@@ -1792,23 +1823,51 @@ export default {
       this.cerrarModalEditarTarea();
       this.cerrarTarea();
     },
+    // Las cargas del panel son del cliente abierto: si llega tarde la respuesta de otro
+    // cliente (panel cerrado y abierto con otro) se descarta
+    esDelClienteAbierto(clienteId) {
+      return this.clienteLocal?.id === clienteId;
+    },
+    avisarErrorPanel(que) {
+      this.$swal.fire({
+        icon: 'error',
+        title: `No se pudieron cargar ${que}`,
+        text: 'Inténtelo de nuevo en unos segundos.',
+        timer: 4000,
+        showConfirmButton: false,
+        toast: true,
+        // Abajo: arriba a la derecha tapaba la X de cerrar el panel
+        position: 'bottom-end'
+      });
+    },
     async cargarTareas() {
-      if (!this.clienteLocal?.id) return;
+      const clienteId = this.clienteLocal?.id;
+      if (!clienteId) return;
       this.cargandoTareas = true;
       try {
-        const [tareasRes, estadosRes] = await Promise.all([
-          axios.get(`${process.env.VUE_APP_API_URL}/tareas/cliente/${this.clienteLocal.id}`),
+        // Sin la lista de estados las tareas se siguen viendo (antes no salía ninguna)
+        const [tareasRes, estadosRes] = await Promise.allSettled([
+          axios.get(`${process.env.VUE_APP_API_URL}/tareas/cliente/${clienteId}`),
           axios.get(`${process.env.VUE_APP_API_URL}/tareas/estados`)
         ]);
-        this.tareas = tareasRes.data;
-        this.estadosTareas = estadosRes.data;
+        if (!this.esDelClienteAbierto(clienteId)) return;
+        if (estadosRes.status === 'fulfilled') {
+          this.estadosTareas = estadosRes.value.data;
+        } else {
+          console.error('Error cargando los estados de las tareas:', estadosRes.reason);
+        }
+        if (tareasRes.status === 'rejected') throw tareasRes.reason;
+        this.tareas = tareasRes.value.data;
+        this.fallosPanel.tareas = false;
         const totalFijadas = this.tareas.filter(t => t.fijada && t.titulo !== 'NOTAS CLIENTE').length;
         this.mostrarTareasFijadas = totalFijadas > 0 && totalFijadas <= 3;
       } catch (e) {
         console.error('Error cargando tareas del cliente:', e);
+        this.fallosPanel.tareas = true;
         this.mostrarTareasFijadas = false;
+        this.avisarErrorPanel('las tareas');
       } finally {
-        this.cargandoTareas = false;
+        if (this.esDelClienteAbierto(clienteId)) this.cargandoTareas = false;
       }
     },
     async abrirTarea(tarea) {
@@ -1900,24 +1959,35 @@ export default {
         this.guardandoTareaEdicion = false;
       }
     },
-    async handleCambiarEstado(tareaId, estadoId, motivoBloqueo = null) {
+    async handleCambiarEstado(tareaId, estadoId, motivoBloqueo = null, comentario = null) {
+      if (this.cambiandoEstadoTarea) return;
+      this.cambiandoEstadoTarea = true;
       try {
         await tareasApi.cambiarEstadoTarea(tareaId, estadoId, motivoBloqueo);
+        // El comentario del cambio, solo si el cambio se ha hecho (antes iban a la vez y,
+        // si fallaba el cambio, al reintentar se duplicaba el comentario)
+        await this.guardarComentarioDeEstado(tareaId, comentario);
         await Promise.all([
           this.cargarTareas(),
           this.cargarActividadCliente(),
+          this.cargarNotasCliente(),
           this.cargarIncidenciasCliente(),
         ]);
         this.cerrarTarea();
       } catch (e) {
         console.error('Error cambiando estado:', e);
+        this.$swal.fire({ icon: 'error', title: 'Error', text: 'Error al cambiar el estado' });
+      } finally {
+        this.cambiandoEstadoTarea = false;
       }
     },
     async handleCompletarConComentario(data) {
-      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+      if (this.cambiandoEstadoTarea) return;
+      this.cambiandoEstadoTarea = true;
       try {
-        await tareasApi.crearComentario({ tareaId: data.tareaId, usuarioId: usuario.id, comentario: data.comentario.contenido });
+        // Primero se completa y después se guarda el comentario
         await tareasApi.cambiarEstadoTarea(data.tareaId, data.estadoId);
+        await this.guardarComentarioDeEstado(data.tareaId, data.comentario?.contenido);
         await Promise.all([
           this.cargarTareas(),
           this.cargarNotasCliente(),
@@ -1926,61 +1996,97 @@ export default {
         this.cerrarTarea();
       } catch (e) {
         console.error('Error completando tarea:', e);
+        this.$swal.fire({ icon: 'error', title: 'Error', text: 'Error al completar la tarea' });
+      } finally {
+        this.cambiandoEstadoTarea = false;
       }
     },
-    async handleCrearComentarioEstado(data) {
-      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    /** Guarda el comentario de un cambio de estado ya hecho; si falla, lo avisa. */
+    async guardarComentarioDeEstado(tareaId, texto) {
+      if (!texto || !texto.trim()) return;
       try {
-        await tareasApi.crearComentario({ tareaId: data.tareaId, usuarioId: usuario.id, comentario: data.contenido });
-        await this.cargarNotasCliente();
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        await tareasApi.crearComentario({ tareaId, usuarioId: usuario.id, comentario: texto.trim() });
       } catch (e) {
         console.error('Error creando comentario:', e);
+        this.$swal.fire({ icon: 'warning', title: 'Comentario no guardado', text: 'El estado se ha cambiado, pero no se pudo guardar el comentario.' });
       }
     },
     async cargarActividadCliente() {
-      if (!this.clienteLocal?.id) return;
+      const clienteId = this.clienteLocal?.id;
+      if (!clienteId) return;
       this.cargandoActividad = true;
       try {
         const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
         const nivelAcceso = typeof usuario?.nivelAcceso === 'number' ? usuario.nivelAcceso : 0;
-        this.actividadCliente = await tareasApi.obtenerActividadCliente(this.clienteLocal.id, nivelAcceso);
+        const actividad = await tareasApi.obtenerActividadCliente(clienteId, nivelAcceso);
+        if (!this.esDelClienteAbierto(clienteId)) return;
+        this.actividadCliente = actividad;
         this.actividadPanelPagina = 1;
+        this.fallosPanel.actividad = false;
       } catch (e) {
+        if (!this.esDelClienteAbierto(clienteId)) return;
         console.error('Error cargando actividad del cliente:', e);
         this.actividadCliente = [];
         this.actividadPanelPagina = 1;
+        this.fallosPanel.actividad = true;
+        this.avisarErrorPanel('la actividad');
       } finally {
-        this.cargandoActividad = false;
+        if (this.esDelClienteAbierto(clienteId)) this.cargandoActividad = false;
       }
     },
+    // Fijadas primero y después la más reciente (editada o creada), igual al cargar que
+    // al fijar: antes, al recargar, una nota fijada volvía a su sitio por fecha
+    ordenarNotas(notas) {
+      return [...notas].sort((a, b) => {
+        if (!!a.fijado !== !!b.fijado) return a.fijado ? -1 : 1;
+        const fechaA = a.fechaEdicion || a.fechaCreacion || '';
+        const fechaB = b.fechaEdicion || b.fechaCreacion || '';
+        return fechaB.localeCompare(fechaA);
+      });
+    },
     async cargarNotasCliente() {
-      if (!this.clienteLocal?.id) return;
+      const clienteId = this.clienteLocal?.id;
+      if (!clienteId) return;
       this.cargandoNotas = true;
       try {
-        this.notasCliente = await tareasApi.obtenerNotasCliente(this.clienteLocal.id);
+        const notas = await tareasApi.obtenerNotasCliente(clienteId);
+        if (!this.esDelClienteAbierto(clienteId)) return;
+        this.notasCliente = this.ordenarNotas(notas || []);
         this.notasPanelPagina = 1;
         this.notasExpandidas = {};
+        this.fallosPanel.notas = false;
       } catch (e) {
+        if (!this.esDelClienteAbierto(clienteId)) return;
         console.error('Error cargando notas del cliente:', e);
         this.notasCliente = [];
         this.notasPanelPagina = 1;
         this.notasExpandidas = {};
+        this.fallosPanel.notas = true;
+        this.avisarErrorPanel('las notas');
       } finally {
-        this.cargandoNotas = false;
+        if (this.esDelClienteAbierto(clienteId)) this.cargandoNotas = false;
       }
     },
     async cargarIncidenciasCliente() {
-      if (!this.clienteLocal?.id) return;
+      const clienteId = this.clienteLocal?.id;
+      if (!clienteId) return;
       this.cargandoIncidencias = true;
       try {
-        this.incidenciasCliente = await tareasApi.obtenerIncidenciasCliente(this.clienteLocal.id);
+        const incidencias = await tareasApi.obtenerIncidenciasCliente(clienteId);
+        if (!this.esDelClienteAbierto(clienteId)) return;
+        this.incidenciasCliente = incidencias;
         this.incidenciasPanelPagina = 1;
+        this.fallosPanel.incidencias = false;
       } catch (e) {
+        if (!this.esDelClienteAbierto(clienteId)) return;
         console.error('Error cargando incidencias del cliente:', e);
         this.incidenciasCliente = [];
         this.incidenciasPanelPagina = 1;
+        this.fallosPanel.incidencias = true;
+        this.avisarErrorPanel('las incidencias');
       } finally {
-        this.cargandoIncidencias = false;
+        if (this.esDelClienteAbierto(clienteId)) this.cargandoIncidencias = false;
       }
     },
     async cargarCupsClienteParaNotas() {
@@ -2196,15 +2302,6 @@ export default {
     quitarArchivoEdicionNota(idx) {
       this.notaEdicion.archivosNuevos.splice(idx, 1);
     },
-    async descargarArchivoNota(nota) {
-      try {
-        const response = await tareasApi.descargarArchivoNota(this.clienteLocal.id, nota.comentarioId);
-        this.descargarBlob(response, nota.nombreArchivo || 'archivo');
-      } catch (e) {
-        console.error('Error descargando archivo de nota:', e);
-        this.$swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo descargar el archivo.' });
-      }
-    },
     async descargarAdjuntoNota(nota, adjuntoId, nombreArchivo) {
       try {
         const response = await tareasApi.descargarAdjuntoNota(this.clienteLocal.id, nota.comentarioId, adjuntoId);
@@ -2242,49 +2339,28 @@ export default {
         const notaActualizada = await tareasApi.toggleFijadaNota(this.clienteLocal.id, nota.comentarioId);
         // Reemplazar la nota actualizada y reasignar el array completo (fuerza reactividad)
         const notas = this.notasCliente.map(n => n.comentarioId === nota.comentarioId ? notaActualizada : n);
-        // Reordenar: fijadas primero, luego por fecha descendente (editada o creada)
-        notas.sort((a, b) => {
-          if (a.fijado !== b.fijado) return a.fijado ? -1 : 1;
-          const fechaA = a.fechaEdicion || a.fechaCreacion || '';
-          const fechaB = b.fechaEdicion || b.fechaCreacion || '';
-          return fechaB.localeCompare(fechaA);
-        });
-        this.notasCliente = notas;
+        this.notasCliente = this.ordenarNotas(notas);
       } catch (e) {
         console.error('Error al cambiar estado fijado de nota:', e);
+        this.$swal.fire({ icon: 'error', title: 'Error', text: textoError(e, 'No se pudo fijar la nota.') });
       }
     },
     getPrioridadTexto(prioridad) {
-      switch (prioridad) {
-        case 0: return 'Urgente';
-        case 1: return 'Alta';
-        case 2: return 'Media';
-        case 3: return 'Baja';
-        default: return 'Normal';
-      }
+      return textoPrioridad(prioridad);
+    },
+    // Solo para mostrar: «EN_PROGRESO» -> «En Progreso» (igual que en el detalle de la tarea)
+    formatearEstadoNombre(nombre) {
+      return nombreEstado(nombre);
     },
     getEstadoIcon(estadoNombre) {
-      const estado = estadoNombre ? estadoNombre.toLowerCase() : '';
-      switch (estado) {
-        case 'pendiente': return 'far fa-clock';
-        case 'en progreso': case 'progreso': return 'far fa-play-circle';
-        case 'completada': case 'finalizada': return 'far fa-check-circle';
-        case 'cancelada': return 'far fa-times-circle';
-        case 'pausada': return 'far fa-pause-circle';
-        case 'bloqueada': return 'fas fa-lock';
-        default: return 'fas fa-circle';
-      }
+      // Aquí solo los nombres en español (la lista de tareas también entiende los ingleses)
+      return iconoEstadoTarea(estadoNombre, false);
     },
     formatDate(date) {
-      if (!date) return '-';
-      return new Date(date).toLocaleDateString('es-ES');
+      return fechaCortaES(date, '-');
     },
     formatDateTime(date) {
-      if (!date) return '-';
-      return new Date(date).toLocaleString('es-ES', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      });
+      return fechaHoraES(date);
     },
     debeMostrarToggleNota(texto) {
       if (!texto) return false;

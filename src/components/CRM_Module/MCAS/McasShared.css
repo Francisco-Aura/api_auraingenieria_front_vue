@@ -37,20 +37,24 @@
   padding: 0.7rem 1rem;
   display: flex;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   flex: 1;
   min-width: 0;
-  animation: statCardEntrance 0.5s ease both;
+  animation: statCardEntrance 0.22s var(--aura-curva) backwards;
 }
 
-.stats-container > :nth-child(2) { animation-delay: 0.1s; }
-.stats-container > :nth-child(3) { animation-delay: 0.2s; }
-.stats-container > :nth-child(4) { animation-delay: 0.3s; }
-.stats-container > :nth-child(5) { animation-delay: 0.4s; }
+.stats-container > :nth-child(2) { animation-delay: 0.05s; }
+.stats-container > :nth-child(3) { animation-delay: 0.1s; }
+.stats-container > :nth-child(4) { animation-delay: 0.15s; }
+.stats-container > :nth-child(5) { animation-delay: 0.2s; }
 
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+/* Elevación suave al pasar el ratón (antes no se veía: la animación de entrada
+   se quedaba aplicada con «both» y su transform tapaba el del hover) */
+/* Solo se elevan las tarjetas que se pulsan (filtros de Comisiones); las de resumen de
+   Configuración no hacen nada al pulsarlas y parecían botones */
+.stat-card--filtro:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
 }
 
 /* Tarjeta clicable (filtro rápido): mismo aspecto, con estado activo de marca */
@@ -224,7 +228,8 @@
 }
 
 .toolbar-select:disabled {
-  background-color: #f5f5f5;
+  background-color: #f3f4f6;
+  color: #6b7280;
   cursor: not-allowed;
 }
 
@@ -270,7 +275,7 @@
 }
 
 .data-table tbody tr {
-  animation: rowFadeIn 0.3s ease both;
+  animation: rowFadeIn 0.2s ease-out backwards;
 }
 .data-table tbody tr:nth-child(1) { animation-delay: 0s; }
 .data-table tbody tr:nth-child(2) { animation-delay: 0.03s; }
@@ -279,9 +284,10 @@
 .data-table tbody tr:nth-child(5) { animation-delay: 0.12s; }
 .data-table tbody tr:nth-child(n+6) { animation-delay: 0.15s; }
 
+/* Sin «to» ni relleno final: la fila termina con sus propios estilos (las dadas de
+   baja vuelven a su opacidad atenuada) y sin un transform que se quede puesto */
 @keyframes rowFadeIn {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateX(-6px); }
 }
 
 .sortable {
@@ -321,7 +327,7 @@
   border-radius: 6px;
   font-size: 0.9rem;
   background-color: white;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
@@ -586,7 +592,7 @@ select.column-filter {
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   font-weight: 500;
   min-width: 40px;
 }
@@ -603,6 +609,49 @@ select.column-filter {
   opacity: 0.5;
   cursor: not-allowed;
   background-color: #f5f5f5;
+}
+
+/* Botones de texto «outline» (Ocultar detalle, Nueva versión, Ver tabla, Editar
+   como JSON, Vista avanzada…): misma altura, letra y aspecto que los botones
+   neutros comunes (shared-buttons.css). Salían más altos, con letra mayor y, al
+   pasar el ratón, en amarillo con texto blanco. Los de la paginación (hijos de
+   .pagination-buttons) no se tocan: tienen su estilo en shared-pagination.css. */
+:not(.pagination-buttons) > .btn.btn-outline {
+  gap: 8px;
+  height: var(--aura-btn-alto);
+  min-height: var(--aura-btn-alto);
+  padding: 0 16px;
+  border: 1px solid var(--aura-btn-neutro-borde);
+  border-radius: var(--aura-btn-radio);
+  background: var(--aura-btn-neutro-fondo);
+  color: var(--aura-btn-neutro-texto);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: var(--aura-btn-sombra);
+}
+
+:not(.pagination-buttons) > .btn.btn-outline i {
+  font-size: 1rem;
+}
+
+:not(.pagination-buttons) > .btn.btn-outline:hover:not(:disabled) {
+  background: var(--aura-btn-neutro-hover);
+  border-color: var(--aura-btn-neutro-borde-hover);
+  color: var(--aura-btn-neutro-texto);
+  transform: none;
+  box-shadow: var(--aura-btn-sombra-hover);
+}
+
+:not(.pagination-buttons) > .btn.btn-outline:focus-visible {
+  outline: none;
+  box-shadow: var(--aura-btn-foco);
+}
+
+:not(.pagination-buttons) > .btn.btn-outline:disabled {
+  background: var(--aura-btn-neutro-fondo);
+  box-shadow: none;
 }
 
 /* Acción de estado "suave" (mismo estilo que Dar de Baja en Puntos de Suministro) */
@@ -624,8 +673,8 @@ select.column-filter {
 .mcas-modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: var(--backdrop-color);
+  backdrop-filter: var(--backdrop-blur);
   z-index: var(--z-overlay-elevated);
   display: flex;
   align-items: center;
@@ -846,7 +895,8 @@ select.column-filter {
 }
 
 .mcas-input:disabled {
-  background: #f5f5f5;
+  background: #f3f4f6;
+  color: #6b7280;
   cursor: not-allowed;
 }
 
@@ -919,7 +969,7 @@ textarea.mcas-input {
   height: 24px;
   background: #ccc;
   border-radius: 24px;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   flex-shrink: 0;
 }
 
@@ -932,7 +982,7 @@ textarea.mcas-input {
   height: 18px;
   background: white;
   border-radius: 50%;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 

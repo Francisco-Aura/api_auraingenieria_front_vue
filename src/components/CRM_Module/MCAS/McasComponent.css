@@ -354,3 +354,23 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Tarjetas de resumen: la etiqueta pasa a dos líneas antes que recortarse
+   («Necesita atención» y «Cerrada sin comisión» no cabían a 1280 y 1366 px) */
+.stat-card--filtro .stat-label {
+  white-space: normal;
+  overflow: visible;
+  line-height: 1.2;
+}
+
+/* «No procede» (cerrar sin comisión) con contorno ámbar: no se confunde con «Cerrar» */
+.mcas-modal-footer .btn.btn-no-procede:not(#aura-boton) {
+  background: #fff !important;
+  border-color: #f59e0b !important;
+  color: #b45309 !important;
+}
+
+.mcas-modal-footer .btn.btn-no-procede:not(#aura-boton):hover:not(:disabled) {
+  background: #fff7ed !important;
+  border-color: #d97706 !important;
+}

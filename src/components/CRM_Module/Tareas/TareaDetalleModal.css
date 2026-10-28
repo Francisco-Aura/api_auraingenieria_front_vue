@@ -6,8 +6,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: var(--backdrop-color);
+  backdrop-filter: var(--backdrop-blur);
   z-index: var(--z-overlay-elevated);
   display: flex;
   align-items: center;
@@ -40,10 +40,7 @@
   }
 }
 
-/* Header del modal */
-.modal-header {
-  display: none; /* Ocultar header completamente */
-}
+/* Cabecera y botón de cierre: styles/shared-modal-header.css (.aura-modal-header) */
 
 .header-actions {
   display: flex;
@@ -68,28 +65,6 @@
   background: rgba(var(--color-brand-yellow-rgb), 0.15);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
-}
-
-.close-button {
-  background-color: transparent;
-  border: none;
-  font-size: 1.1rem;
-  cursor: pointer;
-  color: #a0aec0;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  margin-left: 8px;
-}
-
-.close-button:hover {
-  background-color: #f7fafc;
-  color: #2d3748;
-  transform: rotate(90deg);
 }
 
 /* Body del modal */
@@ -132,7 +107,7 @@
 
 .detalle-grid {
   display: grid;
-  grid-template-columns: 175px 1fr;
+  grid-template-columns: 195px 1fr;
   gap: 8px;
   flex: 1 1 0;
   overflow: hidden;
@@ -205,9 +180,20 @@
   color: #495057;
 }
 
+.cups-info {
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.cups-info > i {
+  margin-top: 3px;
+}
+
 .cups-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-family: monospace;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   color: #1a56db;
   font-weight: 600;
 }
@@ -278,7 +264,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -287,7 +273,6 @@
 
 .btn-aplicar-cambio:hover:not(:disabled) {
   background: #218838;
-  transform: translateY(-1px);
 }
 
 .btn-aplicar-cambio:disabled {
@@ -313,7 +298,7 @@
   border: 1px solid #dee2e6;
   border-radius: 6px;
   font-size: 0.85rem;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   background: white;
 }
 
@@ -375,15 +360,10 @@
   border-left: 4px solid var(--color-accent-indigo);
   border-radius: 6px;
   padding: 12px;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   word-wrap: break-word;
   overflow-wrap: break-word;
   max-width: 100%;
-}
-
-.comentario-item:hover {
-  background: #e9ecef;
-  transform: translateX(4px);
 }
 
 .comentario-header {
@@ -403,12 +383,6 @@
 .comentario-fecha {
   font-size: 0.75rem;
   color: var(--color-secondary-gray);
-}
-
-.comentario-fijado {
-  color: #ffc107;
-  font-size: 0.9rem;
-  margin-left: auto;
 }
 
 .comentario-contenido {
@@ -472,14 +446,8 @@
   border: 1px solid #e9ecef;
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   font-size: 0.85rem;
-}
-
-.adjunto-item:hover {
-  background: #f8f9fa;
-  border-color: var(--color-accent-indigo);
-  transform: translateX(4px);
 }
 
 .adjunto-item i {
@@ -507,7 +475,7 @@
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -515,7 +483,6 @@
 }
 
 .btn-auditoria:hover {
-  transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(23, 162, 184, 0.3);
 }
 
@@ -549,7 +516,7 @@
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   border: none;
   font-size: 0.95rem;
   display: flex;
@@ -617,12 +584,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--backdrop-color);
+  backdrop-filter: var(--backdrop-blur);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: var(--z-overlay-confirm);
-  backdrop-filter: blur(4px);
 }
 
 .modal-confirmacion-completar {
@@ -633,37 +600,7 @@
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.modal-header-confirmacion {
-  padding: 24px;
-  border-bottom: 2px solid #f8f9fa;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(135deg, var(--color-accent-indigo) 0%, var(--color-accent-indigo-dark) 100%);
-  border-radius: 12px 12px 0 0;
-}
-
-.modal-header-confirmacion h3 {
-  margin: 0;
-  color: white;
-  font-size: 1.3rem;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  /* Entrada: la común de los modales (styles/shared-motion.css) */
 }
 
 .modal-body-confirmacion {
@@ -704,10 +641,11 @@
   padding: 12px;
   border: 2px solid #e5e7eb;
   border-radius: 6px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  /* La letra de la aplicación (era Segoe UI, la única caja de texto con otra letra) */
+  font-family: inherit;
   font-size: 0.9rem;
   resize: vertical;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .textarea-confirmacion:focus {
@@ -734,7 +672,7 @@
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -747,31 +685,9 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.btn-confirmar-completar {
-  background: linear-gradient(135deg, var(--color-success) 0%, #20c997 100%);
-  color: white;
-  border: none;
-  padding: 10px 24px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-}
-
-.btn-confirmar-completar:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
-}
-
-.btn-confirmar-completar:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
+/* «Confirmar» de completar la tarea: botón principal común (.btn-confirm en
+   styles/shared-buttons.css), como el de los demás modales. Tenía un degradado verde
+   propio, 2 px más alto que «Cancelar» y que saltaba al pasar el ratón. */
 
 .btn-confirmar-completar i {
   font-size: 1rem;
@@ -814,7 +730,7 @@
 }
 
 .adjuntos-panel-header .section-label {
-  margin-bottom: 0;
+  margin: 0;
 }
 
 .adjuntos-total {
@@ -860,7 +776,7 @@
   padding: 3px 7px;
   font-size: 0.74rem;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: var(--aura-transicion);
   text-align: left;
   min-width: 0;
   max-width: 180px;
@@ -965,6 +881,12 @@
   height: 40px;
   border-radius: 9px;
   box-sizing: border-box;
+}
+
+/* El desplegable mide 210 px: con los 150 px de los demás botones se salía de su
+   recuadro (la flecha quedaba fuera del borde y el texto descentrado). */
+.estado-selector-container.task-action-control {
+  width: auto;
 }
 
 .estado-selector-container {
@@ -1074,7 +996,7 @@
   border-radius: 9px;
   background: #ffffff;
   box-shadow: inset 3px 0 0 var(--primary-color);
-  animation: statePanelEnter 180ms ease-out both;
+  animation: statePanelEnter 180ms ease-out backwards;
 }
 
 .estado-cambio-summary {
@@ -1123,7 +1045,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.2s;
+  transition: var(--aura-transicion);
 }
 
 .btn-aplicar-cambio-estado:hover:not(:disabled) {
@@ -1143,9 +1065,9 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: var(--aura-btn-neutro-fondo);
-  color: var(--aura-btn-neutro-texto);
-  border: 1px solid var(--aura-btn-neutro-borde);
+  background: var(--aura-btn-cancelar-fondo);
+  color: var(--aura-btn-cancelar-texto);
+  border: 1px solid var(--aura-btn-cancelar-borde);
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.85rem;
@@ -1154,8 +1076,8 @@
 }
 
 .btn-cancelar-cambio-estado:hover {
-  background: var(--aura-btn-neutro-hover);
-  border-color: var(--aura-btn-neutro-borde-hover);
+  background: var(--aura-btn-cancelar-hover);
+  border-color: var(--aura-btn-cancelar-borde-hover);
 }
 
 .btn-aplicar-cambio-estado:disabled {
@@ -1209,6 +1131,11 @@
   flex-shrink: 0;
 }
 
+/* Icono separado del texto como en el resto de títulos de sección */
+.section-label i {
+  margin-right: 4px;
+}
+
 .comentarios-lista-compact {
   flex: 1 1 0;
   overflow-y: auto;
@@ -1233,7 +1160,7 @@
   border-radius: 4px;
   padding: 7px;
   font-size: 0.85rem;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   word-wrap: break-word;
   overflow-wrap: break-word;
   max-width: 100%;
@@ -1297,7 +1224,7 @@
   background: rgba(var(--color-accent-indigo-rgb), 0.08);
   padding: 4px 8px;
   border-radius: 6px;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
 }
 
 .comentario-item-compact:hover .comentario-actions {
@@ -1313,7 +1240,7 @@
   cursor: pointer;
   padding: 6px 8px;
   font-size: 1rem;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: var(--aura-transicion);
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -1329,6 +1256,10 @@
   cursor: not-allowed;
 }
 
+/* Al pasar el ratón solo se colorean, como los iconos de acción de las tablas (antes
+   crecían un 15 % aunque estuvieran desactivados, y el de actualizar un adjunto daba
+   media vuelta) */
+
 .btn-fijar-comentario::before,
 .btn-editar-comentario::before,
 .btn-eliminar-comentario::before {
@@ -1337,7 +1268,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   z-index: -1;
 }
 
@@ -1350,13 +1281,12 @@
   transform: scale(0);
 }
 
-.btn-fijar-comentario:hover {
+.btn-fijar-comentario:hover:not(:disabled) {
   color: #f59e0b;
   opacity: 1;
-  transform: scale(1.15);
 }
 
-.btn-fijar-comentario:hover::before {
+.btn-fijar-comentario:hover:not(:disabled)::before {
   transform: scale(1);
 }
 
@@ -1374,13 +1304,12 @@
   transform: scale(0);
 }
 
-.btn-editar-comentario:hover {
+.btn-editar-comentario:hover:not(:disabled) {
   color: #3182ce;
   opacity: 1;
-  transform: scale(1.15);
 }
 
-.btn-editar-comentario:hover::before {
+.btn-editar-comentario:hover:not(:disabled)::before {
   transform: scale(1);
 }
 
@@ -1393,20 +1322,18 @@
   transform: scale(0);
 }
 
-.btn-eliminar-comentario:hover {
+.btn-eliminar-comentario:hover:not(:disabled) {
   color: #e53e3e;
   opacity: 1;
-  transform: scale(1.15);
 }
 
-.btn-eliminar-comentario:hover::before {
+.btn-eliminar-comentario:hover:not(:disabled)::before {
   transform: scale(1);
 }
 
 /* Mostrar más prominentemente al hover del comentario */
-.comentario-item-compact:hover .btn-fijar-comentario,
-.comentario-item-compact:hover .btn-editar-comentario,
-.comentario-item-compact:hover .btn-eliminar-comentario {
+/* Sin contar los desactivados (seguían pareciendo activos) ni el que tiene el ratón encima */
+.comentario-item-compact:hover :is(.btn-fijar-comentario, .btn-editar-comentario, .btn-eliminar-comentario):not(:disabled):not(:hover) {
   opacity: 0.8;
 }
 
@@ -1422,7 +1349,7 @@
   font-family: inherit;
   font-size: 0.85rem;
   resize: vertical;
-  transition: border-color 0.3s;
+  transition: border-color 0.15s;
 }
 
 .comentario-edicion textarea:focus {
@@ -1446,7 +1373,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1459,7 +1386,6 @@
 
 .btn-guardar-edicion:hover {
   background: #218838;
-  transform: translateY(-1px);
 }
 
 .btn-cancelar-edicion {
@@ -1469,7 +1395,6 @@
 
 .btn-cancelar-edicion:hover {
   background: #5a6268;
-  transform: translateY(-1px);
 }
 
 .adjunto-item-compact {
@@ -1483,32 +1408,17 @@
   border: 1.5px solid #d6e4ff;
   border-radius: 6px;
   margin-bottom: 4px;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: var(--aura-transicion);
   position: relative;
   overflow: hidden;
 }
 
-.adjunto-item-compact::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transition: left 0.5s ease;
-  pointer-events: none;
-}
-
-.adjunto-item-compact:hover::before {
-  left: 100%;
-}
-
+/* Sin el destello que cruzaba el adjunto al pasar el ratón: animaba «left» durante
+   medio segundo y ningún otro elemento de la aplicación lo hace */
 .adjunto-item-compact:hover {
   border-color: var(--color-accent-indigo);
   box-shadow: 0 4px 12px rgba(var(--color-accent-indigo-rgb), 0.25);
   background: linear-gradient(135deg, #f8faff 0%, #ffffff 100%);
-  transform: translateY(-2px);
 }
 
 .adjunto-nombre {
@@ -1519,7 +1429,7 @@
   align-items: center;
   gap: 6px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   position: relative;
   z-index: 1;
 }
@@ -1537,7 +1447,7 @@
   display: flex;
   gap: 4px;
   opacity: 0.5;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.15s ease;
   position: relative;
   z-index: 1;
 }
@@ -1553,7 +1463,7 @@
   cursor: pointer;
   padding: 6px 8px;
   font-size: 0.95rem;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: var(--aura-transicion);
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -1568,7 +1478,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   z-index: -1;
 }
 
@@ -1583,7 +1493,6 @@
 
 .btn-actualizar-adjunto:hover {
   color: #2c5282;
-  transform: scale(1.18) rotate(180deg);
 }
 
 .btn-actualizar-adjunto:hover::before {
@@ -1601,7 +1510,6 @@
 
 .btn-eliminar-adjunto:hover {
   color: #c53030;
-  transform: scale(1.18);
 }
 
 .btn-eliminar-adjunto:hover::before {
@@ -1748,20 +1656,14 @@
   }
 }
 
-/* Info adicional left */
+/* Info adicional left (sin etiquetas ni tiempo estimado no se dibuja la línea) */
 .info-adicional-left {
   margin-top: 20px;
   border-top: 1px solid #eee;
   padding-top: 10px;
 }
 
-.adjunto-item-compact {
-  font-size: 0.8rem;
-  color: var(--color-accent-indigo);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2px 0;
+.info-adicional-left:empty {
+  display: none;
 }
-.adjunto-item-compact:hover { text-decoration: underline; }
+

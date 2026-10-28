@@ -49,16 +49,33 @@ function usuarioActualId() {
   }
 }
 
+// Estado del módulo de tareas: lo preguntan el panel (menú), la campana de
+// notificaciones y la pantalla de Tareas, casi a la vez al entrar. Todas comparten
+// la petición en curso y su respuesta durante unos segundos (antes eran 2-3 peticiones
+// idénticas por carga). Un fallo no se guarda: la siguiente llamada vuelve a preguntar.
+const VIGENCIA_MODULO_ACTIVO_MS = 10 * 1000
+let consultaModuloActivo = null // { promesa, caduca }
+
 export const tareasApi = {
   // Configuración de módulos
-  async verificarModuloActivo() {
-    try {
-      const response = await axios.get('/configuracion-modulos/GESTOR_TAREAS/activo')
-      return response.data.activo
-    } catch (error) {
-      console.error('Error verificando módulo activo:', error)
-      return false
+  verificarModuloActivo() {
+    const vigente = consultaModuloActivo
+    if (vigente && (vigente.caduca === null || Date.now() < vigente.caduca)) {
+      return vigente.promesa
     }
+    const consulta = { promesa: null, caduca: null }
+    consulta.promesa = axios.get('/configuracion-modulos/GESTOR_TAREAS/activo')
+      .then((response) => {
+        consulta.caduca = Date.now() + VIGENCIA_MODULO_ACTIVO_MS
+        return response.data.activo
+      })
+      .catch((error) => {
+        console.error('Error verificando módulo activo:', error)
+        if (consultaModuloActivo === consulta) consultaModuloActivo = null
+        return false
+      })
+    consultaModuloActivo = consulta
+    return consulta.promesa
   },
 
 
@@ -265,13 +282,6 @@ export const tareasApi = {
     }
     const response = await axios.put(`/clientes/${clienteId}/timeline/notas/${notaId}`, payload)
     return response.data
-  },
-
-  async descargarArchivoNota(clienteId, notaId) {
-    const response = await axios.get(`/clientes/${clienteId}/timeline/notas/${notaId}/descargar`, {
-      responseType: 'blob'
-    });
-    return response;
   },
 
   async eliminarNotaCliente(clienteId, notaId) {

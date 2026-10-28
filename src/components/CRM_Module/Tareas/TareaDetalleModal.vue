@@ -164,7 +164,7 @@
               <!-- Actions Row: Status Badge, Change Status Selector, Buttons -->
               <div class="acciones-row-horizontal">
                 <!-- Estado Actual -->
-                <div class="estado-badge-compact" :style="{ backgroundColor: tarea.estadoColor }">
+                <div class="estado-badge-compact" :style="{ backgroundColor: tarea.estadoColor, color: colorTextoSobre(tarea.estadoColor) }">
                   <i :class="getEstadoIcon(tarea.estadoId)"></i>
                   {{ formatearEstadoNombre(tarea.estadoNombre) }}
                 </div>
@@ -212,6 +212,7 @@
                       v-model="comentarioCambioEstado"
                       class="form-control motivo-input"
                       :placeholder="esEstadoBloqueado ? 'Explica por qué se bloquea la tarea...' : 'Describe brevemente el cambio...'"
+                      :maxlength="esEstadoBloqueado ? 255 : null"
                       rows="2"
                     ></textarea>
                   </div>
@@ -223,7 +224,7 @@
                       type="button"
                       class="btn-aplicar-cambio-estado"
                       @click="aplicarCambioEstado"
-                      :disabled="!puedeAplicarCambio"
+                      :disabled="!puedeAplicarCambio || guardando"
                     >
                       <i class="fas fa-check"></i> Aplicar cambio
                     </button>
@@ -258,13 +259,17 @@
                   </div>
                 </div>
                 <div class="modal-footer-confirmacion">
-                  <button type="button" class="btn btn-cancelar" @click="cerrarConfirmacion">Cancelar</button>
+                  <button type="button" class="btn btn-cancelar" @click="cerrarConfirmacion">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                  </button>
                   <button 
                     type="button"
-                    class="btn btn-confirmar-completar" 
+                    class="btn btn-confirm btn-confirmar-completar"
                     @click.prevent="completarConComentario"
                     :disabled="comentarioCompletacion.trim().length === 0 || completandoTarea"
                   >
+                    <i :class="completandoTarea ? 'fas fa-spinner fa-spin' : 'fas fa-check'"></i>
                     {{ completandoTarea ? 'Procesando...' : 'Confirmar' }}
                   </button>
                 </div>
@@ -369,7 +374,8 @@
                       <span v-if="comentario.fijado" class="fijado-badge" title="Comentario fijado">
                         <i class="fas fa-thumbtack"></i>
                       </span>
-                      <span v-if="comentario.editado" class="editado-badge" title="Comentario editado">
+                      <!-- Con la fecha de edición ya se lee «(Editado: …)»: la etiqueta solo si no la hay -->
+                      <span v-if="comentario.editado && !comentario.fechaEdicion" class="editado-badge" title="Comentario editado">
                         <i class="fas fa-pencil-alt"></i> Editado
                       </span>
                       <span class="comentario-fecha">{{ formatDate(comentario.fechaCreacion) }}</span>
@@ -472,6 +478,7 @@
         </div>
         <div class="footer-actions">
           <button type="button" class="btn btn-secondary" @click="cerrar">
+            <i class="fas fa-times"></i>
             Cerrar
           </button>
           <button v-if="puedeEditarTarea" type="button" class="btn btn-primary" @click="editarTarea">
@@ -495,6 +502,9 @@
 
 <script>
 import { textoError } from '@/utils/errores';
+import { fechaHoraES } from '@/utils/fechas'
+import { nombreEstado, textoPrioridad } from '@/utils/tareas'
+import { colorTextoSobre } from '@/utils/colores'
 import TareaAuditoriaModal from './TareaAuditoriaModal.vue'
 import tareasApi from '@/services/tareasApi'
 
@@ -503,7 +513,7 @@ export default {
   components: {
     TareaAuditoriaModal
   },
-  emits: ['actualizar', 'cambiarEstado', 'completarConComentario', 'completar-con-comentario', 'crearComentarioEstado', 'crear-comentario-estado', 'comentario-creado', 'cerrar', 'update:value'],
+  emits: ['actualizar', 'cambiarEstado', 'completarConComentario', 'completar-con-comentario', 'comentario-creado', 'cerrar', 'update:value'],
   props: {
     value: {
       type: Boolean,
@@ -516,12 +526,16 @@ export default {
     estados: {
       type: Array,
       default: () => []
+    },
+    // El padre lo activa mientras guarda el cambio de estado: evita repetirlo con un doble clic
+    guardando: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
       estadoSeleccionado: null,
-      motivoBloqueo: '',
       comentarioCambioEstado: '',
       esEstadoBloqueado: false,
       mostrarAuditoria: false,
@@ -534,7 +548,6 @@ export default {
       guardandoComentario: false,
       archivosSeleccionados: [],
       dragActivoComentario: false,
-      subiendoArchivos: false,
       comentarioEditando: null,
       textoComentarioEditando: '',
       adjuntosDirectos: [],
@@ -615,7 +628,6 @@ export default {
           // Inicializar estado como null para mostrar "Modificar estado"
           this.estadoSeleccionado = null
           // Resetear campos de comentario
-          this.motivoBloqueo = ''
           this.comentarioCambioEstado = ''
           this.esEstadoBloqueado = false
           this.nuevoComentario = ''
@@ -678,6 +690,7 @@ export default {
     }
   },
   methods: {
+    colorTextoSobre,
     toggleAdjuntosPanel() {
       this.adjuntosExpandidos = !this.adjuntosExpandidos
       this.$nextTick(() => {
@@ -734,6 +747,7 @@ export default {
     },
 
     async aplicarCambioEstado() {
+      if (this.guardando) return
       if (!this.estadoSeleccionado || this.estadoSeleccionado === this.tarea.estadoId) {
         return
       }
@@ -743,33 +757,16 @@ export default {
         return
       }
 
-      try {
-        // Primero crear el comentario sobre el cambio de estado
-        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
-        await this.$emit('crear-comentario-estado', {
-          tareaId: this.tarea.id,
-          contenido: this.comentarioCambioEstado.trim(),
-          autor: usuario.nombre || 'Usuario'
-        })
-        
-        // Luego cambiar el estado (con motivo si es bloqueo)
-        const motivo = this.esEstadoBloqueado ? this.comentarioCambioEstado.trim() : null
-        this.$emit('cambiar-estado', this.tarea.id, this.estadoSeleccionado, motivo)
-      } catch (error) {
-        console.error('Error cambiando estado:', error)
-        // Revertir la selección en caso de error
-        this.estadoSeleccionado = this.tarea.estadoId
-        this.esEstadoBloqueado = false
-        this.comentarioCambioEstado = ''
-        this.$swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo cambiar el estado de la tarea. Inténtelo de nuevo.'
-        })
-      }
+      // Un solo aviso al padre, que cambia el estado (con motivo si es bloqueo) y, si sale
+      // bien, guarda el comentario. Antes se mandaban a la vez: si fallaba el cambio, el
+      // comentario ya estaba guardado y al reintentar se duplicaba
+      const comentario = this.comentarioCambioEstado.trim()
+      const motivo = this.esEstadoBloqueado ? comentario : null
+      this.$emit('cambiar-estado', this.tarea.id, this.estadoSeleccionado, motivo, comentario)
     },
 
     async completarConComentario() {
+      if (this.completandoTarea || this.guardando) return
       if (!this.comentarioCompletacion.trim()) {
         this.$swal.fire({
           icon: 'warning',
@@ -812,14 +809,15 @@ export default {
         }, 300)
       } catch (error) {
         console.error('Error completando tarea:', error)
+        this.completandoTarea = false
         this.$swal.fire({
           icon: 'error',
           title: 'Error',
           text: 'Error al completar la tarea: ' + error.message
         })
-      } finally {
-        this.completandoTarea = false
       }
+      // completandoTarea sigue activo (botón bloqueado) hasta que cerrarConfirmacion lo
+      // limpia: antes se soltaba al instante y un doble clic completaba la tarea dos veces
     },
 
     cerrarConfirmacion() {
@@ -866,6 +864,8 @@ export default {
           this.insertarMencion(this.mencionDropdown.usuarios[this.mencionDropdown.indice])
         }
       } else if (event.key === 'Escape') {
+        // Esc cierra la lista de menciones, no el detalle de la tarea
+        event.preventDefault()
         this.mencionDropdown.visible = false
       }
     },
@@ -987,35 +987,20 @@ export default {
     },
 
     formatearFecha(fecha) {
-      if (!fecha) return '-'
-      return new Date(fecha).toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      return fechaHoraES(fecha)
     },
 
     formatearEstadoNombre(nombre) {
-      if (!nombre) return ''
-      return nombre.toString().replace(/_/g, ' ').toLowerCase().replace(/(^|\s)\S/g, (t) => t.toUpperCase())
+      return nombreEstado(nombre)
     },
 
     getPrioridadTexto(prioridad) {
-      switch (prioridad) {
-        case 0: return 'Urgente'
-        case 1: return 'Alta'
-        case 2: return 'Media'
-        case 3: return 'Baja'
-        default: return 'Normal'
-      }
+      return textoPrioridad(prioridad)
     },
 
     cerrar() {
       // Resetear campos de cambio de estado
       this.estadoSeleccionado = null
-      this.motivoBloqueo = ''
       this.comentarioCambioEstado = ''
       this.esEstadoBloqueado = false
       this.mostrarAuditoria = false
@@ -1030,7 +1015,8 @@ export default {
       const estado = this.estados.find(e => e.id === estadoId)
       if (!estado) return 'fas fa-circle'
       
-      if (estado.esBloqueo) return 'fas fa-lock'
+      // El servidor manda «estadoBloqueo» (esBloqueo es el nombre en la base de datos)
+      if (estado.estadoBloqueo || estado.esBloqueo) return 'fas fa-lock'
       if (estado.cuentaTiempo) return 'fas fa-play'
       if (estado.estadoFinal) return 'fas fa-check-circle'
       
@@ -1078,14 +1064,7 @@ export default {
     },
 
     formatDate(fecha) {
-      if (!fecha) return '-'
-      return new Date(fecha).toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      return fechaHoraES(fecha)
     },
 
     async descargarAdjunto(adjunto) {
@@ -1120,7 +1099,6 @@ export default {
         
         // Si hay archivos seleccionados, subirlos
         if (this.archivosSeleccionados.length > 0) {
-          this.subiendoArchivos = true
           
           for (const archivo of this.archivosSeleccionados) {
             try {
@@ -1135,7 +1113,6 @@ export default {
             }
           }
           
-          this.subiendoArchivos = false
         }
         
         // Limpiar campos y recargar comentarios
@@ -1154,7 +1131,6 @@ export default {
         })
       } finally {
         this.guardandoComentario = false
-        this.subiendoArchivos = false
       }
     },
 

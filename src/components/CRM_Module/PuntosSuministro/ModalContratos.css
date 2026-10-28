@@ -166,7 +166,7 @@
   align-items: center;
   justify-content: center;
   font-size: 1rem;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   position: relative;
   background: #fff;
   border: 1px solid var(--border-color);
@@ -178,7 +178,6 @@
   background: #f8f9fa;
   border-color: #ffd600;
   color: #ffd600;
-  transform: scale(1.12);
 }
 
 .btn-icon:disabled {
@@ -264,7 +263,7 @@
 
 .status-vigente i {
   color: var(--color-success);
-  animation: pulse 2s infinite;
+  animation: pulse 2s 3; /* tres pulsos y quieto */
 }
 
 .status-historico {
@@ -273,6 +272,19 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+/* Contrato que todavía no ha empezado (solo la etiqueta de la tabla) */
+.status-proximo {
+  color: #1d4ed8;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-table td.celda-numero {
+  white-space: nowrap;
 }
 
 /* ===== MODALES COMPACTADOS ===== */
@@ -284,8 +296,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: var(--backdrop-color);
+  backdrop-filter: var(--backdrop-blur);
   z-index: var(--z-overlay);
   display: flex;
   align-items: center;
@@ -469,7 +481,7 @@
   padding: 0.2rem 0.3rem;
   font-size: 0.75rem;
   text-align: center;
-  transition: all 0.2s;
+  transition: var(--aura-transicion);
 }
 
 .potencia-input-compacta:focus {
@@ -749,9 +761,11 @@
 }
 
 /* Estilos compactos para la gestión de denuncia */
+/* Sin marcar, la casilla de denuncia es neutra; en rojo solo cuando hay denuncia
+   (antes el recuadro rojo parecía un error aunque no se hubiera marcado nada) */
 .denuncia-compacta {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 0.3rem;
   padding: 0.6rem;
   display: flex;
@@ -786,7 +800,7 @@
   border: 2px solid #dc2626;
   border-radius: 3px;
   position: relative;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   flex-shrink: 0;
   display: inline-block;
   cursor: pointer;
@@ -830,7 +844,8 @@
   padding-top: 0.3rem;
   border-top: 1px solid #fecaca;
   margin-top: 0.3rem;
-  animation: slideIn 0.3s ease-out;
+  /* Mismo despliegue que el resto de la aplicación (styles/shared-motion.css) */
+  animation: auraDesplegar 0.16s var(--aura-curva);
 }
 
 .fecha-label-compacta {
@@ -858,17 +873,6 @@
   outline: none;
   border-color: #b91c1c;
   box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.1);
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* Badges informativos compactos */
@@ -1034,7 +1038,7 @@
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
   position: relative;
-  animation: modalFadeIn 0.3s;
+  /* Entrada y esquinas: las comunes de los modales (shared-motion.css, shared-modal-header.css) */
 }
 
 .detalle-contrato-content .modal-header {
@@ -1160,17 +1164,6 @@
   border-color: #ffc107;
 }
 
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .btn {
   padding: 0.75rem 1.5rem;
   border: none;
@@ -1180,7 +1173,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   font-weight: 500;
 }
 
@@ -1667,4 +1660,57 @@
 
 .textarea-contrato {
   font-family: inherit;
+}
+
+/* La celda de acciones sigue siendo celda de tabla (con display:flex perdía el
+   fondo y el borde de la fila); los iconos van en línea con un hueco fijo */
+.history-table td.action-buttons {
+  display: table-cell;
+  white-space: nowrap;
+}
+
+.history-table td.action-buttons > .btn-icon {
+  vertical-align: middle;
+}
+
+.history-table td.action-buttons > .btn-icon + .btn-icon {
+  margin-left: 4px;
+}
+
+/* Pie del formulario: Cancelar y Guardar separados */
+.modal-footer-modern .action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Las cabeceras de dos palabras pueden partirse en dos líneas: así la tabla cabe
+   en pantallas de 1280 px sin que la columna Acciones quede fuera del modal */
+.history-table th {
+  white-space: normal;
+  vertical-align: bottom;
+  line-height: 1.3;
+}
+
+.denuncia-compacta .denuncia-label-compacta,
+.denuncia-compacta .denuncia-text {
+  color: #334155;
+}
+
+.denuncia-compacta .denuncia-checkmark {
+  border-color: #94a3b8;
+}
+
+.denuncia-compacta--activa {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.denuncia-compacta--activa .denuncia-label-compacta,
+.denuncia-compacta--activa .denuncia-text {
+  color: #dc2626;
+}
+
+.denuncia-compacta--activa .denuncia-checkmark {
+  border-color: #dc2626;
 }

@@ -24,6 +24,8 @@ const routes = [
     component: DashboardComponent,
     meta: { requiresAuth: true },
     children: [
+      // /dashboard a secas era una pantalla vacía: se abre la cartera de clientes
+      { path: '', redirect: '/dashboard/clientes' },
       {
         path: 'clientes',
         component: ClientesComponent,
@@ -42,7 +44,9 @@ const routes = [
       {
         path: 'administracion',
         component: AdministracionComponent,
-        meta: { requiresAuth: true }
+        // Como en el menú: solo administradores (escribiendo la URL se veían las tablas
+        // maestras y los datos de los usuarios)
+        meta: { requiresAuth: true, requiresAdmin: true }
       },
       {
         path: 'tareas',
@@ -60,7 +64,9 @@ const routes = [
         meta: { requiresAuth: true, requiresAdmin: true }
       }
     ]
-  },  
+  },
+  // Una dirección que no existe dejaba la página en blanco
+  { path: '/:pathMatch(.*)*', redirect: '/dashboard/clientes' },
 ];
 
 // Crea el router
@@ -96,6 +102,27 @@ router.beforeEach((to, from, next) => {
     // Si la ruta no requiere autenticación, permitir el acceso
     next();
   }
+});
+
+// Tras un despliegue, una pestaña abierta con la versión anterior pide trozos de la
+// app que ya no existen. En vez de quedarse en blanco, se recarga una vez para coger
+// la versión nueva (como mucho una vez cada 10 s, para no entrar en bucle sin red).
+router.onError((error, to) => {
+  const mensaje = String(error?.message || '');
+  if (!/Loading (CSS )?chunk|ChunkLoadError|dynamically imported module/i.test(mensaje)) return;
+  let ultima = 0;
+  try {
+    ultima = Number(sessionStorage.getItem('aura-recarga-version')) || 0;
+  } catch (e) {
+    // sin sessionStorage se recarga igual
+  }
+  if (Date.now() - ultima < 10000) return;
+  try {
+    sessionStorage.setItem('aura-recarga-version', String(Date.now()));
+  } catch (e) {
+    // sin sessionStorage se recarga igual
+  }
+  window.location.assign(to?.fullPath || '/');
 });
 
 // Exporta el router

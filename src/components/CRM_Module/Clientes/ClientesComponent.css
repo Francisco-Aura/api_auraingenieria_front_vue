@@ -37,19 +37,18 @@
   padding: 0.7rem 1rem;
   display: flex;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   flex: 1;
-  animation: statCardEntrance 0.5s ease both;
+  animation: statCardEntrance 0.22s var(--aura-curva) backwards;
 }
 
 .stat-card--clientes { animation-delay: 0s; }
-.stat-card--puntos { animation-delay: 0.1s; }
-.stat-card--sectores { animation-delay: 0.2s; }
+.stat-card--puntos { animation-delay: 0.05s; }
+.stat-card--sectores { animation-delay: 0.1s; }
 
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-}
+/* Elevación suave al pasar el ratón, igual en todas las pantallas */
+/* Las tarjetas de resumen no se pulsan: sin elevarse al pasar el ratón (parecían botones).
+   Las de Comisiones MCAS, que sí filtran, tienen su propio hover (McasShared.css). */
 
 .stat-icon {
   width: 2.8rem;
@@ -86,7 +85,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   min-width: auto;
 }
 
@@ -115,7 +114,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   padding: 0;
   margin: 0;
 }
@@ -175,6 +174,10 @@
   border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 500;
+  /* Ancho mínimo común: el ojo queda en la misma vertical tenga el cliente 4 o 121 puntos */
+  min-width: 2.75rem;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .table-controls {
@@ -228,7 +231,7 @@
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   font-weight: 500;
   min-width: 40px;
 }
@@ -268,20 +271,29 @@
   z-index: var(--z-sticky);
 }
 
+/* Anchos que suman 100 % (antes 130 %): la columna Acciones ya no se sale de la
+   tabla en pantallas de 1280 px. El CIF (9 caracteres) tiene un mínimo para verse
+   entero a 1280 px; se lo cede la dirección, que ya se recorta con «…» */
 .th-col-nombre { width: 20%; }
-.th-col-cif { width: 15%; }
-.th-col-grupo { width: 15%; }
-.th-col-sector { width: 15%; }
-.th-col-dirfiscal { width: 25%; }
-.th-col-ps { width: 15%; }
-.th-col-usuario { width: 15%; }
-.th-col-acciones-cli { width: 10%; }
+.th-col-cif { width: 10%; min-width: 96px; }
+.th-col-grupo { width: 14%; }
+.th-col-sector { width: 11%; }
+.th-col-dirfiscal { width: 18%; }
+.th-col-ps { width: 9%; }
+.th-col-usuario { width: 10%; }
+.th-col-acciones-cli { width: 8%; }
 
 .data-table td {
-  padding: 12px 15px;
+  padding: 12px 6px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
   height: 52px; /* Altura fija para las filas */
+}
+
+/* La fila del aviso de tabla vacía no se resalta al pasar el ratón */
+.data-table tbody tr.fila-estado-vacio,
+.data-table tbody tr.fila-estado-vacio:hover {
+  background-color: transparent;
 }
 
 /* Estado vacío */
@@ -312,9 +324,24 @@
   color: var(--color-text-secondary);
 }
 
+/* Fallo de carga: en rojo y con botón para reintentar */
+.empty-state--error i {
+  background: rgba(220, 53, 69, 0.1);
+  color: var(--color-danger);
+}
+
+.empty-state--error p {
+  color: var(--color-text-dark);
+  font-weight: 500;
+}
+
+.empty-state .btn-reintentar {
+  margin-top: 1rem;
+}
+
 /* Row fade-in animation */
 .data-table tbody tr {
-  animation: rowFadeIn 0.3s ease both;
+  animation: rowFadeIn 0.2s ease-out backwards;
 }
 .data-table tbody tr:nth-child(1) { animation-delay: 0s; }
 .data-table tbody tr:nth-child(2) { animation-delay: 0.03s; }
@@ -323,9 +350,10 @@
 .data-table tbody tr:nth-child(5) { animation-delay: 0.12s; }
 .data-table tbody tr:nth-child(n+6) { animation-delay: 0.15s; }
 
+/* Sin «to» ni relleno final: la fila termina con sus propios estilos (las dadas de
+   baja vuelven a su opacidad atenuada) y sin un transform que se quede puesto */
 @keyframes rowFadeIn {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateX(-6px); }
 }
 @keyframes highlightFlash {
   0% { background-color: rgba(76, 175, 80, 0.3); }
@@ -349,7 +377,6 @@
   display: flex;
   gap: 8px;
   justify-content: center;
-  min-width: 120px; /* Ancho mínimo para los botones de acción */
 }
 
 .column-header {
@@ -378,7 +405,7 @@
   border-radius: 6px;
   font-size: 0.9rem;
   background-color: white;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
@@ -394,7 +421,7 @@
 }
 
 .data-table th {
-  padding: 12px;
+  padding: 12px 6px;
   vertical-align: top;
   background-color: var(--surface-color);
   border-bottom: 2px solid var(--border-color);
@@ -423,7 +450,7 @@
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   width: 100%;
   text-align: left;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -441,14 +468,30 @@
 }
 
 .dropdown-button i {
-  transition: transform 0.3s ease;
+  transition: transform 0.2s var(--aura-curva);
+  flex-shrink: 0;
 }
 
+/* Texto del botón recortado con «…» (el nombre completo va en el title); ancho 0 de
+   partida para que un sector largo no ensanche la columna */
+.dropdown-button-texto {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tan ancho como pida el sector más largo (con tope), no como la columna: antes los
+   nombres salían cortados a media palabra */
 .dropdown-menu {
   position: absolute;
   top: 100%;
   left: 0;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
+  max-width: 280px;
   background-color: white;
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -467,12 +510,13 @@
   gap: 8px;
   font-size: 0.9rem;
   color: var(--text-primary);
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
 }
 
+/* Texto oscuro sobre amarillo suave: en amarillo sobre blanco apenas se leía */
 .dropdown-item:hover {
-  background-color: var(--hover-color);
-  color: var(--primary-color);
+  background-color: rgba(var(--color-brand-yellow-rgb), 0.12);
+  color: var(--color-text-dark);
 }
 
 .dropdown-item.checked {
@@ -491,7 +535,13 @@
   cursor: pointer;
   font-weight: 600;
   color: var(--text-primary);
-  font-size: 10px;
+  font-size: 0.8rem; /* antes 10 px: apenas se leía */
+  line-height: 1.3;
+  white-space: normal;
+}
+
+.checkbox-label .checkmark {
+  flex-shrink: 0;
 }
 
 .checkbox-label input {
@@ -512,7 +562,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
 }
 
 .checkbox-label input:checked ~ .checkmark {
@@ -574,7 +624,7 @@
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: var(--aura-transicion);
   border: none;
   cursor: pointer;
   letter-spacing: 0.3px;
@@ -650,7 +700,7 @@
   font-weight: 600;
   padding: 10px 20px;
   border-radius: 8px;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
 }
 
 .btn-toggle-baja:hover {
@@ -675,7 +725,7 @@
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   border: none;
   cursor: pointer;
 }

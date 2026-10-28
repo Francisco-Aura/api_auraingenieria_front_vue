@@ -66,6 +66,9 @@
                       <span v-else-if="obtenerEstadoServicio(servicio) === 'PENDIENTE'" class="status-pendiente">
                         <i class="fas fa-exclamation-circle"></i> PENDIENTE
                       </span>
+                      <span v-else-if="esServicioProximo(servicio)" class="status-proximo" :title="'Empieza el ' + formatDate(servicio.fechaInicioServicio)">
+                        <i class="fas fa-clock"></i> PRÓXIMO
+                      </span>
                       <span v-else class="status-historico">
                         <i class="fas fa-circle"></i> HISTÓRICO
                       </span>
@@ -80,10 +83,10 @@
                     <td class="pagos-column">
                       <div v-if="servicio.pagos" class="pagos-mini">
                         <span class="pago-indicador">{{ obtenerMesesPagados(servicio.pagos) }}/{{ obtenerNumeroCuotas(servicio.pagos) }} P</span>
-                        <span class="total-indicador">{{ formatearEuros(servicio.pagos.importeFinal || servicio.pagos.importe) }}</span>
+                        <span class="total-indicador">{{ formatearEuros(esDescuentoTotal(servicio.pagos.importe, servicio.pagos.descuento) ? 0 : (servicio.pagos.importeFinal || servicio.pagos.importe)) }}</span>
                       </div>
-                      <div v-else class="sin-pagos-mini">
-                        <span>--/--</span>
+                      <div v-else class="sin-pagos-mini" title="Este servicio no tiene plan de pagos">
+                        <span>Sin plan</span>
                       </div>
                     </td>
                     <td class="action-buttons">
@@ -150,7 +153,7 @@
                       @change="errores.idProducto = ''"
                       required
                     >
-                      <option value="">Seleccione un producto...</option>
+                      <option :value="0">Seleccione...</option>
                       <option v-for="producto in productos" :key="producto.id" :value="producto.id">
                         {{ producto.nombre }}
                       </option>
@@ -169,7 +172,7 @@
                       @change="errores.idGestora = ''"
                       required
                     >
-                      <option value="">Seleccione una gestora...</option>
+                      <option :value="0">Seleccione...</option>
                       <option v-for="gestora in gestoras" :key="gestora.id" :value="gestora.id">
                         {{ gestora.nombre }}
                       </option>
@@ -188,7 +191,7 @@
                       @change="errores.idComercializadora = ''"
                       required
                     >
-                      <option value="">Seleccione una comercializadora...</option>
+                      <option :value="0">Seleccione...</option>
                       <option v-for="comercializadora in comercializadorasList" :key="comercializadora.id" :value="comercializadora.id">
                         {{ comercializadora.nombre }}
                       </option>
@@ -268,7 +271,7 @@
                       @change="errores.idPagoPlazos = ''"
                       required
                     >
-                      <option value="">Seleccione modalidad...</option>
+                      <option :value="null">Seleccione...</option>
                       <option v-for="plazo in modalidadesPago" :key="plazo.id" :value="plazo.id">
                         {{ plazo.nombre }}<span v-if="plazo.descripcion"> - {{ plazo.descripcion }}</span>
                       </option>
@@ -393,7 +396,7 @@
     </div>
 
     <!-- MODAL DETALLE SERVICIO - FUERA DEL MODAL PRINCIPAL -->
-    <div v-if="mostrarModalDetalleServicio" class="modal-overlay detalle-contrato-modal">
+    <div v-if="mostrarModalDetalleServicio" class="modal-overlay detalle-contrato-modal" @click.self="cerrarModalDetalleServicio">
       <div class="modal-content detalle-contrato-content">
         <div class="modal-header aura-modal-header">
           <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-clipboard-list"></i></span>
@@ -494,7 +497,7 @@
     </div>
 
     <!-- MODAL GESTIÓN DE PAGOS - FUERA DEL MODAL PRINCIPAL -->
-    <div v-if="mostrarModalGestionPagos" class="modal-overlay detalle-contrato-modal">
+    <div v-if="mostrarModalGestionPagos" class="modal-overlay detalle-contrato-modal" @click.self="pedirCerrarGestionPagos">
       <div class="modal-content detalle-contrato-content">
         <div class="modal-header aura-modal-header">
           <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-euro-sign"></i></span>
@@ -502,7 +505,7 @@
             <h2>Gestión de pagos</h2>
             <span class="aura-modal-header__subtitulo"><span class="aura-dato"><span class="aura-dato__etiqueta">Servicio</span>#{{ servicioGestionPagos?.id }}</span><span>Marque cada cuota cobrada y pulse «Guardar» en su fila</span></span>
           </div>
-          <button type="button" @click="cerrarModalGestionPagos" class="close-button" aria-label="Cerrar gestión de pagos">
+          <button type="button" @click="pedirCerrarGestionPagos" class="close-button" aria-label="Cerrar gestión de pagos">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -544,7 +547,12 @@
                     <span class="ct-badge-num">{{ cuota.numeroPago }}</span>
                   </td>
                   <td class="ct-estado">
-                    <span class="ct-pill" :class="cuota.pagado ? 'ct-pill--pagado' : 'ct-pill--pendiente'">
+                    <!-- Un cambio sin guardar no se presenta como hecho: «Sin guardar» hasta pulsar Guardar -->
+                    <span v-if="cuota.editado" class="ct-pill ct-pill--sin-guardar" title="Pulse «Guardar» en esta fila para guardar el cambio">
+                      <i class="fas fa-pen"></i>
+                      Sin guardar
+                    </span>
+                    <span v-else class="ct-pill" :class="cuota.pagado ? 'ct-pill--pagado' : 'ct-pill--pendiente'">
                       <i :class="cuota.pagado ? 'fas fa-check-circle' : 'fas fa-clock'"></i>
                       {{ cuota.pagado ? 'Pagado' : 'Pendiente' }}
                     </span>
@@ -582,7 +590,10 @@
 
 <script>
 import axios from "axios";
-import { fechaLocalISO } from "@/utils/fechas";
+import { fechaLocalISO, enVigorHoy, terminadoHoy, fechaES } from "@/utils/fechas";
+import { cupsRecortado } from "@/utils/cups";
+import { nombreComercializadora } from "@/utils/maestros";
+import { escaparHtml } from "@/utils/html";
 
 const FORMATO_EUROS = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
 
@@ -679,6 +690,7 @@ export default {
       nivelAcceso: null,
       cuotas: [],
       pagosExistentes: null,
+      peticionEdicion: 0,
       modalidadDebounceTimer: null,
       errores: {},
     };
@@ -728,14 +740,19 @@ export default {
 
     // Helper para obtener el CUPS correcto del punto de suministro
     obtenerCupsDelPuntoSuministro() {
-      const cupsluz = this.puntoSuministroData?.cupsluz?.trim() || "";
-      const cupsgas = this.puntoSuministroData?.cupsgas?.trim() || "";
-      return cupsluz || cupsgas || "";
+      return cupsRecortado(this.puntoSuministroData);
     },
 
+    // «05/03/2026», como la lista de puntos de suministro (antes «5/3/2026»)
     formatDate(date) {
-      if (!date) return '';
-      return new Date(date).toLocaleDateString('es-ES');
+      return fechaES(date, '');
+    },
+
+    // Solo para la etiqueta de la tabla: un servicio que aún no ha empezado no es
+    // «histórico». No cambia cuál cuenta como vigente para Modificar/Renovar actual.
+    esServicioProximo(servicio) {
+      const inicio = fechaLocalISO(servicio?.fechaInicioServicio);
+      return inicio !== '' && inicio > fechaLocalISO();
     },
 
     formatDateForInput(dateString) {
@@ -791,25 +808,8 @@ export default {
     },
 
     getComercializadoraNombre(id) {
-      if (!id || id === '') return 'Sin Comercializadora';
-      
-      // Priorizar las comercializadoras del prop, luego las cargadas internamente
-      let lista = this.comercializadoras;
-      if (!lista || !lista.length) {
-        lista = this.comercializadorasList;
-      }
-      
-      if (!lista || !lista.length) {
-        return 'Comercializadora Desconocida';
-      }
-      
-      const comercializadora = lista.find(c => c.id == id);
-      
-      if (!comercializadora) {
-        return 'Comercializadora Desconocida';
-      }
-      
-      return comercializadora.nombre;
+      // Primero las comercializadoras del prop y, si no hay, las cargadas por la ventana
+      return nombreComercializadora(id, this.comercializadoras, this.comercializadorasList);
     },
 
     // Nuevos métodos para manejar la nueva interfaz
@@ -825,14 +825,13 @@ export default {
 
     async modificarServicioActual() {
       if (!this.servicioVigente) return;
-      this.mostrandoFormulario = true;
-      this.modoEdicion = true;
-      this.modoRenovacion = false;
-      this.servicioEditandoId = this.servicioVigente.id;
+      const servicioId = this.servicioVigente.id;
+      const peticion = this.empezarCargaEdicion(servicioId);
       
       // Cargar datos completos del servicio desde el backend
       try {
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/servicios/${this.servicioVigente.id}`);
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/servicios/${servicioId}`);
+        if (peticion !== this.peticionEdicion) return;
         const servicioCompleto = response.data;
         
         this.nuevoServicio = { 
@@ -848,11 +847,12 @@ export default {
           observaciones: servicioCompleto.observaciones || "",
           importe: servicioCompleto.importe || 0,
           descuento: servicioCompleto.descuento || 0,
-          importeFinal: servicioCompleto.importeFinal || servicioCompleto.importe || 0,
+          importeFinal: this.esDescuentoTotal(servicioCompleto.importe, servicioCompleto.descuento) ? 0 : (servicioCompleto.importeFinal || servicioCompleto.importe || 0),
           idPagoPlazos: servicioCompleto.idPagoPlazos || null // ¡CAMPO CRÍTICO INCLUIDO!
         };
 
       } catch (error) {
+        if (peticion !== this.peticionEdicion) return;
         console.error('Error al cargar datos completos del servicio:', error);
         // Fallback al método anterior si falla la carga
         this.nuevoServicio = { ...this.servicioVigente };
@@ -863,7 +863,7 @@ export default {
         }
       }
       
-      this.cargarDatosPagosServicio(this.servicioVigente.id);
+      await this.terminarCargaEdicion(peticion, servicioId);
     },
 
     renovarServicioActual() {
@@ -889,14 +889,12 @@ export default {
     },
 
     async editarServicioGenerico(servicio) {
-      this.mostrandoFormulario = true;
-      this.modoEdicion = true;
-      this.modoRenovacion = false;
-      this.servicioEditandoId = servicio.id;
+      const peticion = this.empezarCargaEdicion(servicio.id);
       
       // Cargar datos completos del servicio desde el backend
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/servicios/${servicio.id}`);
+        if (peticion !== this.peticionEdicion) return;
         const servicioCompleto = response.data;
         
         this.nuevoServicio = {
@@ -913,11 +911,12 @@ export default {
           observaciones: servicioCompleto.observaciones || "",
           importe: servicioCompleto.importe || 0,
           descuento: servicioCompleto.descuento || 0,
-          importeFinal: servicioCompleto.importeFinal || servicioCompleto.importe || 0,
+          importeFinal: this.esDescuentoTotal(servicioCompleto.importe, servicioCompleto.descuento) ? 0 : (servicioCompleto.importeFinal || servicioCompleto.importe || 0),
           idPagoPlazos: servicioCompleto.idPagoPlazos || null // ¡CAMPO CRÍTICO INCLUIDO!
         };
         
       } catch (error) {
+        if (peticion !== this.peticionEdicion) return;
         console.error('Error al cargar datos completos del servicio:', error);
         // Fallback al método anterior si falla la carga
         this.nuevoServicio = JSON.parse(JSON.stringify(servicio));
@@ -934,7 +933,38 @@ export default {
         this.nuevoServicio.fechaFinServicio = this.formatDateForInput(servicio.fechaFinServicio);
       }
       
-      this.cargarDatosPagosServicio(servicio.id);
+      await this.terminarCargaEdicion(peticion, servicio.id);
+    },
+
+    // Hasta tener el servicio y su plan de pagos el formulario no se enseña: guardar antes
+    // de que llegara el plan (o si fallaba su carga) lo regeneraba como si no hubiera
+    // ninguna cuota pagada. La última edición abierta es la que vale.
+    empezarCargaEdicion(servicioId) {
+      this.peticionEdicion += 1;
+      this.pagosExistentes = null;
+      this.cuotas = [];
+      this.errores = {};
+      this.cargandoDatos = true;
+      this.mostrandoFormulario = true;
+      this.modoEdicion = true;
+      this.modoRenovacion = false;
+      this.servicioEditandoId = servicioId;
+      return this.peticionEdicion;
+    },
+
+    async terminarCargaEdicion(peticion, servicioId) {
+      const planCargado = await this.cargarDatosPagosServicio(servicioId);
+      if (peticion !== this.peticionEdicion) return;
+      this.cargandoDatos = false;
+      if (!planCargado) {
+        this.cancelarFormulario();
+        this.$swal.fire({
+          icon: 'error',
+          title: 'No se pudo abrir el servicio',
+          text: 'No se han podido cargar sus pagos. Inténtelo de nuevo en unos segundos; no se ha modificado nada.',
+          confirmButtonColor: '#fcd700'
+        });
+      }
     },
 
     renovarServicioGenerico(servicio) {
@@ -961,7 +991,12 @@ export default {
     },
 
     cancelarFormulario() {
+      // Una carga de edición que siga en curso ya no abre el formulario
+      this.peticionEdicion += 1;
+      this.cargandoDatos = false;
       this.mostrandoFormulario = false;
+      // Los avisos en rojo de este intento no se arrastran al siguiente formulario
+      this.errores = {};
       this.modoEdicion = false;
       this.modoRenovacion = false;
       this.servicioEditandoId = null;
@@ -1054,7 +1089,7 @@ export default {
           descripcion: this.nuevoServicio.descripcion,
           importe: this.nuevoServicio.importe || 0,
           descuento: this.nuevoServicio.descuento || 0,
-          importeFinal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe || 0,
+          importeFinal: this.descuentoTotalFormulario() ? 0 : (this.nuevoServicio.importeFinal || this.nuevoServicio.importe || 0),
           idGestora: this.nuevoServicio.idGestora || null,
           idProducto: this.nuevoServicio.idProducto || null,
           idComercializadora: this.nuevoServicio.idComercializadora || null,
@@ -1106,7 +1141,7 @@ export default {
                     },
                     importe: this.nuevoServicio.importe || pagosGenerados.importe || 0,
                     descuento: this.nuevoServicio.descuento || pagosGenerados.descuento || 0,
-                    importeFinal: this.nuevoServicio.importeFinal || pagosGenerados.importeFinal || 0,
+                    importeFinal: this.descuentoTotalFormulario() ? 0 : (this.nuevoServicio.importeFinal || pagosGenerados.importeFinal || 0),
                     // Incluir todas las fechas e importes de las cuotas generadas
                     ...pagosGenerados
                   };
@@ -1132,7 +1167,7 @@ export default {
                 },
                 importe: this.nuevoServicio.importe || pagosGenerados.importe || 0,
                 descuento: this.nuevoServicio.descuento || pagosGenerados.descuento || 0,
-                importeFinal: this.nuevoServicio.importeFinal || pagosGenerados.importeFinal || 0,
+                importeFinal: this.descuentoTotalFormulario() ? 0 : (this.nuevoServicio.importeFinal || pagosGenerados.importeFinal || 0),
                 // Incluir todas las fechas e importes de las cuotas generadas
                 primerPagoFecha: pagosGenerados.primerPagoFecha,
                 primerPagoImporte: pagosGenerados.primerPagoImporte,
@@ -1240,6 +1275,9 @@ export default {
 
     // Verificar si un servicio tiene cuotas pendientes de pago
     tieneCuotasPendientes(servicio) {
+      // Sin plan de pagos no hay cuotas que cobrar: no está pendiente (como en el informe
+      // «Servicios pendientes de pago»). Antes el plan vacío del servidor contaba como 12
+      // cuotas sin pagar y el servicio se quedaba PENDIENTE para siempre
       if (!servicio.pagos) return false;
       
       const pagos = servicio.pagos;
@@ -1264,17 +1302,13 @@ export default {
 
     // Determinar el estado de un servicio: VIGENTE, PENDIENTE o HISTÓRICO
     obtenerEstadoServicio(servicio) {
-      const ahora = new Date();
-      const fechaFin = new Date(servicio.fechaFinServicio);
-      const fechaInicio = new Date(servicio.fechaInicioServicio);
-      
       // Si está dentro del período de vigencia
-      if (fechaInicio <= ahora && fechaFin > ahora) {
+      if (enVigorHoy(servicio.fechaInicioServicio, servicio.fechaFinServicio)) {
         return 'VIGENTE';
       }
       
       // Si ya pasó la fecha de fin pero tiene cuotas pendientes
-      if (fechaFin <= ahora && this.tieneCuotasPendientes(servicio)) {
+      if (terminadoHoy(servicio.fechaFinServicio) && this.tieneCuotasPendientes(servicio)) {
         return 'PENDIENTE';
       }
       
@@ -1360,6 +1394,26 @@ export default {
       this.servicioDetalle = null;
     },
 
+    // Cerrar «Gestión de pagos» (X, Esc o clic fuera): si hay cuotas cambiadas sin pulsar
+    // «Guardar», se pregunta antes; antes se cerraba y el cambio se perdía sin avisar
+    async pedirCerrarGestionPagos() {
+      const sinGuardar = this.cuotas.filter(cuota => cuota.editado).length;
+      if (sinGuardar) {
+        const respuesta = await this.$swal.fire({
+          icon: 'warning',
+          title: sinGuardar === 1 ? 'Hay una cuota sin guardar' : `Hay ${sinGuardar} cuotas sin guardar`,
+          text: 'Si cierra ahora, se perderán los cambios que no ha guardado con el botón «Guardar» de su fila.',
+          showCancelButton: true,
+          confirmButtonText: 'Cerrar sin guardar',
+          cancelButtonText: 'Seguir editando',
+          confirmButtonColor: '#d33',
+          focusCancel: true
+        });
+        if (!respuesta.isConfirmed) return;
+      }
+      this.cerrarModalGestionPagos();
+    },
+
     cerrarModalGestionPagos() {
       
       this.mostrarModalGestionPagos = false;
@@ -1404,7 +1458,7 @@ export default {
         }
 
         // Crear mensaje de confirmación apropiado
-        let mensajeConfirmacion = `¿Deseas eliminar el servicio?`;
+        let mensajeConfirmacion = `¿Deseas eliminar el servicio #${servicio.id}?`;
         if (tienePagos) {
           mensajeConfirmacion += '\n\n⚠️ Este servicio tiene pagos asociados que también se eliminarán.';
         }
@@ -1432,12 +1486,8 @@ export default {
           });
 
           try {
-            // Si tiene pagos, eliminarlos primero
-            if (tienePagos) {
-              await axios.delete(`${process.env.VUE_APP_API_URL}/servicios-pagos/servicio/${servicio.id}`);
-            }
-
-            // Luego eliminar el servicio
+            // El servidor borra el servicio y su plan de pagos en la misma operación: si
+            // algo falla no queda un servicio sin pagos
             await axios.delete(`${process.env.VUE_APP_API_URL}/servicios/${servicio.id}`);
             
             // Mostrar mensaje de éxito
@@ -1482,7 +1532,7 @@ export default {
       try {
         const respuesta = await axios.post(`${process.env.VUE_APP_API_URL}/servicios-pagos/generar-plan`, {
           idPagoPlazos: this.nuevoServicio.idPagoPlazos,
-          importeTotal: this.nuevoServicio.importeFinal || this.nuevoServicio.importe,
+          importeTotal: this.descuentoTotalFormulario() ? 0 : (this.nuevoServicio.importeFinal || this.nuevoServicio.importe),
           fechaInicio: this.nuevoServicio.fechaInicioServicio
         });
         return respuesta.data;
@@ -1502,11 +1552,21 @@ export default {
       }
     },
 
+    // Con la ventana de «Gestión de pagos» abierta, solo valen las cuotas de su servicio:
+    // una carga de otro (p. ej. la del vigente tras recargar la lista) no las sustituye
+    cuotasDeOtroServicio(servicioId) {
+      return this.mostrarModalGestionPagos && this.servicioGestionPagos?.id !== servicioId;
+    },
+
     async cargarCuotas() {
       if (!this.servicioActual || !this.servicioActual.id) return;
       
       // Reutilizar el método mejorado de cargar cuotas
-      await this.cargarCuotasParaGestion(this.servicioActual.id);
+      try {
+        await this.cargarCuotasParaGestion(this.servicioActual.id);
+      } catch (error) {
+        console.error('Error al cargar las cuotas del servicio actual:', error);
+      }
     },
 
     async cargarCuotasParaGestion(servicioId) {
@@ -1521,6 +1581,7 @@ export default {
         // Intentar cargar desde el endpoint de cuotas primero
         try {
           const resp = await axios.get(`${process.env.VUE_APP_API_URL}/servicios-pagos/servicio/${servicioId}/cuotas`);
+          if (this.cuotasDeOtroServicio(servicioId)) return;
           this.cuotas = resp.data.map(c => ({ ...c, editado: false }));
           return;
         } catch (cuotasError) {
@@ -1529,6 +1590,7 @@ export default {
         
         // Si no hay endpoint de cuotas, cargar desde servicios-pagos y convertir
         const respPagos = await axios.get(`${process.env.VUE_APP_API_URL}/servicios-pagos/servicio/${servicioId}`);
+        if (this.cuotasDeOtroServicio(servicioId)) return;
         const pagos = respPagos.data;
         
         // Verificar que los datos de pagos corresponden al servicio correcto
@@ -1590,6 +1652,8 @@ export default {
         }
       } catch (e) {
         this.cuotas = [];
+        // Quien llama decide cómo avisar: antes un fallo se veía como «No hay cuotas»
+        throw e;
       }
     },
 
@@ -1598,33 +1662,15 @@ export default {
     },
 
     async guardarCuota(cuota) {
+      const servicioIdActual = this.servicioGestionPagos?.id;
       try {
-        // Guardar el ID del servicio actual para evitar confusiones
-        const servicioIdActual = this.servicioGestionPagos?.id;
-        
         if (!servicioIdActual) {
           throw new Error('No se pudo identificar el servicio actual');
         }
         
-        // Intentar actualizar la cuota individual primero
-        try {
-          await axios.put(`${process.env.VUE_APP_API_URL}/servicios-pagos/cuota/${cuota.id}`, cuota);
-          cuota.editado = false;
-          this.$swal.fire({ icon: 'success', title: 'Cuota actualizada', timer: 1200, showConfirmButton: false });
-          
-          // Recargar cuotas del servicio específico (usando el ID guardado)
-          await this.cargarCuotasParaGestion(servicioIdActual);
-          
-          // NO emitir recargar-servicios aquí para evitar desincronización del modal
-          // El refresco se hará cuando se cierre el modal de gestión de pagos
-          return;
-        } catch (cuotaError) {
-          // No hacer nada
-        }
-        
-        // Si no funciona el endpoint individual, actualizar todo el objeto de pagos
         if (cuota.fechaField && cuota.importeField && cuota.pagadoField) {
-          // Usar el servicioId de la cuota para mayor seguridad
+          // Cuotas montadas en pantalla a partir del plan (cuando no se pudo leer el listado
+          // de cuotas): se actualiza el plan entero del servicio
           const servicioIdParaActualizar = cuota.servicioId || servicioIdActual;
           
           // Cargar los datos de pagos actuales del servicio específico
@@ -1641,36 +1687,42 @@ export default {
           pagosActuales[cuota.importeField] = parseFloat(cuota.importePago);
           pagosActuales[cuota.pagadoField] = cuota.pagado;
           
-          // Enviar la actualización completa
           await axios.put(`${process.env.VUE_APP_API_URL}/servicios-pagos/servicio/${servicioIdParaActualizar}`, pagosActuales);
-          
-          cuota.editado = false;
-          this.$swal.fire({ icon: 'success', title: 'Cuota actualizada', timer: 1200, showConfirmButton: false });
-          
-          // Recargar cuotas del servicio específico (usando el ID guardado)
-          await this.cargarCuotasParaGestion(servicioIdActual);
-          
-          // NO emitir recargar-servicios aquí para evitar desincronización del modal
-          // El refresco se hará cuando se cierre el modal de gestión de pagos
         } else {
-          throw new Error('No se pudo determinar cómo actualizar la cuota');
+          await axios.put(`${process.env.VUE_APP_API_URL}/servicios-pagos/cuota/${cuota.id}`, cuota);
         }
       } catch (e) {
+        // Se enseña el motivo real del servidor (antes un fallo acababa en «No se pudo
+        // determinar cómo actualizar la cuota»)
         console.error('Error al guardar cuota:', e);
         this.$swal.fire({ 
           icon: 'error', 
           title: 'Error al guardar cuota', 
-          text: e.response?.data?.message || e.message || 'Error desconocido'
+          text: e.response?.data?.message || e.response?.data?.error || e.message || 'Error desconocido'
         });
+        return;
+      }
+      
+      cuota.editado = false;
+      this.$swal.fire({ icon: 'success', title: 'Cuota actualizada', timer: 1200, showConfirmButton: false });
+      
+      // Recargar cuotas del servicio específico. NO se emite recargar-servicios aquí para
+      // no desincronizar el modal: el refresco se hace al cerrar la gestión de pagos
+      try {
+        await this.cargarCuotasParaGestion(servicioIdActual);
+      } catch (error) {
+        console.error('Error al recargar las cuotas tras guardar:', error);
       }
     },
 
     async cargarDatosPagosServicio(servicioId) {
-      if (!servicioId) return;
+      if (!servicioId) return false;
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/servicios-pagos/servicio/${servicioId}`);
         const pagos = response.data;
-        if (pagos) {
+        // Un servicio sin plan de pagos devuelve un objeto vacío (sin id): sus importes no
+        // pueden pisar con ceros los del propio servicio
+        if (pagos?.id) {
           this.nuevoServicio.idPagoPlazos = Number(pagos.pagoPlazos?.id) || null;
           this.nuevoServicio.importe = parseFloat(pagos.importe) || 0;
           this.nuevoServicio.descuento = parseFloat(pagos.descuento) || 0;
@@ -1684,12 +1736,14 @@ export default {
           });
         }
         
-        // También cargar las cuotas si estamos en modo edición
+        // También las cuotas del servicio que se edita (antes, las del vigente)
         if (this.modoEdicion) {
-          await this.cargarCuotas();
+          await this.cargarCuotasParaGestion(servicioId);
         }
+        return true;
       } catch (error) {
         console.error("Error al cargar datos de pagos del servicio:", error);
+        return false;
       }
     },
 
@@ -1776,7 +1830,7 @@ export default {
       }
 
       const cuotasHtml = resultadoVerificacion.detalleCuotasPerdidas.map(cuota =>
-        `<li>Cuota ${cuota.numero}: ${cuota.importe.toFixed(2)}€ ${cuota.fecha ? `(Pagada: ${cuota.fecha})` : ''}</li>`
+        `<li>Cuota ${cuota.numero}: ${cuota.importe.toFixed(2)}€ ${cuota.fecha ? `(Pagada: ${escaparHtml(cuota.fecha)})` : ''}</li>`
       ).join('');
 
       const resultado = await this.$swal.fire({
@@ -1845,7 +1899,9 @@ export default {
         'novenoPagoPagado', 'decimoPagoPagado', 'decimoprimerPagoPagado', 'decimosegundoPagoPagado'
       ];
       
-      return camposPagado.filter(campo => this.pagosExistentes[campo]).length;
+      // Solo las del plan: las cuotas que no usa la modalidad se guardan como pagadas
+      return camposPagado.slice(0, this.obtenerNumeroCuotasActual())
+        .filter(campo => this.pagosExistentes[campo]).length;
     },
 
     // Método para obtener detalle de cuotas pagadas
@@ -1936,7 +1992,7 @@ export default {
       ];
 
       const numeroCuotas = this.obtenerNumeroCuotasActual();
-      const importeTotal = this.nuevoServicio.importeFinal || this.nuevoServicio.importe;
+      const importeTotal = this.descuentoTotalFormulario() ? 0 : (this.nuevoServicio.importeFinal || this.nuevoServicio.importe);
       
       // Calcular importe ya pagado y cuotas pendientes
       let importePagado = 0;
@@ -1950,14 +2006,13 @@ export default {
         }
       }
       
-      // Recalcular importe para cuotas pendientes
-      const importePendiente = importeTotal - importePagado;
-      const importePorCuotaPendiente = cuotasPendientes > 0 ? importePendiente / cuotasPendientes : 0;
-      
-      // Actualizar importes de cuotas no pagadas
+      // Lo que falta por pagar, repartido entre las cuotas pendientes con los céntimos
+      // sobrantes en la última (antes, 100 € en 3 cuotas daban 99,99 €)
+      const importes = this.repartirEnCuotas(Math.max(0, importeTotal - importePagado), cuotasPendientes);
+      let siguiente = 0;
       for (let i = 0; i < numeroCuotas && i < camposPagado.length; i++) {
         if (!payload[camposPagado[i]]) {
-          payload[camposImporte[i]] = Number(importePorCuotaPendiente.toFixed(2));
+          payload[camposImporte[i]] = importes[siguiente++];
         }
       }
       
@@ -2004,9 +2059,23 @@ export default {
         importeFinal: this.nuevoServicio.importeFinal
       };
 
-      // Recalcular importes solo para cuotas no pagadas
-      const importePorCuotaNueva = numeroCuotasNueva > 0 ? 
-        (this.nuevoServicio.importeFinal || this.nuevoServicio.importe) / numeroCuotasNueva : 0;
+      // Las cuotas pagadas que siguen en el plan se conservan y lo que falta por pagar se
+      // reparte entre las demás. Antes cada cuota pendiente era «total / nº de cuotas»
+      // aunque ya hubiera cuotas pagadas, y el plan no sumaba el importe del servicio
+      // (12 cuotas de 100 € con 3 pagadas pasadas a 6 dejaban 300 € sin cobrar).
+      const importeServicio = this.descuentoTotalFormulario() ? 0
+        : (Number(this.nuevoServicio.importeFinal || this.nuevoServicio.importe) || 0);
+      let yaPagado = 0;
+      let pendientes = 0;
+      for (let i = 0; i < numeroCuotasNueva && i < camposPagado.length; i++) {
+        if (i < numeroCuotasActual && this.pagosExistentes[camposPagado[i]]) {
+          yaPagado += Number(this.pagosExistentes[camposImporte[i]]) || 0;
+        } else {
+          pendientes++;
+        }
+      }
+      const importesPendientes = this.repartirEnCuotas(Math.max(0, importeServicio - yaPagado), pendientes);
+      let siguientePendiente = 0;
 
       // Preservar estados pagado de las cuotas existentes que siguen vigentes
       for (let i = 0; i < numeroCuotasNueva && i < camposPagado.length; i++) {
@@ -2028,9 +2097,10 @@ export default {
         } else {
           // Para cuotas no pagadas o nuevas, usar los valores recalculados
           payloadFusionado[campoPagado] = false;
+          const importeCuota = importesPendientes[siguientePendiente++];
           // Mantener fecha del nuevo plan pero asegurar importe recalculado
           if (payloadFusionado[campoImporte] !== null && payloadFusionado[campoImporte] !== undefined) {
-            payloadFusionado[campoImporte] = Number(importePorCuotaNueva.toFixed(2));
+            payloadFusionado[campoImporte] = importeCuota;
           }
         }
       }
@@ -2194,6 +2264,29 @@ export default {
       const imp = parseFloat(this.nuevoServicio.importe) || 0;
       const desc = parseFloat(this.nuevoServicio.descuento) || 0;
       return (imp - desc).toFixed(2);
+    },
+
+    // Un importe final de 0 por un descuento de todo el importe es un 0 de verdad. Con
+    // «importeFinal || importe» ese 0 se tomaba por vacío y el servicio se guardaba (y su
+    // plan de cuotas se generaba) por el importe completo. En el resto de casos, como antes.
+    // Reparte un importe en cuotas al céntimo: los céntimos que sobran van a la última,
+    // así la suma es exactamente el importe (como hace el servidor al generar el plan)
+    repartirEnCuotas(importe, cuotas) {
+      if (!cuotas || cuotas <= 0) return [];
+      const centimos = Math.round((Number(importe) || 0) * 100);
+      const base = Math.trunc(centimos / cuotas);
+      return Array.from({ length: cuotas }, (_, i) =>
+        (i === cuotas - 1 ? centimos - base * (cuotas - 1) : base) / 100);
+    },
+
+    esDescuentoTotal(importe, descuento) {
+      const imp = parseFloat(importe) || 0;
+      const desc = parseFloat(descuento) || 0;
+      return imp > 0 && desc >= imp;
+    },
+
+    descuentoTotalFormulario() {
+      return this.esDescuentoTotal(this.nuevoServicio.importe, this.nuevoServicio.descuento);
     }
   },
 
@@ -2211,7 +2304,7 @@ export default {
     textoBotonGuardar() {
       if (this.modoEdicion) return 'Guardar cambios';
       if (this.modoRenovacion) return 'Guardar y Renovar';
-      return 'Guardar Servicio';
+      return 'Guardar servicio';
     },
 
     tituloModal() {
@@ -2235,13 +2328,8 @@ export default {
         return null;
       }
       
-      const ahora = new Date();
       const servicioVigente = this.servicios.find(
-        (servicio) => {
-          const fechaFin = new Date(servicio.fechaFinServicio);
-          const fechaInicio = new Date(servicio.fechaInicioServicio);
-          return fechaInicio <= ahora && fechaFin > ahora;
-        }
+        (servicio) => enVigorHoy(servicio.fechaInicioServicio, servicio.fechaFinServicio)
       );
       
       return servicioVigente || null;
@@ -2267,6 +2355,9 @@ export default {
 
     totalPagadoFormulario() {
       let importePagado = 0;
+      // Un servicio nuevo o una renovación aún no tiene nada pagado (las cuotas cargadas
+      // pueden ser las del servicio vigente)
+      if (!this.modoEdicion) return 0;
       
       // Si estamos en modo edición y hay datos de pagos existentes, calcular desde ahí
       if (this.modoEdicion && this.pagosExistentes) {
@@ -2289,6 +2380,7 @@ export default {
         if (newVal) {
           this.cargandoDatos = false;
           this.mostrandoFormulario = false;
+          this.errores = {};
           this.modoEdicion = false;
           this.modoRenovacion = false;
           
@@ -2312,6 +2404,7 @@ export default {
             }
           });
         } else {
+          this.peticionEdicion += 1;
           this.cargandoDatos = false;
           this.mostrandoFormulario = false;
           this.modoEdicion = false;

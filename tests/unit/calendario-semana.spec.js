@@ -38,3 +38,22 @@ test('el cambio de hora no duplica ni se salta ningún día', () => {
     '2026-10-23', '2026-10-24', '2026-10-25']);
   assert.equal(new Set(dias).size, 7);
 });
+
+test('en la vista semanal las flechas pasan a la semana de al lado', () => {
+  // Miércoles 07/10/2026
+  const ctx = contexto(new Date(2026, 9, 7));
+  ctx.mesSiguiente();
+  assert.equal(aIso(ctx.fechaActual), '2026-10-14');
+  ctx.mesAnterior();
+  ctx.mesAnterior();
+  assert.equal(aIso(ctx.fechaActual), '2026-09-30');
+});
+
+test('en la vista mensual las flechas siguen pasando de mes en mes', () => {
+  const ctx = contexto(new Date(2026, 9, 7), 'mes');
+  ctx.mesSiguiente();
+  assert.equal(aIso(ctx.fechaActual), '2026-11-01');
+  ctx.mesAnterior();
+  ctx.mesAnterior();
+  assert.equal(aIso(ctx.fechaActual), '2026-09-01');
+});

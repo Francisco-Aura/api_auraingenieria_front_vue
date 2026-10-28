@@ -25,14 +25,60 @@ function nombresImportados(sentencia) {
   return nombres.concat(resto);
 }
 
-/** Evalúa el <script> de un .vue sin sus import, inyectando las dependencias indicadas (el resto, vacías). */
+/** Pares [nombre local, nombre exportado] de un import: 'default' para el por defecto y '*' para «* as X». */
+function enlacesImportados(sentencia) {
+  const clausula = sentencia.replace(/\r/g, '').replace(/^import\s+/, '').replace(/\s+from\s+['"][^'"]+['"][\s\S]*$/, '');
+  const enlaces = [];
+  const llaves = clausula.match(/\{([\s\S]*)\}/);
+  if (llaves) {
+    llaves[1].split(',').map((s) => s.trim()).filter(Boolean).forEach((s) => {
+      const [exportado, local = exportado] = s.split(/\s+as\s+/).map((x) => x.trim());
+      enlaces.push([local, exportado]);
+    });
+  }
+  clausula.replace(/\{[\s\S]*\}/, '').split(',').map((s) => s.trim()).filter(Boolean).forEach((s) => {
+    const todo = s.match(/^\*\s+as\s+(\S+)$/);
+    enlaces.push(todo ? [todo[1], '*'] : [s, 'default']);
+  });
+  return enlaces;
+}
+
+/**
+ * El módulo real si el import es de src/utils (funciones puras, sin Vue ni red); null si
+ * es otra cosa o no se puede cargar en Node (p. ej. excel.js, que importa con «@/»).
+ */
+function moduloDeUtils(especificador, rutaComponente) {
+  const utils = path.join(raiz, 'src', 'utils') + path.sep;
+  let ruta;
+  if (especificador.startsWith('@/')) ruta = path.join(raiz, 'src', especificador.slice(2));
+  else if (especificador.startsWith('.')) ruta = path.resolve(path.dirname(path.join(raiz, rutaComponente)), especificador);
+  else return null;
+  if (!ruta.endsWith('.js')) ruta += '.js';
+  if (!ruta.startsWith(utils)) return null;
+  try {
+    return require(ruta);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Evalúa el <script> de un .vue sin sus import, inyectando las dependencias indicadas.
+ * Lo que se importa de src/utils se carga de verdad (salvo que el test lo sustituya); el
+ * resto de imports no indicados quedan vacíos ({}).
+ */
 function cargarComponente(ruta, dependencias = {}) {
   const { descriptor, errors } = parse(leer(ruta), { filename: ruta });
   assert.deepEqual(errors, []);
   const reImport = /^import\s+[^\n]*?\s+from\s+['"][^'"]+['"];?[^\n]*$/gm;
   const inyectar = { ...dependencias };
   for (const sentencia of descriptor.script.content.match(reImport) || []) {
-    for (const nombre of nombresImportados(sentencia)) if (!(nombre in inyectar)) inyectar[nombre] = {};
+    const modulo = moduloDeUtils(sentencia.match(/from\s+['"]([^'"]+)['"]/)[1], ruta);
+    for (const [nombre, exportado] of enlacesImportados(sentencia)) {
+      if (nombre in inyectar) continue;
+      const valor = modulo && (exportado === '*' ? modulo : modulo[exportado]);
+      inyectar[nombre] = valor === undefined || valor === null ? {} : valor;
+    }
   }
   const codigo = descriptor.script.content
     .replace(reImport, '')
@@ -64,4 +110,4 @@ function crearContexto(componente, extras = {}) {
   return ctx;
 }
 
-module.exports = { raiz, leer, plantilla, nombresImportados, cargarComponente, crearContexto };
+module.exports = { raiz, leer, plantilla, nombresImportados, enlacesImportados, cargarComponente, crearContexto };

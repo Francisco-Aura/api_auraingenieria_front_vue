@@ -80,7 +80,7 @@ test('los diálogos de confirmación usan la misma forma de botón y Cancelar ne
   const css = leer(CSS_BOTONES);
   assert.match(regla(css, '.swal2-actions .swal2-styled', 'height'), /height:\s*var\(--aura-btn-alto\)/);
   assert.match(regla(css, '.swal2-confirm[style*="252, 215, 0"]'), /color:\s*var\(--aura-btn-principal-texto\)/);
-  assert.match(regla(css, '.swal2-styled:is(.swal2-cancel, .swal2-deny)', 'background:'), /var\(--aura-btn-neutro-fondo\)/);
+  assert.match(regla(css, '.swal2-styled:is(.swal2-cancel, .swal2-deny)', 'background:'), /var\(--aura-btn-cancelar-fondo\)/);
 });
 
 test('los diálogos no fuerzan la visualización de botones ocultos ni usan el morado de SweetAlert', () => {

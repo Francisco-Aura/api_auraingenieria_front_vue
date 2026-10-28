@@ -1,4 +1,5 @@
-image: node:20
+# Node 22 (LTS): Node 20 dejó de tener soporte en abril de 2026
+image: node:22
 
 stages:
   - build_and_deploy_frontend
@@ -16,17 +17,18 @@ deploy_frontend_PRE:
 
   script:
     - set -eo pipefail
-    - set -x
 
     - echo "Limpiando entorno anterior..."
-    - rm -rf node_modules package-lock.json dist
-    - npm cache clean --force
+    - rm -rf node_modules dist
 
-    - echo "Instalando dependencias..."
-    - npm install --legacy-peer-deps
+    - echo "Instalando dependencias (versiones exactas del package-lock.json)..."
+    - npm ci --no-audit --no-fund
 
     - echo "Verificando instalación..."
     - npm list --depth=0 || true
+
+    - echo "Pasando los tests (si falla alguno no se despliega)..."
+    - npm test
 
     - echo "Construyendo aplicación..."
     - npm run build
@@ -45,9 +47,13 @@ deploy_frontend_PRE:
 
     - export FRONTEND_FINAL_DIR="/home/babenza/deploy/frontend"
 
-    - ssh -p 2222 -o StrictHostKeyChecking=no babenza@5.34.148.92 "mkdir -p ${FRONTEND_FINAL_DIR} && rm -rf ${FRONTEND_FINAL_DIR}/*"
+    - ssh -p 2222 -o StrictHostKeyChecking=no babenza@5.34.148.92 "mkdir -p ${FRONTEND_FINAL_DIR}"
 
-    - rsync -avzh --delete --progress -e "ssh -p 2222 -o StrictHostKeyChecking=no" dist/ babenza@5.34.148.92:${FRONTEND_FINAL_DIR}/
+    # Sin vaciar antes la carpeta (la web dejaba de responder mientras se subía): los
+    # ficheros nuevos se colocan todos juntos al final y luego se borran los que sobran
+    # Nunca se publica una web vacía: rsync --delete-after borraría la que hay
+    - test -s dist/index.html
+    - rsync -avzh --delete-after --delay-updates --progress -e "ssh -p 2222 -o StrictHostKeyChecking=no" dist/ babenza@5.34.148.92:${FRONTEND_FINAL_DIR}/
 
     - ssh -p 2222 -o StrictHostKeyChecking=no babenza@5.34.148.92 "bash /home/babenza/deploy_frontend.sh"
 
@@ -65,17 +71,18 @@ deploy_frontend_PRO:
 
   script:
     - set -eo pipefail
-    - set -x
 
     - echo "Limpiando entorno anterior..."
-    - rm -rf node_modules package-lock.json dist
-    - npm cache clean --force
+    - rm -rf node_modules dist
 
-    - echo "Instalando dependencias..."
-    - npm install --legacy-peer-deps
+    - echo "Instalando dependencias (versiones exactas del package-lock.json)..."
+    - npm ci --no-audit --no-fund
 
     - echo "Verificando instalación..."
     - npm list --depth=0 || true
+
+    - echo "Pasando los tests (si falla alguno no se despliega)..."
+    - npm test
 
     - echo "Construyendo aplicación..."
     - npm run build
@@ -94,8 +101,12 @@ deploy_frontend_PRO:
 
     - export FRONTEND_FINAL_DIR="/home/babenza/deploy/frontend"
 
-    - ssh -o StrictHostKeyChecking=no babenza@5.34.148.92 "mkdir -p ${FRONTEND_FINAL_DIR} && rm -rf ${FRONTEND_FINAL_DIR}/*"
+    - ssh -o StrictHostKeyChecking=no babenza@5.34.148.92 "mkdir -p ${FRONTEND_FINAL_DIR}"
 
-    - rsync -avzh --delete --progress -e "ssh -o StrictHostKeyChecking=no" dist/ babenza@5.34.148.92:${FRONTEND_FINAL_DIR}/
+    # Sin vaciar antes la carpeta (la web dejaba de responder mientras se subía): los
+    # ficheros nuevos se colocan todos juntos al final y luego se borran los que sobran
+    # Nunca se publica una web vacía: rsync --delete-after borraría la que hay
+    - test -s dist/index.html
+    - rsync -avzh --delete-after --delay-updates --progress -e "ssh -o StrictHostKeyChecking=no" dist/ babenza@5.34.148.92:${FRONTEND_FINAL_DIR}/
 
     - ssh -o StrictHostKeyChecking=no babenza@5.34.148.92 "bash /home/babenza/deploy_frontend.sh"

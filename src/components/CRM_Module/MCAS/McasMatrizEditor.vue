@@ -699,6 +699,8 @@ export default {
     },
     onKeydown(e) {
       if (e.key !== 'Escape' || this.$swal?.isVisible?.()) return
+      // Atendido aquí: el Esc general de los modales (services/capasModales.js) no actúa
+      e.preventDefault()
       this.cerrar()
     },
   },
@@ -791,11 +793,14 @@ export default {
   color: var(--text-primary);
 }
 
+/* Color propio: sin él heredaba el blanco de «table th» (assets/styles.css) y
+   las etiquetas de fila (tramos de consumo) no se leían sobre el fondo claro */
 .matriz-tabla tbody th {
   position: sticky;
   left: 0;
   z-index: 1;
   background: #f8fafc;
+  color: var(--text-primary);
   font-weight: 600;
   text-align: left;
 }

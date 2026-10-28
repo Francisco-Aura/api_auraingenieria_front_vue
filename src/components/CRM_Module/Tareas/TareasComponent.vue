@@ -29,9 +29,11 @@
             <i class="fas fa-file-download"></i>
             <span>Excel</span>
           </button>
-          <button class="btn btn-toggle-completed" :class="{ active: mostrarCompletadas }" @click="mostrarCompletadas = !mostrarCompletadas" title="Mostrar/ocultar tareas completadas">
-            <i :class="mostrarCompletadas ? 'fas fa-check-circle' : 'fas fa-tasks'"></i>
-            <span>{{ mostrarCompletadas ? 'Completadas' : 'Sin completar' }}</span>
+          <!-- El botón dice lo que hace al pulsarlo (antes decía lo que se veía). Solo en la
+               tabla: el calendario enseña todas las tareas y aquí no hacía nada -->
+          <button v-if="vistaActual === 'tabla'" class="btn btn-toggle-completed" :class="{ active: mostrarCompletadas }" @click="mostrarCompletadas = !mostrarCompletadas" :aria-pressed="mostrarCompletadas ? 'true' : 'false'" :title="mostrarCompletadas ? 'Volver a las tareas sin completar' : 'Ver solo las tareas completadas'">
+            <i :class="mostrarCompletadas ? 'fas fa-tasks' : 'fas fa-check-circle'"></i>
+            <span>{{ mostrarCompletadas ? 'Ver pendientes' : 'Ver completadas' }}</span>
           </button>
           <button class="btn btn-create" @click="abrirModalCrearTarea" title="Crear nueva tarea">
             <i class="fas fa-plus-circle"></i>
@@ -40,13 +42,13 @@
         </div>
       </div>
 
-      <div class="table-responsive">
-        <table v-if="vistaActual === 'tabla'" class="data-table data-table--acciones-fijas">
+      <div class="table-responsive" v-desborde-tabla>
+        <table v-if="vistaActual === 'tabla'" class="data-table data-table--acciones-fijas data-table--compacta">
           <thead>
             <tr>
               <th class="sortable th-col-titulo">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('titulo')">
+                  <div class="column-title" @click="sortBy('titulo')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('titulo')" @keydown.space.prevent="sortBy('titulo')">
                     <i class="fas fa-text-width mr-2"></i>Título
                     <i :class="getSortIcon('titulo')"></i>
                   </div>
@@ -64,7 +66,7 @@
               </th>
               <th class="sortable th-col-cliente">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('clienteRelacionadoNombre')">
+                  <div class="column-title" @click="sortBy('clienteRelacionadoNombre')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('clienteRelacionadoNombre')" @keydown.space.prevent="sortBy('clienteRelacionadoNombre')">
                     <i class="fas fa-building mr-2"></i>Cliente
                     <i :class="getSortIcon('clienteRelacionadoNombre')"></i>
                   </div>
@@ -82,7 +84,7 @@
               </th>
               <th class="sortable th-col-asignado">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('usuarioAsignadoNombre')">
+                  <div class="column-title" @click="sortBy('usuarioAsignadoNombre')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('usuarioAsignadoNombre')" @keydown.space.prevent="sortBy('usuarioAsignadoNombre')">
                     <i class="fas fa-user-tie mr-2"></i>Asignado a
                     <i :class="getSortIcon('usuarioAsignadoNombre')"></i>
                   </div>
@@ -100,7 +102,7 @@
               </th>
               <th class="sortable th-col-estado">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('estadoNombre')">
+                  <div class="column-title" @click="sortBy('estadoNombre')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('estadoNombre')" @keydown.space.prevent="sortBy('estadoNombre')">
                     <i class="fas fa-tasks mr-2"></i>Estado
                     <i :class="getSortIcon('estadoNombre')"></i>
                   </div>
@@ -118,7 +120,7 @@
               </th>
               <th class="sortable th-col-prioridad">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('prioridad')">
+                  <div class="column-title" @click="sortBy('prioridad')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('prioridad')" @keydown.space.prevent="sortBy('prioridad')">
                     <i class="fas fa-flag mr-2"></i>Prioridad
                     <i :class="getSortIcon('prioridad')"></i>
                   </div>
@@ -136,7 +138,7 @@
               </th>
               <th class="sortable th-col-categoria">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('categoriaNombre')">
+                  <div class="column-title" @click="sortBy('categoriaNombre')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('categoriaNombre')" @keydown.space.prevent="sortBy('categoriaNombre')">
                     <i class="fas fa-folder mr-2"></i>Categoría
                     <i :class="getSortIcon('categoriaNombre')"></i>
                   </div>
@@ -154,7 +156,7 @@
               </th>
               <th class="sortable th-col-fecha">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('fechaVencimiento')">
+                  <div class="column-title" @click="sortBy('fechaVencimiento')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('fechaVencimiento')" @keydown.space.prevent="sortBy('fechaVencimiento')">
                     <i class="fas fa-calendar-alt mr-2"></i>Fecha vto.
                     <i :class="getSortIcon('fechaVencimiento')"></i>
                   </div>
@@ -195,7 +197,7 @@
                   <span class="titulo-texto">{{ tarea.titulo }}</span>
                 </span>
               </td>
-              <td :title="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre || '-'">
+              <td class="text-truncate" :title="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre || '-'">
                 <div v-if="tarea.clienteRelacionadoNombre || tarea.clientePotencialNombre" class="cliente-cell">
                   <span class="cliente-nombre-truncate">
                     <i class="fas fa-user-circle"></i>
@@ -215,8 +217,8 @@
                 <span v-else class="text-muted">-</span>
               </td>
               <td>
-                <span class="estado-badge" :style="{ backgroundColor: tarea.estadoColor }">
-                  <i :class="getEstadoIcon(tarea.estadoNombre)"></i>
+                <span class="estado-badge" :style="{ backgroundColor: tarea.estadoColor, color: colorTextoSobre(tarea.estadoColor) }">
+                  <i :class="getEstadoIcon(formatearEstadoNombre(tarea.estadoNombre))"></i>
                   {{ tarea.estadoNombre }}
                 </span>
               </td>
@@ -261,7 +263,6 @@
         <TareasCalendarioView
           v-if="vistaActual === 'calendario'"
           :tareas="tareas"
-          :estados="estados"
           @ver-detalle="handleVerDetalle"
           @nueva-tarea="crearTareaEnFecha"
         />
@@ -279,7 +280,7 @@
           </select>
         </div>
         <div class="pagination-info">
-          Mostrando {{ paginationStart }} - {{ paginationEnd }} de {{ tareasFiltradas.length }} registros
+          Mostrando {{ tareasFiltradas.length ? paginationStart : 0 }} - {{ paginationEnd }} de {{ tareasFiltradas.length }} registros
         </div>
         <div class="pagination-buttons">
           <button 
@@ -325,10 +326,10 @@
       :value="mostrarModalDetalle"
       :tarea="tareaDetalle"
       :estados="estados"
+      :guardando="cambiandoEstadoTarea"
       @actualizar="handleActualizarTarea"
       @cambiar-estado="handleCambiarEstado"
       @completar-con-comentario="handleCompletarConComentario"
-      @crear-comentario-estado="handleCrearComentarioEstado"
       @cerrar="cerrarModalDetalle"
     />
 
@@ -346,12 +347,12 @@
     />
 
     <!-- Notificaciones -->
-    <div v-if="snackbar.show" class="snackbar" :class="snackbar.color">
+    <div v-if="snackbar.show" class="snackbar" :class="snackbar.color" role="status">
       <div class="snackbar-content">
         <i :class="getSnackbarIcon(snackbar.color)"></i>
         <span>{{ snackbar.message }}</span>
       </div>
-      <button @click="snackbar.show = false" class="snackbar-close">
+      <button type="button" @click="snackbar.show = false" class="snackbar-close" aria-label="Cerrar aviso">
         <i class="fas fa-times"></i>
       </button>
     </div>
@@ -368,7 +369,9 @@ import TareaModalCorporativo from './TareaModalCorporativo.vue'
 import TareasCalendarioView from './TareasCalendarioView.vue'
 import Spinner from '@/components/SpinnerComponent.vue'
 import { cargarExcelJS, descargarLibroExcel } from '@/utils/excel'
-import { fechaLocalISO } from '@/utils/fechas'
+import { fechaLocalISO, fechaES } from '@/utils/fechas'
+import { iconoEstadoTarea, nombreEstado, textoPrioridad } from '@/utils/tareas'
+import { colorTextoSobre } from '@/utils/colores'
 
 export default {
   name: 'TareasComponent',
@@ -395,6 +398,8 @@ export default {
       mostrarModalDetalle: false,
       tareaEnEdicion: null,
       tareaDetalle: null,
+      // Tarea de la URL que se está pidiendo al servidor (el watch y mounted la piden a la vez)
+      detalleEnCamino: null,
       
       // Filtros por columna
       columnFilters: {
@@ -430,6 +435,7 @@ export default {
 
       // Estado de guardado
       guardandoTarea: false,
+      cambiandoEstadoTarea: false, // Cambio de estado/completado en curso (evita el doble clic)
 
       // Evita doble carga inicial cuando el watcher inmediato y mounted() coinciden
       promesaInicializacionEnCurso: null
@@ -489,30 +495,63 @@ export default {
         if (this.tareas.length === 0) {
           await this.inicializar()
         }
-        const tarea = this.tareas.find(t => String(t.id) === String(tareaId))
-        if (tarea) {
-          this.tareaDetalle = { ...tarea }
-          this.mostrarModalDetalle = true
-        }
+        await this.abrirDetalleDesdeRuta(tareaId)
       }
     }
   },
   beforeUnmount() {
     if (this.filtroDebounceTimer) clearTimeout(this.filtroDebounceTimer)
+    clearTimeout(this.temporizadorMensaje)
   },
   async mounted() {
     await this.inicializar()
     // Abrir detalle si viene en query params (por si el watch no lo pilló antes de cargar)
     const tareaId = this.$route.query.abrirDetalle
     if (tareaId && !this.mostrarModalDetalle) {
-      const tarea = this.tareas.find(t => String(t.id) === String(tareaId))
+      await this.abrirDetalleDesdeRuta(tareaId)
+    }
+  },
+  methods: {
+    colorTextoSobre,
+    /**
+     * Abre el detalle de la tarea indicada en la URL (?abrirDetalle=ID, desde la campana
+     * o el aviso de «vence hoy»). Si no está en la lista del usuario (p. ej. le han
+     * mencionado en la tarea de otro), se pide aparte.
+     */
+    async abrirDetalleDesdeRuta(tareaId) {
+      // Solo un número de tarea: el valor llega de la URL y va dentro de la ruta de la API
+      if (!tareaId || !/^\d+$/.test(String(tareaId))) return
+      let tarea = this.tareas.find(t => String(t.id) === String(tareaId))
+      if (!tarea) {
+        if (this.detalleEnCamino === String(tareaId)) return
+        this.detalleEnCamino = String(tareaId)
+        try {
+          tarea = await tareasApi.obtenerTareaPorId(tareaId)
+        } catch (error) {
+          console.warn('No se pudo abrir la tarea de la notificación:', error)
+          // Se avisa (antes no pasaba nada) y se quita de la URL, como al cerrar el detalle.
+          // Una tarea que no existe llega como 400 («Tarea no encontrada») o 404
+          this.mostrarMensaje([400, 404].includes(error?.response?.status)
+            ? 'La tarea ya no existe: puede que se haya eliminado'
+            : 'No se pudo abrir la tarea', 'warning')
+          if (String(this.$route.query.abrirDetalle) === String(tareaId)) {
+            const query = { ...this.$route.query }
+            delete query.abrirDetalle
+            this.$router.replace({ query }).catch(() => {})
+          }
+          return
+        } finally {
+          this.detalleEnCamino = null
+        }
+        // Si mientras llegaba se ha navegado a otra cosa, no se abre
+        if (String(this.$route.query.abrirDetalle) !== String(tareaId)) return
+      }
       if (tarea) {
         this.tareaDetalle = { ...tarea }
         this.mostrarModalDetalle = true
       }
-    }
-  },
-  methods: {
+    },
+
     /**
      * Verifica si el usuario actual puede editar una tarea.
      * Las tareas creadas por un administrador (nivel 1) solo pueden ser editadas por administradores.
@@ -760,8 +799,8 @@ export default {
           { header: 'Estado Final', key: 'estadoFinal', width: 12 }
         ]
         
-        // Añadir datos
-        this.tareasFiltradas.forEach(tarea => {
+        // Añadir datos, en el orden en que se ven en pantalla
+        this.sortedTareas.forEach(tarea => {
           worksheet.addRow({
             titulo: tarea.titulo,
             categoria: tarea.categoriaNombre || '-',
@@ -793,6 +832,8 @@ export default {
     
     async handleGuardarTarea(tarea, archivos = []) {
       this.guardandoTarea = true
+      // Si fallan los adjuntos, ese aviso es el que se queda (antes lo tapaba el de éxito)
+      let avisoAdjuntos = null
       try {
         if (tarea.id) {
           await tareasApi.actualizarTarea(tarea.id, tarea)
@@ -803,11 +844,12 @@ export default {
               await tareasApi.subirAdjuntosTarea(tarea.id, archivos)
             } catch (e) {
               console.error('Error subiendo adjuntos en edición:', e)
-              this.mostrarMensaje('Tarea actualizada, pero hubo un error al subir algunos adjuntos', 'warning')
+              avisoAdjuntos = 'Tarea actualizada, pero hubo un error al subir algunos adjuntos'
             }
           }
 
-          this.mostrarMensaje('Tarea actualizada correctamente', 'success')
+          if (avisoAdjuntos) this.mostrarMensaje(avisoAdjuntos, 'warning')
+          else this.mostrarMensaje('Tarea actualizada correctamente', 'success')
         } else {
           const nueva = await tareasApi.crearTarea(tarea)
           
@@ -817,11 +859,12 @@ export default {
               await tareasApi.subirAdjuntosTarea(nueva.id, archivos)
             } catch (e) {
               console.error('Error subiendo adjuntos:', e)
-              this.mostrarMensaje('Tarea creada, pero hubo un error al subir algunos adjuntos', 'warning')
+              avisoAdjuntos = 'Tarea creada, pero hubo un error al subir algunos adjuntos'
             }
           }
 
-          this.mostrarMensaje('Tarea creada correctamente', 'success')
+          if (avisoAdjuntos) this.mostrarMensaje(avisoAdjuntos, 'warning')
+          else this.mostrarMensaje('Tarea creada correctamente', 'success')
 
           // Si llegaron comentarios desde el modal, crearlos
           if (tarea.comentarios && Array.isArray(tarea.comentarios) && tarea.comentarios.length > 0) {
@@ -841,6 +884,14 @@ export default {
         }
         
         await this.cargarTareas()
+
+        // Editada desde su detalle: el detalle que sigue abierto debajo enseña ya los
+        // datos nuevos (antes, los de antes de editar)
+        if (tarea.id && this.mostrarModalDetalle && this.tareaDetalle?.id === tarea.id) {
+          const recargada = this.tareas.find(t => t.id === tarea.id)
+            || await tareasApi.obtenerTareaPorId(tarea.id).catch(() => null)
+          if (recargada) this.tareaDetalle = { ...recargada }
+        }
         
         // Actualizar estadísticas
         if (this.$refs.estadisticas) {
@@ -876,10 +927,14 @@ export default {
       }
     },
     
-    async handleCambiarEstado(tareaId, estadoId, motivoBloqueo = null) {
+    async handleCambiarEstado(tareaId, estadoId, motivoBloqueo = null, comentario = null) {
+      if (this.cambiandoEstadoTarea) return
+      this.cambiandoEstadoTarea = true
       try {
         await tareasApi.cambiarEstadoTarea(tareaId, estadoId, motivoBloqueo)
-        this.mostrarMensaje('Estado actualizado correctamente', 'success')
+        // El comentario del cambio, solo si el cambio se ha hecho
+        const comentarioGuardado = await this.guardarComentarioDeEstado(tareaId, comentario)
+        if (comentarioGuardado) this.mostrarMensaje('Estado actualizado correctamente', 'success')
         await this.cargarTareas()
         
         // Actualizar estadísticas
@@ -891,25 +946,21 @@ export default {
       } catch (error) {
         console.error('Error cambiando estado:', error)
         this.mostrarMensaje('Error al cambiar el estado', 'error')
+      } finally {
+        this.cambiandoEstadoTarea = false
       }
     },
 
     async handleCompletarConComentario(data) {
+      if (this.cambiandoEstadoTarea) return
+      this.cambiandoEstadoTarea = true
       try {
-        // Obtener usuario actual
-        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
-        
-        // Primero crear el comentario
-        await tareasApi.crearComentario({
-          tareaId: data.tareaId,
-          usuarioId: usuario.id,
-          comentario: data.comentario.contenido
-        })
-        
-        // Luego cambiar el estado a completado
+        // Primero se completa y después se guarda el comentario: si falla el cambio no
+        // queda un comentario suelto que se duplica al reintentar
         await tareasApi.cambiarEstadoTarea(data.tareaId, data.estadoId)
+        const comentarioGuardado = await this.guardarComentarioDeEstado(data.tareaId, data.comentario?.contenido)
         
-        this.mostrarMensaje('Tarea marcada como completada', 'success')
+        if (comentarioGuardado) this.mostrarMensaje('Tarea marcada como completada', 'success')
         await this.cargarTareas()
         
         // Actualizar estadísticas
@@ -921,22 +972,22 @@ export default {
       } catch (error) {
         console.error('Error completando tarea:', error)
         this.mostrarMensaje('Error al completar la tarea', 'error')
+      } finally {
+        this.cambiandoEstadoTarea = false
       }
     },
 
-    async handleCrearComentarioEstado(data) {
+    /** Guarda el comentario de un cambio de estado ya hecho; devuelve si se guardó (o no había). */
+    async guardarComentarioDeEstado(tareaId, texto) {
+      if (!texto || !texto.trim()) return true
       try {
-        // Obtener usuario actual
         const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
-        
-        await tareasApi.crearComentario({
-          tareaId: data.tareaId,
-          usuarioId: usuario.id,
-          comentario: data.contenido
-        })
+        await tareasApi.crearComentario({ tareaId, usuarioId: usuario.id, comentario: texto.trim() })
+        return true
       } catch (error) {
         console.error('Error creando comentario de estado:', error)
-        this.mostrarMensaje('Error al guardar el comentario', 'error')
+        this.mostrarMensaje('El estado se ha cambiado, pero no se pudo guardar el comentario', 'warning')
+        return false
       }
     },
     
@@ -999,6 +1050,13 @@ export default {
 
     cerrarModalDetalle() {
       this.mostrarModalDetalle = false
+      // Si se abrió desde la campana (?abrirDetalle=ID), se quita de la URL: si no,
+      // volver a pulsar la misma tarea no hacía nada y F5 la reabría
+      if (this.$route.query.abrirDetalle) {
+        const query = { ...this.$route.query }
+        delete query.abrirDetalle
+        this.$router.replace({ query }).catch(() => {})
+      }
       // Limpiar la tarea detalle después de cerrar
       this.$nextTick(() => {
         this.tareaDetalle = null
@@ -1025,50 +1083,20 @@ export default {
     },
     
     formatearFecha(fecha) {
-      if (!fecha) return '-'
-      return new Date(fecha).toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      })
+      return fechaES(fecha)
     },
 
     getPrioridadTexto(prioridad) {
-      switch (prioridad) {
-        case 0: return 'Urgente'
-        case 1: return 'Alta'
-        case 2: return 'Media'
-        case 3: return 'Baja'
-        default: return 'Normal'
-      }
+      return textoPrioridad(prioridad)
     },
-    
+
+    // Solo para mostrar: «EN_PROGRESO» -> «En Progreso» (igual que en el detalle de la tarea)
+    formatearEstadoNombre(nombre) {
+      return nombreEstado(nombre)
+    },
+
     getEstadoIcon(estadoNombre) {
-      const estado = estadoNombre ? estadoNombre.toLowerCase() : ''
-      switch (estado) {
-        case 'pendiente':
-        case 'pending':
-          return 'far fa-clock'
-        case 'en progreso':
-        case 'in progress':
-        case 'progreso':
-          return 'far fa-play-circle'
-        case 'completada':
-        case 'completed':
-        case 'finalizada':
-          return 'far fa-check-circle'
-        case 'cancelada':
-        case 'cancelled':
-          return 'far fa-times-circle'
-        case 'pausada':
-        case 'paused':
-          return 'far fa-pause-circle'
-        case 'bloqueada':
-        case 'blocked':
-          return 'fas fa-lock'
-        default:
-          return 'fas fa-circle'
-      }
+      return iconoEstadoTarea(estadoNombre)
     },
     
     getSnackbarIcon(color) {
@@ -1087,7 +1115,9 @@ export default {
         color
       }
       
-      setTimeout(() => {
+      // El temporizador de un mensaje anterior no puede ocultar este antes de tiempo
+      clearTimeout(this.temporizadorMensaje)
+      this.temporizadorMensaje = setTimeout(() => {
         this.snackbar.show = false
       }, 3000)
     }

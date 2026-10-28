@@ -1,22 +1,11 @@
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const test = require('node:test');
-const { parse } = require('@vue/compiler-sfc');
+const { cargarComponente } = require('./helpers/sfc');
 
-const projectRoot = path.resolve(__dirname, '..', '..');
 
+// Mismo cargador que el resto de tests: lo que el componente importa de src/utils es real
 function loadComponent(relativePath, axios) {
-  const filename = path.join(projectRoot, relativePath);
-  const source = fs.readFileSync(filename, 'utf8');
-  const { descriptor, errors } = parse(source, { filename });
-  assert.deepEqual(errors, []);
-
-  const executable = descriptor.script.content
-    .replace(/^import\s+.*;\s*$/gm, '')
-    .replace('export default', 'return');
-
-  return Function('axios', 'Spinner', 'jsPDF', executable)(axios, {}, class {});
+  return cargarComponente(relativePath, { axios, Spinner: {}, jsPDF: class {} });
 }
 
 function deferred() {

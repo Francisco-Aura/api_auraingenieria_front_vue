@@ -4,6 +4,7 @@ const path = require('node:path');
 const test = require('node:test');
 const postcss = require('postcss');
 const { parse } = require('@vue/compiler-sfc');
+const { cargarComponente } = require('./helpers/sfc');
 
 const projectRoot = path.resolve(__dirname, '..', '..');
 
@@ -22,14 +23,9 @@ function loadCss(relativePath) {
   return postcss.parse(read(relativePath), { from: relativePath });
 }
 
+// Mismo cargador que el resto de tests: lo que el componente importa de src/utils es real
 function loadComponent(relativePath) {
-  const filename = path.join(projectRoot, relativePath);
-  const { descriptor, errors } = parse(read(relativePath), { filename });
-  assert.deepEqual(errors, []);
-  const executable = descriptor.script.content
-    .replace(/^import\s+.*;\s*$/gm, '')
-    .replace('export default', 'return');
-  return Function('axios', 'Spinner', 'jsPDF', executable)({}, {}, class {});
+  return cargarComponente(relativePath, { axios: {}, Spinner: {}, jsPDF: class {} });
 }
 
 function createContext(component, overrides = {}) {

@@ -12,6 +12,7 @@
 }
 
 .login-container {
+  animation: loginTarjetaEntra 0.22s cubic-bezier(0.2, 0, 0, 1);
   background: rgba(255, 255, 255, 0.562);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -21,6 +22,10 @@
   width: 100%;
   max-width: 450px;
   border: 1px solid rgba(255, 255, 255, 0.068);
+}
+
+@keyframes loginTarjetaEntra {
+  from { opacity: 0; transform: translateY(8px); }
 }
 
 .logo-container {
@@ -54,53 +59,103 @@
   align-items: center;
 }
 
+/* Icono centrado en vertical sobre el campo y con ancho fijo (usuario y candado
+   miden distinto) para que el texto de ambos campos empiece a la misma altura */
 .input-group i {
   position: absolute;
-  left: 0.8rem;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  text-align: center;
   color: var(--text-secondary);
   font-size: 0.9rem;
+  pointer-events: none;
 }
 
+/* styles.css da a todo input un margen superior y un 98 % de ancho: el icono
+   quedaba descentrado respecto al texto y el campo más estrecho que el botón */
 .input-field {
   width: 100%;
-  padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+  height: 42px;
+  margin: 0;
+  padding: 0 0.8rem 0 2.5rem;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
+  border-radius: var(--aura-btn-radio, 8px);
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   background: var(--surface-color);
   color: var(--text-primary);
 }
 
+.input-field:hover:not(:focus) {
+  border-color: var(--aura-btn-neutro-borde, #c9d1db);
+}
+
 .input-field:focus {
-  border-color: var(--accent-color);
+  border-color: var(--color-brand-yellow-hex);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.25);
+  box-shadow: var(--focus-ring);
+}
+
+/* El icono del campo activo se oscurece junto con el anillo de foco */
+.input-group i {
+  transition: color 0.15s ease;
+}
+
+.input-group:focus-within i {
+  color: var(--color-text-dark);
 }
 
 .input-field::placeholder {
   color: var(--text-secondary);
 }
 
+/* Misma forma, letra y colores que el botón principal de la app
+   (shared-buttons.css); antes el hover lo pintaba azul oscuro con el texto
+   negro encima, casi ilegible */
 .login-button {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: var(--primary-color);
-  color: black;
+  height: 42px;
+  margin-top: 0.25rem;
+  background: var(--aura-btn-principal-fondo, #fcd700);
+  color: var(--aura-btn-principal-texto, #1f2a36);
   border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 0.2rem;
-  font-size: 0.9rem;
+  padding: 0 1.2rem;
+  border-radius: var(--aura-btn-radio, 8px);
+  font-family: inherit;
+  font-size: 0.95rem;
   font-weight: 600;
+  letter-spacing: 0.2px;
+  line-height: 1;
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: var(--aura-btn-sombra);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
 }
 
 .login-button:hover:not(:disabled) {
-  background: var(--secondary-color);
-  transform: translateY(-1px);
+  background: var(--aura-btn-principal-hover, #f0cb00);
+  color: var(--aura-btn-principal-texto, #1f2a36);
+  box-shadow: var(--aura-btn-sombra-hover);
+  transform: none;
+}
+
+.login-button:hover {
+  transform: none;
+}
+
+.login-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.login-button:focus-visible {
+  outline: none;
+  box-shadow: var(--aura-btn-foco);
 }
 
 .login-button:disabled {
@@ -118,7 +173,7 @@
   }
   
   .input-field {
-    padding: 0.5rem 0.6rem 0.5rem 1.8rem;
+    padding: 0 0.6rem 0 2.3rem;
   }
 }
 
@@ -154,9 +209,14 @@
 }
 
 .error-text {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   color: var(--color-danger-alt);
-  font-size: 0.72rem;
-  margin-top: 2px;
+  /* Antes 0,72rem (unos 10 px): costaba leerlo sobre el fondo translúcido */
+  font-size: 0.8rem;
+  /* Pegado a su campo: el hueco de 1rem del formulario lo separaba igual del
+     campo de arriba que del de abajo */
+  margin-top: -0.6rem;
   line-height: 1.2;
 }

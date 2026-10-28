@@ -9,9 +9,10 @@
 
 /** Nombre propuesto por el servidor en la cabecera Content-Disposition, si lo hay. */
 export function nombreDeCabecera(cabeceras, alternativo) {
-  const disposicion = (cabeceras && (cabeceras['content-disposition'] || cabeceras['Content-Disposition'])) || '';
-  const coincidencia = String(disposicion).match(/filename="?([^";\n]+)"?/);
-  return coincidencia ? coincidencia[1] : alternativo;
+  const disposicion = String((cabeceras && (cabeceras['content-disposition'] || cabeceras['Content-Disposition'])) || '');
+  // Entre comillas el nombre puede llevar «;» («Acta; reunión.pdf» se quedaba en «Acta»)
+  const coincidencia = disposicion.match(/filename="([^"\n]+)"/) || disposicion.match(/filename=([^";\n]+)/);
+  return coincidencia ? coincidencia[1].trim() : alternativo;
 }
 
 /** Descarga el contenido con el nombre indicado y libera el blob al terminar. */

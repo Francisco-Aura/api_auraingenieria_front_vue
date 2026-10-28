@@ -1,5 +1,6 @@
 <template>
-  <div class="estadisticas-container">
+  <!-- Solo para ADMIN: a los demás les quedaba un recuadro vacío (una raya) encima de la tabla -->
+  <div v-if="esAdmin" class="estadisticas-container">
     <!-- Header desplegable solo para ADMIN (nivelAcceso = 1) -->
     <div v-if="esAdmin" class="estadisticas-header">
       <button class="btn-toggle-estadisticas" @click="mostrarEstadisticas = !mostrarEstadisticas">
@@ -149,14 +150,14 @@
               <div class="metrica-descripcion">Tareas completadas a tiempo</div>
             </div>
 
-            <!-- Delay Promedio -->
+            <!-- Retraso medio -->
             <div class="metrica-item">
               <div class="metrica-header">
-                <span class="metrica-label">Delay Promedio</span>
+                <span class="metrica-label">Retraso medio</span>
                 <i class="fas fa-hourglass-end"></i>
               </div>
               <div class="metrica-valor">
-                {{ (estadisticas.delayPromedioDias || 0).toFixed(1) }}d
+                {{ (estadisticas.delayPromedioDias || 0).toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) }}d
               </div>
               <div class="metrica-descripcion">Días de retraso en tareas vencidas</div>
             </div>
@@ -238,7 +239,6 @@ export default {
         prioridadPromedioPendientes: 0,
         tareasSinAsignar: 0
       },
-      cargando: false,
       // Caché de tareas para evitar recargas innecesarias
       tareasCache: []
     }
@@ -482,6 +482,22 @@ export default {
       
       const total = tareasFiltradas.length
       const tasaCompletacion = total > 0 ? (completadas / total) * 100 : 0
+
+      // Eficiencia, retraso medio y bloqueadas sin terminar, con las mismas fórmulas que
+      // el servidor y sobre las tareas del periodo, como el resto de tarjetas (antes no
+      // se calculaban y salían siempre a 0)
+      const completadasConPlazo = tareasFiltradas.filter(t => t.estadoFinal === true)
+      const completadasATiempo = completadasConPlazo.filter(t =>
+        t.fechaFinalizacion && t.fechaVencimiento && new Date(t.fechaFinalizacion) <= new Date(t.fechaVencimiento)
+      ).length
+      const eficiencia = completadasConPlazo.length > 0 ? (completadasATiempo / completadasConPlazo.length) * 100 : 0
+      const diasDeRetraso = tareasFiltradas
+        .filter(t => t.estadoFinal !== true && t.fechaVencimiento && new Date(t.fechaVencimiento) < ahoraCalculo)
+        .map(t => Math.floor((ahoraCalculo - new Date(t.fechaVencimiento)) / 86400000))
+      const delayPromedioDias = diasDeRetraso.length > 0
+        ? diasDeRetraso.reduce((suma, dias) => suma + dias, 0) / diasDeRetraso.length
+        : 0
+      const tareasBloqueadasPeriodo = tareasFiltradas.filter(t => t.estadoFinal !== true && t.estadoBloqueo === true).length
       
       // Estadísticas globales
       const tareasProximasAVencer = todasLasTareas.filter(t => {
@@ -505,6 +521,9 @@ export default {
         vencidas,
         total,
         tasaCompletacion,
+        eficiencia,
+        delayPromedioDias,
+        tareasBloqueadasPeriodo,
         tareasProximasAVencer,
         tareasSinAsignar,
         totalSemana: total,
@@ -532,42 +551,41 @@ export default {
     },
     
     async cargarEstadisticas() {
+      // Las estadísticas solo se muestran a administradores. Para el resto, Tareas
+      // llamaba aquí tras cada guardado/cambio de estado/borrado y se volvían a pedir
+      // todas sus tareas (la caché solo se llena para administradores) sin enseñarlas.
+      if (!this.esAdmin) return
+
       // Si hay datos en caché, usar esos en lugar de hacer petición al servidor
       if (this.tareasCache && this.tareasCache.length > 0) {
         this.procesarEstadisticasDesdeData(this.tareasCache)
         return
       }
       
+      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+      if (!usuario.id) {
+        console.error('No se encontró usuario logueado')
+        return
+      }
+      
+      // Obtener todas las tareas del usuario (solo si no hay caché)
+      let todasLasTareas = []
       try {
-        this.cargando = true
-        
-        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
-        if (!usuario.id) {
-          console.error('No se encontró usuario logueado')
-          return
+        const esAdminUser = usuario.nivelAcceso === 1 || usuario.nivelAcceso === '1'
+        if (esAdminUser) {
+          todasLasTareas = await tareasApi.obtenerTodasLasTareas()
+        } else {
+          todasLasTareas = await tareasApi.obtenerTareasPorUsuario(parseInt(usuario.id))
         }
         
-        // Obtener todas las tareas del usuario (solo si no hay caché)
-        let todasLasTareas = []
-        try {
-          const esAdminUser = usuario.nivelAcceso === 1 || usuario.nivelAcceso === '1'
-          if (esAdminUser) {
-            todasLasTareas = await tareasApi.obtenerTodasLasTareas()
-          } else {
-            todasLasTareas = await tareasApi.obtenerTareasPorUsuario(parseInt(usuario.id))
-          }
-          
-          // Guardar en caché
-          this.tareasCache = todasLasTareas
-          
-          // Procesar estadísticas
-          this.procesarEstadisticasDesdeData(todasLasTareas)
-        } catch (error) {
-          console.error('Error obteniendo tareas:', error)
-          this.resetearEstadisticas()
-        }
-      } finally {
-        this.cargando = false
+        // Guardar en caché
+        this.tareasCache = todasLasTareas
+        
+        // Procesar estadísticas
+        this.procesarEstadisticasDesdeData(todasLasTareas)
+      } catch (error) {
+        console.error('Error obteniendo tareas:', error)
+        this.resetearEstadisticas()
       }
     },
     

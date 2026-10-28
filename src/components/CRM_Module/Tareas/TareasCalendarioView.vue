@@ -30,9 +30,10 @@
           <i class="fas fa-calendar-week"></i>
           Semana
         </button>
+        <!-- «Día» y no «Hoy»: ya hay un botón «Hoy» (ir a hoy) justo encima -->
         <button class="btn-vista" :class="{ active: vista === 'hoy' }" @click="cambiarVista('hoy')" title="Vista del día">
           <i class="fas fa-calendar-day"></i>
-          Hoy
+          Día
         </button>
       </div>
     </div>
@@ -88,9 +89,9 @@
     <!-- Panel lateral de día seleccionado -->
     <transition name="slide">
       <div v-if="diaSeleccionado && (vista === 'hoy' || mostrarPanelLateral)" class="panel-dia">
-        <div class="panel-header">
+        <div class="panel-header aura-modal-header">
           <h3>{{ formatFechaCompleta(diaSeleccionado.fecha) }}</h3>
-          <button class="close-button" @click="cerrarPanel">
+          <button class="close-button" @click="cerrarPanel" aria-label="Cerrar el panel del día">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -116,7 +117,7 @@
               @click="verDetalleTarea(tarea)">
               
               <div class="tarea-header-panel">
-                <span class="tarea-tipo-badge" :style="{ backgroundColor: tarea.estadoColor || 'rgb(252, 215, 0)' }">
+                <span class="tarea-tipo-badge" :style="{ backgroundColor: tarea.estadoColor || 'rgb(252, 215, 0)', color: colorTextoSobre(tarea.estadoColor || 'rgb(252, 215, 0)') }">
                   {{ tarea.estadoNombre }}
                 </span>
                 <span class="tarea-prioridad-badge" :class="`prioridad-${tarea.prioridad}`">
@@ -135,7 +136,7 @@
                 </span>
               </div>
               
-              <p v-if="tarea.descripcion" class="tarea-descripcion">{{ tarea.descripcion.substring(0, 100) }}...</p>
+              <p v-if="tarea.descripcion" class="tarea-descripcion">{{ resumenDescripcion(tarea.descripcion) }}</p>
               
               <div class="tarea-footer-panel">
                 <span class="asignado-a">
@@ -151,16 +152,14 @@
 </template>
 
 <script>
+import { colorTextoSobre } from '@/utils/colores'
+
 export default {
   name: 'TareasCalendarioView',
   props: {
     tareas: {
       type: Array,
       required: true
-    },
-    estados: {
-      type: Array,
-      default: () => []
     }
   },
   data() {
@@ -200,6 +199,10 @@ export default {
         const clave = this.claveDia(new Date(tarea.fechaVencimiento))
         if (!porDia.has(clave)) porDia.set(clave, [])
         porDia.get(clave).push(tarea)
+      }
+      // Dentro de cada día, por hora de vencimiento (antes salían 10:00, 09:00, 11:00...)
+      for (const lista of porDia.values()) {
+        lista.sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento))
       }
       return porDia
     },
@@ -277,7 +280,29 @@ export default {
       return []
     }
   },
+  mounted() {
+    window.addEventListener('keydown', this.alPulsarTecla)
+  },
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.alPulsarTecla)
+  },
   methods: {
+    colorTextoSobre,
+    // Esc cierra el panel del día. Si hay un modal o un aviso encima (el detalle de una
+    // tarea abierto desde el panel), Esc es suyo: el cierre común de modales ya lo ha
+    // atendido (preventDefault) o el aviso de SweetAlert lo usa
+    alPulsarTecla(evento) {
+      if (evento.key !== 'Escape' || evento.defaultPrevented || !this.diaSeleccionado) return
+      if (!(this.vista === 'hoy' || this.mostrarPanelLateral)) return
+      if (document.querySelector('.swal2-container, .modal-overlay, [aria-modal="true"]')) return
+      evento.preventDefault()
+      this.cerrarPanel()
+    },
+    // Resumen de la descripción en el panel: «…» solo si de verdad se corta
+    resumenDescripcion(texto) {
+      const descripcion = String(texto || '')
+      return descripcion.length > 100 ? `${descripcion.substring(0, 100).trimEnd()}…` : descripcion
+    },
     cambiarVista(nuevaVista) {
       this.vista = nuevaVista
       if (nuevaVista === 'hoy') {
@@ -292,12 +317,20 @@ export default {
       }
     },
     mesAnterior() {
-      this.fechaActual = new Date(this.año, this.mes - 1, 1)
+      this.fechaActual = this.desplazar(-1)
       this.diaSeleccionado = null
     },
     mesSiguiente() {
-      this.fechaActual = new Date(this.año, this.mes + 1, 1)
+      this.fechaActual = this.desplazar(1)
       this.diaSeleccionado = null
+    },
+    // En la vista semanal las flechas pasan de semana en semana (antes saltaban al día 1
+    // del mes de al lado y las semanas intermedias no se podían ver); en la mensual, de mes en mes
+    desplazar(sentido) {
+      if (this.vista === 'semana') {
+        return new Date(this.año, this.mes, this.fechaActual.getDate() + 7 * sentido)
+      }
+      return new Date(this.año, this.mes + sentido, 1)
     },
     irAHoy() {
       this.fechaActual = new Date()

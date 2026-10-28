@@ -182,39 +182,68 @@ div.aura-modal-header.aura-modal-header .aura-modal-header__boton:hover {
   color: var(--color-text-dark, #2c3e50) !important;
 }
 
-/* Botón de cierre: mismo círculo rojo en todos los modales */
+/* Botón de cierre: mismo círculo rojo en todos los modales.
+   Tamaño, color, icono y estados (hover, pulsado, foco) se fijan aquí con
+   !important porque cada componente trae reglas scoped propias para su X
+   (tamaños de 28 a 40 px, giros al pasar el ratón, bordes y sombras). Los
+   valores salen de las variables --aura-close-* de shared-ui.css, que usan
+   también las X fuera de la cabecera común. */
 div.aura-modal-header.aura-modal-header .close-button {
   position: static !important;
-  flex: 0 0 34px;
-  width: 34px !important;
-  min-width: 34px !important;
-  height: 34px !important;
-  margin: 0 0 0 auto;
+  flex: 0 0 var(--aura-close-size) !important;
+  box-sizing: border-box !important;
+  width: var(--aura-close-size) !important;
+  min-width: var(--aura-close-size) !important;
+  height: var(--aura-close-size) !important;
+  min-height: var(--aura-close-size) !important;
+  margin: 0 0 0 auto !important;
   padding: 0 !important;
   align-self: center !important;
   display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
+  align-items: center !important;
+  justify-content: center !important;
   border: none !important;
   border-radius: 50% !important;
-  background: #c0392b !important;
+  background: var(--aura-close-bg) !important;
   color: #fff !important;
-  font-size: 0.95rem !important;
+  font-size: var(--aura-close-icon) !important;
+  line-height: 1 !important;
+  opacity: 1 !important;
   box-shadow: none !important;
   transform: none !important;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+div.aura-modal-header.aura-modal-header .close-button > i {
+  margin: 0 !important;
+  font-size: inherit !important;
+  line-height: 1 !important;
+  color: inherit !important;
+  transform: none !important;
 }
 
 div.aura-modal-header.aura-modal-header .aura-modal-header__acciones .close-button {
-  margin: 0;
+  margin: 0 !important;
 }
 
 div.aura-modal-header.aura-modal-header .close-button:hover {
-  background: #96281b !important;
+  background: var(--aura-close-bg-hover) !important;
+  transform: none !important;
 }
 
-div.aura-modal-header.aura-modal-header .close-button:focus-visible,
+div.aura-modal-header.aura-modal-header .close-button:active {
+  background: var(--aura-close-bg-active) !important;
+}
+
+div.aura-modal-header.aura-modal-header .close-button:focus {
+  outline: none !important;
+}
+
+div.aura-modal-header.aura-modal-header .close-button:focus-visible {
+  box-shadow: var(--aura-close-focus) !important;
+}
+
 div.aura-modal-header.aura-modal-header .aura-modal-header__boton:focus-visible {
   outline: 2px solid var(--color-brand-yellow-hex, #fcd700);
   outline-offset: 2px;
@@ -311,6 +340,14 @@ button.aura-pestana.aura-pestana--activa {
   padding: 0 !important;
   border: none !important;
   overflow: hidden;
+}
+
+/* La ventana de todos los modales con las mismas esquinas: 12 px, como los diálogos de
+   SweetAlert (swal-dialogs.css). Iban de 5,6 a 16 px según la pantalla. */
+:is(.modal-overlay, .mcas-modal-overlay, .tareas-panel-overlay, .modal-overlay-confirmacion)
+  > :is(.modal-content, .mcas-modal, .tareas-panel, .modal-auditoria, .modal-confirmacion-completar,
+    .modal-comentario-renovacion):not(#aura-esquinas) {
+  border-radius: 12px;
 }
 
 /* ---------------------------------------------------------------------------

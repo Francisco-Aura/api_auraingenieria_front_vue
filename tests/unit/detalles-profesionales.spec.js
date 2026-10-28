@@ -104,7 +104,7 @@ test('el detalle del servicio separa etiqueta y valor y muestra los importes en 
 test('los diálogos no muestran el azul por defecto: confirmar en amarillo y el resto neutro', () => {
   const css = leer(BOTONES_CSS);
   assert.match(regla(css, '.swal2-confirm[style*="48, 133, 214"]'), /var\(--aura-btn-principal-fondo\)/);
-  assert.match(regla(css, '.swal2-styled:is(.swal2-cancel, .swal2-deny)', 'background:'), /var\(--aura-btn-neutro-fondo\)/);
+  assert.match(regla(css, '.swal2-styled:is(.swal2-cancel, .swal2-deny)', 'background:'), /var\(--aura-btn-cancelar-fondo\)/);
 });
 
 test('el menú lateral plegado centra su botón, usa iconos claros y deja ver los nombres', () => {

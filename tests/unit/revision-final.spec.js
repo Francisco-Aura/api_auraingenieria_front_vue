@@ -80,7 +80,7 @@ test('en las tablas anchas la columna de acciones se queda fija a la derecha', (
   assert.match(celda, /position: *sticky/);
   assert.match(celda, /right: *0/);
   for (const ruta of [PS, TAREAS]) {
-    assert.match(leer(ruta), /class="data-table data-table--acciones-fijas"/, ruta);
+    assert.match(leer(ruta), /class="data-table data-table--acciones-fijas[ "]/, ruta);
   }
 });
 

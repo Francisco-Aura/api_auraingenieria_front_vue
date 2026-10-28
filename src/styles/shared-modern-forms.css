@@ -32,17 +32,22 @@
 
 .icon-prefix {
   position: absolute;
-  left: 0.4rem;
+  left: 0.55rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--color-secondary-gray);
   font-size: 0.8rem;
-  width: 14px;
+  width: 16px;
+  text-align: center;
   z-index: 1;
 }
 
+/* Hueco para el icono (los anchos, como el de €, ya no tocan el texto) y sin el
+   margen/ancho globales de los input (assets/styles.css), que lo descentraban */
 .input-with-icon-modern .form-control-modern {
-  padding-left: 1.3rem;
+  display: block;
+  margin: 0;
+  padding-left: 1.9rem;
 }
 
 .form-control-modern {
@@ -51,7 +56,7 @@
   border: 1px solid #ddd;
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
-  transition: all 0.2s;
+  transition: var(--aura-transicion);
   color: var(--text-primary);
   background-color: white;
   height: 28px;
@@ -63,7 +68,7 @@
   border: 1px solid #ddd;
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
-  transition: all 0.2s;
+  transition: var(--aura-transicion);
   color: var(--text-primary);
   background-color: white;
   height: 28px;
@@ -77,11 +82,20 @@
   outline: none;
 }
 
+/* Desactivados (p. ej. «Tarifa gas» en un contrato de luz): en gris, como los demás
+   campos bloqueados de la aplicación. En blanco parecían editables y vacíos. */
+.form-control-modern:disabled,
+.form-select-modern:disabled {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
 .btn-modern {
   padding: 0.5rem 0.8rem;
   border-radius: 0.3rem;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: var(--aura-transicion);
   cursor: pointer;
   display: inline-flex;
   align-items: center;

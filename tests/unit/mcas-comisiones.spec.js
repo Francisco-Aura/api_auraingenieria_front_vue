@@ -191,7 +191,7 @@ test('las superadas solo se ven con el conmutador «Ver histórico»', () => {
   assert.deepEqual(ctx.propuestasFiltradas.map((p) => p.id), [1, 2, 3, 4, 5, 6]);
   assert.ok(ctx.estadosDisponibles.some((e) => e.value === 'SUPERADO'));
 
-  const cabecera = plantilla(MCAS).match(/<div class="table-header">[\s\S]*?<div class="table-responsive">/)[0];
+  const cabecera = plantilla(MCAS).match(/<div class="table-header">[\s\S]*?<div class="table-responsive"/)[0];
   const conmutador = botones(cabecera).find((b) => /verHistorico = !verHistorico/.test(b));
   assert.ok(conmutador, 'falta el conmutador «Ver histórico»');
   assert.match(conmutador, /:aria-pressed="verHistorico \? 'true' : 'false'"/);
@@ -229,7 +229,7 @@ test('el estado enseña el grupo y, debajo, el estado detallado', () => {
 
 test('B6: la tabla tiene siete columnas con la de acciones fija; FEE, % y retrocesión pasan al detalle', () => {
   const tpl = plantilla(MCAS);
-  assert.match(tpl, /<table class="data-table data-table--acciones-fijas">/);
+  assert.match(tpl, /<table class="data-table data-table--compacta data-table--acciones-fijas">/);
   const thead = tpl.slice(tpl.indexOf('<thead>'), tpl.indexOf('</thead>'));
   assert.equal((thead.match(/<th\b/g) || []).length, 7);
   const titulos = [...thead.matchAll(/<div class="column-title[^"]*"[^>]*>\s*<i[^>]*><\/i>([^<]+)/g)].map((m) => m[1].trim());
@@ -287,7 +287,7 @@ const LISTADO = () => [
 
 test('el filtro de comercializadora está en la barra superior; en la tabla se filtra por cliente, CUPS o contrato', () => {
   const tpl = plantilla(MCAS);
-  const cabecera = tpl.match(/<div class="table-header">[\s\S]*?<div class="table-responsive">/)[0];
+  const cabecera = tpl.match(/<div class="table-header">[\s\S]*?<div class="table-responsive"/)[0];
   assert.match(cabecera, /<select v-model="filtroComercializadora" class="toolbar-select"/);
   assert.match(cabecera, /v-for="c in comercializadorasDisponibles"/);
   assert.match(cabecera, /Todas las comercializadoras/);
@@ -775,7 +775,7 @@ test('B5: «Aprobar seleccionadas» dice cuántas y el total, confirma, aprueba 
   ctx.seleccionadas = [1, 2];
   assert.equal(ctx.textoAprobarSeleccionadas, 'Aprobar seleccionadas (2 · 531,84 €)');
 
-  const cabecera = plantilla(MCAS).match(/<div class="table-header">[\s\S]*?<div class="table-responsive">/)[0];
+  const cabecera = plantilla(MCAS).match(/<div class="table-header">[\s\S]*?<div class="table-responsive"/)[0];
   const boton = botones(cabecera).find((b) => /@click="aprobarSeleccionadas"/.test(b));
   assert.ok(boton, 'falta el botón «Aprobar seleccionadas»');
   assert.match(boton, /:disabled="accionando \|\| !propuestasSeleccionadas\.length"/);

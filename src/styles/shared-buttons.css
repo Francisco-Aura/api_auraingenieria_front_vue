@@ -22,7 +22,9 @@
   --aura-btn-radio: 8px;
   --aura-btn-sombra: 0 1px 2px rgba(16, 24, 40, 0.08);
   --aura-btn-sombra-hover: 0 2px 6px rgba(16, 24, 40, 0.14);
-  --aura-btn-foco: 0 0 0 3px rgba(252, 215, 0, 0.55);
+  /* Foco de teclado: anillo oscuro con borde blanco, visible también sobre los botones
+     amarillos (el halo amarillo de antes no se distinguía en ellos) */
+  --aura-btn-foco: 0 0 0 2px #fff, 0 0 0 4px #1f2a36;
 
   --aura-btn-principal-fondo: #fcd700;
   --aura-btn-principal-hover: #f0cb00;
@@ -33,6 +35,14 @@
   --aura-btn-neutro-borde: #c9d1db;
   --aura-btn-neutro-borde-hover: #aab4c0;
   --aura-btn-neutro-texto: #2c3e50;
+
+  /* Cancelar y Cerrar dentro de un modal o de un aviso: gris relleno. En blanco con
+     borde claro se confundían con el fondo blanco del modal y costaba verlos. */
+  --aura-btn-cancelar-fondo: #dce3ea;
+  --aura-btn-cancelar-hover: #cbd4de;
+  --aura-btn-cancelar-borde: #94a3b5;
+  --aura-btn-cancelar-borde-hover: #788aa0;
+  --aura-btn-cancelar-texto: #1f2a36;
 
   --aura-btn-peligro-fondo: #fdecec;
   --aura-btn-peligro-hover: #fbdcdc;
@@ -49,10 +59,12 @@
   --aura-btn-aviso-borde: #f2d59e;
   --aura-btn-aviso-texto: #7a4a06;
 
-  --aura-btn-tono-fondo: #e8eef5;
-  --aura-btn-tono-hover: #dbe4ee;
-  --aura-btn-tono-borde: #d3dde8;
-  --aura-btn-tono-texto: #24374b;
+  /* Acción secundaria con color propio (Recalcular...): azul claro, distinto del gris
+     de Cancelar y Cerrar, para que no parezca un botón desactivado */
+  --aura-btn-tono-fondo: #dbeafe;
+  --aura-btn-tono-hover: #bfdbfe;
+  --aura-btn-tono-borde: #93c5fd;
+  --aura-btn-tono-texto: #1e40af;
 }
 
 /* ---------------------------------------------------------------------------
@@ -83,7 +95,7 @@
   box-shadow: var(--aura-btn-sombra) !important;
   transform: none !important;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, transform 0.12s ease !important;
 }
 
 :is(.btn, .btn-modern, .btn-compact):is(.btn-primary, .btn-save, .btn-create, .btn-confirm,
@@ -143,6 +155,20 @@
   .btn-toggle-baja, .btn-toggle-completed):not(#aura-boton):hover:not(:disabled) {
   background: var(--aura-btn-neutro-hover) !important;
   border-color: var(--aura-btn-neutro-borde-hover) !important;
+}
+
+/* Cancelar y Cerrar dentro de los modales: gris relleno, bien visible sobre blanco */
+:is(.modal-overlay, .mcas-modal-overlay, .modal-overlay-confirmacion, .tareas-panel-overlay)
+  :is(.btn, .btn-modern, .btn-compact):is(.btn-cancel, .btn-cancelar, .btn-secondary):not(#aura-boton) {
+  background: var(--aura-btn-cancelar-fondo) !important;
+  border-color: var(--aura-btn-cancelar-borde) !important;
+  color: var(--aura-btn-cancelar-texto) !important;
+}
+
+:is(.modal-overlay, .mcas-modal-overlay, .modal-overlay-confirmacion, .tareas-panel-overlay)
+  :is(.btn, .btn-modern, .btn-compact):is(.btn-cancel, .btn-cancelar, .btn-secondary):not(#aura-boton):hover:not(:disabled) {
+  background: var(--aura-btn-cancelar-hover) !important;
+  border-color: var(--aura-btn-cancelar-borde-hover) !important;
 }
 
 /* Peligro en tono suave: dar de baja, rechazar y el conmutador «dados de baja» activo */
@@ -239,7 +265,14 @@
   line-height: 1 !important;
   box-shadow: none !important;
   transform: none !important;
-  transition: background-color 0.15s ease, color 0.15s ease !important;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.12s ease !important;
+}
+
+.btn-icon:is(.btn-edit, .btn-view, .btn-view-details, .btn-add, .btn-renew, .btn-delete, .btn-reject,
+  .btn-download, .btn-payment, .btn-archive, .btn-approve, .btn-contracts, .btn-services):not(#aura-boton):focus-visible {
+  /* Con teclado se ve en qué botón de la fila se está (antes no se veía ninguno) */
+  outline: none !important;
+  box-shadow: var(--aura-btn-foco) !important;
 }
 
 .btn-icon:is(.btn-edit, .btn-view, .btn-view-details, .btn-add, .btn-renew, .btn-delete, .btn-reject,
@@ -318,14 +351,14 @@
 }
 
 .swal2-popup .swal2-actions .swal2-styled:is(.swal2-cancel, .swal2-deny) {
-  background: var(--aura-btn-neutro-fondo) !important;
-  border: 1px solid var(--aura-btn-neutro-borde) !important;
-  color: var(--aura-btn-neutro-texto) !important;
+  background: var(--aura-btn-cancelar-fondo) !important;
+  border: 1px solid var(--aura-btn-cancelar-borde) !important;
+  color: var(--aura-btn-cancelar-texto) !important;
 }
 
 .swal2-popup .swal2-actions .swal2-styled:is(.swal2-cancel, .swal2-deny):hover {
-  background: var(--aura-btn-neutro-hover) !important;
-  border-color: var(--aura-btn-neutro-borde-hover) !important;
+  background: var(--aura-btn-cancelar-hover) !important;
+  border-color: var(--aura-btn-cancelar-borde-hover) !important;
 }
 
 .swal2-popup :is(.swal2-input, .swal2-textarea, .swal2-select) {
@@ -355,7 +388,7 @@
   line-height: 1 !important;
   box-shadow: var(--aura-btn-sombra) !important;
   transform: none !important;
-  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, transform 0.12s ease !important;
 }
 
 .btn-action-compact:not(#aura-boton) i {

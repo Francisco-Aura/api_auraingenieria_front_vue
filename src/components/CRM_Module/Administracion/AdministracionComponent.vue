@@ -54,7 +54,13 @@
             v-for="tabla in tablasFiltradas" 
             :key="tabla.nombre"
             class="table-card"
+            :class="{ 'table-card--cargando': tablaPendiente === tabla.nombre }"
+            role="button"
+            tabindex="0"
+            :aria-busy="tablaPendiente === tabla.nombre ? 'true' : 'false'"
             @click="seleccionarTabla(tabla)"
+            @keydown.enter.self.prevent="seleccionarTabla(tabla)"
+            @keydown.space.self.prevent="seleccionarTabla(tabla)"
           >
             <div class="table-card-header">
               <div class="table-icon-wrapper">
@@ -71,7 +77,8 @@
                 <template v-else>{{ getRegistrosCount(tabla.nombre) }} registros</template>
               </span>
               <div class="action-indicator">
-                <i class="fas fa-arrow-right"></i>
+                <!-- Mientras llegan sus datos (la tabla se abre al tenerlos) -->
+                <i :class="tablaPendiente === tabla.nombre ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'"></i>
               </div>
             </div>
           </div>
@@ -123,14 +130,16 @@
         </p>
 
         <!-- Tabla de datos con altura calculada -->
+        <!-- Compacta (como Puntos de Suministro): cabe entera desde 1280 px; si aun así no
+             cabe, v-desborde-tabla deja fija la columna de acciones (no hay en las de consulta) -->
         <div class="table-container">
-          <div class="table-responsive">
-            <table class="data-table">
+          <div class="table-responsive" v-desborde-tabla>
+            <table class="data-table data-table--compacta" :class="{ 'data-table--acciones-fijas': !tablaSoloLectura }">
               <thead>
                 <tr>
                   <th v-for="col in columnasVisibles" :key="col" class="sortable">
                     <div class="column-header">
-                      <div class="column-title" @click="sortBy(col)">
+                      <div class="column-title" @click="sortBy(col)" tabindex="0" role="button" @keydown.enter.prevent="sortBy(col)" @keydown.space.prevent="sortBy(col)">
                         {{ formatColumnName(col) }}
                         <i :class="getSortIcon(col)"></i>
                       </div>
@@ -161,7 +170,7 @@
                   </tr>
                 </template>
                 <tr v-for="fila in paginatedDatos" v-show="!loading" :key="fila.id" class="table-row">
-                  <td v-for="col in columnasVisibles" :key="col" class="data-cell" :title="formatCellValue(fila[col])">
+                  <td v-for="col in columnasVisibles" :key="col" class="data-cell" :title="valorExportable(fila[col])">
                     <span class="cell-content">{{ formatCellValue(fila[col]) }}</span>
                   </td>
                   <td v-if="!tablaSoloLectura" class="actions-cell">
@@ -169,7 +178,7 @@
                       <button class="btn-icon btn-edit" @click="editarRegistro(fila)" title="Editar" aria-label="Editar registro">
                         <i class="fas fa-edit"></i>
                       </button>
-                      <button class="btn-icon btn-delete" @click="eliminarRegistro(fila.id)" title="Eliminar" aria-label="Eliminar registro">
+                      <button class="btn-icon btn-delete" @click="eliminarRegistro(fila.id, fila)" title="Eliminar" aria-label="Eliminar registro">
                         <i class="fas fa-trash-alt"></i>
                       </button>
                     </div>
@@ -180,7 +189,8 @@
                     <div class="empty-state">
                       <i class="fas fa-inbox fa-3x"></i>
                       <h3>No hay registros</h3>
-                      <p>No se encontraron registros que coincidan con los filtros</p>
+                      <p v-if="hayFiltrosColumna">No se encontraron registros que coincidan con los filtros</p>
+                      <p v-else>Esta tabla todavía no tiene registros</p>
                       <button v-if="!tablaSoloLectura" class="btn btn-primary" @click="nuevoRegistro">
                         <i class="fas fa-plus"></i>
                         <span>Crear primer registro</span>
@@ -228,14 +238,14 @@
 
     <!-- Modal CORREGIDO para formularios -->
     <div v-if="mostrarFormulario" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="admin-form-title">
-      <div class="modal-content" @click.stop>
+      <div ref="modalFormulario" class="modal-content" @click.stop>
         <div class="modal-header aura-modal-header">
           <div class="modal-title">
             <div class="modal-icon">
               <i :class="editando ? 'fas fa-edit' : 'fas fa-plus-circle'"></i>
             </div>
             <div class="title-text">
-              <h2 id="admin-form-title">{{ editando ? 'Editar' : 'Nueva' }} {{ esTablaSubcategorias ? 'Subcategoría' : 'Registro' }}</h2>
+              <h2 id="admin-form-title">{{ tituloFormulario }}</h2>
               <p>{{ tablaSeleccionada?.nombre }}</p>
             </div>
           </div>
@@ -329,6 +339,22 @@ import { compararValores } from '@/utils/orden';
 import axios from 'axios';
 import { cargarExcelJS, descargarLibroExcel } from '@/utils/excel';
 
+// Contraseña de Usuarios: el servidor solo la devuelve a administradores (la guarda
+// cifrada); al editar, dejarla en blanco significa «no cambiarla».
+const CAMPO_PASS = 'pass';
+
+// Cabeceras legibles de las columnas que vienen del JSON sin tilde o en camelCase
+const NOMBRES_COLUMNAS = {
+  telefono: 'Teléfono',
+  nivelAcceso: 'Nivel de acceso',
+  descripcion: 'Descripción',
+  codigo: 'Código',
+  pass: 'Contraseña',
+  user: 'Usuario',
+  numeroCuotas: 'Número de cuotas',
+  categorias: 'Categorías',
+};
+
 export default {
   name: 'AdministracionComponent',
   mixins: [ordenTabla],
@@ -369,6 +395,7 @@ export default {
       globalFilter: "",
       columnFilters: {},
       loading: false,
+      tablaPendiente: null, // Tarjeta pulsada cuyos datos aún no han llegado (su flecha gira)
       currentPage: 1,
       recordsPerPage: 10,
       sortKey: null,
@@ -389,7 +416,12 @@ export default {
     columnasFiltradas() {
       // Excluir id, categoriaIds (interno) y categorias (se muestra aparte en subcategorías)
       const excluidas = ['id', 'categoriaIds', 'categorias'];
-      return this.columnas.filter(col => !excluidas.includes(col));
+      const campos = this.columnas.filter(col => !excluidas.includes(col));
+      // Si ningún registro trae la contraseña, el campo se toma de la definición de la tabla
+      if (this.tablaSeleccionada?.campos?.includes(CAMPO_PASS) && !campos.includes(CAMPO_PASS)) {
+        campos.push(CAMPO_PASS);
+      }
+      return campos;
     },
     
     // Columnas visibles en la tabla (sin id ni categoriaIds)
@@ -398,6 +430,18 @@ export default {
       return this.columnas.filter(col => !excluidas.includes(col));
     },
     
+    // Título del formulario: «Nuevo registro», «Nueva subcategoría», «Editar registro»...
+    tituloFormulario() {
+      const objeto = this.esTablaSubcategorias ? 'subcategoría' : 'registro';
+      if (this.editando) return `Editar ${objeto}`;
+      return `${this.esTablaSubcategorias ? 'Nueva' : 'Nuevo'} ${objeto}`;
+    },
+
+    // Hay algún filtro de columna escrito (para el texto de la tabla vacía)
+    hayFiltrosColumna() {
+      return Object.values(this.columnFilters).some(v => String(v ?? '').trim() !== '');
+    },
+
     // Detectar si estamos en la tabla de subcategorías
     esTablaSubcategorias() {
       return this.tablaSeleccionada?.nombre === 'Tareas - Subcategorías';
@@ -452,7 +496,8 @@ export default {
     },
     
     totalPages() {
-      return Math.ceil(this.filteredDatos.length / this.recordsPerPage);
+      // Mínimo 1: con la tabla vacía se lee «Página 1 de 1», como en el resto de pantallas
+      return Math.max(1, Math.ceil(this.filteredDatos.length / this.recordsPerPage));
     },
     
     paginationStart() {
@@ -476,9 +521,13 @@ export default {
       // página ni los filtros: solo se recargan los datos.
       const esMismaTabla = this.tablaSeleccionada && tabla &&
         this.tablaSeleccionada.nombre === tabla.nombre;
+      // Si se pulsa otra tabla (o «Volver») antes de que llegue la respuesta, se descarta
+      const peticion = this.peticionTablaId = (this.peticionTablaId || 0) + 1;
       this.loading = true;
+      this.tablaPendiente = tabla.nombre;
       try {
         const respuesta = await axios.get(tabla.url);
+        if (peticion !== this.peticionTablaId) return;
         this.datos = respuesta.data;
         // Sin registros no hay de dónde leer los campos: se usan los de la tabla
         this.columnas = this.datos.length ? Object.keys(this.datos[0]) : [...(tabla.campos || [])];
@@ -496,6 +545,7 @@ export default {
           await this.cargarCategoriasDisponibles();
         }
       } catch (error) {
+        if (peticion !== this.peticionTablaId) return;
         console.error("Error al cargar datos", error);
         this.datos = [];
         this.columnas = [];
@@ -505,11 +555,17 @@ export default {
           text: 'Error al cargar los datos de la tabla'
         })
       } finally {
-        this.loading = false;
+        if (peticion === this.peticionTablaId) {
+          this.loading = false;
+          this.tablaPendiente = null;
+        }
       }
     },
 
     volverASeleccion() {
+      this.peticionTablaId = (this.peticionTablaId || 0) + 1;
+      this.loading = false;
+      this.tablaPendiente = null;
       this.tablaSeleccionada = null;
       this.datos = [];
       this.columnas = [];
@@ -562,12 +618,22 @@ export default {
     },
     
     formatColumnName(col) {
+      // Nombres con tilde o de varias palabras; el resto, como antes (primera letra en mayúscula)
+      if (NOMBRES_COLUMNAS[col]) return NOMBRES_COLUMNAS[col];
+      return this.nombreColumnaExcel(col);
+    },
+
+    // Cabeceras del Excel exactamente como antes («Telefono», «NivelAcceso», «Pass»...):
+    // si alguien procesa esos ficheros por el nombre de la columna, sigue funcionando
+    nombreColumnaExcel(col) {
       return col.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     },
     
     formatCellValue(value) {
       if (value === null || value === undefined) return '-';
       if (typeof value === 'boolean') return value ? 'Sí' : 'No';
+      // Listas (p. ej. las categorías de una subcategoría): sus nombres, no el JSON
+      if (Array.isArray(value)) value = this.textoLista(value) || '-';
       if (typeof value === 'string' && value.length > 50) {
         return value.substring(0, 50) + '...';
       }
@@ -578,15 +644,21 @@ export default {
     valorExportable(value) {
       if (value === null || value === undefined) return '';
       if (typeof value === 'boolean') return value ? 'Sí' : 'No';
-      if (Array.isArray(value)) return value.join(', ');
+      if (Array.isArray(value)) return this.textoLista(value);
       return value;
+    },
+
+    textoLista(lista) {
+      return lista.map(v => (v && typeof v === 'object') ? (v.nombre ?? v.codigo ?? v.id) : v).join(', ');
     },
     
     nuevoRegistro() {
-      this.registro = {};
+      // Las tablas con «activo» crean el registro activo (lo hace el servidor si no llega):
+      // el interruptor tiene que enseñarlo así, no como «Inactivo»
+      this.registro = this.tablaSeleccionada?.campos?.includes('activo') ? { activo: true } : {};
       this.selectedCategoriaIds = [];
       this.editando = false;
-      this.mostrarFormulario = true;
+      this.abrirFormulario();
     },
     
     editarRegistro(fila) {
@@ -598,7 +670,14 @@ export default {
         this.selectedCategoriaIds = [];
       }
       this.editando = true;
+      this.abrirFormulario();
+    },
+
+    // Abre el modal sin el error del formulario anterior y con el cursor en el primer campo
+    abrirFormulario() {
+      this.errorNombre = '';
       this.mostrarFormulario = true;
+      this.$nextTick(() => this.$refs.modalFormulario?.querySelector('.form-input, .toggle-switch input')?.focus());
     },
     
     // Cargar categorías disponibles para el selector
@@ -632,13 +711,9 @@ export default {
       const campo = this.campoObligatorio;
       const valor = this.registro[campo];
       if (valor === undefined || valor === null || !String(valor).trim()) {
-        const etiqueta = this.formatColumnName(campo);
-        this.errorNombre = `${etiqueta} es obligatorio`;
-        this.$swal.fire({
-          icon: 'warning',
-          title: 'Campo obligatorio',
-          text: `El campo ${etiqueta} es obligatorio`
-        });
+        // El error se ve bajo el campo (sin además un aviso emergente) y el cursor va a él
+        this.errorNombre = `${this.formatColumnName(campo)} es obligatorio`;
+        this.$nextTick(() => this.$refs.modalFormulario?.querySelector('.form-input.input-error')?.focus());
         return;
       }
       this.loading = true;
@@ -649,6 +724,11 @@ export default {
         // Si es subcategoría, incluir las categorías seleccionadas
         if (this.esTablaSubcategorias) {
           datosEnviar.categoriaIds = this.selectedCategoriaIds;
+        }
+
+        // Contraseña en blanco al editar: el servidor conserva la actual
+        if (this.editando && CAMPO_PASS in datosEnviar && !String(datosEnviar[CAMPO_PASS] ?? '').trim()) {
+          delete datosEnviar[CAMPO_PASS];
         }
         
         if (this.editando) {
@@ -671,7 +751,8 @@ export default {
           this.seleccionarTabla(this.tablaSeleccionada);
         }
       } catch (error) {
-        console.error("Error al guardar registro", error);
+        // Sin el error entero: lleva el cuerpo enviado (en Usuarios, la contraseña)
+        console.error("Error al guardar registro", error?.response?.status, error?.message);
         const mensajeError = error.response?.data?.message
           || error.response?.data?.error
           || error.response?.data
@@ -687,13 +768,16 @@ export default {
       }
     },
     
-    async eliminarRegistro(id) {
+    async eliminarRegistro(id, fila = null) {
+      // El aviso dice qué registro se borra y el botón es rojo, como el resto de borrados
+      const nombre = this.nombreRegistro(fila);
       const confirmacion = await this.$swal.fire({
         icon: 'warning',
         title: '¿Eliminar registro?',
-        text: 'Esta acción no se puede deshacer.',
+        text: nombre ? `Se eliminará «${nombre}». Esta acción no se puede deshacer.` : 'Esta acción no se puede deshacer.',
         showCancelButton: true,
         confirmButtonText: 'Sí, eliminar',
+        confirmButtonColor: '#d33',
         cancelButtonText: 'Cancelar',
         reverseButtons: true,
       });
@@ -726,10 +810,18 @@ export default {
       }
     },
     
+    // Texto con el que se nombra un registro en los avisos (su nombre, descripción, código o nivel)
+    nombreRegistro(fila) {
+      if (!fila) return '';
+      const valor = [fila.nombre, fila.descripcion, fila.codigo, fila.nivel].find(v => v !== null && v !== undefined && String(v).trim() !== '');
+      return valor === undefined ? '' : String(valor).trim();
+    },
+
     cerrarFormulario() {
       this.mostrarFormulario = false;
       this.registro = {};
       this.editando = false;
+      this.errorNombre = '';
     },
     
     refreshData() {
@@ -740,11 +832,11 @@ export default {
     
     async exportarExcel() {
       try {
-        // Mismas columnas que la tabla, con el texto completo (en pantalla se recorta a 50 caracteres)
-        const data = this.filteredDatos.map(fila => {
+        // Mismas columnas y orden que la tabla, con el texto completo (en pantalla se recorta a 50 caracteres)
+        const data = this.sortedDatos.map(fila => {
           const row = {};
           this.columnasVisibles.forEach(col => {
-            row[this.formatColumnName(col)] = this.valorExportable(fila[col]);
+            row[this.nombreColumnaExcel(col)] = this.valorExportable(fila[col]);
           });
           return row;
         });

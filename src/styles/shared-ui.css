@@ -8,6 +8,14 @@
   --ui-table-row-height: 52px;
   --ui-table-hover: rgba(252, 215, 0, 0.05);
   --ui-focus-ring: var(--focus-ring);
+
+  /* Botón de cierre (X) de modales y paneles: uno solo en toda la app */
+  --aura-close-size: 34px;
+  --aura-close-icon: 0.95rem;
+  --aura-close-bg: #c0392b;
+  --aura-close-bg-hover: #a93226;
+  --aura-close-bg-active: #8e2a20;
+  --aura-close-focus: 0 0 0 2px #fff, 0 0 0 4px var(--color-brand-yellow-hex, #fcd700);
 }
 
 /* Sin esto el navegador pinta los textarea (observaciones, notas, comentarios) en
@@ -37,13 +45,17 @@ textarea {
 
 .btn:focus-visible,
 .btn-modern:focus-visible,
-.btn-icon:focus-visible,
+.btn-icon:focus-visible {
+  outline: none;
+  box-shadow: var(--ui-focus-ring);
+}
+
 .close-button:focus-visible,
 .btn-close-modal:focus-visible,
 .btn-close:focus-visible,
 .close-button-floating:focus-visible {
   outline: none;
-  box-shadow: var(--ui-focus-ring);
+  box-shadow: var(--aura-close-focus);
 }
 
 .btn:disabled,
@@ -178,10 +190,6 @@ textarea {
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
-.btn-icon:hover:not(:disabled) {
-  transform: scale(1.06);
-}
-
 .btn-icon:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -251,6 +259,13 @@ textarea {
   background-color: transparent;
 }
 
+/* Tampoco se resalta la fila del mensaje de tabla vacía o de error: no es un registro
+   ni se puede pulsar */
+.data-table tbody tr:has(> td > .empty-state):hover,
+.data-table tbody tr:has(> td.empty-state-cell):hover {
+  background-color: transparent;
+}
+
 .skeleton-line {
   height: 14px;
   border-radius: var(--radius-sm);
@@ -297,6 +312,16 @@ textarea {
 
 .data-table thead th.sortable:not(#aura-tabla):hover {
   background-color: var(--surface-color) !important;
+}
+
+/* La mano solo sobre el título, que es lo que ordena: el resto de la celda y el hueco
+   alrededor del filtro no hacen nada al pulsarlos */
+.data-table thead th.sortable:not(#aura-tabla) {
+  cursor: default;
+}
+
+.data-table thead th.sortable .column-title:not(.column-title--sin-orden):not(#aura-tabla) {
+  cursor: pointer;
 }
 
 .data-table thead .column-title:not(#aura-tabla) {
@@ -375,6 +400,12 @@ textarea {
   transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 
+/* Listas de la cabecera: menos relleno a los lados, la flecha ya ocupa su sitio. En las
+   columnas estrechas («Fase» y «Estado» de MCAS a 1280 px) «TODOS» se cortaba */
+.data-table thead select.column-filter:not(#aura-tabla) {
+  padding: 0 2px 0 8px !important;
+}
+
 .data-table thead :is(.column-filter, .dropdown-button):not(#aura-tabla):hover {
   border-color: #aab4c0 !important;
 }
@@ -395,6 +426,13 @@ textarea {
   background-color: #fffbe0 !important;
   border-color: var(--color-brand-yellow-hex, #fcd700) !important;
   color: var(--color-text-dark, #2c3e50) !important;
+}
+
+/* Cabeceras ordenables: también con el teclado (Tab + Intro/Espacio) en todas las tablas */
+.column-title[role="button"]:focus-visible {
+  outline: none;
+  border-radius: 4px;
+  box-shadow: var(--ui-focus-ring);
 }
 
 .column-filter,
@@ -482,28 +520,32 @@ textarea {
   text-align: center;
 }
 
+/* X de cierre fuera de la cabecera común (paneles laterales, avisos): mismo
+   círculo rojo que en los modales (ver shared-modal-header.css), sin giros ni
+   saltos al pasar el ratón. */
 .close-button,
 .btn-close-modal,
 .btn-close,
 .close-button-floating {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
+  box-sizing: border-box;
+  width: var(--aura-close-size);
+  height: var(--aura-close-size);
+  min-width: var(--aura-close-size);
   padding: 0;
   margin: 0;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: none;
   border-radius: 50%;
-  background: rgba(192, 57, 43, 0.94);
+  background: var(--aura-close-bg);
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  align-self: auto;
-  font-size: 1rem;
+  align-self: center;
+  font-size: var(--aura-close-icon);
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(127, 29, 29, 0.28);
-  transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: none;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
   flex-shrink: 0;
 }
 
@@ -511,16 +553,23 @@ textarea {
 .btn-close-modal:hover,
 .btn-close:hover,
 .close-button-floating:hover {
-  background: #96281b;
+  background: var(--aura-close-bg-hover);
   color: #fff;
-  transform: rotate(90deg);
-  box-shadow: 0 4px 10px rgba(127, 29, 29, 0.35);
+  transform: none;
+  box-shadow: none;
+}
+
+.close-button:active,
+.btn-close-modal:active,
+.btn-close:active,
+.close-button-floating:active {
+  background: var(--aura-close-bg-active);
 }
 
 .modal-header > .close-button,
 .modal-header > .btn-close-modal,
 .modal-header > .btn-close {
-  margin: -2px 0 -2px 12px;
+  margin: 0 0 0 12px;
 }
 
 @media (max-width: 768px) {
@@ -553,17 +602,65 @@ textarea {
 
 
 /* ---------------------------------------------------------------------------
- * Columna de acciones fija a la derecha (Puntos de Suministro y Tareas)
+ * Tablas anchas: que quepan y, si no caben, acciones a la vista
  *
- * A 1366 px con el menú abierto esas dos tablas no caben: había que desplazarse
- * a la derecha para ver los botones de cada fila. Con la última columna fija, las
- * acciones se ven siempre y el resto de columnas se desplaza por debajo.
+ * 1) Por debajo de 1500 px las tablas .data-table--compacta (Puntos de Suministro
+ *    y Tareas) se compactan: sin el icono de cada cabecera, menos relleno, botones
+ *    más juntos y, por debajo de 1366 px, cabeceras en dos líneas si hace falta.
+ *    Así caben enteras desde 1280 px y la columna de acciones no tapa ninguna otra.
+ * 2) Solo si aun así la tabla no cabe (pantallas más estrechas, Informes o MCAS
+ *    con muchas columnas), la directiva v-desborde-tabla marca su contenedor con
+ *    .tabla-desborda y la columna de acciones se queda fija a la derecha, con una
+ *    sombra suave mientras quede tabla por la derecha. Si la tabla cabe, la columna
+ *    de acciones es una más: sin raya, sin sombra y sin taparse con nada.
  *
  * La celda fija necesita fondo propio (si no, se transparenta y se lee encima el
  * contenido que pasa por detrás) y un fondo distinto por cada estado de la fila:
  * par/impar, hover y filas marcadas. El selector :not(#aura-tabla) da peso de id
  * para ganar a las reglas scoped de cada pantalla.
  * ------------------------------------------------------------------------- */
+
+@media (max-width: 1499px) {
+  .data-table--compacta thead .column-header:not(.minimal-header) .column-title > i:first-child:not(#aura-tabla) {
+    display: none !important;
+  }
+
+  .data-table--compacta:not(#aura-tabla) :is(th, td) {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .data-table--compacta .action-buttons:not(#aura-tabla) {
+    gap: 4px !important;
+  }
+}
+
+@media (max-width: 1365px) {
+  /* Cabeceras en dos líneas si hace falta. Todas arriba y con el alto de dos líneas,
+     para que los filtros queden en la misma fila y las columnas sin filtro (Acciones,
+     No-Switching) no bajen a la altura de los filtros */
+  .data-table--compacta:not(#aura-tabla) thead th {
+    white-space: normal !important;
+    vertical-align: top !important;
+  }
+
+  /* Alto de dos líneas con su relleno (3,7em): con 2,6em el título que pasaba a dos
+     líneas bajaba su filtro 13 px respecto a los de las demás columnas */
+  .data-table--compacta:not(#aura-tabla) thead .column-title {
+    white-space: normal !important;
+    font-size: 0.85rem !important;
+    min-height: 3.7em;
+  }
+
+  .data-table--compacta .action-buttons .btn-icon:not(#aura-tabla) {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .data-table--compacta td.cups-cell:not(#aura-tabla) {
+    font-size: 0.82rem !important;
+  }
+}
 
 /* La animación de entrada de las filas termina con «transform: translateX(0)» y
    se queda aplicada (animation-fill-mode: both). Un transform en un ancestro
@@ -575,48 +672,75 @@ textarea {
 
 @keyframes auraFilaAparece {
   from { opacity: 0; }
-  to { opacity: 1; }
 }
 
-.data-table--acciones-fijas :is(th, td):last-child:not(#aura-tabla) {
+.tabla-desborda .data-table--acciones-fijas :is(th, td):last-child:not(#aura-tabla) {
   position: sticky !important;
   right: 0;
   z-index: 2;
   background-color: #fff;
-  box-shadow: inset 1px 0 0 var(--border-color), -6px 0 10px -8px rgba(16, 24, 40, 0.28);
+  transition: box-shadow 0.15s ease;
 }
 
-.data-table--acciones-fijas thead th:last-child:not(#aura-tabla) {
+/* Sombra suave a la izquierda de la columna fija solo mientras quedan columnas
+   escondidas por debajo; al llegar al final de la tabla desaparece */
+.tabla-desborda:not(.tabla-al-final) .data-table--acciones-fijas :is(th, td):last-child:not(#aura-tabla) {
+  box-shadow: -10px 0 12px -10px rgba(16, 24, 40, 0.22);
+}
+
+/* La celda única de «no hay datos» (colspan) ocupa toda la fila: no se fija. */
+.tabla-desborda .data-table--acciones-fijas td[colspan]:last-child:not(#aura-tabla) {
+  position: static !important;
+  box-shadow: none;
+}
+
+.tabla-desborda .data-table--acciones-fijas thead th:last-child:not(#aura-tabla) {
   z-index: calc(var(--z-sticky) + 1);
   background-color: var(--surface-color);
 }
 
-.data-table--acciones-fijas tbody tr td:last-child:not(#aura-tabla) {
+.tabla-desborda .data-table--acciones-fijas tbody tr td:last-child:not(#aura-tabla) {
   background-color: #fff;
 }
 
-.data-table--acciones-fijas tbody tr:nth-child(even) td:last-child:not(#aura-tabla) {
+.tabla-desborda .data-table--acciones-fijas tbody tr:nth-child(even) td:last-child:not(#aura-tabla) {
   background-color: #f8fafc;
 }
 
-.data-table--acciones-fijas tbody tr:hover td:last-child:not(#aura-tabla) {
-  background-color: #fdf6d6;
+/* La celda fija necesita un color opaco (por debajo pasan las demás celdas al desplazar
+   la tabla): el equivalente exacto, sobre blanco, del color semitransparente de la
+   fila. Antes no coincidían y la columna de Acciones se veía de otro color: más
+   amarilla al pasar el ratón, gris en las bajas, rosa en las vencidas, verde en las
+   completadas (que no tienen tinte) y sin cambiar al pasar el ratón por las de estado. */
+.tabla-desborda .data-table--acciones-fijas tbody tr:hover td:last-child:not(#aura-tabla) {
+  background-color: #fffdf2; /* rgba(252, 215, 0, 0.05) */
 }
 
-/* Filas con estado propio (baja, vencida, completada, fijada): el mismo color que
-   la fila, para que la columna fija no corte la franja de color. */
-.data-table--acciones-fijas tbody tr:is(.cliente-dado-baja, .punto-dado-baja, .fila-inactiva) td:last-child:not(#aura-tabla) {
-  background-color: #f5f5f5;
+.tabla-desborda .data-table--acciones-fijas tbody tr:is(.cliente-dado-baja, .punto-dado-baja, .tarea-vencida) td:last-child:not(#aura-tabla) {
+  background-color: #fdf5f6; /* rgba(220, 53, 69, 0.05) */
 }
 
-.data-table--acciones-fijas tbody tr.tarea-vencida td:last-child:not(#aura-tabla) {
-  background-color: #fff5f5;
+.tabla-desborda .data-table--acciones-fijas tbody tr:is(.cliente-dado-baja, .punto-dado-baja, .tarea-vencida):hover td:last-child:not(#aura-tabla) {
+  background-color: #fcebec; /* rgba(220, 53, 69, 0.1) */
 }
 
-.data-table--acciones-fijas tbody tr.tarea-completada td:last-child:not(#aura-tabla) {
-  background-color: #f6fbf4;
+/* Fijada gana a vencida, como en la fila (shared-row-states.css) */
+.tabla-desborda .data-table--acciones-fijas tbody tr.tarea-fijada td:last-child:not(#aura-tabla) {
+  background-color: #fffaeb; /* rgba(255, 193, 7, 0.08) */
 }
 
-.data-table--acciones-fijas tbody tr.tarea-fijada td:last-child:not(#aura-tabla) {
-  background-color: #fffdf2;
+.tabla-desborda .data-table--acciones-fijas tbody tr.tarea-fijada:hover td:last-child:not(#aura-tabla) {
+  background-color: #fff6da; /* rgba(255, 193, 7, 0.15) */
+}
+
+/* ---------------------------------------------------------------------------
+ * Modales: la rueda del ratón mueve el modal, no la pantalla de detrás
+ *
+ * Con un modal de la aplicación abierto, services/capasModales.js pone esta clase
+ * en el body y compensa con relleno el ancho de la barra de desplazamiento, para
+ * que la pantalla de detrás ni se desplace ni dé un salto. Los avisos pequeños
+ * (toasts) no bloquean nada, y SweetAlert ya se ocupa de sus propios diálogos.
+ * ------------------------------------------------------------------------- */
+body.aura-modal-abierto {
+  overflow: hidden !important;
 }

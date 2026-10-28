@@ -68,18 +68,39 @@
       </div>
 
       <!-- User profile at the bottom -->
-      <div class="sidebar-footer">
-        <div class="user-profile" @click="handleUserProfileClick">
+      <!-- Tarjeta y opción con rol de botón: se llega con Tab y se pulsan con Intro o
+           Espacio sin cambiar su aspecto. El menú se cierra con Esc o pulsando fuera. -->
+      <div ref="pieUsuario" class="sidebar-footer">
+        <div
+          ref="tarjetaUsuario"
+          class="user-profile"
+          role="button"
+          tabindex="0"
+          aria-haspopup="menu"
+          :aria-expanded="userMenuOpen ? 'true' : 'false'"
+          :title="sidebarCollapsed ? `${userName} (${userRole})` : null"
+          @click="handleUserProfileClick"
+          @keydown.enter.prevent="handleUserProfileClick"
+          @keydown.space.prevent="handleUserProfileClick"
+        >
           <div class="avatar">
             <i class="fas fa-user"></i>
           </div>
           <div v-if="!sidebarCollapsed" class="user-info">
-            <div class="user-name">{{ userName }}</div>
+            <div class="user-name" :title="userName">{{ userName }}</div>
             <div class="user-role">{{ userRole }}</div>
           </div>
         </div>
-        <div v-if="userMenuOpen && !sidebarCollapsed" class="user-menu">
-          <div class="menu-option" @click="cerrarSesion">
+        <div v-if="userMenuOpen && !sidebarCollapsed" class="user-menu" role="menu">
+          <div
+            ref="opcionCerrarSesion"
+            class="menu-option"
+            role="menuitem"
+            tabindex="0"
+            @click="cerrarSesion"
+            @keydown.enter.prevent="cerrarSesion"
+            @keydown.space.prevent="cerrarSesion"
+          >
             <i class="fas fa-sign-out-alt"></i>
             <span>Cerrar sesión</span>
           </div>
@@ -97,7 +118,7 @@
           </div>
         </div>
         <div class="header-right">
-          <NotificacionesComponent v-if="moduloTareasActivo" />
+          <NotificacionesComponent v-if="moduloTareasActivo" @menu-abierto="userMenuOpen = false" />
         </div>
       </header>
 
@@ -112,6 +133,7 @@
 </template>
 
 <script>
+import axios from 'axios'
 import NotificacionesComponent from '@/components/CRM_Module/Tareas/NotificacionesComponent.vue'
 import { tareasApi } from '@/services/tareasApi'
 import { crearSondeoPendientes, textoPendientesMcas } from '@/services/mcasPendientes'
@@ -158,6 +180,19 @@ export default {
     }
   },
   methods: {
+    // La sesión del servidor es una por navegador: si en otra pestaña se cierra sesión o se
+    // entra con otro usuario, esta seguía enseñando el nombre y los menús del anterior
+    // (y sus peticiones salían ya como el nuevo). Se recarga para ponerse al día.
+    alCambiarUsuarioEnOtraPestana(evento) {
+      if (evento.key !== 'usuario' && evento.key !== null) return;
+      let antes = null;
+      let ahora = null;
+      try { antes = JSON.parse(evento.oldValue || 'null'); } catch { antes = null; }
+      try { ahora = JSON.parse(evento.newValue || 'null'); } catch { ahora = null; }
+      if (evento.key === null || !ahora || antes?.id !== ahora.id) {
+        window.location.assign(ahora ? '/dashboard/clientes' : '/');
+      }
+    },
     toggleSidebar() {
       this.sidebarCollapsed = !this.sidebarCollapsed;
       if (this.sidebarCollapsed) {
@@ -169,7 +204,24 @@ export default {
         this.userMenuOpen = !this.userMenuOpen;
       }
     },
+    // El menú de usuario se cierra al pulsar fuera de la tarjeta (antes seguía abierto
+    // encima de lo que se hiciera después, incluso a la vez que el de notificaciones)
+    cerrarMenuUsuarioAlPulsarFuera(evento) {
+      if (!this.userMenuOpen) return;
+      const pie = this.$refs.pieUsuario;
+      if (pie && pie.contains(evento.target)) return;
+      this.userMenuOpen = false;
+    },
+    // Esc cierra el menú de usuario y devuelve el foco a la tarjeta
+    cerrarMenuUsuarioConEscape(evento) {
+      if (evento.key !== 'Escape' || !this.userMenuOpen || evento.defaultPrevented) return;
+      evento.preventDefault();
+      this.userMenuOpen = false;
+      this.$refs.tarjetaUsuario?.focus();
+    },
     cerrarSesion() {
+      // Cierra también la sesión del servidor; si falla (red, ya caducada) se sale igual
+      axios.post(`${process.env.VUE_APP_API_URL}/usuarios/logout`).catch(() => {});
       localStorage.removeItem('usuario');
       localStorage.removeItem('token');
       this.$router.push('/');
@@ -225,9 +277,15 @@ export default {
       this.sidebarCollapsed = true;
     }
     window.addEventListener('resize', this.handleResize);
+    window.addEventListener('storage', this.alCambiarUsuarioEnOtraPestana);
+    document.addEventListener('click', this.cerrarMenuUsuarioAlPulsarFuera);
+    document.addEventListener('keydown', this.cerrarMenuUsuarioConEscape);
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.handleResize);
+    window.removeEventListener('storage', this.alCambiarUsuarioEnOtraPestana);
+    document.removeEventListener('click', this.cerrarMenuUsuarioAlPulsarFuera);
+    document.removeEventListener('keydown', this.cerrarMenuUsuarioConEscape);
     this.sondeoPendientesMcas?.detener();
   },
   watch: {

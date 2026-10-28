@@ -196,6 +196,7 @@ test('el menú enseña junto a «Comisiones MCAS» cuántas hay por aprobar, tam
 
 function dashboard({ nivelAcceso, sondeos }) {
   global.window = { innerWidth: 1366, addEventListener() {}, removeEventListener() {} };
+  global.document = { addEventListener() {}, removeEventListener() {} };
   global.localStorage = {
     getItem: (clave) => (clave === 'usuario' ? JSON.stringify({ id: 1, nombre: 'Ana', nivelAcceso }) : null),
     setItem() {}, removeItem() {},

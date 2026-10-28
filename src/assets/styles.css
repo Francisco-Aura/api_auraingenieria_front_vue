@@ -15,7 +15,7 @@ a {
   color: var(--color-brand-yellow);
   text-decoration: none;
   font-size: 14px;
-  transition: color 0.3s ease;
+  transition: color 0.15s ease;
 }
 
 a:hover {
@@ -38,18 +38,13 @@ h2 {
   cursor: pointer;
   border: none;
   border-radius: 6px;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
 }
 
-/* Estilo de los botones al pasar el ratón */
-.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
 
 .btn-cancelar {
   background-color: var(--color-danger);
@@ -65,14 +60,13 @@ button {
   cursor: pointer;
   border: none;
   border-radius: 6px;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   /* Los componentes específicos definen su propio styling */
 }
 
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+/* Sin salto ni sombra genéricos al pasar el ratón: cada botón define su propio
+   hover (color/fondo). Este salto de 2 px se colaba en botones de icono, de
+   copiar, pestañas y desplegables que no lo anulaban, y movía la fila entera. */
 
 /* =============================== */
 /*             Formularios         */
@@ -103,12 +97,9 @@ button:hover {
   gap: 20px;
 }
 
-.full-width {
-  grid-column: span 2; /* Ocupa ambas columnas */
-  display: flex; /* Utiliza Flexbox para la disposición interna */
-  flex-direction: column; /* Disposición en columna */
-  gap: 0.5rem; /* Espaciado entre elementos internos */
-}
+/* Sin regla global .full-width: cada formulario que la usa (alta de cliente,
+   servicios, tareas) define su propio ancho; la global les metía además un flex
+   con 0.5rem de separación que descuadraba sus tarjetas. */
 
 .form-group {
   display: flex; /* Utiliza Flexbox para la disposición del grupo */
@@ -157,25 +148,25 @@ input:focus {
   box-shadow: var(--focus-ring);
 }
 
+/* Los navegadores no heredan la letra en los controles de formulario: sin esto
+   campos, desplegables y botones salían en Arial en vez de Poppins */
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+/* Aspecto base de los campos. Sin ancho ni margen superior: el 98 % y el
+   0.5rem globales se colaban en buscadores, desplegables y casillas (iconos y
+   botones descuadrados respecto al campo) y cada pantalla tenía que anularlos;
+   cada formulario fija su propio ancho y separación. */
 input, textarea, select {
   font-size: 0.9rem;
-  width: 98%; /* Ancho del campo, con un pequeño margen */
   padding: 0.5rem; /* Espaciado interno */
-  margin-top: 0.5rem; /* Margen superior */
   border-radius: 4px; /* Bordes redondeados */
   border: 1px solid #ddd; /* Borde del campo */
 }
 
-/*Notas de Cliente en actualizar y crear*/
-textarea#notas {
-  width: 98%; /* Ancho del campo "Notas" */
-  height: 120px; /* Altura del campo "Notas" */
-  padding: 10px; /* Espaciado interno */
-  border: 1px solid #ccc; /* Borde del campo */
-  border-radius: 5px; /* Bordes redondeados */
-  font-size: 15px; /* Tamaño de la fuente */
-  resize: none; /* Permite redimensionar solo verticalmente */
-}
+/* (Antes había aquí una regla textarea#notas con otro relleno, letra y borde:
+   las notas del cliente se veían distintas del resto de campos del formulario.) */
 
 /* =============================== */
 /*             TABLAS              */
@@ -190,10 +181,9 @@ table th, table td {
   border-bottom: 1px solid #ddd;
 }
 
-table th {
-  background-color: #333;
-  color: white;
-}
+/* Sin fondo gris oscuro ni texto blanco globales en los th: todas las tablas
+   pintan su cabecera clara, y donde no lo hacían (etiquetas de fila de la tabla
+   de importes MCAS) el texto blanco quedaba invisible. */
 
 table tr:nth-child(even) {
   background-color: #f2f2f2;
@@ -212,7 +202,8 @@ table tr:hover {
      propio tamaño (notificaciones, auditoría, comentario de informes) salían
      descentrados, y el borde oscuro se veía como un marco alrededor. */
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--backdrop-color);
+  backdrop-filter: var(--backdrop-blur);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -283,7 +274,7 @@ input:-webkit-autofill:focus {
 /* Animaciones adicionales */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.18s ease;
 }
 
 .fade-enter-from,
@@ -293,7 +284,7 @@ input:-webkit-autofill:focus {
 
 .slide-up-enter-active,
 .slide-up-leave-active {
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
 }
 
 .slide-up-enter-from,

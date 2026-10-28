@@ -5,8 +5,8 @@
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: var(--backdrop-color);
+  backdrop-filter: var(--backdrop-blur);
   z-index: var(--z-toast) !important; /* Reducido para permitir que SweetAlert2 aparezca encima */
   display: flex !important;
   align-items: center !important;
@@ -66,7 +66,7 @@
   flex-direction: column;
   max-height: calc(95vh - 120px);
   min-height: 0;
-  gap: 0.4rem;
+  gap: 0.75rem;
 }
 
 /* Pestañas a todo el ancho, pegadas a la cabecera y visibles al desplazarse */
@@ -74,13 +74,12 @@
   position: sticky;
   top: -0.5rem;
   z-index: 3;
-  margin: -0.5rem -0.5rem 0.2rem;
+  margin: -0.5rem -0.5rem 0;
 }
 
 .form-sections-container {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.4rem;
+  gap: 0.75rem;
 }
 
 .panel-left,
@@ -89,28 +88,24 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.75rem;
 }
 
+/* Misma tarjeta que el formulario de cliente: blanca, borde fino y sin sombra */
 .form-section {
-  background: var(--surface-color);
-  border-radius: 0.3rem;
-  padding: 0.4rem;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--border-color);
+  background: #fff;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  border: 1px solid #e3e8ee;
 }
 
 .observaciones-fullwidth {
   width: 100%;
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
   flex-shrink: 0;
 }
 
 .potencias-fullwidth {
   width: 100%;
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
   flex-shrink: 0;
 }
 
@@ -121,26 +116,37 @@
 .section-header {
   display: flex;
   align-items: center;
-  padding-bottom: 0.25rem;
-  margin-bottom: 0.35rem;
-  border-bottom: 1px solid var(--border-color);
+  gap: 0.5rem;
+  padding-bottom: 0.45rem;
+  margin-bottom: 0.6rem;
+  border-bottom: 1px solid #edf0f3;
 }
 
 .section-header i {
-  color: black;
-  margin-right: 0.4rem;
-  font-size: 0.85rem;
+  flex: 0 0 1.1rem;
+  width: 1.1rem;
+  text-align: center;
+  color: var(--color-text-dark);
+  font-size: 0.9rem;
 }
 
 .section-header h3 {
   margin: 0;
-  font-size: 0.82rem;
-  color: var(--text-primary);
+  font-size: 0.875rem;
+  color: var(--color-text-dark);
   font-weight: 600;
 }
 
 .form-compact-group {
-  margin-bottom: 0.3rem;
+  min-width: 0;
+  margin-bottom: 0.6rem;
+}
+
+/* Sin margen bajo el último campo: el hueco inferior de la tarjeta es su relleno */
+.form-section > .form-compact-group:last-child,
+.form-section > .form-row:last-child,
+.form-section > .form-row:last-child > .form-compact-group {
+  margin-bottom: 0;
 }
 
 .form-compact-group--sin-margen {
@@ -150,15 +156,15 @@
 .form-compact-group label {
   display: block;
   font-weight: 500;
-  color: var(--text-primary);
-  font-size: 0.78rem;
-  margin-bottom: 0.1rem;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  margin: 0 0 4px;
 }
 
 .form-row {
   display: flex;
-  gap: 0.4rem;
-  margin-bottom: 0.3rem;
+  gap: 0.6rem;
+  margin-bottom: 0;
 }
 
 .form-row .half {
@@ -167,26 +173,39 @@
 
 .form-row.triple {
   display: flex;
-  gap: 0.3rem;
+  gap: 0.6rem;
 }
 
 .form-row.triple .form-compact-group {
   flex: 1;
-  margin-bottom: 0.3rem;
 }
 
+/* display:block evita el hueco de línea bajo el campo (descentraba los iconos) y
+   font-family: inherit usa la letra de la aplicación (fechas y números incluidos) */
 .form-compact-group input,
 .form-compact-group select,
 .form-compact-group textarea {
+  display: block;
   width: 100%;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.82rem;
-  border: 1px solid #ddd;
-  border-radius: 0.2rem;
-  height: 25px;
+  margin: 0;
+  padding: 0 0.6rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  border: 1px solid #cfd6de;
+  border-radius: var(--radius-sm);
+  height: 34px;
   background-color: white;
-  color: var(--text-primary);
+  color: var(--color-text-dark);
   transition: border-color 0.2s;
+}
+
+/* Modo consulta: los campos de solo lectura se distinguen de los editables. También en
+   la pestaña «Instalaciones» (.form-group-compact), que antes parecía editable */
+:is(.form-compact-group, .form-group-compact) :is(input[readonly], textarea[readonly], select:disabled) {
+  background-color: #f8fafc;
+  color: var(--color-text-dark);
+  opacity: 1;
+  cursor: default;
 }
 
 .form-compact-group input:focus,
@@ -201,7 +220,8 @@
   resize: vertical;
   min-height: 42px;
   height: auto;
-  padding-top: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  line-height: 1.45;
 }
 
 .input-with-icon {
@@ -210,17 +230,20 @@
 
 .icon-prefix {
   position: absolute;
-  left: 0.4rem;
+  left: 0.6rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #aaa;
+  width: 0.9rem;
+  text-align: center;
+  color: var(--color-text-muted);
   font-size: 0.8rem;
+  pointer-events: none;
   z-index: 1;
 }
 
 .input-with-icon input,
 .input-with-icon select {
-  padding-left: 1.3rem;
+  padding-left: 2rem;
 }
 
 .input-with-suffix {
@@ -231,11 +254,12 @@
 
 .input-suffix {
   position: absolute;
-  right: 0.5rem;
+  right: 0.6rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #666;
-  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  line-height: 1;
   pointer-events: none;
 }
 
@@ -244,7 +268,7 @@
 }
 
 .input-with-icon.input-with-suffix input {
-  padding-left: 1.3rem;
+  padding-left: 2rem;
   padding-right: 2.5rem;
 }
 
@@ -256,31 +280,30 @@
 .potencias-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
 }
 
 .potencia-item {
   background: #ffffff;
-  border: 2px solid #e1ecf7;
-  border-radius: 0.3rem;
+  border: 1px solid #e3e8ee;
+  border-radius: var(--radius-sm);
+  padding: 0.4rem;
   text-align: center;
-  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  gap: 2px;
 }
 
 .potencia-item.potencia-active {
-  background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
-  border-color: var(--color-success);
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
-  transform: translateY(-2px);
+  background: #eef8f0;
+  border-color: #b9dfc2;
 }
 
 .potencia-label {
   font-weight: 700;
-  font-size: 0.8rem;
-  color: #495057;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
   letter-spacing: 0.5px;
 }
 
@@ -289,15 +312,14 @@
 }
 
 .potencia-valor {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  color: black;
+  color: var(--color-text-dark);
   line-height: 1.2;
 }
 
 .potencia-active .potencia-valor {
   font-weight: 700;
-  font-size: 0.9rem;
 }
 
 .modal-footer {
@@ -321,19 +343,9 @@
   gap: 0.6rem;
 }
 
-.btn {
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.2s;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  font-size: 0.95rem;
-  border: none;
-  outline: none;
+/* Botones siempre a la derecha, aunque no haya nota de campos obligatorios (modo consulta) */
+.modal-footer .action-buttons {
+  margin-left: auto;
 }
 
 @media (max-width: 1200px) {
@@ -384,11 +396,6 @@
   .modal-title {
     font-size: 1rem;
   }
-  
-  .btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-  }
 }
 
 /* Estilos para el sistema de pestañas */
@@ -411,7 +418,7 @@
   font-weight: 500;
   color: #555;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: var(--aura-transicion);
   display: flex;
   align-items: center;
   gap: 0.35rem;
@@ -447,63 +454,69 @@
 
 .tab-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 0.5rem;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 140px);
+  gap: 0.75rem;
 }
 
 /* Estilos compactos para las instalaciones */
 .form-grid-compact {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-  flex: 1;
+  gap: 0.75rem;
 }
 
 .form-section-compact {
   background: #fff;
-  border-radius: 0.3rem;
-  border: 1px solid #e9ecef;
-  padding: 0.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #e3e8ee;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  margin-bottom: 0.3rem;
 }
 
 .section-header-compact {
   display: flex;
   align-items: center;
-  margin-bottom: 0.2rem;
-  gap: 0.3rem;
-  padding-bottom: 0.2rem;
-  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 0.6rem;
+  gap: 0.5rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid #edf0f3;
 }
 
 .section-header-compact i {
+  flex: 0 0 1.1rem;
+  width: 1.1rem;
+  text-align: center;
   font-size: 0.9rem;
-  color: black;
-  width: 0.9rem;
+  color: var(--color-text-dark);
 }
 
 .section-header-compact h3 {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-dark);
   margin: 0;
 }
 
 .form-group-compact {
-  margin-bottom: 0.3rem;
+  min-width: 0;
+  margin-bottom: 0.6rem;
+}
+
+:is(.installation-card, .form-section-compact) > .form-group-compact:last-child {
+  margin-bottom: 0;
 }
 
 .form-group-compact label {
   display: block;
-  margin-bottom: 0.1rem;
-  font-size: 1rem;
+  margin: 0 0 4px;
+  font-size: 0.8rem;
   font-weight: 500;
-  color: black;
+  color: var(--color-text-secondary);
 }
 
 /* «Ejecutado por Aura»: casilla y texto en una fila, con el mismo alto que los campos */
@@ -543,20 +556,23 @@
 }
 
 .form-control-compact {
+  display: block;
   width: 100%;
-  padding: 0.3rem 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 0.25rem;
-  font-size: 1rem;
-  transition: all 0.2s;
-  color: #333;
+  margin: 0;
+  padding: 0 0.6rem;
+  border: 1px solid #cfd6de;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  color: var(--color-text-dark);
   background-color: #fff;
-  height: 26px;
+  height: 34px;
 }
 
 .form-control-compact:focus {
   border-color: var(--color-brand-yellow);
-  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1);
+  box-shadow: var(--focus-ring);
   outline: none;
 }
 
@@ -566,24 +582,27 @@
 }
 
 .form-select-compact {
+  display: block;
   width: 100%;
-  padding: 0.3rem 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 0.25rem;
-  font-size: 1rem;
-  transition: all 0.2s;
-  color: #333;
+  margin: 0;
+  padding: 0 2rem 0 0.6rem;
+  border: 1px solid #cfd6de;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  color: var(--color-text-dark);
   background-color: #fff;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
   cursor: pointer;
-  height: 26px;
+  height: 34px;
 }
 
 .form-select-compact:focus {
   border-color: var(--color-brand-yellow);
-  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1);
+  box-shadow: var(--focus-ring);
   outline: none;
 }
 
@@ -601,101 +620,28 @@
   position: relative;
 }
 
-.icon-prefix {
-  position: absolute;
-  left: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #aaa;
-  font-size: 0.8rem;
-  width: 0.8rem;
-}
-
 .input-with-icon-compact .form-control-compact {
-  padding-left: 1.8rem;
+  padding-left: 2rem;
 }
 
 .installations-row {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: 0.75rem;
 }
 
 .installation-card {
   background: #fff;
-  border-radius: 0.3rem;
-  border: 1px solid #e9ecef;
-  padding: 0.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #e3e8ee;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
 }
 
 .installation-card .section-header-compact i {
   color: var(--color-success);
-}
-
-.btn-compact {
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.2s;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  height: fit-content;
-  font-size: 0.95rem;
-  border: none;
-  outline: none;
-}
-
-.btn-compact:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background-color: var(--color-brand-yellow);
-  color: black;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: rgb(222, 189, 0);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.btn-info {
-  background-color: #17a2b8;
-  color: white;
-}
-
-.btn-info:hover:not(:disabled) {
-  background-color: #138496;
-  transform: translateY(-1px);
-}
-
-.btn-danger {
-  background-color: #f5b2b2;
-  color: black;
-  border: 1px solid #f5b2b2;
-  font-weight: 600;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background-color: #f19999;
-  border-color: #f19999;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(245, 178, 178, 0.4);
-  color: black;
-}
-
-.btn-danger:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(245, 178, 178, 0.3);
 }
 
 /* Estilos personalizados para SweetAlert de baja */
@@ -742,11 +688,6 @@
   .installations-row {
     grid-template-columns: 1fr;
   }
-
-  .tab-content {
-    overflow-y: auto;
-    max-height: calc(100vh - 150px);
-  }
 }
 
 /* Estilos para el checkbox de baja */
@@ -757,7 +698,7 @@
   position: relative;
   padding: 0.2rem;
   border-radius: 0.25rem;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.15s ease;
 }
 
 .service-checkbox:hover {
@@ -776,7 +717,7 @@
   border-radius: 0.2rem;
   margin-right: 0.4rem;
   position: relative;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
 }
 
 .service-checkbox input[type="checkbox"]:checked + .checkmark {
@@ -821,7 +762,7 @@
   background-color: white;
   color: #991b1b;
   height: 28px;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
 }
 
 .fecha-input-compacta:focus {
@@ -843,27 +784,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-/* Estilo para el botón de reactivación verde */
-.btn-success {
-  background-color: #86efac;
-  color: black;
-  border: 1px solid #86efac;
-  font-weight: 600;
-}
-
-.btn-success:hover:not(:disabled) {
-  background-color: #4ade80;
-  border-color: #4ade80;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(134, 239, 172, 0.4);
-  color: black;
-}
-
-.btn-success:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(134, 239, 172, 0.3);
 }
 
 /* Estilos para mensajes de estado */
@@ -906,7 +826,11 @@
 
 /* Validación de errores (declarado al final para ganar por orden de cascada sin !important) */
 .input-error,
-.input-error:focus {
+.input-error:focus,
+.form-compact-group .input-error,
+.form-compact-group .input-error:focus {
+  /* La regla de .form-compact-group input pesaba más y dejaba el borde casi gris:
+     ahora el campo con error se ve en rojo, como en el formulario de servicios */
   border-color: var(--color-danger-alt);
   box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15);
 }
@@ -916,6 +840,11 @@
   font-size: 0.72rem;
   margin-top: 2px;
   line-height: 1.2;
+}
+/* Aviso que va suelto entre dos campos (el de «al menos un CUPS»): aire debajo */
+.error-text--bloque {
+  margin-top: -4px;
+  margin-bottom: 8px;
 }
 
 /* Pie de cada pestaña: fijo abajo y siempre visible, aunque el contenido tenga scroll */

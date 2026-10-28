@@ -38,12 +38,12 @@
           />
         </div>
 
-        <div class="table-responsive">
-          <table v-if="puntosSuministroLocal.length > 0 || cargandoPuntos" class="data-table">
+        <div class="table-responsive" v-desborde-tabla>
+          <table v-if="puntosSuministroLocal.length > 0 || cargandoPuntos" class="data-table data-table--acciones-fijas">
             <thead>
               <tr>
-                <th><i class="fas fa-map-marker-alt"></i> Direccion</th>
-                <th><i class="fas fa-id-card"></i> Identificacion</th>
+                <th><i class="fas fa-map-marker-alt"></i> Dirección</th>
+                <th><i class="fas fa-id-card"></i> Identificación</th>
                 <th><i class="fas fa-bolt"></i> CUPS</th>
                 <th><i class="fas fa-tag"></i> Tipo</th>
                 <th><i class="fas fa-bolt"></i> P1</th>
@@ -63,6 +63,15 @@
                   <td v-for="col in 13" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
                 </tr>
               </template>
+              <!-- Sin coincidencias en la búsqueda: antes solo quedaba la cabecera -->
+              <tr v-if="!cargandoPuntos && filterPuntos && filteredPuntosSuministro.length === 0" class="fila-sin-resultados">
+                <td colspan="13">
+                  <div class="empty-state">
+                    <i class="fas fa-search fa-2x text-muted"></i>
+                    <p>No hay puntos de suministro que coincidan con la búsqueda</p>
+                  </div>
+                </td>
+              </tr>
               <tr v-for="punto in filteredPuntosSuministro" v-show="!cargandoPuntos" :key="punto.id">
                 <td class="text-truncate" :title="`${punto.direccion}, ${punto.codigoPostal}, ${punto.poblacion}, ${punto.provincia}`">
                   {{ punto.direccion }}, {{ punto.codigoPostal }}, {{ punto.poblacion }}, {{ punto.provincia }}
@@ -114,7 +123,7 @@
       </div>
 
       <div class="modal-footer">
-        <button @click="$emit('cerrar-modal')" class="btn btn-primary">
+        <button @click="$emit('cerrar-modal')" class="btn btn-secondary">
           <i class="fas fa-times"></i>
           <span>Cerrar</span>
         </button>
@@ -138,6 +147,8 @@
 <script>
 import ModalActualizarPuntoSuministro from '@/components/CRM_Module/PuntosSuministro/ActualizarPuntoSuministro.vue';
 import axios from 'axios';
+import { fechaCortaES } from '@/utils/fechas';
+import { cupsVisible, tipoCups } from '@/utils/cups';
 
 export default {
   name: "PuntosSuministroClienteComponent",
@@ -253,9 +264,11 @@ export default {
     navegarAPuntosSupministro(punto) {
       const cups = this.getCupsValue(punto);
       this.$emit('cerrar-modal');
+      // Un punto dado de baja solo se ve en esa pantalla con «Mostrar dados de baja»
+      const query = punto.fechaBaja ? { cupsluz: cups, bajas: '1' } : { cupsluz: cups };
       this.$router.push({
         path: '/dashboard/puntos-suministro',
-        query: { cupsluz: cups }
+        query
       });
     },
 
@@ -295,27 +308,11 @@ export default {
 
     // Métodos para manejar CUPS y potencias como en la tabla principal
     getCupsValue(punto) {
-      // Si tiene CUPS de luz y no está vacío, lo mostramos
-      if (punto.cupsluz && punto.cupsluz.trim() !== '') {
-        return punto.cupsluz;
-      }
-      // Si tiene CUPS de gas y no está vacío, lo mostramos
-      if (punto.cupsgas && punto.cupsgas.trim() !== '') {
-        return punto.cupsgas;
-      }
-      return '-';
+      return cupsVisible(punto.cupsluz, punto.cupsgas, '-');
     },
 
     getTipoCups(punto) {
-      // Primero verificamos si tiene CUPS de luz válido
-      if (punto.cupsluz && punto.cupsluz.trim() !== '') {
-        return 'Luz';
-      }
-      // Luego verificamos si tiene CUPS de gas válido
-      if (punto.cupsgas && punto.cupsgas.trim() !== '') {
-        return 'Gas';
-      }
-      return '-';
+      return tipoCups(punto.cupsluz, punto.cupsgas, '-');
     },
 
     getTipoCupsClass(punto) {
@@ -346,8 +343,7 @@ export default {
     },
 
     formatDate(date) {
-      if (!date) return '-';
-      return new Date(date).toLocaleDateString('es-ES');
+      return fechaCortaES(date, '-');
     },
   },
 };

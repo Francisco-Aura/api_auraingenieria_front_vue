@@ -3,8 +3,8 @@
 .suministro-container {
   display: grid;
   grid-template-rows: auto auto auto 1fr;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 20px;
+  padding: 20px;
   width: 100%;
 }
 
@@ -13,30 +13,34 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: 20px;
 }
 
 .stats-container {
   display: flex;
   flex: 1;
-  gap: 1rem;
+  gap: 20px;
 }
 
 .stat-card {
   background-color: var(--surface-color);
   border-radius: var(--border-radius);
   box-shadow: var(--card-shadow);
-  padding: 0.8rem 1rem;
+  padding: 0.7rem 1rem;
   display: flex;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   flex: 1;
-  animation: statCardEntrance 0.5s ease both;
+  animation: statCardEntrance 0.22s var(--aura-curva) backwards;
 }
 
 .stat-card--puntos { animation-delay: 0s; }
-.stat-card--contratos { animation-delay: 0.1s; }
-.stat-card--servicios { animation-delay: 0.2s; }
+.stat-card--contratos { animation-delay: 0.05s; }
+.stat-card--servicios { animation-delay: 0.1s; }
+
+/* Elevación suave al pasar el ratón, igual en todas las pantallas */
+/* Las tarjetas de resumen no se pulsan: sin elevarse al pasar el ratón (parecían botones).
+   Las de Comisiones MCAS, que sí filtran, tienen su propio hover (McasShared.css). */
 
 .stat-icon {
   width: 2.8rem;
@@ -114,7 +118,7 @@
   background-color: var(--surface-color);
   color: var(--text-primary);
   font-weight: 600;
-  padding: 12px 15px;
+  padding: 12px 8px;
   text-align: left;
   vertical-align: middle;
   border-bottom: 2px solid var(--border-color);
@@ -145,7 +149,7 @@
 
 .td-noswitching {
   text-align: center;
-  padding: 12px 15px;
+  padding: 12px 8px;
 }
 
 .noswitching-cell-content {
@@ -177,7 +181,7 @@
 }
 
 .data-table td {
-  padding: 12px 15px;
+  padding: 12px 8px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
   height: 52px; /* Altura fija para las filas */
@@ -185,7 +189,7 @@
 
 /* Row fade-in animation */
 .data-table tbody tr {
-  animation: rowFadeIn 0.3s ease both;
+  animation: rowFadeIn 0.2s ease-out backwards;
 }
 .data-table tbody tr:nth-child(1) { animation-delay: 0s; }
 .data-table tbody tr:nth-child(2) { animation-delay: 0.03s; }
@@ -194,9 +198,10 @@
 .data-table tbody tr:nth-child(5) { animation-delay: 0.12s; }
 .data-table tbody tr:nth-child(n+6) { animation-delay: 0.15s; }
 
+/* Sin «to» ni relleno final: la fila termina con sus propios estilos (las dadas de
+   baja vuelven a su opacidad atenuada) y sin un transform que se quede puesto */
 @keyframes rowFadeIn {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateX(-6px); }
 }
 @keyframes highlightFlash {
   0% { background-color: rgba(76, 175, 80, 0.3); }
@@ -253,7 +258,7 @@
   border-radius: 6px;
   font-size: 0.9rem;
   background-color: white;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
@@ -299,7 +304,6 @@
   display: flex;
   gap: 8px;
   justify-content: center;
-  min-width: 120px; /* Ancho mínimo para los botones de acción */
 }
 
 .btn-icon {
@@ -313,7 +317,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   padding: 0;
   margin: 0;
 }
@@ -395,21 +399,21 @@
   color: var(--color-text-secondary);
 }
 
-/* Animaciones */
-.fade-in {
-  animation: fadeIn 0.3s ease-in-out;
+/* La fila del aviso de tabla vacía no es una fila de datos: sin resaltado al pasar el ratón */
+.data-table tbody tr.fila-vacia,
+.data-table tbody tr.fila-vacia:hover {
+  background-color: transparent;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.empty-state--error i {
+  background: var(--color-danger-light, #fdecea);
+  color: var(--color-danger, #c0392b);
 }
+
+/* Foco de teclado de las cabeceras ordenables: styles/shared-ui.css */
+
+/* Entrada de la pantalla: la común (.fade-in en App.css), solo opacidad y en 0,18 s
+   como las demás. Esta subía 10 px durante 0,3 s. */
 
 .btn-outline {
   background: white;
@@ -418,7 +422,7 @@
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   font-weight: 500;
   min-width: 40px;
 }
@@ -541,13 +545,12 @@
   height: 28px;
   border-radius: 4px;
   flex-shrink: 0;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   cursor: help;
 }
 
 .no-switching-indicator:hover {
   background-color: rgba(255, 152, 0, 0.3);
-  transform: scale(1.1);
   box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
   color: #f57c00;
 }
@@ -607,7 +610,7 @@
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: var(--aura-transicion);
   border: none;
   cursor: pointer;
   letter-spacing: 0.3px;
@@ -674,7 +677,7 @@
   font-weight: 600;
   padding: 10px 20px;
   border-radius: 8px;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
 }
 
 .btn-toggle-baja:hover {
@@ -704,7 +707,7 @@
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   border: none;
   cursor: pointer;
 }
