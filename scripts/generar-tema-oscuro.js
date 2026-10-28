@@ -138,6 +138,8 @@ const COLOR_RE = /#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)|(?<![\w-])(?:white|black)(?
 function mapValue(value, mapper) {
   let changed = false
   let keptOpaque = false
+  // `color-mix(in srgb, #f59e0b 24%, transparent)` es un tinte translúcido: su color no es un fondo vivo
+  const inMix = /color-mix\(/i.test(value)
   const out = value.replace(COLOR_RE, (token) => {
     const color = parseColor(token)
     if (!color) return token
@@ -146,7 +148,7 @@ function mapValue(value, mapper) {
       changed = true
       return mapped
     }
-    if (color.a >= 0.6) keptOpaque = true
+    if (color.a >= 0.6 && !inMix) keptOpaque = true
     return token
   })
   return { value: out, changed, keptOpaque }
