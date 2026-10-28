@@ -38,8 +38,7 @@
   --color-success-rgb: 40, 167, 69;
   --color-secondary-gray: #6c757d;
   --color-orange: #f97316;
-  --color-text-dark: var(--color-text);
-
+  --color-text-dark: #2c3e50;
 
   /* Superficies y texto (los valores claros de siempre; el modo oscuro los redefine más abajo) */
   --color-bg-page: #f7f9fc;
