@@ -467,6 +467,30 @@
   background-color: transparent;
 }
 
+/* Aplicación incrustada (Planificador): ocupa todo el ancho y alto, y solo se desplaza ella por dentro,
+   así sus paneles laterales quedan pegados al borde de la pantalla y no aparece una segunda barra. */
+.dashboard-wrapper--app {
+  height: 100vh;
+  overflow: hidden; /* la página mide justo la ventana: no hay barra de desplazamiento de la página */
+}
+
+.dashboard-wrapper--app .main-content {
+  height: 100vh;
+  min-height: 0;
+}
+
+.content-wrapper--app {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.content-wrapper--app .content-container {
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  animation: none;
+}
+
 /* El fundido de entrada de cada pantalla está en styles/shared-motion.css */
 
 /* Responsive adjustments */

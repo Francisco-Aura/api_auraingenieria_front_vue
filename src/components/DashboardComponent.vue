@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard-wrapper">
+  <div class="dashboard-wrapper" :class="{ 'dashboard-wrapper--app': esAplicacionIncrustada }">
     <!-- Sidebar -->
     <aside class="sidebar" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <!-- Logo container -->
@@ -38,6 +38,12 @@
           <i class="fas fa-chart-bar menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Informes</span>
           <div v-if="sidebarCollapsed" class="tooltip">Informes</div>
+        </router-link>
+
+        <router-link to="/dashboard/planificador" class="menu-item" active-class="active">
+          <i class="fas fa-project-diagram menu-icon"></i>
+          <span v-if="!sidebarCollapsed" class="menu-text">Planificador</span>
+          <div v-if="sidebarCollapsed" class="tooltip">Planificador</div>
         </router-link>
 
         <router-link v-if="moduloTareasActivo" to="/dashboard/tareas" class="menu-item" active-class="active">
@@ -123,7 +129,7 @@
       </header>
 
       <!-- Main view area -->
-      <main class="content-wrapper">
+      <main class="content-wrapper" :class="{ 'content-wrapper--app': esAplicacionIncrustada }">
         <div class="content-container">
           <router-view></router-view>
         </div>
@@ -157,7 +163,8 @@ export default {
         '/dashboard/administracion': 'Administración',
         '/dashboard/tareas': 'Gestión de Tareas',
         '/dashboard/mcas': 'Configuración MCAS',
-        '/dashboard/mcas-propuestas': 'Comisiones MCAS'
+        '/dashboard/mcas-propuestas': 'Comisiones MCAS',
+        '/dashboard/planificador': 'Planificador'
       },
       moduloTareasActivo: false,
       // Recuento de comisiones MCAS pendientes (solo administradores): { porValidar, porRevisar, enCorreccion, total }
@@ -177,6 +184,10 @@ export default {
     },
     tituloPendientesMcas() {
       return textoPendientesMcas(this.pendientesMcas);
+    },
+    // Aplicaciones que se muestran dentro de la página (iframe) y gestionan su propio desplazamiento
+    esAplicacionIncrustada() {
+      return this.$route.path === '/dashboard/planificador';
     }
   },
   methods: {
@@ -264,7 +275,9 @@ export default {
     if (usuario) {
       this.nivelAcceso = usuario.nivelAcceso;
       this.userName = usuario.nombre || 'Usuario';
-      this.userRole = usuario.nivelAcceso === 1 ? 'Administrador' : 'Usuario';
+      // Bajo el nombre se muestra su grupo de trabajo; sin grupo (o con una sesión anterior al grupo), su nivel de acceso
+      const grupos = { comercial: 'Comercial', ingenieria: 'Ingeniería', administracion: 'Administración', coordinacion: 'Coordinación' };
+      this.userRole = grupos[usuario.grupo] || (usuario.nivelAcceso === 1 ? 'Administrador' : 'Usuario');
       if (usuario.nivelAcceso === 1) this.iniciarPendientesMcas();
     } else {
       // Si no hay usuario autenticado, redirigir al login

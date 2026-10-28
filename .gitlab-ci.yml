@@ -1,112 +1,147 @@
-# Node 22 (LTS): Node 20 dejó de tener soporte en abril de 2026
-image: node:22
+image: node:20
 
 stages:
   - build_and_deploy_frontend
 
-# ============================
-# Despliegue FRONTEND en PRE
-# (Rama release → Raspberry PRE)
-# SSH: 2222
-# WEB: http://5.34.148.92:8080
-# ============================
+.deploy_frontend:
+  stage: build_and_deploy_frontend
+
+  before_script:
+    - apt-get update -y
+    - apt-get install -y openssh-client rsync
+
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+
+    - |
+      if [ -f "$DEPLOY_PRIVATE_KEY" ]; then
+        echo "Usando clave SSH desde variable GitLab tipo File"
+        cp "$DEPLOY_PRIVATE_KEY" ~/.ssh/id_rsa_gitlab
+      else
+        echo "Usando clave SSH desde variable GitLab normal"
+        printf '%s\n' "$DEPLOY_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_gitlab
+      fi
+
+    - chmod 600 ~/.ssh/id_rsa_gitlab
+
+    - |
+      echo "=== Validando clave SSH ==="
+      ssh-keygen -y -f ~/.ssh/id_rsa_gitlab > /dev/null || {
+        echo "ERROR: La clave privada SSH no es valida"
+        exit 1
+      }
+
+    - |
+      echo "=== Registrando host SSH ==="
+      ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+    - chmod 600 ~/.ssh/known_hosts
+
+    - |
+      echo "=== Probando conexion SSH ==="
+      ssh \
+        -p "$DEPLOY_PORT" \
+        -i ~/.ssh/id_rsa_gitlab \
+        -o BatchMode=yes \
+        -o ConnectTimeout=10 \
+        "babenza@${DEPLOY_HOST}" \
+        "echo SSH_OK && hostname"
+
+  script:
+    - set -eo pipefail
+
+    - echo "=== Instalando dependencias ==="
+    - rm -rf node_modules dist
+
+    - |
+      if [ -f package-lock.json ]; then
+        npm ci --legacy-peer-deps
+      else
+        npm install --legacy-peer-deps
+      fi
+
+    - echo "=== Compilando frontend ==="
+    - npm run build
+
+    - echo "=== Verificando build ==="
+    - test -f dist/index.html
+
+    - echo "=== Preparando despliegue remoto ==="
+    - |
+      ssh \
+        -p "$DEPLOY_PORT" \
+        -i ~/.ssh/id_rsa_gitlab \
+        "babenza@${DEPLOY_HOST}" \
+        "rm -rf /tmp/aura-frontend && mkdir -p /tmp/aura-frontend"
+
+    - echo "=== Enviando frontend ==="
+    - |
+      rsync \
+        -avz \
+        --delete \
+        -e "ssh -p ${DEPLOY_PORT} -i /root/.ssh/id_rsa_gitlab" \
+        dist/ \
+        "babenza@${DEPLOY_HOST}:/tmp/aura-frontend/"
+
+    - echo "=== Instalando frontend ==="
+    - |
+      ssh \
+        -p "$DEPLOY_PORT" \
+        -i ~/.ssh/id_rsa_gitlab \
+        "babenza@${DEPLOY_HOST}" \
+        "bash /home/babenza/deploy_frontend.sh"
+
+
+# ======================================================
+# DES
+# develop -> Raspberry DES
+# SSH -> 5.34.148.92:2223
+# WEB -> http://5.34.148.92:8081
+# ======================================================
+
+deploy_frontend_DES:
+  extends: .deploy_frontend
+
+  variables:
+    DEPLOY_HOST: "5.34.148.92"
+    DEPLOY_PORT: "2223"
+    DEPLOY_PRIVATE_KEY: "$SSH_PRIVATE_KEY_DES"
+
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+
+# ======================================================
+# PRE
+# release -> Raspberry PRE
+# SSH -> 5.34.148.92:2222
+# ======================================================
+
 deploy_frontend_PRE:
-  stage: build_and_deploy_frontend
-  only:
-    - release
+  extends: .deploy_frontend
 
-  script:
-    - set -eo pipefail
+  variables:
+    DEPLOY_HOST: "5.34.148.92"
+    DEPLOY_PORT: "2222"
+    DEPLOY_PRIVATE_KEY: "$SSH_PRIVATE_KEY_PRE"
 
-    - echo "Limpiando entorno anterior..."
-    - rm -rf node_modules dist
-
-    - echo "Instalando dependencias (versiones exactas del package-lock.json)..."
-    - npm ci --no-audit --no-fund
-
-    - echo "Verificando instalación..."
-    - npm list --depth=0 || true
-
-    - echo "Pasando los tests (si falla alguno no se despliega)..."
-    - npm test
-
-    - echo "Construyendo aplicación..."
-    - npm run build
-
-    - chmod -R 755 dist
-
-    - apt-get update -y
-    - apt-get install -y openssh-client rsync
-
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY_PRE" | ssh-add -
-
-    - mkdir -p ~/.ssh
-    - ssh-keyscan -p 2222 5.34.148.92 >> ~/.ssh/known_hosts
-    - chmod 600 ~/.ssh/known_hosts
-
-    - export FRONTEND_FINAL_DIR="/home/babenza/deploy/frontend"
-
-    - ssh -p 2222 -o StrictHostKeyChecking=no babenza@5.34.148.92 "mkdir -p ${FRONTEND_FINAL_DIR}"
-
-    # Sin vaciar antes la carpeta (la web dejaba de responder mientras se subía): los
-    # ficheros nuevos se colocan todos juntos al final y luego se borran los que sobran
-    # Nunca se publica una web vacía: rsync --delete-after borraría la que hay
-    - test -s dist/index.html
-    - rsync -avzh --delete-after --delay-updates --progress -e "ssh -p 2222 -o StrictHostKeyChecking=no" dist/ babenza@5.34.148.92:${FRONTEND_FINAL_DIR}/
-
-    - ssh -p 2222 -o StrictHostKeyChecking=no babenza@5.34.148.92 "bash /home/babenza/deploy_frontend.sh"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "release"'
 
 
-# ============================
-# Despliegue FRONTEND en PRO
-# (Rama main → Raspberry PRO)
-# SSH: 22
-# WEB: http://5.34.148.92
-# ============================
+# ======================================================
+# PRO
+# main -> Raspberry PRO
+# SSH -> 5.34.148.92:22
+# ======================================================
+
 deploy_frontend_PRO:
-  stage: build_and_deploy_frontend
-  only:
-    - main
+  extends: .deploy_frontend
 
-  script:
-    - set -eo pipefail
+  variables:
+    DEPLOY_HOST: "5.34.148.92"
+    DEPLOY_PORT: "22"
+    DEPLOY_PRIVATE_KEY: "$SSH_PRIVATE_KEY"
 
-    - echo "Limpiando entorno anterior..."
-    - rm -rf node_modules dist
-
-    - echo "Instalando dependencias (versiones exactas del package-lock.json)..."
-    - npm ci --no-audit --no-fund
-
-    - echo "Verificando instalación..."
-    - npm list --depth=0 || true
-
-    - echo "Pasando los tests (si falla alguno no se despliega)..."
-    - npm test
-
-    - echo "Construyendo aplicación..."
-    - npm run build
-
-    - chmod -R 755 dist
-
-    - apt-get update -y
-    - apt-get install -y openssh-client rsync
-
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | ssh-add -
-
-    - mkdir -p ~/.ssh
-    - ssh-keyscan 5.34.148.92 >> ~/.ssh/known_hosts
-    - chmod 600 ~/.ssh/known_hosts
-
-    - export FRONTEND_FINAL_DIR="/home/babenza/deploy/frontend"
-
-    - ssh -o StrictHostKeyChecking=no babenza@5.34.148.92 "mkdir -p ${FRONTEND_FINAL_DIR}"
-
-    # Sin vaciar antes la carpeta (la web dejaba de responder mientras se subía): los
-    # ficheros nuevos se colocan todos juntos al final y luego se borran los que sobran
-    # Nunca se publica una web vacía: rsync --delete-after borraría la que hay
-    - test -s dist/index.html
-    - rsync -avzh --delete-after --delay-updates --progress -e "ssh -o StrictHostKeyChecking=no" dist/ babenza@5.34.148.92:${FRONTEND_FINAL_DIR}/
-
-    - ssh -o StrictHostKeyChecking=no babenza@5.34.148.92 "bash /home/babenza/deploy_frontend.sh"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'

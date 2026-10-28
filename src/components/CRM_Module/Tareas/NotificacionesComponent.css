@@ -1,7 +1,12 @@
-
 .notificaciones-container {
   position: relative;
+  --color-notification-orange: #fcd700;
+  --color-notification-orange-light: #ffe44d;
+  --color-notification-orange-rgb: 252, 215, 0;
 }
+
+.btn-link { color: #2c3e50; }
+.notification-badge { color: #000; }
 
 /* Trigger de notificaciones */
 .notificaciones-trigger {
@@ -9,20 +14,28 @@
 }
 
 .notification-btn {
-  background: transparent;
+  background: #2c3e50 !important;
+  color: #fcd700 !important;
   border: none;
-  color: var(--text-primary);
-  font-size: 1.1rem;
+  border-radius: 50% !important;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 50%;
   transition: var(--aura-transicion);
   position: relative;
 }
 
 .notification-btn:hover {
-  background-color: rgba(var(--color-notification-orange-rgb), 0.1);
-  color: var(--color-notification-orange);
+  background: #1f2d3d !important;
+}
+
+.notification-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #2c3e50;
 }
 
 /* Naranja oscuro: el blanco sobre el naranja claro de antes no llegaba a 3:1.
@@ -129,6 +142,7 @@
 .tipo-color-comentario { color: #9C27B0; }
 .tipo-color-completada { color: #00897B; }
 .tipo-color-mencion { color: #1565C0; }
+.tipo-color-planificador { color: #2c3e50; }
 .tipo-color-general { color: #FF9800; }
 
 .vencimiento-banner-dismiss {
@@ -212,12 +226,14 @@
   overflow: hidden;
 }
 
-/* Misma cabecera que los modales de Aura (azul del menú y línea amarilla de
-   marca); antes era un bloque naranja que no se parecía a ninguna otra. */
+.fa-bell {
+  color: #fcd700 !important;
+}
+
 .notificaciones-header {
-  background: linear-gradient(135deg, var(--color-text-dark) 0%, #1a252f 100%);
-  border-bottom: 3px solid var(--color-brand-yellow-hex);
-  color: white;
+  background: linear-gradient(135deg, #2c3e50, #1f2d3d);
+  color: #fff;
+  font-weight: 600;
   padding: 1rem 1.2rem;
   border-radius: 12px 12px 0 0;
   display: flex;
@@ -241,23 +257,18 @@
 }
 
 .filtro-select {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  color: white;
-  padding: 0.5rem 0.8rem;
+  background: #fff;
+  color: #2c3e50;
+  border: 1px solid transparent;
   border-radius: 8px;
-  font-size: 0.8rem;
-  cursor: pointer;
+  font-family: inherit;
   font-weight: 500;
-  transition: var(--aura-transicion);
-  min-width: 100px;
 }
 
 .filtro-select:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+  border-color: #fcd700;
+  box-shadow: 0 0 0 3px rgba(252, 215, 0, 0.25);
 }
 
 .filtro-select:hover {
@@ -271,9 +282,9 @@
 }
 
 .btn-icon {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: inherit;
+  background: #fcd700;
+  border: 1px solid transparent;
+  color: #000;
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 8px;
@@ -288,9 +299,9 @@
 /* Sin subir 1 px al pasar el ratón, como el resto de botones (y sin el desenfoque de
    fondo, que sobre la cabecera opaca no se veía y obligaba a recomponer la capa) */
 .btn-icon:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.4);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fcd700;
+  filter: brightness(0.94);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* La campana también es .btn-icon: sobre la cabecera blanca de la página se queda con
@@ -302,9 +313,9 @@
 }
 
 .btn-icon:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
-  background: rgba(255, 255, 255, 0.1);
+  background: #fcd700;
 }
 
 /* Al actualizar gira solo el icono, no el botón cuadrado entero */
@@ -350,9 +361,9 @@
 
 .sin-notificaciones i {
   margin-bottom: 0.6rem;
-  opacity: 0.6;
+  opacity: 0.9;
   font-size: 2rem;
-  color: var(--color-notification-orange);
+  color: #fcd700;
 }
 
 /* Fallo al cargar: aviso en rojo con botón para reintentar */
@@ -685,23 +696,27 @@
 }
 
 .notification-badge {
-  top: -3px; 
-  right: -3px; 
+  top: -3px;
+  right: -3px;
+  box-sizing: border-box;
+  width: auto;
   min-width: 18px;
   height: 18px;
+  padding: 0 4px;
   border-radius: 9px;
+  border-color: #2c3e50;
+  color: #2c3e50;
   font-size: 0.7rem;
-  outline: 2px solid white;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-/* Estilos para botón de sonido */
 .sonido-activo {
-  color: white;
-  transition: var(--aura-transicion);
+  color: #000;
 }
 
 .sonido-activo:hover {
-  color: var(--color-brand-yellow-hex);
+  color: #2c3e50;
 }
 
 .sonido-inactivo {
@@ -786,10 +801,22 @@
     gap: 0.8rem;
   }
   
-  .header-actions {
-    justify-content: space-between;
-    width: 100%;
-  }
+  .header-actions button {
+  background: #fcd700;
+  color: #000;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: filter 0.2s ease;
+}
+
+.header-actions button:hover:not(:disabled) {
+  filter: brightness(0.94);
+}
+
+.header-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
   
   .filtro-select {
     min-width: 80px;

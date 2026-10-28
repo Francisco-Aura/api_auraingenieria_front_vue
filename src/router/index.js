@@ -12,6 +12,7 @@ const AdministracionComponent = () => import('@/components/CRM_Module/Administra
 const TareasComponent = () => import('@/components/CRM_Module/Tareas/TareasComponent.vue');
 const McasAdminComponent = () => import('@/components/CRM_Module/MCAS/McasAdminComponent.vue');
 const McasComponent = () => import('@/components/CRM_Module/MCAS/McasComponent.vue');
+const PlanificadorComponent = () => import('@/components/PlanificadorComponent.vue');
 
 // Define las rutas
 const routes = [
@@ -62,6 +63,11 @@ const routes = [
         path: 'mcas-propuestas',
         component: McasComponent,
         meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'planificador',
+        component: PlanificadorComponent,
+        meta: { requiresAuth: true }
       }
     ]
   },

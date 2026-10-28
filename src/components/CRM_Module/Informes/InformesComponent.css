@@ -1,4 +1,3 @@
-
 /* Estilos existentes mantenidos... */
 .informes-container {
   display: grid;
@@ -314,9 +313,18 @@
   }
 }
 
+/* Contenedor de la tabla: todas las columnas van en una sola fila,
+   así que en pantallas normales no hace falta scroll horizontal (los
+   anchos de abajo están pensados para caber). overflow-x sirve solo
+   de red de seguridad si la ventana es muy estrecha, para no perder
+   datos en vez de recortarlos. El scroll vertical, si hay muchas
+   filas, mantiene la cabecera fija (sticky). */
 .table-responsive {
   overflow-x: auto;
-  width: 100%;
+  overflow-y: auto;
+  max-height: 75vh;
+  background-color: white;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
 /* Estilos para los filtros y ordenamiento */
@@ -337,7 +345,7 @@
   transition: background-color 0.2s ease;
   gap: 4px;
   font-size: 0.95rem;
-  min-height: 20px;
+  min-height: 15px;
   overflow: hidden;
   min-width: 0;
   flex-wrap: nowrap;
@@ -352,6 +360,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.2;
+  max-width: 80px;
   min-width: 0;
   flex: 1;
 }
@@ -445,36 +454,31 @@
 /* Estilos para la tabla */
 .data-table {
   width: 100%;
-  min-width: auto;
   border-collapse: separate;
   border-spacing: 0;
   margin-bottom: 0;
+  table-layout: auto;
 }
 
 .data-table th {
   background-color: var(--surface-color);
   color: var(--text-primary);
   font-weight: 600;
-  padding: 8px 6px;
+  padding: 7px 9px;
   text-align: left;
   border-bottom: 2px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  min-width: 90px;
-  font-size: 0.94rem;
+  font-size: 0.85rem;
   vertical-align: bottom;
-  height: 72px;
-  overflow: hidden;
-  max-width: 160px;
 }
 
 .data-table td {
-  padding: 7px 8px;
+  padding: 7px 9px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
-  height: 40px; /* Altura fija para las filas */
-  font-size: 0.95rem;
+  font-size: 0.84rem;
 }
 
 .text-truncate {
@@ -589,13 +593,6 @@
   background-color: var(--hover-color);
 }
 
-/* Ajustes para la tabla responsiva */
-.table-responsive {
-  overflow-x: auto;
-  background-color: white;
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
-}
-
 /* Estilos para los controles de filtro */
 .table-controls {
   padding: 15px 20px;
@@ -645,123 +642,44 @@
   text-overflow: ellipsis;
 }
 
-/* Ajuste general: reducir max-width de otras celdas para optimizar espacio */
+/* Una sola línea por fila: el texto que no cabe se corta con "..."
+   (tooltip con el valor completo al pasar el ratón), en vez de
+   partirse en varias líneas. El ancho máximo de cada tipo de columna
+   está ajustado más abajo para que el recorte sea la excepción, no
+   la norma, aprovechando al máximo el ancho disponible. */
 .table-cell {
   position: relative;
-  min-width: 66px;
-  max-width: 112px;
-  height: 36px;
-  padding: 6px 7px;
+  padding: 7px 9px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
   cursor: default;
   transition: background-color 0.2s ease;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .cell-content {
-  width: 100%;
-  max-width: 112px;
+  display: block;
+  max-width: 180px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  word-wrap: break-word;
-  display: block;
-  line-height: 1.4;
-  padding-right: 6px;
 }
 
-/* Estilos específicos para la columna CUPS */
+/* Columna CUPS: la única que nunca se recorta. Fija, monoespaciada,
+   siempre en una línea completa. */
 .data-table th[data-column="cups"],
-.data-table th[data-column="cupsLuz"],
-.data-table th[data-column="cupsGas"],
-.data-table td[data-column="cups"],
-.data-table td[data-column="cupsLuz"],
-.data-table td[data-column="cupsGas"] {
-  min-width: 230px;
-  max-width: 280px;
+.data-table td[data-column="cups"] {
+  min-width: 170px;
   white-space: nowrap;
-  overflow: visible;
-  text-overflow: clip;
 }
 
-.data-table td[data-column="cups"] .cell-content,
-.data-table td[data-column="cupsLuz"] .cell-content,
-.data-table td[data-column="cupsGas"] .cell-content {
+.data-table td[data-column="cups"] .cell-content {
   max-width: none;
   overflow: visible;
-  text-overflow: clip;
+  text-overflow: unset;
   white-space: nowrap;
-}
-
-/* Compactación de columnas secundarias sin tocar CUPS */
-.data-table th[data-column="fechaInicio"],
-.data-table td[data-column="fechaInicio"],
-.data-table th[data-column="fechaFin"],
-.data-table td[data-column="fechaFin"] {
-  min-width: 94px;
-  max-width: 102px;
-}
-
-.data-table th[data-column="tarifaLuz"],
-.data-table td[data-column="tarifaLuz"],
-.data-table th[data-column="tarifaGas"],
-.data-table td[data-column="tarifaGas"] {
-  min-width: 96px;
-  max-width: 104px;
-}
-
-.data-table th[data-column="consumoAnual"],
-.data-table td[data-column="consumoAnual"] {
-  min-width: 106px;
-  max-width: 116px;
-}
-
-.data-table th[data-column="comercializadoraActual"],
-.data-table td[data-column="comercializadoraActual"] {
-  min-width: 116px;
-  max-width: 130px;
-}
-
-.data-table th[data-column="cliente"],
-.data-table td[data-column="cliente"],
-.data-table th[data-column="contrato"],
-.data-table td[data-column="contrato"] {
-  min-width: 106px;
-  max-width: 118px;
-}
-
-/* ── Estilos específicos para informe Contactos Clientes ── */
-.data-table td[data-column="correo"],
-.data-table th[data-column="correo"] {
-  min-width: 220px;
-  max-width: 320px;
-}
-
-.data-table td[data-column="sector"],
-.data-table th[data-column="sector"] {
-  min-width: 130px;
-  max-width: 200px;
-}
-
-.data-table td[data-column="cargo"],
-.data-table th[data-column="cargo"] {
-  min-width: 150px;
-  max-width: 220px;
-}
-
-.data-table td[data-column="telefono"],
-.data-table th[data-column="telefono"] {
-  min-width: 140px;
-  max-width: 180px;
-}
-
-.data-table td[data-column="nombreCliente"],
-.data-table th[data-column="nombreCliente"] {
-  min-width: 180px;
-  max-width: 260px;
+  font-family: 'Courier New', 'Monaco', monospace;
+  font-size: 0.85rem;
+  letter-spacing: -0.2px;
 }
 
 /* El contenido de estas columnas usa el ancho reservado para la columna (el
@@ -830,10 +748,10 @@
 .contacto-email-text,
 .contacto-phone-text {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  min-width: 0;
 }
 
 /* Celda CUPS con icono FontAwesome */
@@ -1033,7 +951,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;
+  width: 50px;
 }
 
 .column-filter-placeholder {
@@ -1365,4 +1283,110 @@
   background-color: rgba(34, 197, 94, 0.12);
   color: #15803d;
   border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+/* ================================================================
+   TABLA ÚNICA: todas las columnas en la misma fila, sin truncar
+   ningún dato y sin scroll horizontal en el uso normal.
+   - Columnas de contenido corto y predecible (fechas, tarifa,
+     estado, importe...) se mantienen en una sola línea: son cortas
+     por naturaleza, así que no hace falta que ocupen más sitio.
+   - Columnas de texto libre y potencialmente largo (cliente,
+     gestora, comercializadora, producto, grupo, descripción) tienen
+     un ancho máximo y el texto pasa a la línea siguiente en vez de
+     cortarse con "...": la fila crece en alto, no en anchura.
+   - El CUPS es la única columna que nunca se envuelve: ancho fijo,
+     monoespaciada, siempre en una línea.
+   Entre las dos reglas, las 13 columnas de un informe como
+   "Servicios Vigentes" caben en una pantalla de escritorio normal
+   sin scroll horizontal; en una ventana muy estrecha, el
+   overflow-x: auto del contenedor actúa solo como red de seguridad.
+   ================================================================ */
+
+/* ================================================================
+   TABLA ÚNICA, UNA LÍNEA POR FILA
+   Cada columna recibe el ancho justo que necesita su tipo de dato,
+   para aprovechar al máximo el espacio disponible y que el recorte
+   con "..." sea la excepción, no la norma:
+   - Fechas, tarifa, estado, importe, consumo: contenido corto y de
+     longitud predecible, así que les basta un ancho pequeño (casi
+     nunca se recortan).
+   - Nombres y campos de texto libre (cliente, gestora,
+     comercializadora, producto, grupo, contrato, contacto...):
+     ancho medio, generoso para que la mayoría de valores quepan
+     enteros.
+   - Descripción: el campo con más probabilidad de tener texto largo
+     (comentarios, incidencias...), así que recibe el ancho mayor.
+   - CUPS: la única columna que nunca se recorta (ver regla arriba).
+   El resto de columnas no listadas aquí usa el ancho por defecto de
+   .cell-content (180px).
+   ================================================================ */
+
+/* Corto y predecible: apenas necesita espacio */
+.data-table td[data-column="fechaInicio"] .cell-content,
+.data-table td[data-column="fechaFin"] .cell-content,
+.data-table td[data-column="fechaInicioServicio"] .cell-content,
+.data-table td[data-column="fechaFinServicio"] .cell-content,
+.data-table td[data-column="fechaSiguientePago"] .cell-content,
+.data-table td[data-column="codigoPostal"] .cell-content {
+  max-width: 92px;
+}
+
+.data-table td[data-column="tarifa"] .cell-content,
+.data-table td[data-column="tarifaLuz"] .cell-content,
+.data-table td[data-column="tarifaGas"] .cell-content {
+  max-width: 72px;
+}
+
+.data-table td[data-column="estado"] .cell-content,
+.data-table td[data-column="estadoVencimiento"] .cell-content,
+.data-table td[data-column="estadoPago"] .cell-content,
+.data-table td[data-column="estadoBaja"] .cell-content {
+  max-width: 72px;
+}
+
+.data-table td[data-column="importeFinal"] .cell-content,
+.data-table td[data-column="importeCuotaPendiente"] .cell-content,
+.data-table td[data-column="consumoAnual"] .cell-content {
+  max-width: 110px;
+}
+
+/* Texto libre de longitud media: ancho generoso para minimizar el recorte */
+.data-table td[data-column="cliente"] .cell-content,
+.data-table td[data-column="nombreCliente"] .cell-content,
+.data-table td[data-column="direccion"] .cell-content {
+  max-width: 110px;
+}
+
+.data-table td[data-column="gestora"] .cell-content,
+.data-table td[data-column="comercializadoraActual"] .cell-content,
+.data-table td[data-column="grupo"] .cell-content,
+.data-table td[data-column="producto"] .cell-content,
+.data-table td[data-column="contrato"] .cell-content,
+.data-table td[data-column="correo"] .cell-content,
+.data-table td[data-column="poblacion"] .cell-content {
+  max-width: 110px;
+}
+
+.data-table td[data-column="comercializadora"] .cell-content{
+  max-width: 80px;
+}
+
+.data-table td[data-column="nombre"] .cell-content,
+.data-table td[data-column="cargo"] .cell-content,
+.data-table td[data-column="sector"] .cell-content,
+.data-table td[data-column="tipoContacto"] .cell-content,
+.data-table td[data-column="telefono"] .cell-content,
+.data-table td[data-column="provincia"] .cell-content {
+  max-width: 130px;
+}
+
+/* El campo con más probabilidad de texto largo: el que más espacio recibe */
+.data-table td[data-column="descripcion"] .cell-content {
+  max-width: 100px;
+}
+
+/* Cebra suave, calculada por índice en el componente */
+.data-table tbody tr.fila-par {
+  background-color: #fcfcfd;
 }
