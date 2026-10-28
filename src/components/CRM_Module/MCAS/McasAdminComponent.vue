@@ -52,6 +52,33 @@
       </div>
     </div>
 
+    <!-- Recién instalado (ninguna tabla): qué hacer, en orden, para que MCAS calcule solo -->
+    <section v-if="mostrarPrimerosPasos" class="mcas-primeros-pasos" aria-labelledby="mcas-primeros-pasos-titulo">
+      <div class="mcas-primeros-pasos-cabecera">
+        <h3 id="mcas-primeros-pasos-titulo"><i class="fas fa-flag-checkered"></i> Primeros pasos para calcular las comisiones</h3>
+        <p class="mcas-primeros-pasos-intro">
+          Todavía no hay ninguna tabla de comisiones. Mientras no haya una activa, las comisiones de los contratos
+          se completan a mano en Comisiones MCAS. Para que se calculen solas, siga estos pasos:
+        </p>
+      </div>
+      <ol class="mcas-primeros-pasos-lista">
+        <li v-for="(paso, i) in primerosPasos" :key="paso.titulo" class="mcas-primeros-pasos-paso">
+          <span class="mcas-primeros-pasos-numero" aria-hidden="true">{{ i + 1 }}</span>
+          <span><strong>{{ paso.titulo }}.</strong> {{ paso.texto }}</span>
+        </li>
+      </ol>
+      <div class="mcas-primeros-pasos-acciones">
+        <router-link to="/dashboard/administracion" class="btn btn-outline" title="Abrir Administración para revisar o dar de alta comercializadoras">
+          <i class="fas fa-building"></i>
+          <span>Ir a Administración</span>
+        </router-link>
+        <button type="button" class="btn btn-primary" @click="abrirModalConjunto()">
+          <i class="fas fa-plus"></i>
+          <span>Crear la primera tabla</span>
+        </button>
+      </div>
+    </section>
+
     <!-- Estado del módulo: qué falta para que MCAS calcule y cree servicios -->
     <div class="estado-modulo" :class="moduloListo ? 'estado-modulo--listo' : 'estado-modulo--pendiente'" role="status">
       <div class="estado-modulo-cabecera">
@@ -86,7 +113,7 @@
       </div>
     </div>
 
-    <!-- Estado por comercializadora y datos pendientes de confirmar (bloque E) -->
+    <!-- Estado por comercializadora y lo que tiene pendiente cada una (bloque E) -->
     <div class="estado-comercializadoras" role="region" aria-labelledby="mcas-estado-com-titulo">
       <div class="estado-comercializadoras-cabecera">
         <h3 id="mcas-estado-com-titulo"><i class="fas fa-building"></i> Estado por comercializadora</h3>
@@ -105,29 +132,34 @@
           </div>
           <ul v-if="f.pendientes.length" class="estado-com-pendientes">
             <li v-for="(p, k) in f.pendientes" :key="k">
-              <span class="badge badge--warning">Pendiente de confirmar</span>
+              <span class="badge badge--warning">Pendiente</span>
               <span class="estado-com-pendiente-texto">{{ p.texto }}</span>
               <button type="button" class="enlace-pendiente" @click="abrirPendiente(p)">{{ p.etiquetaEnlace }}</button>
             </li>
           </ul>
         </div>
-        <div v-if="comercializadorasSinTabla.length" class="estado-com-fila">
-          <div class="estado-com-cabecera">
-            <span class="badge badge--warning">Pendiente de confirmar</span>
-            <span class="estado-com-texto">Sin tabla de comisiones: sus contratos se completan a mano. Pulse una para crear su tabla.</span>
-          </div>
-          <div class="estado-com-sin-tabla">
+        <!-- Sin tabla: una tarjeta por comercializadora con el atajo a «Nueva tabla» ya elegida -->
+        <div v-if="comercializadorasSinTabla.length" class="estado-com-sin-tabla">
+          <div v-for="f in comercializadorasSinTabla" :key="f.idComercializadora" class="estado-com-sin-tabla-item">
+            <div class="estado-com-sin-tabla-datos">
+              <strong class="estado-com-nombre">{{ f.nombre }}</strong>
+              <span class="estado-com-texto">{{ f.texto }}</span>
+            </div>
             <button
-              v-for="f in comercializadorasSinTabla"
-              :key="f.idComercializadora"
               type="button"
-              class="enlace-pendiente"
+              class="btn btn-outline btn-crear-tabla"
               :title="'Crear la tabla de comisiones de ' + f.nombre"
               @click="abrirPendiente(f.pendientes[0])"
-            >{{ f.nombre }}</button>
+            >
+              <i class="fas fa-plus"></i>
+              <span>Crear su tabla</span>
+            </button>
           </div>
         </div>
-        <p v-if="!estadoComercializadoras.length" class="estado-com-vacio">Todavía no hay comercializadoras ni tablas de comisiones.</p>
+        <p v-if="!estadoComercializadoras.length" class="estado-com-vacio">
+          Todavía no hay ninguna comercializadora: déla de alta en
+          <router-link to="/dashboard/administracion">Administración › Comercializadoras</router-link>.
+        </p>
       </div>
     </div>
 
@@ -404,7 +436,7 @@
                   <td class="text-truncate" :title="[c.archivoOrigen, c.hojaOrigen].filter(Boolean).join(' · ')">
                     <template v-if="c.archivoOrigen || c.hojaOrigen">
                       {{ c.archivoOrigen || '—' }}
-                      <span v-if="c.hojaOrigen" class="celda-secundaria">Hoja: {{ c.hojaOrigen }}</span>
+                      <span v-if="c.hojaOrigen" class="celda-secundaria">Apartado: {{ c.hojaOrigen }}</span>
                     </template>
                     <span v-else class="celda-vacia">—</span>
                   </td>
@@ -586,7 +618,7 @@
                   <td class="celda-resumen" :title="[p.resumen, p.descripcion].filter(Boolean).join(' · ')">
                     <span class="resumen-politica">{{ p.resumen || '—' }}</span>
                     <span v-if="tieneTramosSinConfirmar(p)" class="celda-secundaria aviso-sin-confirmar">
-                      <i class="fas fa-exclamation-triangle"></i>Unidad sin confirmar
+                      <i class="fas fa-exclamation-triangle"></i>Tramos sin tipo de valor
                     </span>
                   </td>
                   <td>
@@ -682,7 +714,7 @@
             <div class="mcas-modal-icon"><i :class="formProducto.id ? 'fas fa-edit' : 'fas fa-tags'"></i></div>
             <div class="title-text">
               <h2 id="mcas-modal-producto-titulo">{{ formProducto.id ? 'Editar' : 'Nuevo' }} producto comercial</h2>
-              <p>El motor usa el código del producto para seleccionar la regla de comisión</p>
+              <p>Oferta de una comercializadora: se elige en la regla de comisión y en el contrato</p>
             </div>
           </div>
           <button type="button" class="close-button" title="Cerrar" aria-label="Cerrar" @click="cerrarModales">
@@ -710,17 +742,20 @@
                   </select>
                 </div>
                 <div class="form-group">
-                  <label class="mcas-label" for="mcas-prod-codigo">
-                    Código <span class="required-asterisk">*</span>
-                    <i class="fas fa-info-circle help-icon" title="Código interno único. El motor lo usa para emparejar con las condiciones de la regla."></i>
+                  <label class="mcas-label" for="mcas-prod-nombre">
+                    Nombre <span class="required-asterisk">*</span>
+                    <i class="fas fa-info-circle help-icon" title="Nombre de la oferta tal como lo usa la comercializadora. Es el que se ve en la regla y en el contrato."></i>
                   </label>
-                  <input id="mcas-prod-codigo" v-model="formProducto.codigo" class="mcas-input mcas-input--codigo" :class="claseError('codigo')" placeholder="Ej: PLAN_PERSONALIZADO">
-                  <small v-if="erroresForm.codigo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.codigo }}</small>
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-prod-nombre">Nombre <span class="required-asterisk">*</span></label>
                   <input id="mcas-prod-nombre" v-model="formProducto.nombre" class="mcas-input" :class="claseError('nombre')" placeholder="Ej: Plan Personalizado">
                   <small v-if="erroresForm.nombre" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.nombre }}</small>
+                </div>
+                <div class="form-group">
+                  <label class="mcas-label" for="mcas-prod-codigo">
+                    Código interno (opcional; se genera solo)
+                    <i class="fas fa-info-circle help-icon" title="Identificador técnico del producto. Si lo deja vacío, se genera a partir del nombre al guardar."></i>
+                  </label>
+                  <input id="mcas-prod-codigo" v-model="formProducto.codigo" class="mcas-input mcas-input--codigo" :class="claseError('codigo')" :placeholder="codigoProductoPropuesto || 'Se genera al guardar'">
+                  <small v-if="erroresForm.codigo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.codigo }}</small>
                 </div>
               </div>
             </section>
@@ -743,13 +778,16 @@
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-prod-zona">
                     Código de zona
-                    <i class="fas fa-info-circle help-icon" title="Ej: ZBR, ZAR (Iberdrola)"></i>
+                    <i class="fas fa-info-circle help-icon" title="Opcional, solo como referencia: zona a la que corresponde la oferta, si la comercializadora la distingue. Ej: ZBR o ZAR"></i>
                   </label>
-                  <input id="mcas-prod-zona" v-model="formProducto.codigoZona" class="mcas-input" placeholder="Ej: ZBR, ZAR">
+                  <input id="mcas-prod-zona" v-model="formProducto.codigoZona" class="mcas-input" placeholder="Opcional">
                 </div>
                 <div class="form-group">
-                  <label class="mcas-label" for="mcas-prod-go">Código GO/OC</label>
-                  <input id="mcas-prod-go" v-model="formProducto.codigoGo" class="mcas-input" placeholder="Código GO u OC">
+                  <label class="mcas-label" for="mcas-prod-go">
+                    Código GO/OC
+                    <i class="fas fa-info-circle help-icon" title="Opcional, solo como referencia: código con el que la comercializadora identifica la oferta"></i>
+                  </label>
+                  <input id="mcas-prod-go" v-model="formProducto.codigoGo" class="mcas-input" placeholder="Opcional">
                 </div>
               </div>
             </section>
@@ -841,6 +879,7 @@
                     <option v-for="c in comercializadoras" :key="c.id" :value="c.id">{{ c.nombre }}</option>
                   </select>
                   <small v-if="erroresForm.idComercializadora" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.idComercializadora }}</small>
+                  <small v-else class="campo-ayuda">¿No aparece? Déla de alta en Administración › Comercializadoras.</small>
                 </div>
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-conj-gestora">Gestora</label>
@@ -860,7 +899,7 @@
                 </div>
                 <div class="form-group form-group--completo">
                   <label class="mcas-label" for="mcas-conj-descripcion">Descripción</label>
-                  <textarea id="mcas-conj-descripcion" v-model="formConjunto.descripcion" class="mcas-input" rows="2" maxlength="1000" placeholder="Opcional: de dónde salen los importes, qué falta por confirmar..."></textarea>
+                  <textarea id="mcas-conj-descripcion" v-model="formConjunto.descripcion" class="mcas-input" rows="2" maxlength="1000" placeholder="Opcional: de dónde salen los importes, a qué contratos se aplica..."></textarea>
                 </div>
               </div>
               <div v-if="avisoFaseIndexada" class="mcas-alert mcas-alert--warning aviso-fase">
@@ -889,23 +928,23 @@
             </section>
 
             <section class="form-section">
-              <div class="section-header"><i class="fas fa-file-excel"></i><h3>Origen documental</h3></div>
+              <div class="section-header"><i class="fas fa-file-alt"></i><h3>Documento de origen (opcional)</h3></div>
               <div class="form-grid form-grid--3">
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-conj-archivo">
-                    Archivo origen
-                    <i class="fas fa-info-circle help-icon" title="Nombre del fichero Excel del que provienen las reglas (solo referencia documental)"></i>
+                    Documento
+                    <i class="fas fa-info-circle help-icon" title="Solo como referencia: nombre del documento de la comercializadora del que salen los importes."></i>
                   </label>
-                  <input id="mcas-conj-archivo" v-model="formConjunto.archivoOrigen" class="mcas-input" placeholder="Ej: COMISIONES NEXO A 16032026.xlsx">
+                  <input id="mcas-conj-archivo" v-model="formConjunto.archivoOrigen" class="mcas-input" placeholder="Ej: Comisiones 2026.pdf">
                 </div>
                 <div class="form-group">
-                  <label class="mcas-label" for="mcas-conj-hoja">Hoja origen</label>
-                  <input id="mcas-conj-hoja" v-model="formConjunto.hojaOrigen" class="mcas-input" placeholder="Ej: ENDESA">
+                  <label class="mcas-label" for="mcas-conj-hoja">Apartado</label>
+                  <input id="mcas-conj-hoja" v-model="formConjunto.hojaOrigen" class="mcas-input" placeholder="Ej: Pymes">
                 </div>
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-conj-fecha-origen">
-                    Fecha interna
-                    <i class="fas fa-info-circle help-icon" title="Fecha interna del archivo fuente. Puede diferir de la fecha del fichero."></i>
+                    Fecha del documento
+                    <i class="fas fa-info-circle help-icon" title="Fecha que figura en el documento de la comercializadora, si la tiene."></i>
                   </label>
                   <input id="mcas-conj-fecha-origen" v-model="formConjunto.fechaInternaOrigen" type="date" class="mcas-input">
                 </div>
@@ -1074,6 +1113,7 @@
                       <option value="">Cualquiera</option>
                       <option v-for="o in opcionesProductoRegla" :key="o.value" :value="o.value">{{ o.label }}</option>
                     </select>
+                    <small v-if="!productosDelConjunto.length" class="campo-ayuda">Esta comercializadora no tiene productos. Si la comisión depende del producto, créelos antes en la pestaña «Productos».</small>
                   </div>
                   <div class="form-group">
                     <label class="mcas-label" for="mcas-cond-tarifa">
@@ -1184,7 +1224,7 @@
                     <div class="form-group">
                       <label class="mcas-label" for="mcas-calc-fee-minimo">
                         FEE mínimo (€/MWh)
-                        <i class="fas fa-info-circle help-icon" title="Opcional. Si el FEE del contrato es menor, no se calcula y la propuesta queda en «Error de cálculo»."></i>
+                        <i class="fas fa-info-circle help-icon" title="Opcional. Si el FEE del contrato es menor, no se calcula y la propuesta queda en «Revisión manual» para completarla a mano."></i>
                       </label>
                       <input id="mcas-calc-fee-minimo" v-model="editorRegla.calculo.feeMinimo" type="number" min="0" step="any" class="mcas-input" :class="claseError('calcFeeMinimo')" placeholder="Sin mínimo">
                       <small v-if="erroresForm.calcFeeMinimo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.calcFeeMinimo }}</small>
@@ -1215,7 +1255,7 @@
                   <div v-if="esMetodoTabla" class="form-group form-group--completo">
                     <div class="mcas-alert mcas-alert--info">
                       <i class="fas fa-table"></i>
-                      <div>El importe se busca en una tabla. Guarde la regla y rellene sus importes con <strong>Ver tabla</strong> en la lista de reglas.</div>
+                      <div>El importe se busca en una tabla de importes. Al guardar la regla nueva se abre su tabla para elegir qué datos van en filas y columnas y rellenar los importes; después la tiene siempre en <strong>Ver tabla</strong>, en la lista de reglas.</div>
                     </div>
                   </div>
                   <div v-if="requiereMotivo" class="form-group form-group--completo">
@@ -1238,10 +1278,10 @@
                   </div>
                   <div class="form-group" :class="{ 'form-group--completo': requiereMotivo }">
                     <label class="mcas-label" for="mcas-regla-localizador">
-                      Localizador de origen
-                      <i class="fas fa-info-circle help-icon" title="Referencia a la fila o celda del Excel de comisiones, para trazabilidad."></i>
+                      Referencia en el documento
+                      <i class="fas fa-info-circle help-icon" title="Opcional, solo como referencia: dónde aparece esta comisión en el documento de la comercializadora (página, apartado...)."></i>
                     </label>
-                    <input id="mcas-regla-localizador" v-model="formRegla.localizadorOrigen" class="mcas-input" placeholder="Ej: ENDESA/Fila_45">
+                    <input id="mcas-regla-localizador" v-model="formRegla.localizadorOrigen" class="mcas-input" placeholder="Ej: página 3, pymes">
                   </div>
                 </div>
               </section>
@@ -1335,8 +1375,8 @@
                     <small v-if="erroresForm.politicaPagoJson" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.politicaPagoJson }}</small>
                   </div>
                   <div class="form-group form-group--completo">
-                    <label class="mcas-label" for="mcas-regla-localizador-json">Localizador de origen</label>
-                    <input id="mcas-regla-localizador-json" v-model="formRegla.localizadorOrigen" class="mcas-input" placeholder="Ej: ENDESA/Fila_45">
+                    <label class="mcas-label" for="mcas-regla-localizador-json">Referencia en el documento</label>
+                    <input id="mcas-regla-localizador-json" v-model="formRegla.localizadorOrigen" class="mcas-input" placeholder="Ej: página 3, pymes">
                   </div>
                 </div>
               </section>
@@ -1553,7 +1593,7 @@
                   </div>
                   <div class="resumen-item">
                     <span class="resumen-label">Regla aplicada</span>
-                    <span class="resumen-valor texto-codigo" :title="simulacion.resultado.reglaAplicada || ''">{{ simulacion.resultado.reglaAplicada || '—' }}</span>
+                    <span class="resumen-valor" :title="simulacion.resultado.reglaAplicada || ''">{{ nombreReglaSimulacion }}</span>
                   </div>
                 </div>
 
@@ -1660,21 +1700,8 @@
                 <div class="section-header"><i class="fas fa-id-card"></i><h3>Identificación</h3></div>
                 <div class="form-grid">
                   <div class="form-group">
-                    <label class="mcas-label" for="mcas-retro-codigo">
-                      Código único <span class="required-asterisk">*</span>
-                      <i class="fas fa-info-circle help-icon" title="Identificador estable de la política. Ej: RET-ENDESA-PYME-20260309"></i>
-                    </label>
-                    <input id="mcas-retro-codigo" v-model="formRetrocesion.codigo" class="mcas-input mcas-input--codigo" :class="claseError('codigo')" placeholder="RET-COMERCIALIZADORA-SEGMENTO-AAAAMMDD" data-autofocus>
-                    <small v-if="erroresForm.codigo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.codigo }}</small>
-                  </div>
-                  <div class="form-group">
-                    <label class="mcas-label" for="mcas-retro-version">Versión <span class="required-asterisk">*</span></label>
-                    <input id="mcas-retro-version" v-model="formRetrocesion.version" class="mcas-input" :class="claseError('version')" placeholder="Ej: 1.0">
-                    <small v-if="erroresForm.version" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.version }}</small>
-                  </div>
-                  <div class="form-group">
                     <label class="mcas-label" for="mcas-retro-comercializadora">Comercializadora <span class="required-asterisk">*</span></label>
-                    <select id="mcas-retro-comercializadora" v-model="formRetrocesion.idComercializadora" class="mcas-input" :class="claseError('idComercializadora')">
+                    <select id="mcas-retro-comercializadora" v-model="formRetrocesion.idComercializadora" class="mcas-input" :class="claseError('idComercializadora')" data-autofocus>
                       <option value="">Seleccionar...</option>
                       <option v-for="c in comercializadoras" :key="c.id" :value="c.id">{{ c.nombre }}</option>
                     </select>
@@ -1699,6 +1726,19 @@
                     </label>
                     <input id="mcas-retro-hasta" v-model="formRetrocesion.vigenciaHasta" type="date" class="mcas-input" :class="claseError('vigenciaHasta')">
                     <small v-if="erroresForm.vigenciaHasta" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.vigenciaHasta }}</small>
+                  </div>
+                  <div class="form-group">
+                    <label class="mcas-label" for="mcas-retro-codigo">
+                      Código interno (opcional; se genera solo)
+                      <i class="fas fa-info-circle help-icon" title="Identificador de la política en las listas. Si lo deja vacío, se genera al guardar con la comercializadora, el segmento, el suministro y la fecha."></i>
+                    </label>
+                    <input id="mcas-retro-codigo" v-model="formRetrocesion.codigo" class="mcas-input mcas-input--codigo" :class="claseError('codigo')" :placeholder="codigoPoliticaPropuesto || 'Se genera al guardar'">
+                    <small v-if="erroresForm.codigo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.codigo }}</small>
+                  </div>
+                  <div class="form-group">
+                    <label class="mcas-label" for="mcas-retro-version">Versión <span class="required-asterisk">*</span></label>
+                    <input id="mcas-retro-version" v-model="formRetrocesion.version" class="mcas-input" :class="claseError('version')" placeholder="Ej: 1.0">
+                    <small v-if="erroresForm.version" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.version }}</small>
                   </div>
                 </div>
               </section>
@@ -1755,9 +1795,9 @@
                   <div class="form-group form-group--completo">
                     <label class="mcas-label" for="mcas-retro-descripcion">
                       Descripción
-                      <i class="fas fa-info-circle help-icon" title="Origen (hoja y celdas del Excel) o avisos para el operador."></i>
+                      <i class="fas fa-info-circle help-icon" title="Opcional: de dónde salen los datos o cualquier aclaración para quien revise las propuestas."></i>
                     </label>
-                    <textarea id="mcas-retro-descripcion" v-model="formRetrocesion.descripcion" class="mcas-input" rows="2" placeholder="Ej: Excel ENDESA D81:G81"></textarea>
+                    <textarea id="mcas-retro-descripcion" v-model="formRetrocesion.descripcion" class="mcas-input" rows="2" placeholder="Opcional: de dónde salen los datos, aclaraciones..."></textarea>
                   </div>
                 </div>
               </section>
@@ -1784,7 +1824,7 @@
                       <span class="linea-suma-unidad">{{ unidadValorTramo(t.tipoValor) }}</span>
                     </div>
                     <select :value="t.tipoValor" class="mcas-input" :class="claseError('tramos.' + i + '.tipoValor')" :aria-label="'Tipo de valor del tramo ' + (i + 1)" @change="cambiarTipoTramo(t, $event.target.value)">
-                      <option v-for="tv in tiposValorTramo" :key="tv.value" :value="tv.value">{{ tv.label }}</option>
+                      <option v-for="tv in tiposValorDeTramo(t)" :key="tv.value" :value="tv.value">{{ tv.label }}</option>
                     </select>
                     <button type="button" class="btn-icon btn-delete" title="Quitar el tramo" aria-label="Quitar el tramo" @click="quitarTramo(i)">
                       <i class="fas fa-trash"></i>
@@ -1804,7 +1844,7 @@
                   </div>
                   <div v-if="t.tipoValor === 'SIN_CONFIRMAR'" class="mcas-alert mcas-alert--warning tramo-aviso">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <div><strong>Unidad sin confirmar.</strong> El Excel no dice si este valor es un porcentaje, un factor o un importe: confírmelo con el cliente y elija el tipo de valor antes de publicar.</div>
+                    <div><strong>Tipo de valor sin elegir.</strong> Elija si este valor es un porcentaje o un importe en euros: hasta entonces la política no se puede publicar.</div>
                   </div>
                   <div v-if="t.revisarValor" class="mcas-alert mcas-alert--warning tramo-aviso">
                     <i class="fas fa-exclamation-triangle"></i>
@@ -2007,6 +2047,7 @@
       :regla="reglaMatriz"
       :editable="conjuntoEditable"
       :orden-resaltado="ordenMatriz"
+      :productos="productosDelConjunto"
       @cerrar="cerrarMatriz"
       @guardado="onTablaGuardada"
       @vista-avanzada="irAVistaAvanzada"
@@ -2026,17 +2067,18 @@ import { comprobacionesModulo } from './mcasEstados'
 import { estadoPorComercializadora, comprobacionActivacion, propuestaNuevaVersion, agruparIncidencias, nombreConjunto, nombreRegla } from './mcasActivacion'
 import McasMatrizEditor from './McasMatrizEditor.vue'
 
+// Del más sencillo al más elaborado; «corto» es el nombre de la lista (NOMBRES_METODO).
 const METODOS_CALCULO = [
-  { value: 'FEE_PERCENTAGE',     corto: '% sobre FEE',      label: '% sobre el FEE del contrato (consumo × FEE × %)' },
-  { value: 'RATE_PER_MWH',       corto: 'Tasa €/MWh',       label: 'Tasa por MWh (consumo × tasa)' },
-  { value: 'FIXED_AMOUNT',       corto: 'Importe fijo',     label: 'Importe fijo' },
-  { value: 'RANGE_LOOKUP',       corto: 'Tabla de rangos',  label: 'Tabla por tramos (una dimensión)' },
-  { value: 'MATRIX_LOOKUP',      corto: 'Matriz 2D',        label: 'Matriz 2D (consumo × potencia)' },
-  { value: 'MULTI_DIMENSION_LOOKUP', corto: 'Multidimensional', label: 'Matriz multidimensional (varias dimensiones)' },
-  { value: 'COMPOSITE_SUM',      corto: 'Suma de líneas',   label: 'Suma de varias líneas' },
-  { value: 'MANUAL',             corto: 'Revisión manual',  label: 'Revisión manual (no calcula)' },
-  { value: 'NOT_COMMISSIONABLE', corto: 'No comisiona',     label: 'No comisiona (0 €)' },
-]
+  { value: 'FIXED_AMOUNT',       label: 'Importe fijo (siempre el mismo importe)' },
+  { value: 'FEE_PERCENTAGE',     label: '% sobre el FEE (consumo × FEE del contrato × %)' },
+  { value: 'RATE_PER_MWH',       label: '€ por MWh (consumo × un importe por MWh)' },
+  { value: 'RANGE_LOOKUP',       label: 'Tabla por tramos (el importe depende de un dato, p. ej. el consumo)' },
+  { value: 'MATRIX_LOOKUP',      label: 'Tabla de dos datos (p. ej. consumo en filas y potencia en columnas)' },
+  { value: 'MULTI_DIMENSION_LOOKUP', label: 'Tabla de varios datos (filas, columnas y pestañas, p. ej. por zona)' },
+  { value: 'COMPOSITE_SUM',      label: 'Suma de varios cálculos (p. ej. un fijo más un % sobre el FEE)' },
+  { value: 'MANUAL',             label: 'A mano (no calcula: se completa en Comisiones MCAS)' },
+  { value: 'NOT_COMMISSIONABLE', label: 'No comisionable (se cierra con 0 €)' },
+].map(m => ({ ...m, corto: NOMBRES_METODO[m.value] }))
 const METODOS_TABLA = ['RANGE_LOOKUP', 'MATRIX_LOOKUP', 'MULTI_DIMENSION_LOOKUP']
 const METODOS_CON_MOTIVO = ['MANUAL', 'NOT_COMMISSIONABLE']
 const DIMENSIONES_TEXTO = ['tarifa_acceso', 'codigo_producto', 'segmento', 'tipo_suministro', 'zona_comision']
@@ -2090,11 +2132,13 @@ const UNIDADES_TRAMO = [
   { value: 'DIAS', label: 'Días' },
 ]
 // PORCENTAJE y FACTOR se guardan como factor (0.6) y se enseñan en % (60).
+// Un tramo nuevo solo ofrece Porcentaje o Importe: FACTOR (igual que Porcentaje) y
+// SIN_CONFIRMAR (sin elegir) solo se enseñan en los tramos que ya los tienen.
 const TIPOS_VALOR_TRAMO = [
   { value: 'PORCENTAJE', label: 'Porcentaje', unidad: '%' },
-  { value: 'FACTOR', label: 'Factor (en %)', unidad: '%' },
   { value: 'IMPORTE_FIJO', label: 'Importe (€)', unidad: '€' },
-  { value: 'SIN_CONFIRMAR', label: 'Sin confirmar', unidad: '' },
+  { value: 'FACTOR', label: 'Factor (en %)', unidad: '%', soloSiYaLoTiene: true },
+  { value: 'SIN_CONFIRMAR', label: 'Sin elegir', unidad: '', soloSiYaLoTiene: true },
 ]
 const TIPOS_EN_PORCENTAJE = ['PORCENTAJE', 'FACTOR']
 const ESTADOS_RETROCESION = [
@@ -2103,7 +2147,7 @@ const ESTADOS_RETROCESION = [
   { value: 'ARCHIVADO', label: 'Archivada', tono: 'neutral' },
 ]
 
-const ACLARACION_RETROCESION = 'Reservado para la fase 3 (aplicar retrocesiones en bajas): hoy no tiene efecto'
+const ACLARACION_RETROCESION = 'Por ahora no tiene efecto: la retrocesión potencial se enseña siempre en cada propuesta, como dato informativo'
 const FLAGS = [
   { codigo: 'MCAS_ENABLED', label: 'Módulo',
     descripcion: 'Cálculo automático de propuestas MCAS', efecto: 'el cálculo automático de propuestas MCAS' },
@@ -2111,10 +2155,28 @@ const FLAGS = [
     descripcion: 'Cálculo para contratos a precio fijo', efecto: 'el cálculo para contratos a precio fijo' },
   { codigo: 'MCAS_INDEXED_ENABLED', label: 'Indexado',
     descripcion: 'Cálculo para contratos indexados (activar solo tras validar los fijos)', efecto: 'el cálculo para contratos indexados' },
-  // La retrocesión potencial se asocia siempre (informativa): el indicador queda para aplicarla en bajas.
+  // La retrocesión potencial se asocia siempre (informativa): el interruptor queda para aplicarla en bajas.
   { codigo: 'MCAS_RETROCESSION_ENABLED', label: 'Retrocesión',
     descripcion: ACLARACION_RETROCESION, aclaracion: ACLARACION_RETROCESION,
-    efecto: 'el interruptor de retrocesión, reservado para la fase 3 (hoy no tiene efecto)' },
+    efecto: 'el interruptor de retrocesión (por ahora no tiene efecto)' },
+]
+
+// Configuración MCAS recién instalada (sin ninguna tabla): qué hacer, en orden.
+const PRIMEROS_PASOS = [
+  { titulo: 'Compruebe la comercializadora',
+    texto: 'Tiene que existir en Administración › Comercializadoras. Si no está, déla de alta allí primero.' },
+  { titulo: 'Cree sus productos (si hacen falta)',
+    texto: 'Solo si la comisión depende de la oferta que se contrata (por ejemplo, «Plan Personalizado»): pestaña «Productos» de esta pantalla.' },
+  { titulo: 'Cree la tabla',
+    texto: 'Pulse «Nueva tabla», elija la comercializadora y la fecha desde la que vale. Se crea en borrador: puede cambiarla cuanto quiera hasta activarla.' },
+  { titulo: 'Añada las reglas',
+    texto: 'En la pestaña «Reglas», «Nueva regla»: a qué contratos se aplica (por ejemplo, pymes de luz) y cómo se calcula la comisión.' },
+  { titulo: 'Pruébela con un contrato',
+    texto: '«Probar con un contrato» calcula la comisión de un contrato real con la tabla en borrador, sin guardar nada.' },
+  { titulo: 'Actívela',
+    texto: '«Activar» comprueba la tabla y la pone en uso desde su fecha de inicio.' },
+  { titulo: 'Encienda los interruptores',
+    texto: '«Módulo» y «Precio fijo», arriba, en «Interruptores del módulo». Desde entonces, al guardar un contrato se calcula su comisión.' },
 ]
 
 const TABS = [
@@ -2142,7 +2204,7 @@ const COLUMNAS = {
     { key: 'vigencia', label: 'Vigencia', icono: 'fas fa-calendar-alt', ancho: '16%', filtro: 'texto',
       valor: (c, vm) => vm.formatVigencia(c.vigenciaDesde, c.vigenciaHasta), orden: c => c.vigenciaDesde },
     { key: 'estado', label: 'Estado', icono: 'fas fa-tasks', ancho: '10%', filtro: 'select', opciones: ESTADOS_CONJUNTO, valor: c => c.estado },
-    { key: 'origen', label: 'Origen', icono: 'fas fa-file-excel', ancho: '14%', filtro: 'texto',
+    { key: 'origen', label: 'Documento', icono: 'fas fa-file-alt', ancho: '14%', filtro: 'texto',
       valor: c => [c.archivoOrigen, c.hojaOrigen].filter(Boolean).join(' ') },
   ],
   reglas: [
@@ -2235,6 +2297,21 @@ const RESULTADOS_SIMULACION = {
 
 function esVacio(v) {
   return v === null || v === undefined || String(v).trim() === ''
+}
+
+/** «Plan Personalizado 15 %» → «PLAN_PERSONALIZADO_15»: mayúsculas, sin tildes ni signos. */
+function codigoDesde(texto, separador = '_') {
+  return String(texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase()
+    .split(/[^A-Z0-9]+/).filter(Boolean).join(separador)
+}
+
+/** El código propuesto, o con «_2», «_3»... si ya lo usa otro (sin distinguir mayúsculas). */
+function codigoLibre(base, usados, separador = '_') {
+  const ocupados = new Set(usados.filter(Boolean).map(c => String(c).trim().toUpperCase()))
+  if (!base) return ''
+  let codigo = base
+  for (let n = 2; ocupados.has(codigo.toUpperCase()); n += 1) codigo = `${base}${separador}${n}`
+  return codigo
 }
 
 // ---- Políticas de retrocesión: servidor ⇄ formulario ----
@@ -2355,6 +2432,7 @@ export default {
     return {
       tabs: TABS,
       tabActivo: 'conjuntos',
+      primerosPasos: PRIMEROS_PASOS,
       metodosCalculo: METODOS_CALCULO,
       fases: FASES,
       tiposPrecio: TIPOS_PRECIO,
@@ -2362,7 +2440,6 @@ export default {
       segmentos: SEGMENTOS,
       metodosRetrocesion: METODOS_RETROCESION,
       unidadesTramo: UNIDADES_TRAMO,
-      tiposValorTramo: TIPOS_VALOR_TRAMO,
       camposCondicion: CAMPOS_CONDICION.join(', '),
       opcionesCondicion: OPCIONES_CONDICION,
       tiposLinea: TIPOS_LINEA,
@@ -2373,7 +2450,7 @@ export default {
       // Administración › Productos y Pago Plazos (los usa el servicio de comisión)
       productosServicio: [],
       pagosPlazos: [],
-      // Indicadores del módulo
+      // Interruptores del módulo
       featureFlags: [],
       flagsError: false,
       flagEnCurso: null,
@@ -2381,6 +2458,7 @@ export default {
       conjuntosReglas: [],
       cargandoConjuntos: false,
       errorConjuntos: false,
+      conjuntosCargados: false,
       conjuntoParaReglasId: null,
       reglasConjunto: [],
       cargandoReglas: false,
@@ -2485,12 +2563,17 @@ export default {
       const activas = filas.filter(f => f.estado === 'ACTIVA').length
       const porActivar = filas.filter(f => f.pendienteActivar).length
       const sinTabla = filas.filter(f => f.estado === 'SIN_TABLA').length
-      const marcas = filas.reduce((n, f) => n + f.pendientes.length, 0)
-      const partes = [activas === 1 ? '1 activa' : `${activas} activas`]
+      // Avisos: lo pendiente salvo «sin tabla», que ya se cuenta aparte.
+      const avisos = filas.reduce((n, f) => n + f.pendientes.filter(p => p.tipo !== 'sin-tabla').length, 0)
+      const partes = [activas === 0 ? 'Ninguna activa' : activas === 1 ? '1 activa' : `${activas} activas`]
       if (porActivar) partes.push(porActivar === 1 ? '1 pendiente de activar' : `${porActivar} pendientes de activar`)
       if (sinTabla) partes.push(`${sinTabla} sin tabla`)
-      partes.push(marcas === 1 ? '1 dato pendiente de confirmar' : `${marcas} datos pendientes de confirmar`)
+      if (avisos) partes.push(avisos === 1 ? '1 aviso' : `${avisos} avisos`)
       return partes.join(' · ')
+    },
+    // Recién instalado: sin ninguna tabla (y sabiendo, tras cargarlas, que de verdad no hay ninguna).
+    mostrarPrimerosPasos() {
+      return this.conjuntosCargados && !this.cargandoConjuntos && !this.errorConjuntos && !this.conjuntosReglas.length
     },
     // ---- activación ----
     idsSeleccionados() {
@@ -2679,7 +2762,13 @@ export default {
         rangos: 'los tramos de la tabla', productos: 'los productos comerciales',
         retrocesiones: 'las políticas de retrocesión',
       }
+      const sinTablas = {
+        icono: 'fas fa-layer-group', texto: 'Todavía no hay tablas de comisiones', crear: 'Crear la primera tabla', accion: 'tabla',
+        detalle: 'Una tabla de comisiones reúne las reglas con las que se calcula la comisión de una comercializadora desde una fecha. '
+          + 'Cree la primera y añádale sus reglas: mientras no haya ninguna activa, las comisiones se completan a mano.',
+      }
       if (this.errorTab) return { error: true, icono: 'fas fa-exclamation-triangle', texto: `No se pudieron cargar ${nombres[this.tabActivo]}` }
+      if ((this.tabActivo === 'reglas' || this.tabActivo === 'rangos') && !this.conjuntosReglas.length) return sinTablas
       if (this.tabActivo === 'reglas' && !this.conjuntoParaReglas) {
         return { icono: 'fas fa-layer-group', texto: 'Seleccione una tabla de comisiones',
           detalle: 'Elija una tabla en el selector superior o pulse «Ver reglas» en la pestaña Tablas de comisiones.' }
@@ -2690,11 +2779,25 @@ export default {
       }
       if (this.filasTab.length) return { icono: 'fas fa-search', texto: 'No se encontraron registros que coincidan con la búsqueda' }
       switch (this.tabActivo) {
-        case 'conjuntos': return { icono: 'fas fa-layer-group', texto: 'Todavía no hay tablas de comisiones', crear: 'Crear primera tabla' }
-        case 'reglas': return { icono: 'fas fa-list-ul', texto: 'Esta tabla aún no tiene reglas', crear: this.conjuntoEditable ? 'Crear primera regla' : null }
-        case 'rangos': return { icono: 'fas fa-table', texto: 'Esta regla aún no tiene tramos', crear: this.conjuntoEditable ? 'Crear primera fila' : null }
-        case 'retrocesiones': return { icono: 'fas fa-undo-alt', texto: 'Todavía no hay políticas de retrocesión', crear: 'Crear primera política' }
-        default: return { icono: 'fas fa-tags', texto: 'Todavía no hay productos comerciales', crear: 'Crear primer producto' }
+        case 'conjuntos': return sinTablas
+        case 'reglas': return {
+          icono: 'fas fa-list-ul', texto: 'Esta tabla todavía no tiene reglas', crear: this.conjuntoEditable ? 'Crear la primera regla' : null,
+          detalle: 'Cada regla dice a qué contratos se aplica (por ejemplo, pymes de luz) y cómo se calcula su comisión: un importe fijo, '
+            + 'un % sobre el FEE, un importe por MWh, una tabla de importes... A cada contrato le debe corresponder una sola regla.'
+            + (this.conjuntoEditable ? '' : ' Esta tabla ya no está en borrador: para añadirle reglas, cree una «Nueva versión».'),
+        }
+        case 'rangos': return { icono: 'fas fa-table', texto: 'Esta regla todavía no tiene tramos', crear: this.conjuntoEditable ? 'Crear la primera fila' : null,
+          detalle: 'Es más cómodo rellenar los importes con «Ver tabla», en la lista de reglas.' }
+        case 'retrocesiones': return {
+          icono: 'fas fa-undo-alt', texto: 'Todavía no hay políticas de retrocesión', crear: 'Crear la primera política',
+          detalle: 'Una política de retrocesión dice qué parte de la comisión se devolvería si el contrato se da de baja pronto '
+            + '(por ejemplo, toda la comisión en los primeros 90 días). Es opcional e informativa: se enseña en cada propuesta y nunca se descuenta en el alta.',
+        }
+        default: return {
+          icono: 'fas fa-tags', texto: 'Todavía no hay productos', crear: 'Crear el primer producto',
+          detalle: 'Los productos son las ofertas de cada comercializadora (por ejemplo, «Plan Personalizado»). Solo hacen falta si la comisión '
+            + 'depende del producto que se contrata: se eligen en la regla y en la pestaña «Comisión MCAS» del contrato.',
+        }
       }
     },
     // ---- formulario de regla / rango ----
@@ -2718,7 +2821,7 @@ export default {
     opcionesProductoRegla() {
       const opciones = this.productosDelConjunto.map(p => ({
         value: p.codigo,
-        label: `${p.nombre} (${p.codigo})${p.activo ? '' : ' · dado de baja'}`,
+        label: `${p.nombre}${p.activo ? '' : ' · dado de baja'}`,
       }))
       const actual = this.editorRegla.condiciones.codigo_producto
       if (actual && !opciones.some(o => o.value === actual)) opciones.push({ value: actual, label: `${actual} (no está dado de alta)` })
@@ -2756,16 +2859,51 @@ export default {
     hayCondicionesAvanzadas() {
       return this.clavesAvanzadas.length > 0
     },
+    // ---- códigos internos que se generan solos ----
+    /** Código de un producto nuevo: el nombre en mayúsculas, sin repetir otro de la misma comercializadora. */
+    codigoProductoPropuesto() {
+      const f = this.formProducto || {}
+      if (f.id) return ''
+      const usados = this.productos.filter(p => String(p.idComercializadora) === String(f.idComercializadora)).map(p => p.codigo)
+      return codigoLibre(codigoDesde(f.nombre).slice(0, 60), usados)
+    },
+    /** «RET-IBERDROLA-PYME-LUZ-20260101»: comercializadora, segmento, suministro, tarifa y fecha. */
+    codigoPoliticaPropuesto() {
+      const f = this.formRetrocesion || {}
+      if (f.id || esVacio(f.idComercializadora)) return ''
+      const comercializadora = codigoDesde(this.nombreComercializadora(f.idComercializadora)).split('_')[0]
+      const fecha = String(f.vigenciaDesde || '').replace(/-/g, '')
+      const base = ['RET', comercializadora, f.segmento, f.tipoSuministro, codigoDesde(f.tarifaAcceso), fecha]
+        .filter(Boolean).join('-').slice(0, 90)
+      return codigoLibre(base, this.politicasRetrocesion.map(p => p.codigo), '-')
+    },
     // ---- prueba con un contrato ----
+    /** Nombre de la regla aplicada: el que manda el servidor o, si no, el de la lista de reglas (nunca el código). */
+    nombreReglaSimulacion() {
+      const r = this.simulacion.resultado
+      if (!r) return '—'
+      const nombre = r.nombreRegla || r.nombreReglaAplicada
+      if (nombre) return nombre
+      const codigo = r.reglaAplicada
+      if (esVacio(codigo)) return '—'
+      const regla = this.reglasConjunto.find(x => x.codigo === codigo || String(x.id) === String(codigo))
+      return regla ? nombreRegla(regla) : codigo
+    },
     datosSimulacion() {
       const d = this.simulacion.resultado?.datosContrato
       if (!d || !Object.keys(d).length) return []
       const siNo = v => (v === true ? 'Sí' : v === false ? 'No' : v)
       const conUnidad = (v, unidad) => (v === null || v === undefined ? null : `${this.formatNumero(v)} ${unidad}`)
+      // Los valores del motor (FIJO, LUZ, PYME, FUERA...) con la misma etiqueta que en el formulario de la regla.
+      const legible = (opciones, v) => (esVacio(v) ? v : (opciones || []).find(o => o.value === String(v).toUpperCase())?.label || v)
+      const producto = esVacio(d.codigoProducto) ? d.codigoProducto
+        : this.productosDelConjunto.find(p => String(p.codigo).toUpperCase() === String(d.codigoProducto).toUpperCase())?.nombre || d.codigoProducto
       const filas = [
-        ['Tipo de precio', d.tipoPrecio], ['Tipo de suministro', d.tipoSuministro], ['Segmento', d.segmento],
-        ['¿Es renovación?', siNo(d.esRenovacion)], ['Tipo de renovación', d.tipoRenovacion], ['Alta nueva', siNo(d.altaNueva)],
-        ['Ámbito', d.ambito], ['Zona de comisión', d.zonaComision], ['Producto comercial', d.codigoProducto],
+        ['Tipo de precio', legible(TIPOS_PRECIO, d.tipoPrecio)], ['Tipo de suministro', legible(SUMINISTROS, d.tipoSuministro)],
+        ['Segmento', legible(SEGMENTOS, d.segmento)],
+        ['¿Es renovación?', siNo(d.esRenovacion)], ['Tipo de renovación', legible(OPCIONES_CONDICION.tipo_renovacion, d.tipoRenovacion)],
+        ['Alta nueva', siNo(d.altaNueva)],
+        ['Ámbito', legible(OPCIONES_CONDICION.ambito, d.ambito)], ['Zona de comisión', d.zonaComision], ['Producto comercial', producto],
         ['Tarifa de acceso', d.tarifaAcceso], ['Consumo anual', conUnidad(d.consumoKwh, 'kWh')],
         ['FEE del contrato', conUnidad(d.feeEurMwh, '€/MWh')], ['Potencia de cálculo', conUnidad(d.potenciaKw, 'kW')],
         ['Nº de pagos del contrato', d.numeroPagos], ['Fecha de inicio', this.formatFechaCorta(d.fechaInicio)],
@@ -2854,6 +2992,7 @@ export default {
         const { data } = await axios.get('/mcas/conjuntos-reglas')
         this.conjuntosReglas = Array.isArray(data) ? data : []
         this.errorConjuntos = false
+        this.conjuntosCargados = true
         if (this.conjuntoParaReglasId && !this.conjuntoParaReglas) this.limpiarSeleccionConjunto()
         this.cargarReglasPanel({ forzar: forzarPanel })
       } catch (e) {
@@ -3051,6 +3190,8 @@ export default {
       }
     },
     crearEnTab() {
+      // Sin ninguna tabla, el botón de cualquier pestaña que la necesite crea la primera.
+      if (this.estadoVacio.accion === 'tabla') return this.abrirModalConjunto()
       switch (this.tabActivo) {
         case 'conjuntos': return this.abrirModalConjunto()
         case 'reglas': return this.abrirModalRegla()
@@ -3123,14 +3264,17 @@ export default {
       const f = this.formProducto
       const errores = {}
       if (esVacio(f.idComercializadora)) errores.idComercializadora = 'Seleccione una comercializadora'
-      if (esVacio(f.codigo)) errores.codigo = 'El código es obligatorio'
+      // Al crear, vacío = se genera a partir del nombre (codigoProductoPropuesto).
+      if (f.id && esVacio(f.codigo)) errores.codigo = 'Un producto ya guardado necesita su código interno'
       if (esVacio(f.nombre)) errores.nombre = 'El nombre es obligatorio'
+      else if (!f.id && esVacio(f.codigo) && !this.codigoProductoPropuesto) errores.nombre = 'El nombre debe tener alguna letra o cifra'
       if (f.activoDesde && f.activoHasta && f.activoHasta < f.activoDesde) errores.activoHasta = 'Debe ser posterior a la fecha de inicio'
       return errores
     },
     async guardarProducto() {
       if (this.mutacionEnCurso || !this.aplicarValidacion(this.validarProducto)) return
-      const payload = { ...this.formProducto, codigo: this.formProducto.codigo.trim(), nombre: this.formProducto.nombre.trim() }
+      const codigo = String(this.formProducto.codigo ?? '').trim() || this.codigoProductoPropuesto
+      const payload = { ...this.formProducto, codigo, nombre: String(this.formProducto.nombre).trim() }
       this.mutacionEnCurso = true
       try {
         if (payload.id) {
@@ -3429,14 +3573,21 @@ export default {
       }
       this.mutacionEnCurso = true
       try {
+        let creada = null
         if (payload.id) {
           await axios.put(`/mcas/reglas/${payload.id}`, payload)
         } else {
-          await axios.post(`/mcas/conjuntos-reglas/${this.conjuntoParaReglas.id}/reglas`, payload)
+          creada = (await axios.post(`/mcas/conjuntos-reglas/${this.conjuntoParaReglas.id}/reglas`, payload))?.data || null
         }
         this.cerrarModales()
         await this.cargarReglas()
-        mostrarExito(this.$swal, 'Regla guardada', `La regla "${nombreRegla(payload)}" se ha guardado correctamente.`)
+        // Una regla nueva que busca el importe en una tabla abre su rejilla para rellenarla en el momento.
+        const conTabla = creada?.id != null && METODOS_TABLA.includes(payload.metodoCalculo)
+          ? (this.reglasConjunto.find(r => r.id === creada.id) || creada) : null
+        mostrarExito(this.$swal, 'Regla guardada', conTabla
+          ? `La regla "${nombreRegla(payload)}" se ha guardado. Ahora elija qué datos van en su tabla y rellene los importes.`
+          : `La regla "${nombreRegla(payload)}" se ha guardado correctamente.`)
+        if (conTabla) this.abrirMatriz(conTabla)
       } catch (e) {
         mostrarError(this.$swal, 'Error al guardar', textoError(e, 'No se pudo guardar la regla.'))
       } finally {
@@ -3610,10 +3761,15 @@ export default {
     unidadValorTramo(tipoValor) {
       return TIPOS_VALOR_TRAMO.find(t => t.value === tipoValor)?.unidad || ''
     },
+    /** Tipos que ofrece el desplegable de un tramo: Porcentaje e Importe, más el suyo si es uno antiguo. */
+    tiposValorDeTramo(t) {
+      return TIPOS_VALOR_TRAMO.filter(tv => !tv.soloSiYaLoTiene || tv.value === t?.tipoValor)
+    },
     validarRetrocesion() {
       const f = this.formRetrocesion
       const errores = {}
-      if (esVacio(f.codigo)) errores.codigo = 'El código es obligatorio'
+      // Al crear, vacío = se genera (codigoPoliticaPropuesto).
+      if (f.id && esVacio(f.codigo)) errores.codigo = 'Una política ya guardada necesita su código interno'
       if (esVacio(f.version)) errores.version = 'La versión es obligatoria'
       if (esVacio(f.idComercializadora)) errores.idComercializadora = 'Seleccione una comercializadora'
       if (esVacio(f.metodo)) errores.metodo = 'Seleccione el método'
@@ -3629,6 +3785,7 @@ export default {
     async guardarRetrocesion() {
       if (this.soloLecturaRetrocesion || this.mutacionEnCurso || !this.aplicarValidacion(this.validarRetrocesion)) return
       const payload = politicaAPayload(this.formRetrocesion)
+      if (!payload.codigo) payload.codigo = this.codigoPoliticaPropuesto
       this.mutacionEnCurso = true
       try {
         if (payload.id) {
@@ -3651,7 +3808,7 @@ export default {
       // El servidor tampoco la publicaría: se explica antes de preguntar.
       if (accion === 'publicar' && this.tieneTramosSinConfirmar(p)) {
         mostrarError(this.$swal, 'No se puede publicar',
-          `La política "${nombre}" tiene tramos con la unidad sin confirmar. Confírmela con el cliente y edite esos tramos antes de publicarla.`)
+          `La política "${nombre}" tiene tramos sin tipo de valor. Edítela y elija «Porcentaje» o «Importe (€)» en esos tramos antes de publicarla.`)
         return
       }
       const acciones = {

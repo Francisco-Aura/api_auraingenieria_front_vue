@@ -163,7 +163,7 @@
                 <span
                   v-if="p.id === 'mcas'"
                   class="aura-pestana__marca"
-                  :class="mcasListo ? 'aura-pestana__marca--ok' : 'aura-pestana__marca--aviso'"
+                  :class="'aura-pestana__marca--' + marcaMcas"
                   :title="tituloMarcaMcas"
                 ></span>
               </button>
@@ -564,7 +564,7 @@
                                 <option value="INDEXADO">INDEXADO</option>
                               </select>
                             </div>
-                            <small class="mcas-campo-ayuda">Fijo: precio pactado. Indexado: sigue al mercado. Déjelo sin elegir si el contrato no debe comisionar.</small>
+                            <small class="mcas-campo-ayuda">Fijo: precio pactado. Indexado: sigue al mercado. Elija «Sin comisión automática» si el contrato no debe comisionar.</small>
                           </div>
 
                           <div v-else-if="campo === 'mcasTipoSuministro'" class="form-group-modern" :class="claseCampoMcas(campo)">
@@ -687,7 +687,7 @@
                                 </option>
                               </select>
                             </div>
-                            <small class="mcas-campo-ayuda">Oferta contratada con la comercializadora (por ejemplo, Oferta 0 o Plan Personalizado).</small>
+                            <small class="mcas-campo-ayuda">Oferta contratada con la comercializadora (por ejemplo, Plan Personalizado).</small>
                           </div>
 
                           <div v-else-if="campo === 'mcasPotenciaCalculo'" class="form-group-modern" :class="claseCampoMcas(campo)">
@@ -2249,6 +2249,8 @@ export default {
     // Sin vista previa (sin red o aún sin respuesta) son el respaldo de la pestaña.
     mcasFaltanCampos() {
       const c = this.nuevoContrato || {};
+      // «Sin comisión automática» es una elección, no un dato que falta.
+      if (this.sinComisionMcas) return [];
       const vacio = (v) => v === null || v === undefined || String(v).trim() === '';
       const requisitos = [
         ['Tipo de precio', 'mcasTipoPrecio'],
@@ -2276,6 +2278,18 @@ export default {
     vistaPreviaMcasValida() {
       const vista = this.vistaPrevia;
       return !!vista && typeof vista === 'object' && typeof vista.estado === 'string';
+    },
+
+    // Tipo de precio en «Sin comisión automática»: el contrato no genera propuesta y no hay nada que pedir.
+    sinComisionMcas() {
+      const tipo = this.nuevoContrato?.mcasTipoPrecio;
+      return tipo === null || tipo === undefined || String(tipo).trim() === '';
+    },
+
+    // Color de la marca de la pestaña: gris sin comisión, verde lista, naranja si falta algo.
+    marcaMcas() {
+      if (this.sinComisionMcas) return 'neutro';
+      return this.mcasListo ? 'ok' : 'aviso';
     },
 
     // Marca de la pestaña: la decide la vista previa; sin ella, los datos mínimos.
@@ -2363,11 +2377,18 @@ export default {
 
     // Cabecera de la pestaña: comisión estimada o lo que falta; sin vista previa, el respaldo.
     cabeceraMcas() {
+      if (this.sinComisionMcas) {
+        return {
+          tono: 'neutro', icono: 'fas fa-info-circle', faltan: [], avisos: [], estimacion: false,
+          titulo: 'Sin comisión automática: este contrato no generará propuesta de comisión',
+          detalle: 'Si el contrato debe comisionar, elija FIJO o INDEXADO en «Tipo de precio».',
+        };
+      }
       if (this.vistaPreviaMcasValida) return cabeceraVistaPrevia(this.vistaPrevia, this.nuevoContrato);
       const faltan = this.mcasFaltanCampos;
       let detalle = 'Al guardar, se aplica la tabla de comisiones de la comercializadora y la propuesta queda en Comisiones MCAS; '
         + 'cuando un administrador la aprueba, se crea el servicio de comisión en este punto de suministro. '
-        + 'Si el contrato no debe comisionar, deje «Tipo de precio» sin elegir.';
+        + 'Si el contrato no debe comisionar, elija «Sin comisión automática» en «Tipo de precio».';
       if (this.cargandoVistaPrevia) detalle = 'Calculando la comisión estimada…';
       else if (this.errorVistaPrevia) detalle = 'No se ha podido calcular la estimación ahora mismo; al guardar el contrato se calculará igualmente.';
       return faltan.length

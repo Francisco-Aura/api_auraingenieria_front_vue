@@ -220,6 +220,9 @@ export default {
       this.$refs.tarjetaUsuario?.focus();
     },
     cerrarSesion() {
+      // El contador de Comisiones MCAS deja de preguntar ya: sin sesión cada vuelta sería un 401.
+      this.sondeoPendientesMcas?.detener();
+      this.sondeoPendientesMcas = null;
       // Cierra también la sesión del servidor; si falla (red, ya caducada) se sale igual
       axios.post(`${process.env.VUE_APP_API_URL}/usuarios/logout`).catch(() => {});
       localStorage.removeItem('usuario');

@@ -47,6 +47,10 @@
         </div>
 
         <template v-else-if="rejilla">
+          <!-- Productos de la comercializadora para las cabeceras «Producto» (se escribe o se elige el nombre) -->
+          <datalist id="mcas-matriz-productos">
+            <option v-for="p in productos" :key="p.codigo" :value="p.nombre"></option>
+          </datalist>
           <div v-if="!editable" class="mcas-alert mcas-alert--info">
             <i class="fas fa-lock"></i>
             <div>Solo se pueden cambiar las tablas en borrador. Para cambiar un importe de una tabla activa, cree una «Nueva versión» desde la pestaña Tablas.</div>
@@ -127,12 +131,12 @@
                   :aria-selected="pestanaActiva === p ? 'true' : 'false'"
                   @click="pestanaActiva = p"
                 >
-                  <span>{{ etiquetaPestana(rejilla, p) }}</span>
+                  <span>{{ etiquetaDePestana(p) }}</span>
                   <span v-if="erroresPorPestana[p]" class="toggle-count matriz-contador-error">{{ erroresPorPestana[p] }}</span>
                 </button>
               </div>
               <div v-if="editable && rejilla.pestanas.dimensiones.length === 1" class="matriz-anadir">
-                <input v-model="nuevaPestana" class="mcas-input" :placeholder="'Nueva pestaña (p. ej. ZBR)'" aria-label="Nombre de la nueva pestaña" @keydown.enter.prevent="nuevaPestanaTabla">
+                <input v-model="nuevaPestana" class="mcas-input" :placeholder="ejemploTramo(rejilla.pestanas.ejes?.[rejilla.pestanas.dimensiones[0]])" :list="listaDatos(rejilla.pestanas.dimensiones[0])" aria-label="Nombre de la nueva pestaña" @keydown.enter.prevent="nuevaPestanaTabla">
                 <button type="button" class="btn btn-outline" @click="nuevaPestanaTabla">
                   <i class="fas fa-plus"></i>
                   <span>Añadir pestaña</span>
@@ -157,11 +161,12 @@
                         <input
                           v-if="editable && rejilla.columnas"
                           class="matriz-input matriz-input--cabecera"
-                          :value="etiquetaCabecera(rejilla.columnas.tipo, valor)"
+                          :value="etiqueta(rejilla.columnas, valor)"
+                          :list="listaDatos(rejilla.columnas.dimension)"
                           :aria-label="'Tramo de la columna ' + (j + 1)"
                           @change="cambiarCabecera('columnas', j, $event.target.value, $event)"
                         >
-                        <span v-else>{{ rejilla.columnas ? etiquetaCabecera(rejilla.columnas.tipo, valor) : 'Importe (€)' }}</span>
+                        <span v-else>{{ rejilla.columnas ? etiqueta(rejilla.columnas, valor) : 'Importe (€)' }}</span>
                         <button v-if="editable && rejilla.columnas" type="button" class="matriz-quitar" title="Quitar la columna" aria-label="Quitar la columna" @click="borrarColumna(j)">
                           <i class="fas fa-times"></i>
                         </button>
@@ -176,11 +181,12 @@
                         <input
                           v-if="editable"
                           class="matriz-input matriz-input--cabecera"
-                          :value="etiquetaCabecera(rejilla.filas.tipo, valor)"
+                          :value="etiqueta(rejilla.filas, valor)"
+                          :list="listaDatos(rejilla.filas.dimension)"
                           :aria-label="'Tramo de la fila ' + (i + 1)"
                           @change="cambiarCabecera('filas', i, $event.target.value, $event)"
                         >
-                        <span v-else>{{ etiquetaCabecera(rejilla.filas.tipo, valor) }}</span>
+                        <span v-else>{{ etiqueta(rejilla.filas, valor) }}</span>
                         <button v-if="editable" type="button" class="matriz-quitar" title="Quitar la fila" aria-label="Quitar la fila" @click="borrarFila(i)">
                           <i class="fas fa-times"></i>
                         </button>
@@ -214,13 +220,13 @@
             <p v-else class="form-hint-inline">Añada la primera pestaña para empezar a rellenar la tabla.</p>
 
             <div v-if="editable" class="matriz-anadir">
-              <input v-model="nuevaFilaTexto" class="mcas-input" :placeholder="ejemploTramo(rejilla.filas)" aria-label="Tramo de la nueva fila" @keydown.enter.prevent="nuevaFilaTabla">
+              <input v-model="nuevaFilaTexto" class="mcas-input" :placeholder="ejemploTramo(rejilla.filas)" :list="listaDatos(rejilla.filas.dimension)" aria-label="Tramo de la nueva fila" @keydown.enter.prevent="nuevaFilaTabla">
               <button type="button" class="btn btn-outline" @click="nuevaFilaTabla">
                 <i class="fas fa-plus"></i>
                 <span>Añadir fila</span>
               </button>
               <template v-if="rejilla.columnas">
-                <input v-model="nuevaColumnaTexto" class="mcas-input" :placeholder="ejemploTramo(rejilla.columnas)" aria-label="Tramo de la nueva columna" @keydown.enter.prevent="nuevaColumnaTabla">
+                <input v-model="nuevaColumnaTexto" class="mcas-input" :placeholder="ejemploTramo(rejilla.columnas)" :list="listaDatos(rejilla.columnas.dimension)" aria-label="Tramo de la nueva columna" @keydown.enter.prevent="nuevaColumnaTabla">
                 <button type="button" class="btn btn-outline" @click="nuevaColumnaTabla">
                   <i class="fas fa-plus"></i>
                   <span>Añadir columna</span>
@@ -229,7 +235,7 @@
             </div>
             <small v-if="errorCabecera" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errorCabecera }}</small>
             <p v-if="editable" class="form-hint-inline matriz-ayuda">
-              Escriba los tramos como en el Excel: «0-5.000», «5.001-10.000», «>300.001». Para dejar una celda en revisión manual, déjela vacía.
+              Escriba los tramos así: «0-5.000», «5.001-10.000», «>300.001». Para dejar una celda en revisión manual, déjela vacía.
             </p>
           </template>
 
@@ -315,7 +321,7 @@
 import axios from 'axios'
 import { confirmar, mostrarError, mostrarExito, textoError } from './mcasDialogs'
 // En una sola línea: los tests cargan este <script> en Node (tests/unit/helpers/sfc.js) y solo reconocen import de una línea.
-import { NOMBRES_DIMENSION, DIMENSIONES_CATEGORIA, nombreDimension, formatearNumero, leerImporte, etiquetaCabecera, leerCabecera, etiquetaPestana, aRejilla, aFilas, rejillaVacia, numerarCeldas, posicionDeOrden, validarRejilla, pegarDesdeExcel, aplicarPegado, rejillaDesdePegado, anadirFila, quitarFila, anadirColumna, quitarColumna, anadirPestana, quitarPestana } from './mcasMatriz'
+import { NOMBRES_DIMENSION, DIMENSIONES_CATEGORIA, nombreDimension, formatearNumero, leerImporte, etiquetaCabecera, leerCabecera, resolverProducto, nombreProducto, aRejilla, aFilas, rejillaVacia, numerarCeldas, posicionDeOrden, validarRejilla, pegarDesdeExcel, aplicarPegado, rejillaDesdePegado, anadirFila, quitarFila, anadirColumna, quitarColumna, anadirPestana, quitarPestana } from './mcasMatriz'
 
 // Estructura propuesta para una tabla nueva según el método de la regla.
 const ESTRUCTURA_INICIAL = {
@@ -332,6 +338,8 @@ export default {
     regla: { type: Object, required: true },
     editable: { type: Boolean, default: false },
     ordenResaltado: { type: Number, default: null },
+    // Productos de la comercializadora de la tabla: las cabeceras «Producto» enseñan su nombre y guardan su código.
+    productos: { type: Array, default: () => [] },
   },
   emits: ['cerrar', 'guardado', 'vista-avanzada'],
   data() {
@@ -399,8 +407,23 @@ export default {
   },
   methods: {
     nombreDimension,
-    etiquetaCabecera,
-    etiquetaPestana,
+    /** Rótulo de una fila, columna o pestaña: el tramo, la categoría o, si es un producto, su nombre. */
+    etiqueta(eje, valor) {
+      if (eje?.dimension === 'codigo_producto') return nombreProducto(valor, this.productos)
+      return etiquetaCabecera(eje?.tipo, valor)
+    },
+    etiquetaDePestana(p) {
+      const r = this.rejilla
+      const combinacion = r?.pestanas.valores[p] || {}
+      return r.pestanas.dimensiones.map(d => this.etiqueta(r.pestanas.ejes?.[d] || { dimension: d, tipo: 'categoria' }, combinacion[d]))
+        .join(' · ') || 'Tabla'
+    },
+    /** Texto escrito en una cabecera → { valor } o { error } (un producto se busca por nombre o código). */
+    leerValorEje(eje, texto) {
+      if (eje.dimension === 'codigo_producto') return resolverProducto(texto, this.productos)
+      const valor = leerCabecera(eje.tipo, texto)
+      return valor ? { valor } : { error: `No se entiende «${String(texto ?? '').trim()}». ${this.explicacionTramo(eje.tipo)}` }
+    },
     async cargar() {
       this.cargando = true
       this.errorCarga = ''
@@ -465,51 +488,62 @@ export default {
     },
     cambiarCabecera(eje, i, texto, evento) {
       if (!this.editable) return
-      const tipo = this.rejilla[eje].tipo
-      const valor = leerCabecera(tipo, texto)
-      if (!valor) {
-        this.errorCabecera = `No se entiende «${String(texto).trim()}». ${this.explicacionTramo(tipo)}`
-        if (evento?.target) evento.target.value = etiquetaCabecera(tipo, this.rejilla[eje].valores[i])
+      const leido = this.leerValorEje(this.rejilla[eje], texto)
+      if (leido.error) {
+        this.errorCabecera = leido.error
+        if (evento?.target) evento.target.value = this.etiqueta(this.rejilla[eje], this.rejilla[eje].valores[i])
         return
       }
       this.errorCabecera = ''
-      this.rejilla[eje].valores.splice(i, 1, valor)
+      this.rejilla[eje].valores.splice(i, 1, leido.valor)
       this.cambios = true
     },
     explicacionTramo(tipo) {
       return tipo === 'categoria'
         ? 'Escriba el valor tal como aparece en el contrato (p. ej. ZBR o 3.0TD).'
-        : 'Escriba el tramo como en el Excel: 0-5.000, 5.001-10.000 o >300.001.'
+        : 'Escriba el tramo así: 0-5.000, 5.001-10.000 o >300.001.'
+    },
+    /** Lista de sugerencias de un campo de cabecera: los productos, si el dato es el producto. */
+    listaDatos(dimension) {
+      return dimension === 'codigo_producto' && this.productos.length ? 'mcas-matriz-productos' : null
     },
     ejemploTramo(eje) {
       if (!eje) return ''
+      if (eje.dimension === 'codigo_producto') return 'Producto (elíjalo de la lista)'
       return eje.tipo === 'categoria' ? `Nuevo valor de ${nombreDimension(eje.dimension).toLowerCase()}` : 'Nuevo tramo, p. ej. 5.001-10.000'
     },
     nuevaFilaTabla() {
-      const valor = leerCabecera(this.rejilla.filas.tipo, this.nuevaFilaTexto)
-      if (!valor) {
-        this.errorCabecera = `No se entiende la fila «${this.nuevaFilaTexto.trim()}». ${this.explicacionTramo(this.rejilla.filas.tipo)}`
+      const leido = this.leerValorEje(this.rejilla.filas, this.nuevaFilaTexto)
+      if (leido.error) {
+        this.errorCabecera = `Fila: ${leido.error}`
         return
       }
       this.errorCabecera = ''
-      anadirFila(this.rejilla, valor)
+      anadirFila(this.rejilla, leido.valor)
       this.nuevaFilaTexto = ''
       this.cambios = true
     },
     nuevaColumnaTabla() {
-      const valor = leerCabecera(this.rejilla.columnas.tipo, this.nuevaColumnaTexto)
-      if (!valor) {
-        this.errorCabecera = `No se entiende la columna «${this.nuevaColumnaTexto.trim()}». ${this.explicacionTramo(this.rejilla.columnas.tipo)}`
+      const leido = this.leerValorEje(this.rejilla.columnas, this.nuevaColumnaTexto)
+      if (leido.error) {
+        this.errorCabecera = `Columna: ${leido.error}`
         return
       }
       this.errorCabecera = ''
-      anadirColumna(this.rejilla, valor)
+      anadirColumna(this.rejilla, leido.valor)
       this.nuevaColumnaTexto = ''
       this.cambios = true
     },
     nuevaPestanaTabla() {
-      const valor = String(this.nuevaPestana || '').trim()
-      if (!valor) return
+      if (!String(this.nuevaPestana || '').trim()) return
+      const [dimension] = this.rejilla.pestanas.dimensiones
+      const leido = this.leerValorEje(this.rejilla.pestanas.ejes?.[dimension] || { dimension, tipo: 'categoria' }, this.nuevaPestana)
+      if (leido.error) {
+        this.errorCabecera = `Pestaña: ${leido.error}`
+        return
+      }
+      this.errorCabecera = ''
+      const valor = leido.valor
       this.pestanaActiva = anadirPestana(this.rejilla, valor)
       this.nuevaPestana = ''
       this.cambios = true
@@ -525,7 +559,7 @@ export default {
       this.cambios = true
     },
     async borrarPestana(p) {
-      if (!await this.confirmarBorrado('¿Quitar la pestaña?', `Se quitarán los importes de «${etiquetaPestana(this.rejilla, p)}».`)) return
+      if (!await this.confirmarBorrado('¿Quitar la pestaña?', `Se quitarán los importes de «${this.etiquetaDePestana(p)}».`)) return
       quitarPestana(this.rejilla, p)
       this.pestanaActiva = 0
       this.cambios = true
@@ -603,6 +637,7 @@ export default {
         const nueva = rejillaDesdePegado(pegado, {
           filas: this.rejilla.filas.dimension, columnas: this.rejilla.columnas?.dimension || null,
           idRegla: this.regla.id, unidad: this.rejilla.unidad,
+          leer: (eje, texto) => this.leerValorEje(eje, texto).valor || null,
         })
         if (!nueva.ok) {
           this.mensajePegado = { tipo: 'error', texto: nueva.motivo }

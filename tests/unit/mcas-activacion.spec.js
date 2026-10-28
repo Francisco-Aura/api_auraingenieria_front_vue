@@ -35,14 +35,12 @@ const VISALIA_INDEX = { id: 41, codigo: 'VISALIA-INDEX-20250612', nombre: 'Visal
   vigenciaDesde: '2025-06-12', vigenciaHasta: null, estado: 'BORRADOR' };
 const CONJUNTOS = [ENDESA_BORRADOR, IRIS_PUBLICADO, IBERDROLA_VALIDADO, VISALIA_FIJO, VISALIA_INDEX];
 
-// Localizadores copiados de V20260929_2_Seed_MCAS_Reglas_Hoja2.sql
+// Reglas de dos tablas: una inactiva no se marca como pendiente (la desactiva el administrador).
 const REGLAS = {
-  20: [{ id: 201, codigo: 'IRIS_PLAN_PERSONALIZADO_PYME', activo: false, metodoCalculo: 'FEE_PERCENTAGE',
-    localizadorOrigen: 'Sustituida por IRIS_PYME_LUZ (Hoja2 K15: pyme = consumo × FEE × 44 % sin depender del producto)' }],
+  20: [{ id: 201, codigo: 'IRIS_PLAN_PERSONALIZADO_PYME', activo: false, metodoCalculo: 'FEE_PERCENTAGE' }],
   40: [
-    { id: 401, codigo: 'VISALIA_ESMERALDA_PYME', nombre: 'Visalia · Esmeralda pyme', activo: false, metodoCalculo: 'RATE_PER_MWH',
-      localizadorOrigen: 'Desactivada: Hoja2 K32 indica manual (solo Base pyme es automática). Excel VISALIA A9:B9 ESMERALDA = 16 €/MWh. Activar si el cliente lo confirma' },
-    { id: 402, codigo: 'VISALIA_BASE_PYME', activo: true, metodoCalculo: 'FEE_PERCENTAGE', localizadorOrigen: 'Hoja2 K32' },
+    { id: 401, codigo: 'VISALIA_ESMERALDA_PYME', nombre: 'Visalia · Esmeralda pyme', activo: false, metodoCalculo: 'RATE_PER_MWH' },
+    { id: 402, codigo: 'VISALIA_BASE_PYME', activo: true, metodoCalculo: 'FEE_PERCENTAGE' },
   ],
 };
 const POLITICAS = [
@@ -83,23 +81,20 @@ test('una tabla publicada fuera de vigencia no cuenta como activa', () => {
   assert.equal(filas[0].estado, 'SIN_TABLA');
 });
 
-test('se marcan como «Pendiente de confirmar» borradores, políticas sin confirmar, reglas que la Hoja2 deja en manual y comercializadoras sin tabla', () => {
+test('se marcan como «Pendiente» borradores, políticas con tramos sin tipo de valor y comercializadoras sin tabla (nunca una regla inactiva)', () => {
   const filas = estado();
   const endesa = fila(filas, 1).pendientes;
   assert.ok(endesa.some((p) => p.tipo === 'tabla' && /Endesa 2026-03/.test(p.texto) && p.enlace.tipo === 'tabla' && p.enlace.id === 10));
-  assert.ok(!endesa.some((p) => p.tipo === 'politica'), 'la política de Endesa no tiene tramos sin confirmar');
+  assert.ok(!endesa.some((p) => p.tipo === 'politica'), 'la política de Endesa no tiene tramos sin tipo de valor');
 
   const iberdrola = fila(filas, 2).pendientes;
   assert.ok(iberdrola.some((p) => p.tipo === 'politica' && /RET-IBERDROLA-2_0TD-20260101/.test(p.texto) && p.enlace.id === 7));
 
   const visalia = fila(filas, 4).pendientes;
-  const regla = visalia.find((p) => p.tipo === 'regla');
-  assert.ok(regla, 'falta la regla desactivada por la Hoja2');
-  assert.match(regla.texto, /Visalia · Esmeralda pyme/);
-  assert.deepEqual(regla.enlace, { tipo: 'regla', id: 401, idConjunto: 40 });
+  assert.ok(!visalia.some((p) => p.tipo === 'regla'), 'una regla inactiva es una decisión del administrador, no algo pendiente');
   assert.ok(visalia.some((p) => p.tipo === 'tabla' && /Indexado/.test(p.texto)), 'avisa de que el indexado no se puede activar');
 
-  assert.ok(!fila(filas, 3).pendientes.some((p) => p.tipo === 'regla'), 'una regla sustituida no queda pendiente');
+  assert.ok(!fila(filas, 3).pendientes.some((p) => p.tipo === 'regla'));
 
   const gana = fila(filas, 5).pendientes;
   assert.deepEqual(gana.map((p) => p.enlace), [{ tipo: 'nueva-tabla', idComercializadora: 5 }]);
@@ -426,7 +421,7 @@ test('A9 · el panel solo está «listo» sin borradores pendientes de activar, 
 
   const html = plantilla(ADMIN);
   assert.match(html, /Estado por comercializadora/);
-  assert.match(html, /Pendiente de confirmar/);
+  assert.match(html, /<span class="badge badge--warning">Pendiente<\/span>/);
   assert.match(html, /@click="abrirPendiente\(p\)"/);
   assert.match(html, /to="\/dashboard\/administracion"/);
 

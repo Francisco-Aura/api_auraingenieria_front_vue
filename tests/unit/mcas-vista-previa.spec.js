@@ -565,9 +565,23 @@ test('la marca de la pestaña sigue a la vista previa; lo que falta queda de res
 
   // Sin vista previa ni datos básicos, la cabecera de respaldo enlaza cada campo.
   ctx.vistaPrevia = null;
-  ctx.nuevoContrato = { ...IRIS, mcasTipoPrecio: '', fechaInicio: '' };
-  assert.deepEqual(ctx.cabeceraMcas.faltan.map((f) => f.campo), ['mcasTipoPrecio', 'fechaInicio']);
+  ctx.nuevoContrato = { ...IRIS, fechaInicio: '', contrato: '' };
+  assert.deepEqual(ctx.cabeceraMcas.faltan.map((f) => f.campo), ['contrato', 'fechaInicio']);
   assert.equal(ctx.mcasListo, false);
+  assert.equal(ctx.marcaMcas, 'aviso');
+});
+
+test('«Sin comisión automática» no pide el tipo de precio: recuadro gris que lo explica, sin naranja', () => {
+  const { ctx } = formulario();
+  ctx.nuevoContrato = { ...IRIS, mcasTipoPrecio: null, fechaInicio: '' };
+  assert.equal(ctx.cabeceraMcas.tono, 'neutro');
+  assert.equal(ctx.cabeceraMcas.titulo, 'Sin comisión automática: este contrato no generará propuesta de comisión');
+  assert.equal(ctx.cabeceraMcas.detalle, 'Si el contrato debe comisionar, elija FIJO o INDEXADO en «Tipo de precio».');
+  assert.deepEqual(ctx.cabeceraMcas.faltan, []);
+  assert.deepEqual(ctx.camposFaltanMcas, [], 'ningún campo marcado en naranja');
+  assert.equal(ctx.marcaMcas, 'neutro');
+  assert.match(plantilla(CONTRATOS), /:class="'aura-pestana__marca--' \+ marcaMcas"/);
+  assert.match(leer('src/styles/shared-modal-header.css'), /\.aura-pestana__marca--neutro \{/);
 });
 
 test('los enlaces llevan a la pestaña y al campo que hay que rellenar', async () => {

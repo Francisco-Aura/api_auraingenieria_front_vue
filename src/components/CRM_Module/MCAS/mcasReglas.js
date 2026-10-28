@@ -49,24 +49,24 @@ export const RANGOS_CONDICION = {
 // Métodos de cálculo y líneas de una suma compuesta
 /** Nombre corto de cada método (tablas, desgloses de propuestas y pruebas). */
 export const NOMBRES_METODO = {
-  FEE_PERCENTAGE: '% sobre FEE',
-  RATE_PER_MWH: 'Tasa €/MWh',
+  FEE_PERCENTAGE: '% sobre el FEE',
+  RATE_PER_MWH: '€ por MWh',
   FIXED_AMOUNT: 'Importe fijo',
-  RANGE_LOOKUP: 'Tabla de rangos',
-  MATRIX_LOOKUP: 'Matriz 2D',
-  MULTI_DIMENSION_LOOKUP: 'Multidimensional',
-  COMPOSITE_SUM: 'Suma de líneas',
+  RANGE_LOOKUP: 'Tabla por tramos',
+  MATRIX_LOOKUP: 'Tabla de dos datos',
+  MULTI_DIMENSION_LOOKUP: 'Tabla de varios datos',
+  COMPOSITE_SUM: 'Suma de varios cálculos',
   PERCENTAGE_OF_PREVIOUS: '% de lo anterior',
-  MANUAL: 'Revisión manual',
-  NOT_COMMISSIONABLE: 'No comisiona',
+  MANUAL: 'A mano',
+  NOT_COMMISSIONABLE: 'No comisionable',
 }
 export const METODOS_TABLA = ['RANGE_LOOKUP', 'MATRIX_LOOKUP', 'MULTI_DIMENSION_LOOKUP']
 export const METODOS_CON_MOTIVO = ['MANUAL', 'NOT_COMMISSIONABLE']
 export const TIPOS_LINEA = [
   { value: 'FIXED_AMOUNT', label: 'Importe fijo', unidad: '€' },
-  { value: 'RATE_PER_MWH', label: 'Tasa por MWh', unidad: '€/MWh' },
+  { value: 'RATE_PER_MWH', label: '€ por MWh', unidad: '€/MWh' },
   { value: 'FEE_PERCENTAGE', label: '% sobre el FEE', unidad: '%' },
-  { value: 'PERCENTAGE_OF_PREVIOUS', label: '% de las líneas anteriores', unidad: '%' },
+  { value: 'PERCENTAGE_OF_PREVIOUS', label: '% de lo anterior', unidad: '%' },
 ]
 
 // ---------------------------------------------------------------------------
@@ -185,7 +185,7 @@ function escribirRango(obj, claves, min, max, minInc, maxInc) {
   }
 }
 
-/** Formulario → JSON de condiciones (null = aplica a todos los contratos del conjunto). */
+/** Formulario → JSON de condiciones (null = aplica a todos los contratos de la tabla de comisiones). */
 export function escribirCondiciones(form, extras = {}) {
   const obj = {}
   for (const k of CONDICIONES_TEXTO) {

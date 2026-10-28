@@ -332,6 +332,7 @@ button.aura-pestana.aura-pestana--activa {
 
 .aura-pestana__marca--ok { background: var(--color-success, #28a745); }
 .aura-pestana__marca--aviso { background: #f39c12; }
+.aura-pestana__marca--neutro { background: #b0bec5; }
 
 /* assets/styles.css da a todo .modal-content un relleno del 1 % y un borde gris
    heredados; con la cabecera común el modal va a sangre y la cabecera ocupa el

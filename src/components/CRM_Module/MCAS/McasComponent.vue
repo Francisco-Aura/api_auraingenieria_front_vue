@@ -261,14 +261,23 @@
                         <span>Reintentar</span>
                       </button>
                     </template>
+                    <template v-else-if="!propuestas.length">
+                      <i class="fas fa-inbox fa-3x"></i>
+                      <p>Todavía no hay propuestas de comisión</p>
+                      <p class="empty-state-detalle">
+                        Aparecerán aquí al guardar un contrato con la pestaña «Comisión MCAS» rellena, cuando el interruptor «Módulo»
+                        esté encendido en Configuración MCAS. Si la comercializadora del contrato todavía no tiene una tabla de comisiones
+                        activa, su propuesta llega a «Necesita atención» para completarla a mano.
+                      </p>
+                    </template>
                     <template v-else-if="hayFiltros">
                       <i class="fas fa-search fa-3x"></i>
                       <p>No se encontraron propuestas que coincidan con la búsqueda</p>
                     </template>
                     <template v-else>
-                      <i class="fas fa-inbox fa-3x"></i>
-                      <p>Todavía no hay propuestas de comisión</p>
-                      <p class="empty-state-detalle">Se generan automáticamente al guardar contratos con datos MCAS.</p>
+                      <i class="fas fa-history fa-3x"></i>
+                      <p>No hay propuestas en curso</p>
+                      <p class="empty-state-detalle">Las que hay son antiguas: pulse «Ver histórico» para verlas.</p>
                     </template>
                   </div>
                 </td>

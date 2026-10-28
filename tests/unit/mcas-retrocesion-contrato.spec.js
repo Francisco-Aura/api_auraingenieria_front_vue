@@ -177,15 +177,22 @@ test('el formulario valida los tramos antes de enviar nada', async () => {
   ctx.formRetrocesion.metodo = 'NO_APLICA';
   assert.equal(ctx.validarRetrocesion().tramos, undefined);
 
-  // Obligatorios de la política.
+  // Obligatorios de la política (el código solo en una ya guardada: al crearla se genera).
   Object.assign(ctx.formRetrocesion, { codigo: '', idComercializadora: '', vigenciaDesde: '' });
   const obligatorios = ctx.validarRetrocesion();
   for (const campo of ['codigo', 'idComercializadora', 'vigenciaDesde']) assert.ok(obligatorios[campo], campo);
+  ctx.formRetrocesion.id = null;
+  assert.equal(ctx.validarRetrocesion().codigo, undefined);
 });
 
-test('los tramos con la unidad sin confirmar se avisan y no se pueden publicar', async () => {
+test('los tramos sin tipo de valor (datos antiguos) se avisan y no se pueden publicar; los nuevos no ofrecen «Sin elegir»', async () => {
   const html = plantilla(ADMIN);
-  assert.match(html, /v-if="t\.tipoValor === 'SIN_CONFIRMAR'"[\s\S]{0,200}Unidad sin confirmar/);
+  assert.match(html, /v-if="t\.tipoValor === 'SIN_CONFIRMAR'"[\s\S]{0,200}Tipo de valor sin elegir/);
+  assert.match(html, /<option v-for="tv in tiposValorDeTramo\(t\)"/);
+  const opciones = configuracion();
+  assert.deepEqual(opciones.tiposValorDeTramo({ tipoValor: 'PORCENTAJE' }).map((t) => t.value), ['PORCENTAJE', 'IMPORTE_FIJO']);
+  assert.deepEqual(opciones.tiposValorDeTramo({ tipoValor: 'SIN_CONFIRMAR' }).map((t) => t.value), ['PORCENTAJE', 'IMPORTE_FIJO', 'SIN_CONFIRMAR']);
+  assert.deepEqual(opciones.tiposValorDeTramo({ tipoValor: 'FACTOR' }).map((t) => t.value), ['PORCENTAJE', 'IMPORTE_FIJO', 'FACTOR']);
 
   const iberdrola = { ...POLITICA_PYME, id: 9, codigo: 'RET-IBERDROLA-2_0TD-20260101', tramos: [
     { unidad: 'DIAS', desdeValor: 0, hastaValor: 90, valor: 1, tipoValor: 'PORCENTAJE' },
@@ -204,7 +211,7 @@ test('los tramos con la unidad sin confirmar se avisan y no se pueden publicar',
   await ctx.cambiarEstadoRetrocesion(iberdrola, 'publicar');
   assert.equal(peticiones.length, 0, 'no debe pedir la publicación');
   assert.equal(ctx.avisos.at(-1).icon, 'error');
-  assert.match(ctx.avisos.at(-1).text, /sin confirmar/);
+  assert.match(ctx.avisos.at(-1).text, /sin tipo de valor/);
 
   await ctx.cambiarEstadoRetrocesion(POLITICA_PYME, 'publicar');
   assert.deepEqual(peticiones.filter((p) => p.metodo === 'post').map((p) => p.url), ['/mcas/politicas-retrocesion/7/publicar']);
@@ -223,8 +230,8 @@ test('el formulario de política explica qué pasa si a un contrato le correspon
   assert.doesNotMatch(html, /en lugar de elegir una/);
 });
 
-test('el indicador de retrocesión aclara que hoy no tiene efecto', () => {
-  const aclaracion = 'Reservado para la fase 3 (aplicar retrocesiones en bajas): hoy no tiene efecto';
+test('el interruptor de retrocesión aclara que hoy no tiene efecto', () => {
+  const aclaracion = 'Por ahora no tiene efecto: la retrocesión potencial se enseña siempre en cada propuesta, como dato informativo';
   const ctx = configuracion();
   const retrocesion = () => ctx.flagsVista.find((f) => f.codigo === 'MCAS_RETROCESSION_ENABLED');
 
@@ -237,7 +244,7 @@ test('el indicador de retrocesión aclara que hoy no tiene efecto', () => {
   assert.equal(retrocesion().descripcion, 'Aplicación de políticas de retrocesión');
   assert.equal(retrocesion().ayuda, `Aplicación de políticas de retrocesión\n${aclaracion}`);
 
-  // El resto de indicadores no cambia.
+  // El resto de interruptores no cambia.
   ctx.featureFlags = [{ codigo: 'MCAS_ENABLED', activo: true, descripcion: 'Cálculo automático' }];
   assert.equal(ctx.flagsVista.find((f) => f.codigo === 'MCAS_ENABLED').ayuda, 'Cálculo automático');
 

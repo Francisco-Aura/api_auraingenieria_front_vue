@@ -935,6 +935,15 @@ textarea.mcas-input {
   line-height: 1.45;
 }
 
+/* Ayuda bajo un campo (mismo tamaño que .error-text, en gris) */
+.campo-ayuda {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
 /* Interruptor (mismo control que el campo "activo" de Administración) */
 .toggle-switch {
   position: relative;

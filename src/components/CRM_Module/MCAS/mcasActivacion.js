@@ -1,7 +1,7 @@
 // Configuración MCAS: estado de cada comercializadora (qué tabla de comisiones
-// calcula hoy, qué falta por activar) y marcas «Pendiente de confirmar» con el
-// enlace a la pantalla donde se completa cada una. Sin dependencias de Vue para
-// poder probarlo con node --test.
+// calcula hoy, qué falta por activar) y marcas «Pendiente» con el enlace a la
+// pantalla donde se completa cada una. Sin dependencias de Vue para poder
+// probarlo con node --test.
 
 export const ESTADOS_COMERCIALIZADORA = {
   ACTIVA: { etiqueta: 'Activa', tono: 'success' },
@@ -15,7 +15,7 @@ const ETIQUETAS_ENLACE = {
   tabla: 'Revisar la tabla',
   regla: 'Abrir la regla',
   politica: 'Abrir la política',
-  'nueva-tabla': 'Crear la tabla',
+  'nueva-tabla': 'Crear su tabla',
 };
 
 const dosCifras = (n) => String(n).padStart(2, '0');
@@ -49,13 +49,7 @@ const vigenteEn = (c, dia) => (!c.vigenciaDesde || c.vigenciaDesde <= dia) && (!
 const mismaId = (a, b) => a != null && b != null && String(a) === String(b);
 const citar = (lista) => lista.map((c) => `«${nombreConjunto(c)}»`).join(' y ');
 
-/** Regla desactivada que la Hoja2 del cliente deja en revisión manual (hasta que el cliente la confirme). */
-export function reglaPendienteHoja2(r) {
-  if (!r || r.activo !== false) return false;
-  const texto = [r.descripcion, r.localizadorOrigen].filter(Boolean).join(' ');
-  return /hoja\s*2/i.test(texto) && /(manual|confirm)/i.test(texto);
-}
-
+// Tramos sin tipo de valor elegido (SIN_CONFIRMAR, de datos antiguos): la política no se puede publicar.
 const tieneSinConfirmar = (p) => (p?.tramos || []).some((t) => t.tipoValor === 'SIN_CONFIRMAR');
 
 function marca(tipo, texto, enlace) {
@@ -69,7 +63,7 @@ function marca(tipo, texto, enlace) {
  * marca las que tienen un borrador o una tabla validada sin ninguna versión vigente.
  */
 export function estadoPorComercializadora({
-  conjuntos = [], comercializadoras = [], politicas = [], reglasPorConjunto = {}, hoy, indexadoActivo = false,
+  conjuntos = [], comercializadoras = [], politicas = [], hoy, indexadoActivo = false,
 } = {}) {
   const ids = new Map();
   for (const c of comercializadoras) if (c?.id != null) ids.set(String(c.id), c.nombre || `#${c.id}`);
@@ -106,7 +100,7 @@ export function estadoPorComercializadora({
       texto = `Validada sin publicar (${citar(validadas)})`;
     } else {
       estado = 'SIN_TABLA';
-      texto = 'Sin tabla: sus contratos se completan a mano';
+      texto = 'Sin tabla: las comisiones se completan a mano';
     }
 
     const pendientes = [];
@@ -120,19 +114,13 @@ export function estadoPorComercializadora({
       pendientes.push(marca('tabla', `Tabla «${nombreConjunto(c)}» validada sin publicar: actívela o vuélvala a borrador`,
         { tipo: 'tabla', id: c.id }));
     }
-    for (const c of propios.filter((x) => x.estado !== 'ARCHIVADO')) {
-      for (const r of (reglasPorConjunto[c.id] || []).filter(reglaPendienteHoja2)) {
-        pendientes.push(marca('regla',
-          `Regla «${nombreRegla(r)}» desactivada: la Hoja2 la deja en revisión manual. Actívela si el cliente lo confirma`,
-          { tipo: 'regla', id: r.id, idConjunto: c.id }));
-      }
-    }
     for (const p of politicas.filter((x) => mismaId(x.idComercializadora, id) && x.estado !== 'ARCHIVADO' && tieneSinConfirmar(x))) {
-      pendientes.push(marca('politica', `Retrocesión «${nombrePolitica(p)}»: hay tramos con la unidad sin confirmar`,
+      pendientes.push(marca('politica',
+        `Retrocesión «${nombrePolitica(p)}»: hay tramos sin tipo de valor; elija «Porcentaje» o «Importe (€)» para poder publicarla`,
         { tipo: 'politica', id: p.id }));
     }
     if (estado === 'SIN_TABLA') {
-      pendientes.push(marca('sin-tabla', 'Sin tabla de comisiones: sus contratos se completan a mano hasta que la cree',
+      pendientes.push(marca('sin-tabla', 'Sin tabla de comisiones: las comisiones de sus contratos se completan a mano hasta que la cree',
         { tipo: 'nueva-tabla', idComercializadora: Number.isNaN(Number(id)) ? id : Number(id) }));
     }
 
@@ -151,16 +139,24 @@ export function estadoPorComercializadora({
   return filas.sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es'));
 }
 
-/** Comprobación para el panel «Estado del módulo»: listo solo sin borradores ni validadas sin versión vigente. */
+/**
+ * Comprobación para el panel «Estado del módulo»: lista solo con alguna tabla activa hoy y sin
+ * borradores ni validadas pendientes de activar (las comercializadoras sin tabla se completan a mano).
+ */
 export function comprobacionActivacion(filas = []) {
   const faltan = filas.filter((f) => f.pendienteActivar);
+  const hayActiva = filas.some((f) => f.estado === 'ACTIVA');
+  let detalle = 'Todas las comercializadoras con tabla tienen una versión vigente.';
+  if (faltan.length) {
+    detalle = `Falta activar la tabla de: ${faltan.map((f) => f.nombre).join(', ')}. Mientras tanto, sus contratos quedan en revisión manual.`;
+  } else if (!hayActiva) {
+    detalle = 'Todavía no hay ninguna tabla de comisiones activa: hasta que active una, las comisiones se completan a mano.';
+  }
   return {
     id: 'activacion',
-    ok: faltan.length === 0,
+    ok: faltan.length === 0 && hayActiva,
     titulo: 'Tablas de comisiones activadas',
-    detalle: faltan.length
-      ? `Falta activar la tabla de: ${faltan.map((f) => f.nombre).join(', ')}. Mientras tanto, sus contratos quedan en revisión manual.`
-      : 'Todas las comercializadoras con tabla tienen una versión vigente.',
+    detalle,
     faltan: faltan.map((f) => f.nombre),
   };
 }

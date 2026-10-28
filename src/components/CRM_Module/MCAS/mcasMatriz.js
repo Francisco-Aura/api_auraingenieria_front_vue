@@ -457,6 +457,30 @@ export function etiquetaCabecera(tipo, valor) {
   return tipo === 'categoria' ? String(valor ?? '') : etiquetaIntervalo(valor);
 }
 
+const normalizarTexto = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().replace(/\s+/g, ' ').toUpperCase();
+
+/**
+ * Producto escrito en una cabecera (su nombre o su código, sin distinguir mayúsculas ni
+ * tildes) → { valor: código } o { error }. El motor compara el código del producto del
+ * contrato, así que en la tabla se guarda el código aunque se enseñe el nombre.
+ */
+export function resolverProducto(texto, productos = []) {
+  const t = normalizarTexto(texto);
+  if (!t) return { error: 'Escriba o elija un producto' };
+  if (!productos.length) {
+    return { error: 'Esta comercializadora todavía no tiene productos: créelos antes en la pestaña «Productos» de Configuración MCAS' };
+  }
+  const p = productos.find((x) => normalizarTexto(x.codigo) === t) || productos.find((x) => normalizarTexto(x.nombre) === t);
+  return p ? { valor: p.codigo }
+    : { error: `No hay ningún producto «${String(texto).trim()}» en esta comercializadora: elíjalo de la lista o créelo en la pestaña «Productos»` };
+}
+
+/** Nombre del producto de un código (o el propio código si ya no existe). */
+export function nombreProducto(codigo, productos = []) {
+  const t = normalizarTexto(codigo);
+  return productos.find((x) => normalizarTexto(x.codigo) === t)?.nombre || String(codigo ?? '');
+}
+
 function posicionOrdenada(eje, valor) {
   if (eje.tipo !== 'numerica') return eje.valores.length;
   const i = eje.valores.findIndex((v) => compararIntervalos(valor, v) < 0);
@@ -650,7 +674,9 @@ export function aplicarPegado(rejilla, pegado, { pestana = 0, fila = 0, columna 
 }
 
 /** Tabla nueva a partir de un bloque pegado con cabeceras (primera fila y primera columna con los tramos). */
-export function rejillaDesdePegado(pegado, { filas, columnas = null, idRegla = null, unidad = UNIDAD_POR_DEFECTO } = {}) {
+export function rejillaDesdePegado(pegado, { filas, columnas = null, idRegla = null, unidad = UNIDAD_POR_DEFECTO, leer = null } = {}) {
+  // `leer(eje, texto)` permite traducir las cabeceras (p. ej. nombres de producto a su código).
+  const leerCabeceraEje = (e, texto) => (leer ? leer(e, texto) : leerCabecera(e.tipo, texto));
   if (!pegado?.cabeceraFilas) {
     return { ok: false, motivo: 'Copie también la primera columna del Excel, con los tramos de cada fila' };
   }
@@ -659,13 +685,13 @@ export function rejillaDesdePegado(pegado, { filas, columnas = null, idRegla = n
   }
   const rejilla = rejillaVacia({ filas, columnas, idRegla, unidad });
   for (const texto of pegado.cabeceraFilas) {
-    const valor = leerCabecera(rejilla.filas.tipo, texto);
+    const valor = leerCabeceraEje(rejilla.filas, texto);
     if (!valor) return { ok: false, motivo: `No se entiende el tramo «${texto}» de la primera columna` };
     rejilla.filas.valores.push(valor);
   }
   for (const texto of columnas ? pegado.cabeceraColumnas : []) {
-    const valor = leerCabecera(rejilla.columnas.tipo, texto);
-    if (!valor) return { ok: false, motivo: `No se entiende el tramo «${texto}» de la primera fila` };
+    const valor = leerCabeceraEje(rejilla.columnas, texto);
+    if (!valor) return { ok: false, motivo: `No se entiende «${texto}» de la primera fila` };
     rejilla.columnas.valores.push(valor);
   }
   rejilla.celdas = matrizVacia(1, rejilla.filas.valores.length, numeroColumnas(rejilla));

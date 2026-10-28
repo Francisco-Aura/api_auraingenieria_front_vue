@@ -109,8 +109,11 @@ test('el contrato dice qué le falta para calcular la comisión MCAS', async () 
   assert.deepEqual(ctx.mcasFaltan, []);
   assert.equal(ctx.mcasListo, true);
 
+  // «Sin comisión automática» es una elección: no falta nada y la cabecera no sale en naranja.
   ctx.nuevoContrato.mcasTipoPrecio = '';
-  assert.deepEqual(ctx.mcasFaltan, ['Tipo de precio']);
+  assert.deepEqual(ctx.mcasFaltan, []);
+  assert.equal(ctx.cabeceraMcas.tono, 'neutro');
+  assert.equal(ctx.marcaMcas, 'neutro');
 });
 
 // ---------------------------------------------------------------------------
