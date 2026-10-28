@@ -50,6 +50,16 @@ html.tema-oscuro .swal2-popup { background: var(--color-surface-raised); color: 
 html.tema-oscuro .swal2-title,
 html.tema-oscuro .swal2-html-container { color: var(--color-text); }
 
+/* ===== Paneles flotantes: sobre fondo oscuro la sombra no se ve, la elevación la dan el borde y la sombra fuerte ===== */
+html.tema-oscuro .notificaciones-menu,
+html.tema-oscuro .dropdown-menu,
+html.tema-oscuro .dropdown-clientes,
+html.tema-oscuro .mencion-dropdown {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
 /* ===== Texto sobre el amarillo de marca: oscuro (el blanco no se lee sobre amarillo) ===== */
 html.tema-oscuro .panel-header,
 html.tema-oscuro .panel-header h2,

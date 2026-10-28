@@ -100,8 +100,13 @@ function fromHsl(h, s, l, a) {
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v))
 
+/** Negro translúcido (velos de hover, divisores): sobre fondo oscuro no se ve, hay que pasarlo a blanco translúcido. */
+const isFaintBlack = (c) => c.a >= 0.02 && c.a < 0.3 && c.r <= 40 && c.g <= 40 && c.b <= 40
+const faintWhite = (alpha) => `rgba(255, 255, 255, ${Math.round(alpha * 100) / 100})`
+
 /** Fondo claro -> fondo oscuro del mismo tono. null = no se toca. */
 function darkBackground(color) {
+  if (isFaintBlack(color)) return faintWhite(Math.min(0.14, color.a * 1.2))
   if (color.a < 0.6) return null
   const { h, s, l } = toHsl(color)
   if (l < 0.72) return null
@@ -111,6 +116,7 @@ function darkBackground(color) {
 
 /** Borde claro -> borde oscuro. */
 function darkBorder(color) {
+  if (isFaintBlack(color)) return faintWhite(Math.min(0.35, color.a * 1.8 + 0.06))
   if (color.a < 0.6) return null
   const { h, s, l } = toHsl(color)
   if (l < 0.72) return null
