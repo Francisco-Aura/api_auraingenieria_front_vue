@@ -53,13 +53,40 @@ test('Cancelar y Anterior son neutros; el rojo queda para dar de baja o eliminar
   }
 });
 
-test('los iconos de acción de las tablas son cuadrados en tono suave del mismo tamaño', () => {
+test('los iconos de acción son cuadrados con contorno: fondo blanco, borde e icono del color de la acción', () => {
   const css = leer(CSS_BOTONES);
   const base = regla(css, '.btn-icon:is(');
   assert.match(base, /width:\s*32px\s*!important/);
   assert.match(base, /border-radius:\s*8px\s*!important/);
-  assert.match(regla(css, '.btn-icon.btn-edit'), /background:\s*#e6f1fb\s*!important/);
-  assert.match(regla(css, '.btn-icon:is(.btn-delete'), /background:\s*#fcebeb\s*!important/);
+  assert.match(base, /background:\s*#fff\s*!important/);
+  assert.match(base, /border:\s*1\.5px solid currentColor\s*!important/);
+  assert.match(base, /font-size:\s*1\.05rem\s*!important/, 'icono de 15 px (antes 13 px)');
+});
+
+test('cada acción lleva su color original de PRO, igual en tablas y modales', () => {
+  const css = leer(CSS_BOTONES);
+  const color = (trozo) => regla(css, trozo, 'color:').match(/(?:^|[;\s])color:\s*(#[0-9a-f]{6})/i)[1].toLowerCase();
+  assert.equal(color('.btn-icon.btn-edit:not'), '#2196f3');
+  assert.equal(color('.btn-icon.btn-view-details:not'), '#0062cc', 'más oscuro que editar: en Puntos van juntos');
+  assert.equal(color('.btn-icon:is(.btn-view, .btn-approve):not'), '#43a047');
+  assert.equal(color('.btn-icon.btn-contracts:not'), '#43a047');
+  assert.equal(color('.btn-icon:is(.btn-add, .btn-renew, .btn-services):not'), '#ff9800');
+  assert.equal(color('.btn-icon:is(.btn-delete, .btn-reject):not'), '#dc3545');
+  assert.equal(color('.btn-icon:is(.btn-download, .btn-payment):not'), '#0f766e');
+  assert.equal(color('.btn-icon.btn-archive:not'), '#495057');
+  // Ni rastro de los cuadrados pastel ni de colores propios dentro de los modales
+  assert.doesNotMatch(reglas(css, '.btn-icon').join('\n'), /#e6f1fb|#eaf3de|#faeeda|#fcebeb|#e1f5ee|#eeedfe|#fdf0dd/);
+  assert.doesNotMatch(css, /\.modal[\w-]*\s+\.btn-icon/);
+});
+
+test('al pasar el ratón el botón se rellena de su tono suave, sin moverse', () => {
+  const css = leer(CSS_BOTONES);
+  const hover = (trozo) => regla(css, trozo + ':not(#aura-boton):hover', 'background');
+  assert.match(hover('.btn-icon.btn-edit'), /background:\s*#e9f4fe\s*!important/);
+  assert.match(hover('.btn-icon:is(.btn-delete, .btn-reject)'), /background:\s*#fcebec\s*!important/);
+  for (const b of reglas(css, '.btn-icon:is(.btn-edit').filter(r => r.includes('transform'))) {
+    assert.match(b, /transform:\s*none/);
+  }
 });
 
 test('los botones del pie de los formularios de cliente y punto de suministro siempre se ven', () => {

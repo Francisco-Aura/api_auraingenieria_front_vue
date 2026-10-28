@@ -50,10 +50,11 @@ test('en Puntos de Suministro cada acción tiene su color: consultar, modificar,
   const color = (clase) => {
     const bloque = sinComentarios(css).split('}').find((b) => {
       const selector = b.split('{')[0];
-      return new RegExp(`\\.${clase}(?![\\w-])`).test(selector) && !selector.includes(':hover') && /background:\s*#/.test(b);
+      // Con el contorno el fondo es blanco en todos: la acción la distingue el color del icono y del borde
+      return new RegExp(`\\.${clase}(?![\\w-])`).test(selector) && !selector.includes(':hover') && /(?:^|[;{\s])color:\s*#/.test(b);
     });
     assert.ok(bloque, `sin color para ${clase}`);
-    return bloque.match(/background:\s*(#[0-9a-f]{6})/i)[1];
+    return bloque.match(/(?:^|[;{\s])color:\s*(#[0-9a-f]{6})/i)[1];
   };
   const colores = ['btn-view-details', 'btn-edit', 'btn-contracts', 'btn-services', 'btn-delete'].map(color);
   assert.equal(new Set(colores).size, colores.length, `colores repetidos: ${colores}`);

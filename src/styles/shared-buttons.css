@@ -247,7 +247,10 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Iconos de acción de las tablas
+ * Iconos de acción de tablas y modales
+ * Contorno: fondo blanco y borde e icono del color de la acción (se ven sobre filas
+ * blancas, amarillas o rosas). Los colores son los de siempre en producción, iguales
+ * en tablas y modales.
  * ------------------------------------------------------------------------- */
 
 .btn-icon:is(.btn-edit, .btn-view, .btn-view-details, .btn-add, .btn-renew, .btn-delete, .btn-reject,
@@ -256,12 +259,13 @@
   height: 32px !important;
   min-width: 32px !important;
   padding: 0 !important;
-  border: none !important;
+  background: #fff !important;
+  border: 1.5px solid currentColor !important;
   border-radius: 8px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 0.95rem !important;
+  font-size: 1.05rem !important;
   line-height: 1 !important;
   box-shadow: none !important;
   transform: none !important;
@@ -281,29 +285,32 @@
   box-shadow: none !important;
 }
 
-.btn-icon.btn-edit:not(#aura-boton) { background: #e6f1fb !important; color: #185fa5 !important; }
-.btn-icon.btn-edit:not(#aura-boton):hover:not(:disabled) { background: #cfe3f7 !important; }
+/* Al pasar el ratón, el relleno es el 10 % de su color sobre blanco */
+.btn-icon.btn-edit:not(#aura-boton) { color: #2196f3 !important; }
+.btn-icon.btn-edit:not(#aura-boton):hover:not(:disabled) { background: #e9f4fe !important; }
 
-.btn-icon:is(.btn-view, .btn-view-details, .btn-approve):not(#aura-boton) { background: #eaf3de !important; color: #3b6d11 !important; }
-.btn-icon:is(.btn-view, .btn-view-details, .btn-approve):not(#aura-boton):hover:not(:disabled) { background: #d8eac2 !important; }
+/* El ojo de Puntos de Suministro, más oscuro que el lápiz que lleva al lado */
+.btn-icon.btn-view-details:not(#aura-boton) { color: #0062cc !important; }
+.btn-icon.btn-view-details:not(#aura-boton):hover:not(:disabled) { background: #e6effa !important; }
 
-.btn-icon:is(.btn-add, .btn-renew):not(#aura-boton) { background: #faeeda !important; color: #854f0b !important; }
-.btn-icon:is(.btn-add, .btn-renew):not(#aura-boton):hover:not(:disabled) { background: #f6dfb8 !important; }
+.btn-icon:is(.btn-view, .btn-approve):not(#aura-boton) { color: #43a047 !important; }
+.btn-icon:is(.btn-view, .btn-approve):not(#aura-boton):hover:not(:disabled) { background: #ecf6ed !important; }
 
-.btn-icon:is(.btn-delete, .btn-reject):not(#aura-boton) { background: #fcebeb !important; color: #a32d2d !important; }
-.btn-icon:is(.btn-delete, .btn-reject):not(#aura-boton):hover:not(:disabled) { background: #f8d6d6 !important; }
+.btn-icon.btn-contracts:not(#aura-boton) { color: #43a047 !important; }
+.btn-icon.btn-contracts:not(#aura-boton):hover:not(:disabled) { background: #ecf6ed !important; }
 
-.btn-icon:is(.btn-download, .btn-payment):not(#aura-boton) { background: #e1f5ee !important; color: #0f6e56 !important; }
-.btn-icon:is(.btn-download, .btn-payment):not(#aura-boton):hover:not(:disabled) { background: #c8ebdf !important; }
+.btn-icon:is(.btn-add, .btn-renew, .btn-services):not(#aura-boton) { color: #ff9800 !important; }
+.btn-icon:is(.btn-add, .btn-renew, .btn-services):not(#aura-boton):hover:not(:disabled) { background: #fff5e6 !important; }
 
-.btn-icon.btn-archive:not(#aura-boton) { background: #eef1f5 !important; color: #44546a !important; }
-/* Puntos de Suministro: contratos (violeta) y servicios (ámbar), distintos del ojo de consultar */
-.btn-icon.btn-contracts:not(#aura-boton) { background: #eeedfe !important; color: #534ab7 !important; }
-.btn-icon.btn-contracts:not(#aura-boton):hover:not(:disabled) { background: #dcdafb !important; }
+.btn-icon:is(.btn-delete, .btn-reject):not(#aura-boton) { color: #dc3545 !important; }
+.btn-icon:is(.btn-delete, .btn-reject):not(#aura-boton):hover:not(:disabled) { background: #fcebec !important; }
 
-.btn-icon.btn-services:not(#aura-boton) { background: #fdf0dd !important; color: #8a520a !important; }
-.btn-icon.btn-services:not(#aura-boton):hover:not(:disabled) { background: #f8e0bb !important; }
-.btn-icon.btn-archive:not(#aura-boton):hover:not(:disabled) { background: #dfe5ec !important; }
+/* Pagos (€) y descargar: verde azulado, más oscuro que el verde del ojo */
+.btn-icon:is(.btn-download, .btn-payment):not(#aura-boton) { color: #0f766e !important; }
+.btn-icon:is(.btn-download, .btn-payment):not(#aura-boton):hover:not(:disabled) { background: #e7f1f0 !important; }
+
+.btn-icon.btn-archive:not(#aura-boton) { color: #495057 !important; }
+.btn-icon.btn-archive:not(#aura-boton):hover:not(:disabled) { background: #edeeee !important; }
 
 .btn-icon:is(.btn-edit, .btn-view, .btn-view-details, .btn-add, .btn-renew, .btn-delete, .btn-reject,
   .btn-download, .btn-payment, .btn-archive, .btn-approve, .btn-contracts, .btn-services):not(#aura-boton):disabled {
