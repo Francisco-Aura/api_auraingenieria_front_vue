@@ -1,4 +1,4 @@
-@import './styles/tema-oscuro.css';
+
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 :root {
@@ -232,21 +232,4 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-.boton-tema {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: var(--z-toast, 9999);
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  box-shadow: var(--shadow-card);
 }

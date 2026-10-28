@@ -234,10 +234,7 @@ test('no quedan hojas de estilo sueltas que nadie importa', () => {
     }
   };
   recorrer(path.join(raiz, 'src'));
-  // También cuenta el @import desde otra hoja (el modo oscuro se carga así desde App.css)
-  const codigo = fuentes.filter(f => /\.(vue|js)$/.test(f)).map(f => fs.readFileSync(f, 'utf8'))
-    .concat(fuentes.filter(f => f.endsWith('.css')).map(f => (fs.readFileSync(f, 'utf8').match(/@import[^;]+;/g) || []).join('\n')))
-    .join('\n');
+  const codigo = fuentes.filter(f => /\.(vue|js)$/.test(f)).map(f => fs.readFileSync(f, 'utf8')).join('\n');
   for (const hoja of fuentes.filter(f => f.endsWith('.css'))) {
     if (!codigo.includes(path.basename(hoja))) huerfanas.push(path.relative(raiz, hoja));
   }
