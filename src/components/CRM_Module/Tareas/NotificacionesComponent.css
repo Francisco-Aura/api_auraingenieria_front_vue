@@ -8,89 +8,76 @@
   position: relative;
 }
 
-.notification-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  font-size: 1.1rem;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: var(--aura-transicion);
+/* Campana: botón redondo de 40 px en el gris pizarra del texto. Al pasar el ratón o con el
+   panel abierto solo cambia el fondo; ni late ni cambia de color (la urgencia la lleva el
+   contador). Con .btn-icon para ganar a su tamaño y su borde de los botones del panel. */
+.notification-btn.btn-icon {
   position: relative;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-text-dark, #2c3e50);
+  cursor: pointer;
+  transition: var(--aura-transicion);
 }
 
-.notification-btn:hover {
-  background-color: rgba(var(--color-notification-orange-rgb), 0.1);
-  color: var(--color-notification-orange);
+.notification-btn.btn-icon:hover:not(:disabled),
+.notification-btn.btn-icon[aria-expanded="true"] {
+  background-color: rgba(44, 62, 80, 0.08);
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--color-text-dark, #2c3e50);
 }
 
-/* Naranja oscuro: el blanco sobre el naranja claro de antes no llegaba a 3:1.
-   Ancho mínimo en vez de fijo: con tres cifras («99+») no se sale del círculo. */
+/* El mismo foco que el resto de botones de la aplicación */
+.notification-btn.btn-icon:focus-visible {
+  outline: none;
+  box-shadow: var(--aura-btn-foco);
+}
+
+/* Un solo contador, arriba a la derecha y por fuera de la campana: con «99+» crece hacia la
+   derecha y no la tapa. Naranja oscuro (el blanco encima pasa de 4,5:1) y sin halo. */
 .notification-badge {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  background: #c2410c;
-  color: white;
-  border-radius: 10px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 4px;
+  top: 3px;
+  left: 52%;
+  right: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
   box-sizing: border-box;
+  border-radius: 9px;
+  border: 2px solid var(--color-surface, #fff);
+  background: #c2410c;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  font-size: 0.7rem;
-  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: pulse-scale-bell 2s 3; /* tres pulsos y quieto */
-  box-shadow: 0 2px 8px rgba(var(--color-notification-orange-rgb), 0.3);
-  border: 2px solid white;
+  pointer-events: none;
 }
 
-@keyframes pulse-scale-bell {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-  100% { transform: scale(1); }
+/* Alguna tarea vence hoy: contador en rojo con tres aros que se abren al aparecer y luego
+   quieto (un aviso que no para acaba siendo ruido) */
+.notification-badge--urgente {
+  background: #dc2626;
+  animation: aviso-urgente 1.6s ease-out 3;
 }
 
-@keyframes pulse-urgente {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
-  50% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+@keyframes aviso-urgente {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55); }
+  100% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
 }
 
-/* Unos pulsos al aparecer para llamar la atención y luego quieto: un pulso
-   infinito repinta sin parar y acaba siendo ruido visual */
-.campana-urgente {
-  animation: pulse-urgente 1.5s 4 !important;
-  color: #ef4444 !important;
-}
-
-/* Su !important ganaba a la regla global de «reducir movimiento» */
 @media (prefers-reduced-motion: reduce) {
-  .campana-urgente {
-    animation: none !important;
-  }
-}
-
-.vencimiento-badge-urgente {
-  position: absolute;
-  bottom: -4px;
-  right: -4px;
-  background: #ef4444;
-  color: white;
-  border-radius: 50%;
-  width: 16px;
-  height: 16px;
-  font-size: 0.65rem;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid white;
+  .notification-badge--urgente { animation: none; }
 }
 
 .vencimiento-hoy-banner {
@@ -292,14 +279,6 @@
   background-color: rgba(255, 255, 255, 0.25);
   border-color: rgba(255, 255, 255, 0.4);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* La campana también es .btn-icon: sobre la cabecera blanca de la página se queda con
-   su tono naranja, sin el blanco translúcido ni la sombra de los botones del menú */
-.notification-btn.btn-icon:hover:not(:disabled) {
-  background-color: rgba(var(--color-notification-orange-rgb), 0.1);
-  border-color: transparent;
-  box-shadow: none;
 }
 
 .btn-icon:disabled {
@@ -682,17 +661,7 @@
 }
 
 .notification-btn i {
-  font-size: 1.3rem;
-}
-
-.notification-badge {
-  top: -3px; 
-  right: -3px; 
-  min-width: 18px;
-  height: 18px;
-  border-radius: 9px;
-  font-size: 0.7rem;
-  outline: 2px solid white;
+  font-size: 1.25rem;
 }
 
 /* Estilos para botón de sonido */

@@ -6,14 +6,13 @@
         ref="botonCampana"
         type="button"
         class="btn-icon notification-btn"
-        :class="{ 'campana-urgente': tareasVenciendoHoyLista.length > 0 }"
-        aria-label="Notificaciones"
-        title="Notificaciones"
+        :aria-label="etiquetaCampana"
+        :title="etiquetaCampana"
         :aria-expanded="menuAbierto ? 'true' : 'false'"
       >
-        <i class="fas fa-bell"></i>
-        <span v-if="contadorNoLeidas > 0" class="notification-badge">{{ contadorNoLeidas > 99 ? '99+' : contadorNoLeidas }}</span>
-        <span v-if="tareasVenciendoHoyLista.length > 0" class="vencimiento-badge-urgente" :title="`${tareasVenciendoHoyLista.length} tarea(s) vence(n) hoy`">!</span>
+        <i :class="iconoCampana" aria-hidden="true"></i>
+        <!-- Un solo contador: rojo si alguna tarea vence hoy («!» si no hay ninguna sin leer) -->
+        <span v-if="textoContadorCampana" class="notification-badge" :class="{ 'notification-badge--urgente': hayVencimientosHoy }" aria-hidden="true">{{ textoContadorCampana }}</span>
       </button>
     </div>
 
@@ -296,6 +295,24 @@ export default {
     }
   },
   computed: {
+    hayVencimientosHoy() {
+      return this.tareasVenciendoHoyLista.length > 0
+    },
+    textoContadorCampana() {
+      if (this.contadorNoLeidas > 0) return this.contadorNoLeidas > 99 ? '99+' : String(this.contadorNoLeidas)
+      return this.hayVencimientosHoy ? '!' : ''
+    },
+    // Hueca sin nada pendiente; llena si hay avisos sin leer o tareas que vencen hoy
+    iconoCampana() {
+      return this.contadorNoLeidas > 0 || this.hayVencimientosHoy ? 'fas fa-bell' : 'far fa-bell'
+    },
+    etiquetaCampana() {
+      const partes = []
+      if (this.contadorNoLeidas > 0) partes.push(`${this.contadorNoLeidas} sin leer`)
+      const hoy = this.tareasVenciendoHoyLista.length
+      if (hoy > 0) partes.push(hoy === 1 ? '1 tarea vence hoy' : `${hoy} tareas vencen hoy`)
+      return partes.length ? `Notificaciones: ${partes.join(' · ')}` : 'Notificaciones'
+    }
   },
   mounted() {
     this.inicializar()
