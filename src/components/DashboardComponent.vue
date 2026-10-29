@@ -39,12 +39,6 @@
           <div v-if="sidebarCollapsed" class="tooltip">Planificador</div>
         </router-link>
 
-        <router-link to="/dashboard/registro-horario" class="menu-item" active-class="active">
-          <i class="fas fa-user-clock menu-icon"></i>
-          <span v-if="!sidebarCollapsed" class="menu-text">Registro horario</span>
-          <div v-if="sidebarCollapsed" class="tooltip">Registro horario</div>
-        </router-link>
-
         <router-link v-if="moduloTareasActivo" to="/dashboard/tareas" class="menu-item" active-class="active">
           <i class="fas fa-tasks menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Gestión de Tareas</span>
@@ -55,7 +49,13 @@
           <i class="fas fa-cog menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Administración</span>
           <div v-if="sidebarCollapsed" class="tooltip">Administración</div>
-        </router-link> 
+        </router-link>
+
+        <router-link to="/dashboard/registro-horario" class="menu-item" active-class="active">
+          <i class="fas fa-user-clock menu-icon"></i>
+          <span v-if="!sidebarCollapsed" class="menu-text">Registro horario</span>
+          <div v-if="sidebarCollapsed" class="tooltip">Registro horario</div>
+        </router-link>
       </div>
 
       <!-- User profile at the bottom -->
