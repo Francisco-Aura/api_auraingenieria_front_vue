@@ -45,11 +45,17 @@
           <div v-if="sidebarCollapsed" class="tooltip">Gestión de Tareas</div>
         </router-link>
         
+        <router-link to="/dashboard/registro-horario" class="menu-item" active-class="active">
+          <i class="fas fa-user-clock menu-icon"></i>
+          <span v-if="!sidebarCollapsed" class="menu-text">Registro horario</span>
+          <div v-if="sidebarCollapsed" class="tooltip">Registro horario</div>
+        </router-link>
+
         <router-link v-if="nivelAcceso === 1" to="/dashboard/administracion" class="menu-item" active-class="active">
           <i class="fas fa-cog menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Administración</span>
           <div v-if="sidebarCollapsed" class="tooltip">Administración</div>
-        </router-link> 
+        </router-link>
       </div>
 
       <!-- User profile at the bottom -->
@@ -118,7 +124,8 @@ export default {
         '/dashboard/informes': 'Informes',
         '/dashboard/administracion': 'Administración',
         '/dashboard/tareas': 'Gestión de Tareas',
-        '/dashboard/planificador': 'Planificador'
+        '/dashboard/planificador': 'Planificador',
+        '/dashboard/registro-horario': 'Registro horario'
       },
       moduloTareasActivo: false
     };
@@ -130,7 +137,7 @@ export default {
     },
     // Aplicaciones que se muestran dentro de la página (iframe) y gestionan su propio desplazamiento
     esAplicacionIncrustada() {
-      return this.$route.path === '/dashboard/planificador';
+      return ['/dashboard/planificador', '/dashboard/registro-horario'].includes(this.$route.path);
     }
   },
   methods: {
