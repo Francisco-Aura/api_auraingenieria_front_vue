@@ -96,6 +96,25 @@ html.tema-oscuro .notification-btn:focus-visible { box-shadow: 0 0 0 3px var(--c
 html.tema-oscuro .notification-badge { color: #000; border-color: var(--color-surface); }
 html.tema-oscuro .vencimiento-badge-urgente { border-color: var(--color-surface); }
 
+/* ===== Botones de la cabecera del menú de notificaciones (sonido, ver leídas, marcar todas, actualizar) =====
+   En claro son amarillos con icono negro; el desactivado es ese amarillo al 45 % de opacidad, que sobre la cabecera oscura
+   queda como un cuadrado mostaza con el icono apagado. Aquí los cuatro llevan el mismo estilo y el desactivado solo se atenúa. */
+html.tema-oscuro .notificaciones-header .btn-icon {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f4f7fa;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+html.tema-oscuro .notificaciones-header .btn-icon:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  filter: none;
+}
+html.tema-oscuro .notificaciones-header .btn-icon:disabled {
+  background: rgba(255, 255, 255, 0.05);
+  color: #a7b4c1;
+  border-color: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+}
+
 /* ===== Paneles flotantes: sobre fondo oscuro la sombra no se ve, la elevación la dan el borde y la sombra fuerte ===== */
 html.tema-oscuro .notificaciones-menu,
 html.tema-oscuro .dropdown-menu,
