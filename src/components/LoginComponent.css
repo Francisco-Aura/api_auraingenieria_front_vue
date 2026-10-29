@@ -63,6 +63,9 @@
 
 .input-field {
   width: 100%;
+  /* Sin el margen superior que dan a todos los input en assets/styles.css: con él el icono (centrado en .input-group)
+     quedaba más arriba que el texto del campo */
+  margin: 0;
   padding: 0.6rem 0.8rem 0.6rem 2.2rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);

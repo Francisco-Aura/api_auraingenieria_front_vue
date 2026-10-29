@@ -45,16 +45,16 @@
           <div v-if="sidebarCollapsed" class="tooltip">Gestión de Tareas</div>
         </router-link>
         
-        <router-link v-if="nivelAcceso === 1" to="/dashboard/administracion" class="menu-item" active-class="active">
-          <i class="fas fa-cog menu-icon"></i>
-          <span v-if="!sidebarCollapsed" class="menu-text">Administración</span>
-          <div v-if="sidebarCollapsed" class="tooltip">Administración</div>
-        </router-link>
-
         <router-link to="/dashboard/registro-horario" class="menu-item" active-class="active">
           <i class="fas fa-user-clock menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Registro horario</span>
           <div v-if="sidebarCollapsed" class="tooltip">Registro horario</div>
+        </router-link>
+
+        <router-link v-if="nivelAcceso === 1" to="/dashboard/administracion" class="menu-item" active-class="active">
+          <i class="fas fa-cog menu-icon"></i>
+          <span v-if="!sidebarCollapsed" class="menu-text">Administración</span>
+          <div v-if="sidebarCollapsed" class="tooltip">Administración</div>
         </router-link>
       </div>
 

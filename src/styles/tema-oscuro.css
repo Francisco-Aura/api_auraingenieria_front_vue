@@ -83,6 +83,19 @@ html.tema-oscuro .loading-text-main {
   -webkit-text-fill-color: transparent;
 }
 
+/* ===== Campana de notificaciones =====
+   El botón es #2c3e50 con !important: sobre la cabecera oscura casi no se distingue, así que se aclara y lleva un aro.
+   El número del distintivo va sobre amarillo: texto negro (su color y su fondo están en reglas distintas y el generador
+   lo había pasado a claro). */
+html.tema-oscuro .notification-btn {
+  background: #34465a !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+html.tema-oscuro .notification-btn:hover { background: #3f536a !important; }
+html.tema-oscuro .notification-btn:focus-visible { box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 5px #fcd700; }
+html.tema-oscuro .notification-badge { color: #000; border-color: var(--color-surface); }
+html.tema-oscuro .vencimiento-badge-urgente { border-color: var(--color-surface); }
+
 /* ===== Paneles flotantes: sobre fondo oscuro la sombra no se ve, la elevación la dan el borde y la sombra fuerte ===== */
 html.tema-oscuro .notificaciones-menu,
 html.tema-oscuro .dropdown-menu,
