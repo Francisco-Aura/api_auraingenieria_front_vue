@@ -11,6 +11,7 @@ const InformesComponent = () => import('@/components/CRM_Module/Informes/Informe
 const AdministracionComponent = () => import('@/components/CRM_Module/Administracion/AdministracionComponent.vue');
 const TareasComponent = () => import('@/components/CRM_Module/Tareas/TareasComponent.vue');
 const PlanificadorComponent = () => import('@/components/PlanificadorComponent.vue');
+const RegistroHorarioComponent = () => import('@/components/RegistroHorarioComponent.vue');
 
 // Define las rutas
 const routes = [
@@ -51,6 +52,11 @@ const routes = [
       {
         path: 'planificador',
         component: PlanificadorComponent,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'registro-horario',
+        component: RegistroHorarioComponent,
         meta: { requiresAuth: true }
       }
     ]
