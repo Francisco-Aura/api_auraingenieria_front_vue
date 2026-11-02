@@ -36,6 +36,7 @@
         <router-link to="/dashboard/planificador" class="menu-item" active-class="active">
           <i class="fas fa-project-diagram menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Planificador</span>
+          <span v-if="presupuestosPorValidar > 0" class="menu-dot" :title="presupuestosPorValidar + ' presupuesto(s) pendiente(s) de validar'" aria-label="Hay presupuestos pendientes de validar"></span>
           <div v-if="sidebarCollapsed" class="tooltip">Planificador</div>
         </router-link>
 
@@ -127,7 +128,10 @@ export default {
         '/dashboard/planificador': 'Planificador',
         '/dashboard/registro-horario': 'Registro horario'
       },
-      moduloTareasActivo: false
+      moduloTareasActivo: false,
+      // Ofertas del presupuestador enviadas al cliente a la espera de que las valide el usuario 1 (solo se le avisa a él)
+      presupuestosPorValidar: 0,
+      temporizadorPresupuestos: null
     };
   },
   computed: {
@@ -173,6 +177,23 @@ export default {
         this.moduloTareasActivo = false
       }
     },
+    // Cuenta las ofertas enviadas pendientes de validar (una oferta con varias variantes cuenta una vez). Solo para quien valida.
+    async cargarPresupuestosPorValidar() {
+      const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+      if (!usuario || String(usuario.id) !== '1') {
+        this.presupuestosPorValidar = 0;
+        return;
+      }
+      try {
+        const res = await fetch('/planificador/api/budgets', { headers: { 'X-Usuario-Id': String(usuario.id) } });
+        if (!res.ok) return;
+        const presupuestos = await res.json();
+        const ofertas = new Set(presupuestos.filter((p) => p.status === 'enviado').map((p) => p.offer_id || p.id));
+        this.presupuestosPorValidar = ofertas.size;
+      } catch (error) {
+        // Sin planificador o sin red: no se enseña ningún aviso
+      }
+    },
     handleResize() {
       if (window.innerWidth < 900 && !this.sidebarCollapsed) {
         this.sidebarCollapsed = true;
@@ -203,14 +224,19 @@ export default {
       this.sidebarCollapsed = true;
     }
     window.addEventListener('resize', this.handleResize);
+    this.cargarPresupuestosPorValidar();
+    this.temporizadorPresupuestos = setInterval(this.cargarPresupuestosPorValidar, 60000);
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.handleResize);
+    clearInterval(this.temporizadorPresupuestos);
   },
   watch: {
     // Cerrar menú de usuario al cambiar de ruta
     '$route'() {
       this.userMenuOpen = false;
+      // Al salir del planificador (donde se valida) se vuelve a contar
+      this.cargarPresupuestosPorValidar();
     }
   }
 };
