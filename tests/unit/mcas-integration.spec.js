@@ -69,12 +69,11 @@ test('administracion solo ofrece publicar conjuntos ya validados', () => {
   assert.match(source, /v-if="c\.estado === 'VALIDADO'"[^>]*title="Publicar tabla"/);
 });
 
-test('el configurador expone matrices multidimensionales y explica como agrupar cada celda', () => {
+test('el configurador ofrece tablas de uno, dos o más datos y ya no la lista fila a fila', () => {
   const source = read('src/components/CRM_Module/MCAS/McasAdminComponent.vue');
-  assert.match(source, /value: 'MULTI_DIMENSION_LOOKUP'/);
-  assert.match(source, /v-model\.number="formRango\.orden"/);
-  assert.match(source, /mismo orden[\s\S]*misma celda/i);
-  assert.match(source, /option value="codigo_producto"/);
+  assert.match(source, /valor: 'MULTI_DIMENSION_LOOKUP', titulo: 'De más de dos'/);
+  assert.match(source, /¿De cuántos datos del contrato depende el importe\?/);
+  assert.doesNotMatch(source, /formRango|Vista avanzada|valores-rango/);
 });
 
 test('solo los borradores son editables en la administracion MCAS', () => {
@@ -92,15 +91,16 @@ test('los productos se dan de baja (no se eliminan) y los inactivos se pueden re
   assert.doesNotMatch(source, /eliminarProducto/);
 });
 
-test('las reglas se configuran con un editor visual y el JSON queda como modo avanzado', () => {
+test('las reglas se configuran solo con el formulario: sin JSON, sin código interno ni prioridad', () => {
   const source = read('src/components/CRM_Module/MCAS/McasAdminComponent.vue');
   for (const campo of ['tipo_suministro', 'segmento', 'es_renovacion', 'alta_nueva', 'ambito', 'codigo_producto', 'tarifa_acceso', 'zona_comision']) {
     assert.match(source, new RegExp(`v-model="editorRegla\\.condiciones\\.${campo}"`));
   }
   assert.match(source, /v-model="editorRegla\.calculo\.porcentaje"/);
   assert.match(source, /resumenReglaActual\.calcula/);
-  assert.match(source, /Editar como JSON/);
-  assert.match(source, /if \(!this\.editorRegla\.avanzado\) this\.volcarEditorEnJson\(\)/);
+  assert.match(source, /class="metodo-opciones" role="radiogroup"/);
+  assert.doesNotMatch(source, /Editar como JSON|Modo avanzado|condicionesJson" class|mcas-regla-prioridad|mcas-regla-codigo|Referencia en el documento/);
+  assert.match(source, /async guardarRegla\(\) \{[\s\S]{0,200}\n {6}this\.volcarEditorEnJson\(\)/);
 });
 
 test('la vigencia de un conjunto validado o publicado se puede cerrar para publicar la version siguiente', () => {

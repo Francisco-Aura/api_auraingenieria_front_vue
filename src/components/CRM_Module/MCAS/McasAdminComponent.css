@@ -67,11 +67,6 @@
   color: var(--text-muted);
 }
 
-.toggle-switch--bajo-campo {
-  margin-top: 8px;
-  align-self: flex-start;
-}
-
 /* ===== Barra de contexto (conjunto / regla seleccionados) ===== */
 .context-bar {
   display: flex;
@@ -162,12 +157,6 @@
   color: var(--text-primary);
 }
 
-.celda-codigo--secundario {
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
 /* Lista de reglas: nombre y, debajo, a qué se aplica y cómo calcula (sin ensanchar la columna) */
 .celda-regla {
   max-width: 0;
@@ -190,10 +179,6 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.regla-nombre .celda-codigo {
-  flex-shrink: 0;
 }
 
 .regla-resumen strong {
@@ -300,12 +285,6 @@
   opacity: 0.6;
 }
 
-.texto-codigo {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.72rem;
-  color: var(--text-primary);
-}
-
 /* ===== Editor visual de reglas ===== */
 .footer-izquierda {
   display: flex;
@@ -336,6 +315,108 @@
   min-width: 88px;
   min-height: 32px;
   padding: 4px 10px;
+}
+
+/* ===== Regla: cómo paga la comercializadora (tarjetas) ===== */
+.metodo-opciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.metodo-opcion {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: 8px;
+  row-gap: 2px;
+  align-items: start;
+  align-content: start;
+  margin: 0;
+  padding: 10px 12px;
+  font-weight: 400;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.metodo-opcion:hover {
+  border-color: #9ca3af;
+}
+
+.metodo-opcion--elegida,
+.metodo-opcion--elegida:hover {
+  border-color: var(--aura-btn-principal-texto, #1f2a36);
+  background: #fffbe0;
+}
+
+.metodo-opcion:focus-within {
+  box-shadow: var(--aura-btn-foco);
+}
+
+/* El radio queda para el teclado y el lector de pantalla; se ve la tarjeta. */
+.metodo-opcion-radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.metodo-opcion > i {
+  grid-row: 1 / 3;
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.metodo-opcion--elegida > i {
+  color: var(--aura-btn-principal-texto, #1f2a36);
+}
+
+.metodo-opcion-titulo {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary, #1f2a36);
+}
+
+.metodo-opcion-texto {
+  font-weight: 400;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.metodo-tabla {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--aura-btn-principal-fondo, #fcd700);
+  background: #f9fafb;
+  border-radius: 0 6px 6px 0;
+}
+
+.metodo-tabla .mcas-label {
+  margin: 0 0 2px;
+}
+
+.metodo-tabla-opcion {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  font-weight: 400;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.metodo-tabla-opcion strong {
+  color: var(--text-primary, #1f2a36);
 }
 
 .linea-suma {

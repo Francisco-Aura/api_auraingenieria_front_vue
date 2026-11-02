@@ -164,11 +164,11 @@ function configuracion({ peticiones = [], respuestas = {}, fallos = {}, comproba
   return crearContexto(componente);
 }
 
-test('C1 · tablas y reglas se crean con nombre; el código interno es opcional', async () => {
+test('C1 · tablas y reglas se crean con nombre; el código interno no se pide (se genera solo)', async () => {
   const html = plantilla(ADMIN);
   assert.match(html, /id="mcas-conj-nombre"[^>]*v-model="formConjunto\.nombre"/);
   assert.match(html, /id="mcas-conj-descripcion"/);
-  assert.match(html, /Código interno \(opcional; se genera solo\)/);
+  assert.doesNotMatch(html, /Código interno/);
   assert.match(html, /id="mcas-regla-nombre"[^>]*v-model="formRegla\.nombre"/);
 
   const peticiones = [];
@@ -375,11 +375,12 @@ test('C5 · «Activar seleccionadas» activa en lote y explica el resultado parc
   assert.match(plantilla(ADMIN), /Activar seleccionadas/);
 });
 
-test('C5 · Validar y Publicar pasan a «Más acciones»', () => {
+test('C5 · «Más acciones» ya no ofrece «Validar»: una tabla en borrador se activa directamente', () => {
   const html = plantilla(ADMIN);
   const menu = html.match(/<div v-if="menuConjunto === c\.id"[\s\S]*?<\/div>/);
   assert.ok(menu, 'falta el menú «Más acciones»');
-  assert.match(menu[0], /cambiarEstadoConjunto\(c, 'validar'\)/);
+  assert.doesNotMatch(menu[0], /cambiarEstadoConjunto\(c, 'validar'\)/);
+  // Publicar y volver a borrador quedan solo para las tablas que ya estuvieran validadas.
   assert.match(menu[0], /cambiarEstadoConjunto\(c, 'publicar'\)/);
   assert.match(menu[0], /cambiarEstadoConjunto\(c, 'volver-borrador'\)/);
   assert.match(html, /title="Más acciones"/);
@@ -527,4 +528,86 @@ test('H16 · el panel solo vuelve a pedir las reglas de las tablas que han cambi
   await espera();
 
   assert.match(leer(ADMIN), /case 'conjuntos': return this\.cargarConjuntos\(\{ forzarPanel: true \}\)/);
+});
+
+// ---------------------------------------------------------------------------
+// C6 · Formulario sencillo (02/11/2026): solo lo que usa el cliente
+// ---------------------------------------------------------------------------
+
+test('C6 · la regla se elige con tarjetas «¿Cómo paga?» y las tres tablas van en una', () => {
+  const ctx = configuracion();
+  ctx.conjuntosReglas = [ENDESA_BORRADOR];
+  ctx.conjuntoParaReglasId = 10;
+  ctx.abrirModalRegla();
+  assert.equal(ctx.formRegla.metodoCalculo, 'FIXED_AMOUNT', 'la más sencilla viene marcada');
+  assert.equal(ctx.grupoMetodo, 'FIXED_AMOUNT');
+
+  ctx.grupoMetodo = 'TABLA';
+  assert.equal(ctx.formRegla.metodoCalculo, 'MATRIX_LOOKUP', 'una tabla nueva empieza siendo de dos datos');
+  ctx.formRegla.metodoCalculo = 'RANGE_LOOKUP';
+  assert.equal(ctx.grupoMetodo, 'TABLA', 'los tres métodos de tabla marcan la misma tarjeta');
+  ctx.grupoMetodo = 'TABLA';
+  assert.equal(ctx.formRegla.metodoCalculo, 'RANGE_LOOKUP', 'volver a pulsar la tarjeta no cambia el tipo elegido');
+
+  ctx.editorRegla.calcExtras = { algo: 1 };
+  ctx.grupoMetodo = 'COMPOSITE_SUM';
+  assert.equal(ctx.formRegla.metodoCalculo, 'COMPOSITE_SUM');
+  assert.deepEqual(ctx.editorRegla.calcExtras, {}, 'al cambiar de método se limpia lo del anterior');
+  assert.equal(ctx.editorRegla.calculo.lineas.length, 1, 'la suma empieza con una línea');
+
+  const html = plantilla(ADMIN);
+  assert.match(html, /v-for="m in opcionesMetodo"[\s\S]{0,200}v-model="grupoMetodo" type="radio"/);
+  assert.match(html, /v-if="esMetodoTabla" class="metodo-tabla"[\s\S]{0,400}v-model="formRegla\.metodoCalculo" type="radio"/);
+});
+
+test('C6 · una regla nueva va al final de la lista sin pedir prioridad ni código', async () => {
+  const peticiones = [];
+  const ctx = configuracion({ peticiones });
+  ctx.conjuntosReglas = [ENDESA_BORRADOR];
+  ctx.conjuntoParaReglasId = 10;
+  ctx.reglasConjunto = [{ id: 1, prioridad: 1 }, { id: 2, prioridad: 7 }, { id: 3, prioridad: null }];
+  ctx.abrirModalRegla();
+  assert.equal(ctx.formRegla.prioridad, 8);
+  Object.assign(ctx.formRegla, { nombre: 'Endesa · residencial' });
+  ctx.editorRegla.calculo.importe = 110;
+  await ctx.guardarRegla();
+  const post = peticiones.find((p) => p.metodo === 'post');
+  assert.equal(post.datos.prioridad, 8);
+  assert.equal(post.datos.codigo, null, 'el código lo pone el servidor');
+
+  ctx.reglasConjunto = [];
+  ctx.abrirModalRegla();
+  assert.equal(ctx.formRegla.prioridad, 1, 'la primera regla de la tabla');
+});
+
+test('C6 · una regla que el formulario no sabe leer se avisa y no se guarda', async () => {
+  const peticiones = [];
+  const ctx = configuracion({ peticiones });
+  ctx.conjuntosReglas = [ENDESA_BORRADOR];
+  ctx.conjuntoParaReglasId = 10;
+  ctx.abrirModalRegla({ id: 4, nombre: 'Rara', metodoCalculo: 'FIXED_AMOUNT', condicionesJson: '[1, 2]', calculoJson: '{"importe": 10}' });
+  assert.equal(ctx.editorRegla.ilegible, true);
+  assert.ok(ctx.validarRegla().ilegible);
+  await ctx.guardarRegla();
+  assert.equal(peticiones.filter((p) => p.metodo !== 'get').length, 0);
+  assert.match(plantilla(ADMIN), /v-if="editorRegla\.ilegible"[\s\S]{0,300}Elimínela y créela de nuevo/);
+});
+
+test('C6 · los formularios no enseñan campos técnicos que el cliente no usa', () => {
+  const html = plantilla(ADMIN);
+  for (const id of ['mcas-regla-codigo', 'mcas-regla-prioridad', 'mcas-regla-localizador', 'mcas-conj-codigo', 'mcas-conj-version',
+    'mcas-conj-archivo', 'mcas-prod-codigo', 'mcas-prod-zona', 'mcas-prod-go', 'mcas-retro-codigo', 'mcas-retro-version']) {
+    assert.doesNotMatch(html, new RegExp(`id="${id}"`), id);
+  }
+  assert.doesNotMatch(html, /Incluir el mínimo|Incluir el máximo/, 'los bordes de consumo y potencia de la regla van por defecto');
+  assert.match(html, /«Desde» entra en la regla y «Hasta» no/);
+  // En las retrocesiones sí se elige el borde: es justo lo que se pregunta al cliente.
+  assert.match(html, /Incluir «desde» \(≥\)/);
+
+  const ctx = configuracion();
+  ctx.tabActivo = 'reglas';
+  assert.deepEqual(ctx.columnasActivas.map((c) => c.key), ['regla', 'metodo'], 'sin columna de prioridad');
+  ctx.tabActivo = 'conjuntos';
+  assert.ok(!ctx.columnasActivas.some((c) => c.key === 'origen'), 'sin columna de documento');
+  assert.deepEqual(ctx.tabs.map((t) => t.id), ['conjuntos', 'reglas', 'productos', 'retrocesiones']);
 });

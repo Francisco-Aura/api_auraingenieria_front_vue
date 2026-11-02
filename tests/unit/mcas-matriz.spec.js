@@ -391,11 +391,12 @@ test('fuera de borrador la tabla es de solo lectura', async () => {
   assert.match(plantilla(EDITOR), /:readonly="!editable"/);
 });
 
-test('la lista de reglas abre la rejilla con «Ver tabla» y la lista plana queda como «Vista avanzada»', () => {
+test('la lista de reglas abre la rejilla con «Ver tabla»; ya no hay «Vista avanzada»', () => {
   const html = plantilla(ADMIN);
   assert.match(html, /title="Ver tabla"[^>]*@click="abrirMatriz\(r\)"/);
   assert.match(html, /<McasMatrizEditor/);
-  assert.match(leer(ADMIN), /id: 'rangos', label: 'Vista avanzada'/);
+  assert.doesNotMatch(leer(ADMIN), /Vista avanzada|id: 'rangos'/);
+  assert.doesNotMatch(plantilla(EDITOR), /Vista avanzada|vista-avanzada/);
   assert.doesNotMatch(html, /Valores de Rango/);
   assert.match(plantilla(EDITOR), /Pegar desde Excel/);
 });

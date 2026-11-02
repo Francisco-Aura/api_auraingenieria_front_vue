@@ -177,12 +177,12 @@ test('el formulario valida los tramos antes de enviar nada', async () => {
   ctx.formRetrocesion.metodo = 'NO_APLICA';
   assert.equal(ctx.validarRetrocesion().tramos, undefined);
 
-  // Obligatorios de la política (el código solo en una ya guardada: al crearla se genera).
-  Object.assign(ctx.formRetrocesion, { codigo: '', idComercializadora: '', vigenciaDesde: '' });
+  // Obligatorios de la política; el código y la versión ya no se piden (se generan o se conservan).
+  Object.assign(ctx.formRetrocesion, { codigo: '', version: '', idComercializadora: '', vigenciaDesde: '' });
   const obligatorios = ctx.validarRetrocesion();
-  for (const campo of ['codigo', 'idComercializadora', 'vigenciaDesde']) assert.ok(obligatorios[campo], campo);
-  ctx.formRetrocesion.id = null;
-  assert.equal(ctx.validarRetrocesion().codigo, undefined);
+  for (const campo of ['idComercializadora', 'vigenciaDesde']) assert.ok(obligatorios[campo], campo);
+  assert.equal(obligatorios.codigo, undefined);
+  assert.equal(obligatorios.version, undefined);
 });
 
 test('los tramos sin tipo de valor (datos antiguos) se avisan y no se pueden publicar; los nuevos no ofrecen «Sin elegir»', async () => {
@@ -230,19 +230,10 @@ test('el formulario de política explica qué pasa si a un contrato le correspon
   assert.doesNotMatch(html, /en lugar de elegir una/);
 });
 
-test('el interruptor de retrocesión aclara que hoy no tiene efecto', () => {
-  const aclaracion = 'Por ahora no tiene efecto: la retrocesión potencial se enseña siempre en cada propuesta, como dato informativo';
+test('el interruptor de retrocesión no se enseña porque hoy no tiene efecto', () => {
   const ctx = configuracion();
-  const retrocesion = () => ctx.flagsVista.find((f) => f.codigo === 'MCAS_RETROCESSION_ENABLED');
-
-  ctx.featureFlags = [{ codigo: 'MCAS_RETROCESSION_ENABLED', activo: false }];
-  assert.equal(retrocesion().descripcion, aclaracion);
-  assert.equal(retrocesion().ayuda, aclaracion);
-
-  // Con descripción propia del servidor, la aclaración queda como ayuda secundaria.
   ctx.featureFlags = [{ codigo: 'MCAS_RETROCESSION_ENABLED', activo: false, descripcion: 'Aplicación de políticas de retrocesión' }];
-  assert.equal(retrocesion().descripcion, 'Aplicación de políticas de retrocesión');
-  assert.equal(retrocesion().ayuda, `Aplicación de políticas de retrocesión\n${aclaracion}`);
+  assert.equal(ctx.flagsVista.find((f) => f.codigo === 'MCAS_RETROCESSION_ENABLED'), undefined);
 
   // El resto de interruptores no cambia.
   ctx.featureFlags = [{ codigo: 'MCAS_ENABLED', activo: true, descripcion: 'Cálculo automático' }];

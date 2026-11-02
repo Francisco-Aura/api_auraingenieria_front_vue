@@ -105,12 +105,11 @@ for (const ruta of [ADMIN, ACTIVACION, REGLAS, ESTADOS,
   });
 }
 
-test('el interruptor de retrocesión ya no habla de la «fase 3»', () => {
+test('el interruptor de retrocesión no se enseña: hoy no tiene efecto', () => {
   const ctx = configuracion();
   ctx.featureFlags = [{ codigo: 'MCAS_RETROCESSION_ENABLED', activo: false }];
-  const f = ctx.flagsVista.find((x) => x.codigo === 'MCAS_RETROCESSION_ENABLED');
-  assert.equal(f.descripcion, 'Por ahora no tiene efecto: la retrocesión potencial se enseña siempre en cada propuesta, como dato informativo');
-  assert.doesNotMatch(f.efecto, /fase/);
+  assert.equal(ctx.flagsVista.find((x) => x.codigo === 'MCAS_RETROCESSION_ENABLED'), undefined);
+  assert.deepEqual(ctx.flagsVista.map((f) => f.label), ['Módulo', 'Precio fijo', 'Indexado']);
 });
 
 // ---------------------------------------------------------------------------
@@ -280,9 +279,11 @@ test('los métodos de cálculo se llaman como los entiende el administrador', ()
   for (const [metodo, nombre] of Object.entries(reglas.NOMBRES_METODO)) {
     if (metodo !== 'PERCENTAGE_OF_PREVIOUS') assert.equal(ctx.etiquetaMetodo(metodo), nombre);
   }
-  const etiquetas = ctx.metodosCalculo.map((m) => m.label);
-  assert.ok(etiquetas.every((l) => !/matriz|multidimensional|dimensi|líneas/i.test(l)), etiquetas.join(' | '));
-  assert.equal(ctx.metodosCalculo[0].value, 'FIXED_AMOUNT', 'el más sencillo, primero');
+  // En el formulario se elige con tarjetas «¿Cómo paga?»; las tres tablas van en una y debajo se dice de cuántos datos.
+  const textos = [...ctx.opcionesMetodo, ...ctx.opcionesTabla].map((m) => `${m.titulo} ${m.texto}`);
+  assert.ok(textos.every((l) => !/matriz|multidimensional|dimensi|líneas|JSON/i.test(l)), textos.join(' | '));
+  assert.equal(ctx.opcionesMetodo[0].valor, 'FIXED_AMOUNT', 'el más sencillo, primero');
+  assert.deepEqual(ctx.opcionesTabla.map((t) => t.valor), ['RANGE_LOOKUP', 'MATRIX_LOOKUP', 'MULTI_DIMENSION_LOOKUP']);
 });
 
 test('la ayuda del FEE mínimo dice lo que hace el motor (revisión manual)', () => {
@@ -313,7 +314,7 @@ test('un producto nuevo no pide código: se genera a partir del nombre sin repet
   assert.equal(post.url, '/mcas/productos-comerciales');
   assert.equal(post.datos.codigo, 'PLAN_ONLINE_15');
   assert.equal(post.datos.nombre, 'Plan Ónline 15 %');
-  assert.match(tpl(ADMIN), /Código interno \(opcional; se genera solo\)[\s\S]{0,400}id="mcas-prod-codigo"/);
+  assert.doesNotMatch(tpl(ADMIN), /id="mcas-prod-codigo"/, 'el código ya no se enseña');
 });
 
 test('una política nueva no pide código: se genera con comercializadora, segmento, suministro y fecha', async () => {

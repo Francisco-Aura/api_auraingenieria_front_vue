@@ -241,26 +241,6 @@
             <i class="fas fa-power-off"></i>
             <span>Activar</span>
           </button>
-          <button
-            v-if="tabActivo === 'rangos'"
-            class="btn btn-outline"
-            :disabled="!reglaParaRangos"
-            title="Ver y editar los importes de la regla en una rejilla"
-            @click="abrirMatriz(reglaParaRangos)"
-          >
-            <i class="fas fa-table"></i>
-            <span>Ver tabla</span>
-          </button>
-          <button
-            v-if="tabActivo === 'rangos'"
-            class="btn btn-primary"
-            :disabled="!reglaParaRangos || !conjuntoEditable"
-            :title="reglaParaRangos && conjuntoEditable ? 'Añadir una fila a la tabla de la regla' : 'Seleccione una regla de una tabla en borrador'"
-            @click="abrirModalRango()"
-          >
-            <i class="fas fa-plus"></i>
-            <span>Nueva fila</span>
-          </button>
           <button v-if="tabActivo === 'productos'" class="btn btn-primary" @click="abrirModalProducto()">
             <i class="fas fa-plus"></i>
             <span>Nuevo producto</span>
@@ -281,17 +261,8 @@
         </span>
       </div>
 
-      <!-- Vista avanzada: la tabla de la regla fila a fila, tal como la guarda el motor -->
-      <div v-if="tabActivo === 'rangos'" class="context-bar">
-        <span class="context-meta">
-          <i class="fas fa-info-circle"></i>
-          Vista avanzada: cada celda de la tabla aparece como una fila por dato (mismo «orden» = misma celda).
-          Para cambiar importes es más cómodo «Ver tabla».
-        </span>
-      </div>
-
-      <!-- Contexto: tabla de comisiones / regla sobre las que se trabaja -->
-      <div v-if="tabActivo === 'reglas' || tabActivo === 'rangos'" class="context-bar">
+      <!-- Contexto: tabla de comisiones sobre la que se trabaja -->
+      <div v-if="tabActivo === 'reglas'" class="context-bar">
         <div class="context-field">
           <label class="context-label" for="mcas-ctx-conjunto">Tabla de comisiones</label>
           <select id="mcas-ctx-conjunto" v-model="conjuntoParaReglasId" class="toolbar-select" @change="onCambioConjunto">
@@ -299,19 +270,6 @@
             <option v-for="c in conjuntosReglas" :key="c.id" :value="c.id">
               {{ nombreConjunto(c) }} · {{ nombreComercializadora(c.idComercializadora) }} ({{ etiquetaEstadoConjunto(c.estado) }})
             </option>
-          </select>
-        </div>
-        <div v-if="tabActivo === 'rangos'" class="context-field">
-          <label class="context-label" for="mcas-ctx-regla">Regla</label>
-          <select
-            id="mcas-ctx-regla"
-            v-model="reglaParaRangosId"
-            class="toolbar-select"
-            :disabled="!conjuntoParaReglas"
-            @change="cargarRangos()"
-          >
-            <option :value="null">{{ placeholderRegla }}</option>
-            <option v-for="r in reglasLookup" :key="r.id" :value="r.id">{{ nombreRegla(r) }} ({{ etiquetaMetodo(r.metodoCalculo) }})</option>
           </select>
         </div>
         <div v-if="conjuntoParaReglas" class="context-info">
@@ -415,11 +373,9 @@
                       @change="alternarSeleccion(c)"
                     >
                   </td>
-                  <td class="text-truncate" :title="[nombreConjunto(c), c.codigo, c.descripcion].filter(Boolean).join(' · ')">
+                  <td class="text-truncate" :title="[nombreConjunto(c), c.descripcion].filter(Boolean).join(' · ')">
                     <span class="celda-nombre">{{ nombreConjunto(c) }}</span>
-                    <span class="celda-secundaria">
-                      <template v-if="c.nombre"><span class="celda-codigo celda-codigo--secundario">{{ c.codigo }}</span> · </template>Versión {{ c.version || '—' }}
-                    </span>
+                    <span v-if="c.descripcion" class="celda-secundaria">{{ c.descripcion }}</span>
                   </td>
                   <td class="text-truncate" :title="nombreComercializadora(c.idComercializadora)">
                     {{ nombreComercializadora(c.idComercializadora) }}
@@ -433,13 +389,6 @@
                   </td>
                   <td class="celda-nowrap">{{ formatVigencia(c.vigenciaDesde, c.vigenciaHasta) }}</td>
                   <td><span class="badge" :class="'badge--' + tonoEstadoConjunto(c.estado)">{{ etiquetaEstadoConjunto(c.estado) }}</span></td>
-                  <td class="text-truncate" :title="[c.archivoOrigen, c.hojaOrigen].filter(Boolean).join(' · ')">
-                    <template v-if="c.archivoOrigen || c.hojaOrigen">
-                      {{ c.archivoOrigen || '—' }}
-                      <span v-if="c.hojaOrigen" class="celda-secundaria">Apartado: {{ c.hojaOrigen }}</span>
-                    </template>
-                    <span v-else class="celda-vacia">—</span>
-                  </td>
                   <td @click.stop>
                     <div class="action-buttons">
                       <button class="btn-icon btn-view" title="Ver reglas" aria-label="Ver reglas" @click="verReglas(c)">
@@ -470,9 +419,6 @@
                     </div>
                     <Teleport to="body">
                       <div v-if="menuConjunto === c.id" class="menu-acciones" role="menu" :aria-label="'Más acciones de ' + nombreConjunto(c)" :style="estiloMenu" @click.stop>
-                        <button v-if="c.estado === 'BORRADOR'" type="button" role="menuitem" class="menu-acciones-item" title="Marca la tabla como revisada, sin usarla todavía en el cálculo" @click="cambiarEstadoConjunto(c, 'validar')">
-                          <i class="fas fa-check-circle"></i><span>Validar</span>
-                        </button>
                         <button v-if="c.estado === 'VALIDADO'" type="button" role="menuitem" class="menu-acciones-item" title="Publicar tabla" @click="cambiarEstadoConjunto(c, 'publicar')">
                           <i class="fas fa-rocket"></i><span>Publicar</span>
                         </button>
@@ -496,12 +442,10 @@
 
               <!-- Reglas de la tabla de comisiones -->
               <template v-if="tabActivo === 'reglas'">
-                <tr v-for="r in filasPaginadas" :key="r.id" :class="{ 'fila-seleccionada': reglaParaRangosId === r.id, 'fila-inactiva': !r.activo }">
-                  <td><span class="badge badge--neutral">{{ r.prioridad ?? '—' }}</span></td>
+                <tr v-for="r in filasPaginadas" :key="r.id" :class="{ 'fila-inactiva': !r.activo }">
                   <td class="celda-regla" :title="[nombreRegla(r), resumenesReglas[r.id].aplica, resumenesReglas[r.id].calcula].join('\n')">
                     <span class="regla-nombre">
                       <span class="regla-nombre-texto">{{ nombreRegla(r) }}</span>
-                      <span v-if="r.nombre" class="celda-codigo celda-codigo--secundario">{{ r.codigo }}</span>
                     </span>
                     <span class="celda-secundaria regla-resumen"><strong>Se aplica a:</strong> {{ resumenesReglas[r.id].aplica }}</span>
                     <span class="celda-secundaria regla-resumen"><strong>Cálculo:</strong> {{ resumenesReglas[r.id].calcula }}</span>
@@ -530,36 +474,11 @@
                 </tr>
               </template>
 
-              <!-- Vista avanzada: filas de la tabla de la regla -->
-              <template v-if="tabActivo === 'rangos'">
-                <tr v-for="v in filasPaginadas" :key="v.id">
-                  <td>{{ v.orden ?? '—' }}</td>
-                  <td><span class="celda-codigo">{{ v.dimension }}</span></td>
-                  <td class="celda-nowrap">{{ formatRango(v) }}</td>
-                  <td>{{ v.valorCategoria || '—' }}</td>
-                  <td class="text-end celda-importe">{{ formatResultado(v) }}</td>
-                  <td>
-                    <div class="action-buttons">
-                      <button class="btn-icon btn-edit" title="Editar fila de la tabla" aria-label="Editar fila de la tabla" :disabled="!conjuntoEditable" @click="abrirModalRango(v)">
-                        <i class="fas fa-edit"></i>
-                      </button>
-                      <button class="btn-icon btn-delete" title="Eliminar fila de la tabla" aria-label="Eliminar fila de la tabla" :disabled="!conjuntoEditable || mutacionEnCurso" @click="eliminarRango(v)">
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </template>
-
               <!-- Productos comerciales -->
               <template v-if="tabActivo === 'productos'">
                 <tr v-for="p in filasPaginadas" :key="p.id" :class="{ 'fila-inactiva': !p.activo }">
-                  <td class="text-truncate" :title="[p.nombre, p.codigo, p.codigoZona, p.codigoGo].filter(Boolean).join(' · ')">
+                  <td class="text-truncate" :title="p.nombre">
                     {{ p.nombre }}
-                    <span class="celda-secundaria">
-                      <span class="celda-codigo">{{ p.codigo }}</span>
-                      <template v-if="p.codigoZona || p.codigoGo"> · {{ [p.codigoZona, p.codigoGo].filter(Boolean).join(' / ') }}</template>
-                    </span>
                   </td>
                   <td class="text-truncate" :title="nombreComercializadora(p.idComercializadora)">
                     {{ nombreComercializadora(p.idComercializadora) }}
@@ -591,13 +510,9 @@
               <!-- Políticas de retrocesión -->
               <template v-if="tabActivo === 'retrocesiones'">
                 <tr v-for="p in filasPaginadas" :key="p.id" :class="{ 'fila-inactiva': p.estado === 'ARCHIVADO' }">
-                  <td class="text-truncate" :title="[nombreComercializadoraPolitica(p), p.nombreGestora, p.codigo].filter(Boolean).join(' · ')">
+                  <td class="text-truncate" :title="[nombreComercializadoraPolitica(p), p.nombreGestora].filter(Boolean).join(' · ')">
                     {{ nombreComercializadoraPolitica(p) }}
-                    <span class="celda-secundaria">
-                      <span class="celda-codigo">{{ p.codigo || 'Sin código' }}</span>
-                      <template v-if="p.version"> · v{{ p.version }}</template>
-                      <template v-if="p.nombreGestora || p.idGestora"> · {{ p.nombreGestora || nombreGestora(p.idGestora) }}</template>
-                    </span>
+                    <span v-if="p.nombreGestora || p.idGestora" class="celda-secundaria">Gestora: {{ p.nombreGestora || nombreGestora(p.idGestora) }}</span>
                   </td>
                   <td>
                     <template v-if="p.segmento">{{ etiquetaOpcion(segmentos, p.segmento) }}</template>
@@ -741,21 +656,13 @@
                     <option v-for="g in gestoras" :key="g.id" :value="g.id">{{ g.nombre }}</option>
                   </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group form-group--completo">
                   <label class="mcas-label" for="mcas-prod-nombre">
                     Nombre <span class="required-asterisk">*</span>
                     <i class="fas fa-info-circle help-icon" title="Nombre de la oferta tal como lo usa la comercializadora. Es el que se ve en la regla y en el contrato."></i>
                   </label>
                   <input id="mcas-prod-nombre" v-model="formProducto.nombre" class="mcas-input" :class="claseError('nombre')" placeholder="Ej: Plan Personalizado">
                   <small v-if="erroresForm.nombre" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.nombre }}</small>
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-prod-codigo">
-                    Código interno (opcional; se genera solo)
-                    <i class="fas fa-info-circle help-icon" title="Identificador técnico del producto. Si lo deja vacío, se genera a partir del nombre al guardar."></i>
-                  </label>
-                  <input id="mcas-prod-codigo" v-model="formProducto.codigo" class="mcas-input mcas-input--codigo" :class="claseError('codigo')" :placeholder="codigoProductoPropuesto || 'Se genera al guardar'">
-                  <small v-if="erroresForm.codigo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.codigo }}</small>
                 </div>
               </div>
             </section>
@@ -774,20 +681,6 @@
                   <select id="mcas-prod-suministro" v-model="formProducto.tipoSuministro" class="mcas-input">
                     <option v-for="op in suministros" :key="op.value" :value="op.value">{{ op.label }}</option>
                   </select>
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-prod-zona">
-                    Código de zona
-                    <i class="fas fa-info-circle help-icon" title="Opcional, solo como referencia: zona a la que corresponde la oferta, si la comercializadora la distingue. Ej: ZBR o ZAR"></i>
-                  </label>
-                  <input id="mcas-prod-zona" v-model="formProducto.codigoZona" class="mcas-input" placeholder="Opcional">
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-prod-go">
-                    Código GO/OC
-                    <i class="fas fa-info-circle help-icon" title="Opcional, solo como referencia: código con el que la comercializadora identifica la oferta"></i>
-                  </label>
-                  <input id="mcas-prod-go" v-model="formProducto.codigoGo" class="mcas-input" placeholder="Opcional">
                 </div>
               </div>
             </section>
@@ -861,18 +754,6 @@
                   <small v-if="erroresForm.nombre" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.nombre }}</small>
                 </div>
                 <div class="form-group">
-                  <label class="mcas-label" for="mcas-conj-codigo">
-                    Código interno (opcional; se genera solo)
-                    <i class="fas fa-info-circle help-icon" title="Identificador técnico de la tabla. Si lo deja vacío, se genera al guardar."></i>
-                  </label>
-                  <input id="mcas-conj-codigo" v-model="formConjunto.codigo" class="mcas-input mcas-input--codigo" :class="claseError('codigo')" placeholder="Se genera al guardar">
-                  <small v-if="erroresForm.codigo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.codigo }}</small>
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-conj-version">Versión</label>
-                  <input id="mcas-conj-version" v-model="formConjunto.version" class="mcas-input" placeholder="Ej: 1.0">
-                </div>
-                <div class="form-group">
                   <label class="mcas-label" for="mcas-conj-comercializadora">Comercializadora <span class="required-asterisk">*</span></label>
                   <select id="mcas-conj-comercializadora" v-model="formConjunto.idComercializadora" class="mcas-input" :class="claseError('idComercializadora')">
                     <option value="">Seleccionar...</option>
@@ -927,30 +808,6 @@
               </div>
             </section>
 
-            <section class="form-section">
-              <div class="section-header"><i class="fas fa-file-alt"></i><h3>Documento de origen (opcional)</h3></div>
-              <div class="form-grid form-grid--3">
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-conj-archivo">
-                    Documento
-                    <i class="fas fa-info-circle help-icon" title="Solo como referencia: nombre del documento de la comercializadora del que salen los importes."></i>
-                  </label>
-                  <input id="mcas-conj-archivo" v-model="formConjunto.archivoOrigen" class="mcas-input" placeholder="Ej: Comisiones 2026.pdf">
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-conj-hoja">Apartado</label>
-                  <input id="mcas-conj-hoja" v-model="formConjunto.hojaOrigen" class="mcas-input" placeholder="Ej: Pymes">
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-conj-fecha-origen">
-                    Fecha del documento
-                    <i class="fas fa-info-circle help-icon" title="Fecha que figura en el documento de la comercializadora, si la tiene."></i>
-                  </label>
-                  <input id="mcas-conj-fecha-origen" v-model="formConjunto.fechaInternaOrigen" type="date" class="mcas-input">
-                </div>
-              </div>
-            </section>
-
             <div v-if="!formConjunto.id" class="mcas-alert mcas-alert--info">
               <i class="fas fa-lock"></i>
               <div>La tabla se crea en <strong>borrador</strong>. Añada y revise sus reglas y pulse <strong>Activar</strong> cuando esté lista: solo las tablas activas se usan en el cálculo automático.</div>
@@ -998,39 +855,13 @@
             <section class="form-section">
               <div class="section-header"><i class="fas fa-id-card"></i><h3>Definición</h3></div>
               <div class="form-grid">
-                <div class="form-group form-group--completo">
+                <div class="form-group">
                   <label class="mcas-label" for="mcas-regla-nombre">
                     Nombre <span class="required-asterisk">*</span>
                     <i class="fas fa-info-circle help-icon" title="Nombre con el que verá la regla en la lista y en el desglose de cada propuesta. Ej: Endesa · residencial menos de 10 kW"></i>
                   </label>
                   <input id="mcas-regla-nombre" v-model="formRegla.nombre" class="mcas-input" :class="claseError('nombre')" placeholder="Ej: Endesa · pyme luz 3.0TD" maxlength="150" data-autofocus>
                   <small v-if="erroresForm.nombre" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.nombre }}</small>
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-regla-codigo">
-                    Código interno (opcional; se genera solo)
-                    <i class="fas fa-info-circle help-icon" title="Identificador técnico de la regla dentro de la tabla. Si lo deja vacío, se genera al guardar."></i>
-                  </label>
-                  <input id="mcas-regla-codigo" v-model="formRegla.codigo" class="mcas-input mcas-input--codigo" :class="claseError('codigo')" placeholder="Se genera al guardar">
-                  <small v-if="erroresForm.codigo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.codigo }}</small>
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-regla-metodo">
-                    Método de cálculo <span class="required-asterisk">*</span>
-                    <i class="fas fa-info-circle help-icon" :title="ayudaMetodo(formRegla.metodoCalculo)"></i>
-                  </label>
-                  <select id="mcas-regla-metodo" v-model="formRegla.metodoCalculo" class="mcas-input" :class="claseError('metodoCalculo')" @change="onCambioMetodo">
-                    <option v-for="m in metodosCalculo" :key="m.value" :value="m.value">{{ m.label }}</option>
-                  </select>
-                  <small v-if="erroresForm.metodoCalculo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.metodoCalculo }}</small>
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-regla-prioridad">
-                    Prioridad
-                    <i class="fas fa-info-circle help-icon" title="Número de orden en la lista (menor = más arriba). No desempata: si dos reglas coinciden con el mismo contrato, la propuesta queda en error de cálculo."></i>
-                  </label>
-                  <input id="mcas-regla-prioridad" v-model.number="formRegla.prioridad" type="number" class="mcas-input" :class="claseError('prioridad')">
-                  <small v-if="erroresForm.prioridad" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.prioridad }}</small>
                 </div>
                 <div class="form-group">
                   <span class="mcas-label">Estado</span>
@@ -1047,8 +878,11 @@
               </div>
             </section>
 
-            <!-- Editor visual -->
-            <template v-if="!editorRegla.avanzado">
+            <div v-if="editorRegla.ilegible" class="mcas-alert mcas-alert--danger">
+              <i class="fas fa-exclamation-triangle"></i>
+              <div>Esta regla tiene datos que el formulario no puede mostrar. Elimínela y créela de nuevo desde «Nueva regla».</div>
+            </div>
+            <template v-else>
               <section class="form-section">
                 <div class="section-header"><i class="fas fa-filter"></i><h3>¿A qué contratos se aplica?</h3></div>
                 <p class="form-hint-inline">
@@ -1146,20 +980,10 @@
                     <div class="form-group">
                       <label class="mcas-label" for="mcas-cond-consumo-min">Desde</label>
                       <input id="mcas-cond-consumo-min" v-model="editorRegla.condiciones.consumoMin" type="number" min="0" step="any" class="mcas-input" placeholder="Sin mínimo">
-                      <label class="toggle-switch toggle-switch--compacto toggle-switch--bajo-campo" title="Activo: un consumo igual al mínimo entra (≥). Inactivo: debe ser mayor (>).">
-                        <input v-model="editorRegla.condiciones.consumoMinInc" type="checkbox">
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-label">Incluir el mínimo (≥)</span>
-                      </label>
                     </div>
                     <div class="form-group">
                       <label class="mcas-label" for="mcas-cond-consumo-max">Hasta</label>
                       <input id="mcas-cond-consumo-max" v-model="editorRegla.condiciones.consumoMax" type="number" min="0" step="any" class="mcas-input" :class="claseError('consumoMax')" placeholder="Sin máximo">
-                      <label class="toggle-switch toggle-switch--compacto toggle-switch--bajo-campo" title="Activo: un consumo igual al máximo entra (≤). Inactivo: debe ser menor (<).">
-                        <input v-model="editorRegla.condiciones.consumoMaxInc" type="checkbox">
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-label">Incluir el máximo (≤)</span>
-                      </label>
                       <small v-if="erroresForm.consumoMax" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.consumoMax }}</small>
                     </div>
                   </div>
@@ -1176,28 +1000,38 @@
                     <div class="form-group">
                       <label class="mcas-label" for="mcas-cond-potencia-min">Desde</label>
                       <input id="mcas-cond-potencia-min" v-model="editorRegla.condiciones.potenciaMin" type="number" min="0" step="any" class="mcas-input" placeholder="Sin mínimo">
-                      <label class="toggle-switch toggle-switch--compacto toggle-switch--bajo-campo" title="Activo: una potencia igual al mínimo entra (≥). Inactivo: debe ser mayor (>).">
-                        <input v-model="editorRegla.condiciones.potenciaMinInc" type="checkbox">
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-label">Incluir el mínimo (≥)</span>
-                      </label>
                     </div>
                     <div class="form-group">
                       <label class="mcas-label" for="mcas-cond-potencia-max">Hasta</label>
                       <input id="mcas-cond-potencia-max" v-model="editorRegla.condiciones.potenciaMax" type="number" min="0" step="any" class="mcas-input" :class="claseError('potenciaMax')" placeholder="Sin máximo">
-                      <label class="toggle-switch toggle-switch--compacto toggle-switch--bajo-campo" title="Activo: una potencia igual al máximo entra (≤). Inactivo: debe ser menor (<).">
-                        <input v-model="editorRegla.condiciones.potenciaMaxInc" type="checkbox">
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-label">Incluir el máximo (≤)</span>
-                      </label>
                       <small v-if="erroresForm.potenciaMax" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.potenciaMax }}</small>
                     </div>
                   </div>
                 </div>
+                <p class="form-hint-inline">
+                  «Desde» entra en la regla y «Hasta» no: así, una regla hasta 5.000 kWh y otra desde 5.000 kWh no se pisan
+                  (un contrato de 5.000 kWh justos va con la segunda).
+                </p>
               </section>
 
               <section class="form-section">
                 <div class="section-header"><i class="fas fa-calculator"></i><h3>¿Cómo se calcula la comisión?</h3></div>
+                <div class="metodo-opciones" role="radiogroup" aria-label="Cómo paga la comercializadora este caso">
+                  <label v-for="m in opcionesMetodo" :key="m.valor" class="metodo-opcion" :class="{ 'metodo-opcion--elegida': grupoMetodo === m.valor }">
+                    <input v-model="grupoMetodo" type="radio" name="mcas-regla-metodo" :value="m.valor" class="metodo-opcion-radio">
+                    <i :class="m.icono" aria-hidden="true"></i>
+                    <span class="metodo-opcion-titulo">{{ m.titulo }}</span>
+                    <span class="metodo-opcion-texto">{{ m.texto }}</span>
+                  </label>
+                </div>
+                <small v-if="erroresForm.metodoCalculo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.metodoCalculo }}</small>
+                <div v-if="esMetodoTabla" class="metodo-tabla" role="radiogroup" aria-label="De cuántos datos depende el importe">
+                  <span class="mcas-label">¿De cuántos datos del contrato depende el importe?</span>
+                  <label v-for="t in opcionesTabla" :key="t.valor" class="metodo-tabla-opcion">
+                    <input v-model="formRegla.metodoCalculo" type="radio" name="mcas-regla-tabla" :value="t.valor" @change="onCambioMetodo">
+                    <span><strong>{{ t.titulo }}</strong> · {{ t.texto }}</span>
+                  </label>
+                </div>
                 <div class="form-grid">
                   <div v-if="formRegla.metodoCalculo === 'FIXED_AMOUNT'" class="form-group">
                     <label class="mcas-label" for="mcas-calc-importe">Importe de la comisión (€) <span class="required-asterisk">*</span></label>
@@ -1276,20 +1110,8 @@
                       <option v-for="n in 12" :key="n" :value="n">{{ n === 1 ? '1 pago' : n + ' pagos' }}</option>
                     </select>
                   </div>
-                  <div class="form-group" :class="{ 'form-group--completo': requiereMotivo }">
-                    <label class="mcas-label" for="mcas-regla-localizador">
-                      Referencia en el documento
-                      <i class="fas fa-info-circle help-icon" title="Opcional, solo como referencia: dónde aparece esta comisión en el documento de la comercializadora (página, apartado...)."></i>
-                    </label>
-                    <input id="mcas-regla-localizador" v-model="formRegla.localizadorOrigen" class="mcas-input" placeholder="Ej: página 3, pymes">
-                  </div>
                 </div>
               </section>
-
-              <div v-if="hayCondicionesAvanzadas" class="mcas-alert mcas-alert--info">
-                <i class="fas fa-code"></i>
-                <div>La regla tiene además parámetros avanzados que no aparecen en el formulario (<span class="texto-codigo">{{ clavesAvanzadas }}</span>). Se conservan al guardar; puede verlos en <strong>Editar como JSON</strong>.</div>
-              </div>
 
               <section class="form-section">
                 <div class="section-header"><i class="fas fa-eye"></i><h3>Resumen de la regla</h3></div>
@@ -1313,84 +1135,12 @@
                 </dl>
               </section>
             </template>
-
-            <!-- Modo avanzado: JSON tal cual lo guarda el motor -->
-            <template v-else>
-              <div class="mcas-alert mcas-alert--warning">
-                <i class="fas fa-code"></i>
-                <div>Modo avanzado: edite el JSON exacto que usa el motor. Pulse <strong>Volver al formulario</strong> para seguir con el editor visual.</div>
-              </div>
-              <section class="form-section">
-                <div class="section-header"><i class="fas fa-filter"></i><h3>Condiciones de selección (JSON)</h3></div>
-                <p class="form-hint-inline">
-                  Vacío = aplica a todos los contratos de la tabla. Campos válidos: <span class="texto-codigo">{{ camposCondicion }}</span>
-                </p>
-                <textarea
-                  id="mcas-regla-condiciones"
-                  v-model="formRegla.condicionesJson"
-                  class="mcas-input mcas-input--codigo"
-                  :class="claseError('condicionesJson')"
-                  rows="4"
-                  aria-label="Condiciones de selección (JSON)"
-                  placeholder='{"tipo_suministro":"LUZ","segmento":"PYME","consumo_min_kwh":50001}'
-                ></textarea>
-                <small v-if="erroresForm.condicionesJson" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.condicionesJson }}</small>
-              </section>
-              <section class="form-section">
-                <div class="section-header"><i class="fas fa-calculator"></i><h3>Cálculo y pago (JSON)</h3></div>
-                <div class="form-grid">
-                  <div v-if="usaParametrosCalculo" class="form-group">
-                    <label class="mcas-label" for="mcas-regla-calculo">
-                      Parámetros de cálculo
-                      <i class="fas fa-info-circle help-icon" :title="ayudaCalculoJson(formRegla.metodoCalculo)"></i>
-                    </label>
-                    <textarea
-                      id="mcas-regla-calculo"
-                      v-model="formRegla.calculoJson"
-                      class="mcas-input mcas-input--codigo"
-                      :class="claseError('calculoJson')"
-                      rows="3"
-                      :placeholder="ejemploCalculoJson(formRegla.metodoCalculo)"
-                    ></textarea>
-                    <small v-if="erroresForm.calculoJson" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.calculoJson }}</small>
-                  </div>
-                  <div v-if="requiereMotivo" class="form-group">
-                    <label class="mcas-label" for="mcas-regla-motivo-json">Mensaje para el usuario <span class="required-asterisk">*</span></label>
-                    <input id="mcas-regla-motivo-json" v-model="formRegla.motivoManual" class="mcas-input" :class="claseError('motivoManual')">
-                    <small v-if="erroresForm.motivoManual" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.motivoManual }}</small>
-                  </div>
-                  <div class="form-group" :class="{ 'form-group--completo': !usaParametrosCalculo && !requiereMotivo }">
-                    <label class="mcas-label" for="mcas-regla-pago">
-                      Política de pago
-                      <i class="fas fa-info-circle help-icon" title="numero_pagos_sugerido: se usa si el contrato no indica su número de pagos."></i>
-                    </label>
-                    <textarea
-                      id="mcas-regla-pago"
-                      v-model="formRegla.politicaPagoJson"
-                      class="mcas-input mcas-input--codigo"
-                      :class="claseError('politicaPagoJson')"
-                      rows="3"
-                      placeholder='{"numero_pagos_sugerido": 1}'
-                    ></textarea>
-                    <small v-if="erroresForm.politicaPagoJson" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.politicaPagoJson }}</small>
-                  </div>
-                  <div class="form-group form-group--completo">
-                    <label class="mcas-label" for="mcas-regla-localizador-json">Referencia en el documento</label>
-                    <input id="mcas-regla-localizador-json" v-model="formRegla.localizadorOrigen" class="mcas-input" placeholder="Ej: página 3, pymes">
-                  </div>
-                </div>
-              </section>
-            </template>
             </fieldset>
           </div>
           <div class="mcas-modal-footer">
             <div class="footer-izquierda">
               <span v-if="soloLecturaRegla" class="footer-note"><i class="fas fa-lock"></i> Solo lectura</span>
               <span v-else class="footer-note"><span class="required-asterisk">*</span> Campos obligatorios</span>
-              <button type="button" class="btn btn-outline" :title="editorRegla.avanzado ? 'Volver al editor visual' : 'Ver y editar el JSON exacto que guarda la regla'" @click="alternarModoAvanzado">
-                <i :class="editorRegla.avanzado ? 'fas fa-sliders-h' : 'fas fa-code'"></i>
-                <span>{{ editorRegla.avanzado ? 'Volver al formulario' : 'Editar como JSON' }}</span>
-              </button>
             </div>
             <div class="footer-actions">
               <button type="button" class="btn btn-cancel" @click="cerrarModales">
@@ -1400,128 +1150,6 @@
               <button v-if="!soloLecturaRegla" type="submit" class="btn btn-save" :disabled="mutacionEnCurso">
                 <i :class="mutacionEnCurso ? 'fas fa-spinner fa-spin' : 'fas fa-save'"></i>
                 <span>{{ formRegla.id ? 'Actualizar' : 'Guardar' }}</span>
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Modal Fila de la tabla (vista avanzada) -->
-    <div v-if="modalRango" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-rango-titulo">
-      <div class="mcas-modal">
-        <div class="mcas-modal-header aura-modal-header">
-          <div class="mcas-modal-title">
-            <div class="mcas-modal-icon"><i :class="formRango.id ? 'fas fa-edit' : 'fas fa-table'"></i></div>
-            <div class="title-text">
-              <h2 id="mcas-modal-rango-titulo">{{ formRango.id ? 'Editar fila de la tabla' : 'Nueva fila de la tabla' }}</h2>
-              <p>Regla {{ nombreRegla(reglaParaRangos) }} · {{ etiquetaMetodo(reglaParaRangos?.metodoCalculo) }}</p>
-            </div>
-          </div>
-          <button type="button" class="close-button" title="Cerrar" aria-label="Cerrar" @click="cerrarModales">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <form class="mcas-modal-form" novalidate @submit.prevent="guardarRango">
-          <div class="mcas-modal-body">
-            <section class="form-section">
-              <div class="section-header"><i class="fas fa-ruler-combined"></i><h3>Dimensión</h3></div>
-              <div class="form-grid">
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-rango-dimension">
-                    Dimensión <span class="required-asterisk">*</span>
-                    <i class="fas fa-info-circle help-icon" title="consumo_kwh, consumo_mwh, potencia_kw, tarifa_acceso..."></i>
-                  </label>
-                  <input id="mcas-rango-dimension" v-model="formRango.dimension" class="mcas-input mcas-input--codigo" :class="claseError('dimension')" list="dimensiones-list" placeholder="Ej: consumo_kwh" data-autofocus>
-                  <datalist id="dimensiones-list">
-                    <option value="consumo_kwh"/>
-                    <option value="consumo_mwh"/>
-                    <option value="potencia_kw"/>
-                    <option value="tarifa_acceso"/>
-                    <option value="codigo_producto"/>
-                    <option value="segmento"/>
-                    <option value="tipo_suministro"/>
-                    <option value="zona_comision"/>
-                  </datalist>
-                  <small v-if="erroresForm.dimension" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.dimension }}</small>
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-rango-orden">
-                    Orden / celda <span class="required-asterisk">*</span>
-                    <i class="fas fa-info-circle help-icon" title="En una matriz, use el mismo orden en todas las dimensiones que formen la misma celda."></i>
-                  </label>
-                  <input id="mcas-rango-orden" v-model.number="formRango.orden" type="number" min="1" step="1" class="mcas-input" :class="claseError('orden')">
-                  <small v-if="erroresForm.orden" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.orden }}</small>
-                </div>
-              </div>
-            </section>
-
-            <section v-if="!esDimensionTexto" class="form-section">
-              <div class="section-header"><i class="fas fa-arrows-alt-h"></i><h3>Rango numérico</h3></div>
-              <div class="form-grid">
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-rango-min">Valor mínimo</label>
-                  <input id="mcas-rango-min" v-model="formRango.valorMin" type="number" step="any" class="mcas-input" :class="claseError('valorMin')" placeholder="Sin mínimo">
-                  <label class="toggle-switch toggle-switch--compacto toggle-switch--bajo-campo" title="Si está activo, el valor igual al mínimo entra en el rango (≥). Si no, es estrictamente mayor (>).">
-                    <input v-model="formRango.minInclusivo" type="checkbox">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-label">Incluir el mínimo (≥)</span>
-                  </label>
-                  <small v-if="erroresForm.valorMin" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.valorMin }}</small>
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-rango-max">Valor máximo</label>
-                  <input id="mcas-rango-max" v-model="formRango.valorMax" type="number" step="any" class="mcas-input" :class="claseError('valorMax')" placeholder="Sin máximo">
-                  <label class="toggle-switch toggle-switch--compacto toggle-switch--bajo-campo" title="Si está activo, el valor igual al máximo entra en el rango (≤). Si no, es estrictamente menor (<).">
-                    <input v-model="formRango.maxInclusivo" type="checkbox">
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-label">Incluir el máximo (≤)</span>
-                  </label>
-                  <small v-if="erroresForm.valorMax" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.valorMax }}</small>
-                </div>
-              </div>
-            </section>
-
-            <section v-else class="form-section">
-              <div class="section-header"><i class="fas fa-tag"></i><h3>Categoría</h3></div>
-              <div class="form-group">
-                <label class="mcas-label" for="mcas-rango-categoria">
-                  Valor de categoría <span class="required-asterisk">*</span>
-                  <i class="fas fa-info-circle help-icon" title="Para dimensiones de texto (p. ej. tarifa_acceso = 3.0TD)."></i>
-                </label>
-                <input id="mcas-rango-categoria" v-model="formRango.valorCategoria" class="mcas-input" :class="claseError('valorCategoria')" placeholder="Ej: 3.0TD">
-                <small v-if="erroresForm.valorCategoria" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.valorCategoria }}</small>
-              </div>
-            </section>
-
-            <section class="form-section">
-              <div class="section-header"><i class="fas fa-euro-sign"></i><h3>Resultado</h3></div>
-              <div class="form-grid">
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-rango-resultado">
-                    Resultado <span class="required-asterisk">*</span>
-                    <i class="fas fa-info-circle help-icon" title="Importe o tasa que devuelve esta celda de la tabla."></i>
-                  </label>
-                  <input id="mcas-rango-resultado" v-model="formRango.valorResultado" type="number" step="any" class="mcas-input" :class="claseError('valorResultado')">
-                  <small v-if="erroresForm.valorResultado" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.valorResultado }}</small>
-                </div>
-                <div class="form-group">
-                  <label class="mcas-label" for="mcas-rango-unidad">Unidad del resultado</label>
-                  <input id="mcas-rango-unidad" v-model="formRango.unidadResultado" class="mcas-input" placeholder="€ o €/MWh">
-                </div>
-              </div>
-            </section>
-          </div>
-          <div class="mcas-modal-footer">
-            <span class="footer-note"><span class="required-asterisk">*</span> Campos obligatorios</span>
-            <div class="footer-actions">
-              <button type="button" class="btn btn-cancel" @click="cerrarModales">
-                <i class="fas fa-times"></i>
-                <span>Cancelar</span>
-              </button>
-              <button type="submit" class="btn btn-save" :disabled="mutacionEnCurso">
-                <i :class="mutacionEnCurso ? 'fas fa-spinner fa-spin' : 'fas fa-save'"></i>
-                <span>{{ formRango.id ? 'Actualizar' : 'Guardar' }}</span>
               </button>
             </div>
           </div>
@@ -1726,19 +1354,6 @@
                     </label>
                     <input id="mcas-retro-hasta" v-model="formRetrocesion.vigenciaHasta" type="date" class="mcas-input" :class="claseError('vigenciaHasta')">
                     <small v-if="erroresForm.vigenciaHasta" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.vigenciaHasta }}</small>
-                  </div>
-                  <div class="form-group">
-                    <label class="mcas-label" for="mcas-retro-codigo">
-                      Código interno (opcional; se genera solo)
-                      <i class="fas fa-info-circle help-icon" title="Identificador de la política en las listas. Si lo deja vacío, se genera al guardar con la comercializadora, el segmento, el suministro y la fecha."></i>
-                    </label>
-                    <input id="mcas-retro-codigo" v-model="formRetrocesion.codigo" class="mcas-input mcas-input--codigo" :class="claseError('codigo')" :placeholder="codigoPoliticaPropuesto || 'Se genera al guardar'">
-                    <small v-if="erroresForm.codigo" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.codigo }}</small>
-                  </div>
-                  <div class="form-group">
-                    <label class="mcas-label" for="mcas-retro-version">Versión <span class="required-asterisk">*</span></label>
-                    <input id="mcas-retro-version" v-model="formRetrocesion.version" class="mcas-input" :class="claseError('version')" placeholder="Ej: 1.0">
-                    <small v-if="erroresForm.version" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.version }}</small>
                   </div>
                 </div>
               </section>
@@ -2049,8 +1664,6 @@
       :orden-resaltado="ordenMatriz"
       :productos="productosDelConjunto"
       @cerrar="cerrarMatriz"
-      @guardado="onTablaGuardada"
-      @vista-avanzada="irAVistaAvanzada"
     />
   </div>
 </template>
@@ -2081,12 +1694,21 @@ const METODOS_CALCULO = [
 ].map(m => ({ ...m, corto: NOMBRES_METODO[m.value] }))
 const METODOS_TABLA = ['RANGE_LOOKUP', 'MATRIX_LOOKUP', 'MULTI_DIMENSION_LOOKUP']
 const METODOS_CON_MOTIVO = ['MANUAL', 'NOT_COMMISSIONABLE']
-const DIMENSIONES_TEXTO = ['tarifa_acceso', 'codigo_producto', 'segmento', 'tipo_suministro', 'zona_comision']
-const CAMPOS_CONDICION = [
-  'tipo_suministro', 'segmento', 'es_renovacion', 'tipo_renovacion', 'alta_nueva', 'tarifa_acceso', 'codigo_producto',
-  'ambito', 'zona_comision', 'consumo_min_kwh', 'consumo_max_kwh', 'consumo_min_inclusivo', 'consumo_max_inclusivo',
-  'consumo_min_mwh', 'consumo_max_mwh', 'consumo_min_mwh_inc', 'consumo_max_mwh_inc', 'potencia_min_kw', 'potencia_max_kw',
-  'potencia_min_inc', 'potencia_max_inc',
+// Formulario de la regla: cómo paga la comercializadora, en palabras del día a día.
+// «TABLA» agrupa los tres métodos de tabla; el número de datos se elige debajo (OPCIONES_TABLA).
+const OPCIONES_METODO = [
+  { valor: 'FIXED_AMOUNT', icono: 'fas fa-euro-sign', titulo: 'Siempre lo mismo', texto: 'Un importe fijo por contrato. Ej.: 50 €.' },
+  { valor: 'TABLA', icono: 'fas fa-table', titulo: 'Según una tabla de importes', texto: 'Por tramos de consumo, de potencia, por oferta... Los importes se pegan desde Excel.' },
+  { valor: 'FEE_PERCENTAGE', icono: 'fas fa-percent', titulo: 'Un % del FEE', texto: 'Consumo × FEE del contrato × %. Ej.: 44 % si el FEE llega a 5 €/MWh.' },
+  { valor: 'RATE_PER_MWH', icono: 'fas fa-bolt', titulo: 'Euros por MWh', texto: 'Consumo anual × un importe por MWh. Ej.: 4,05 €/MWh.' },
+  { valor: 'COMPOSITE_SUM', icono: 'fas fa-plus', titulo: 'Varias partes que se suman', texto: 'Ej.: un fijo más un % del FEE.' },
+  { valor: 'MANUAL', icono: 'fas fa-hand-paper', titulo: 'A mano', texto: 'No calcula: la comisión se completa en Comisiones MCAS.' },
+  { valor: 'NOT_COMMISSIONABLE', icono: 'fas fa-ban', titulo: 'No paga', texto: 'Se cierra sin comisión. Ej.: renovaciones de particulares.' },
+]
+const OPCIONES_TABLA = [
+  { valor: 'RANGE_LOOKUP', titulo: 'De uno', texto: 'por ejemplo, solo del consumo (un tramo por fila)' },
+  { valor: 'MATRIX_LOOKUP', titulo: 'De dos', texto: 'por ejemplo, consumo en las filas y potencia en las columnas' },
+  { valor: 'MULTI_DIMENSION_LOOKUP', titulo: 'De más de dos', texto: 'por ejemplo, potencia × oferta, con una pestaña por zona' },
 ]
 
 const ESTADOS_CONJUNTO = [
@@ -2147,7 +1769,6 @@ const ESTADOS_RETROCESION = [
   { value: 'ARCHIVADO', label: 'Archivada', tono: 'neutral' },
 ]
 
-const ACLARACION_RETROCESION = 'Por ahora no tiene efecto: la retrocesión potencial se enseña siempre en cada propuesta, como dato informativo'
 const FLAGS = [
   { codigo: 'MCAS_ENABLED', label: 'Módulo',
     descripcion: 'Cálculo automático de propuestas MCAS', efecto: 'el cálculo automático de propuestas MCAS' },
@@ -2155,10 +1776,7 @@ const FLAGS = [
     descripcion: 'Cálculo para contratos a precio fijo', efecto: 'el cálculo para contratos a precio fijo' },
   { codigo: 'MCAS_INDEXED_ENABLED', label: 'Indexado',
     descripcion: 'Cálculo para contratos indexados (activar solo tras validar los fijos)', efecto: 'el cálculo para contratos indexados' },
-  // La retrocesión potencial se asocia siempre (informativa): el interruptor queda para aplicarla en bajas.
-  { codigo: 'MCAS_RETROCESSION_ENABLED', label: 'Retrocesión',
-    descripcion: ACLARACION_RETROCESION, aclaracion: ACLARACION_RETROCESION,
-    efecto: 'el interruptor de retrocesión (por ahora no tiene efecto)' },
+  // MCAS_RETROCESSION_ENABLED no se enseña: hoy no tiene efecto (la retrocesión es solo informativa).
 ]
 
 // Configuración MCAS recién instalada (sin ninguna tabla): qué hacer, en orden.
@@ -2184,10 +1802,8 @@ const TABS = [
     ayuda: 'Cada tabla de comisiones agrupa las reglas de una comercializadora para un periodo de vigencia. Solo las tablas activas se usan en el cálculo automático.' },
   { id: 'reglas', label: 'Reglas', icono: 'fas fa-list-ul',
     ayuda: 'Cada regla dice a qué contratos se aplica y cómo se calcula la comisión. A cada contrato le debe corresponder una sola regla de la tabla.' },
-  { id: 'rangos', label: 'Vista avanzada', icono: 'fas fa-list',
-    ayuda: 'Los tramos de la tabla de una regla, fila a fila, tal como los guarda el motor. Para cambiar importes es más cómodo «Ver tabla» en la lista de reglas.' },
   { id: 'productos', label: 'Productos', icono: 'fas fa-tags',
-    ayuda: 'Ofertas y tarifas de cada comercializadora. El motor usa el código del producto para seleccionar la regla.' },
+    ayuda: 'Ofertas y tarifas de cada comercializadora. Solo hacen falta si la comisión cambia según la oferta contratada.' },
   { id: 'retrocesiones', label: 'Retrocesiones', icono: 'fas fa-undo-alt',
     ayuda: 'Qué parte de la comisión se devolvería si el contrato causa baja anticipada. Es informativa: la propuesta muestra la retrocesión potencial y nunca se descuenta en el alta.' },
 ]
@@ -2195,8 +1811,8 @@ const TABS = [
 // Columnas por pestaña: `valor` alimenta filtro y orden (salvo `orden` explícito).
 const COLUMNAS = {
   conjuntos: [
-    { key: 'nombre', label: 'Tabla de comisiones', icono: 'fas fa-layer-group', ancho: '20%', filtro: 'texto',
-      valor: (c, vm) => [vm.nombreConjunto(c), c.codigo, c.version].filter(Boolean).join(' '), orden: (c, vm) => vm.nombreConjunto(c) },
+    { key: 'nombre', label: 'Tabla de comisiones', icono: 'fas fa-layer-group', ancho: '34%', filtro: 'texto',
+      valor: (c, vm) => [vm.nombreConjunto(c), c.descripcion].filter(Boolean).join(' '), orden: (c, vm) => vm.nombreConjunto(c) },
     { key: 'comercializadora', label: 'Comercializadora', icono: 'fas fa-building', ancho: '17%', filtro: 'texto',
       valor: (c, vm) => [vm.nombreComercializadora(c.idComercializadora), vm.nombreGestora(c.idGestora)].filter(Boolean).join(' '),
       orden: (c, vm) => vm.nombreComercializadora(c.idComercializadora) },
@@ -2204,30 +1820,18 @@ const COLUMNAS = {
     { key: 'vigencia', label: 'Vigencia', icono: 'fas fa-calendar-alt', ancho: '16%', filtro: 'texto',
       valor: (c, vm) => vm.formatVigencia(c.vigenciaDesde, c.vigenciaHasta), orden: c => c.vigenciaDesde },
     { key: 'estado', label: 'Estado', icono: 'fas fa-tasks', ancho: '10%', filtro: 'select', opciones: ESTADOS_CONJUNTO, valor: c => c.estado },
-    { key: 'origen', label: 'Documento', icono: 'fas fa-file-alt', ancho: '14%', filtro: 'texto',
-      valor: c => [c.archivoOrigen, c.hojaOrigen].filter(Boolean).join(' ') },
   ],
   reglas: [
-    { key: 'prioridad', label: 'Prioridad', icono: 'fas fa-sort-numeric-down', ancho: '9%', filtro: 'texto', valor: r => r.prioridad },
-    { key: 'regla', label: 'Regla', icono: 'fas fa-list-ul', ancho: '62%', filtro: 'texto',
-      valor: (r, vm) => [vm.nombreRegla(r), r.codigo, vm.resumenesReglas[r.id]?.aplica, vm.resumenesReglas[r.id]?.calcula]
+    { key: 'regla', label: 'Regla', icono: 'fas fa-list-ul', ancho: '71%', filtro: 'texto',
+      valor: (r, vm) => [vm.nombreRegla(r), vm.resumenesReglas[r.id]?.aplica, vm.resumenesReglas[r.id]?.calcula]
         .filter(Boolean).join(' '),
       orden: (r, vm) => vm.nombreRegla(r) },
     { key: 'metodo', label: 'Método', icono: 'fas fa-calculator', ancho: '17%', filtro: 'select',
       opciones: METODOS_CALCULO.map(m => ({ value: m.value, label: m.corto })), valor: r => r.metodoCalculo },
   ],
-  rangos: [
-    { key: 'orden', label: 'Orden', icono: 'fas fa-sort-numeric-down', ancho: '9%', filtro: 'texto', valor: v => v.orden },
-    { key: 'dimension', label: 'Dimensión', icono: 'fas fa-ruler-combined', ancho: '18%', filtro: 'texto', valor: v => v.dimension },
-    { key: 'rango', label: 'Rango', icono: 'fas fa-arrows-alt-h', ancho: '26%', filtro: 'texto',
-      valor: (v, vm) => vm.formatRango(v), orden: v => (v.valorMin != null && v.valorMin !== '' ? Number(v.valorMin) : null) },
-    { key: 'categoria', label: 'Categoría', icono: 'fas fa-tag', ancho: '16%', filtro: 'texto', valor: v => v.valorCategoria },
-    { key: 'resultado', label: 'Resultado', icono: 'fas fa-euro-sign', ancho: '17%', filtro: 'texto', alinear: 'derecha',
-      valor: (v, vm) => vm.formatResultado(v), orden: v => Number(v.valorResultado) },
-  ],
   productos: [
     { key: 'producto', label: 'Producto', icono: 'fas fa-tag', ancho: '24%', filtro: 'texto',
-      valor: p => [p.nombre, p.codigo, p.codigoZona, p.codigoGo].filter(Boolean).join(' '), orden: p => p.nombre },
+      valor: p => p.nombre, orden: p => p.nombre },
     { key: 'comercializadora', label: 'Comercializadora', icono: 'fas fa-building', ancho: '19%', filtro: 'select',
       opciones: vm => vm.opcionesComercializadoraProductos, valor: p => String(p.idComercializadora),
       orden: (p, vm) => vm.nombreComercializadora(p.idComercializadora) },
@@ -2258,17 +1862,6 @@ function filtrosIniciales() {
 }
 
 
-// El motor y la validación del conjunto exigen objetos JSON ({...}), no listas ni valores sueltos.
-function jsonValido(texto) {
-  if (!texto || !String(texto).trim()) return true
-  try {
-    const valor = JSON.parse(texto)
-    return !!valor && typeof valor === 'object' && !Array.isArray(valor)
-  } catch {
-    return false
-  }
-}
-
 /** Lo que, si cambia, obliga a volver a pedir las reglas de una tabla para el panel. */
 function firmaPanel(c) {
   return [c?.estado, c?.vigenciaDesde, c?.vigenciaHasta, c?.version, c?.fechaAprobacion].map(v => v ?? '').join('|')
@@ -2280,7 +1873,7 @@ function activacionVacia(conjunto = null) {
 
 function editorReglaVacio() {
   return {
-    avanzado: false,
+    ilegible: false,
     condiciones: condicionesVacias(), condExtras: {},
     calculo: calculoVacio(), calcExtras: {},
     numeroPagos: '', pagoExtras: {},
@@ -2372,7 +1965,8 @@ function politicaAFormulario(p) {
   return {
     id: p.id ?? null,
     codigo: p.codigo || '',
-    version: p.version ?? '',
+    // La versión ya no se pide: se conserva la que tenga (o 1.0, que exige el servidor).
+    version: p.version || '1.0',
     idComercializadora: p.idComercializadora ?? '',
     idGestora: p.idGestora ?? null,
     vigenciaDesde: p.vigenciaDesde || '',
@@ -2433,14 +2027,14 @@ export default {
       tabs: TABS,
       tabActivo: 'conjuntos',
       primerosPasos: PRIMEROS_PASOS,
-      metodosCalculo: METODOS_CALCULO,
+      opcionesMetodo: OPCIONES_METODO,
+      opcionesTabla: OPCIONES_TABLA,
       fases: FASES,
       tiposPrecio: TIPOS_PRECIO,
       suministros: SUMINISTROS,
       segmentos: SEGMENTOS,
       metodosRetrocesion: METODOS_RETROCESION,
       unidadesTramo: UNIDADES_TRAMO,
-      camposCondicion: CAMPOS_CONDICION.join(', '),
       opcionesCondicion: OPCIONES_CONDICION,
       tiposLinea: TIPOS_LINEA,
       tarifasLuz: [],
@@ -2463,10 +2057,6 @@ export default {
       reglasConjunto: [],
       cargandoReglas: false,
       errorReglas: false,
-      reglaParaRangosId: null,
-      valoresRango: [],
-      cargandoRangos: false,
-      errorRangos: false,
       productos: [],
       cargandoProductos: false,
       errorProductos: false,
@@ -2474,10 +2064,9 @@ export default {
       cargandoRetrocesiones: false,
       errorRetrocesiones: false,
       reglasRequestId: 0,
-      rangosRequestId: 0,
       // Tabla
       filtros: filtrosIniciales(),
-      orden: { conjuntos: {}, reglas: { key: 'prioridad', dir: 'asc' }, rangos: { key: 'orden', dir: 'asc' }, productos: {}, retrocesiones: {} },
+      orden: { conjuntos: {}, reglas: {}, productos: {}, retrocesiones: {} },
       currentPage: 1,
       recordsPerPage: 10,
       // Modales
@@ -2490,8 +2079,6 @@ export default {
       editorRegla: editorReglaVacio(),
       modalSimulacion: false,
       simulacion: { referencia: '', cargando: false, resultado: null },
-      modalRango: false,
-      formRango: {},
       modalRetrocesion: false,
       formRetrocesion: politicaAFormulario(null),
       soloLecturaRetrocesion: false,
@@ -2525,9 +2112,6 @@ export default {
   computed: {
     conjuntoParaReglas() {
       return this.conjuntosReglas.find(c => c.id === this.conjuntoParaReglasId) || null
-    },
-    reglaParaRangos() {
-      return this.reglasConjunto.find(r => r.id === this.reglaParaRangosId) || null
     },
     conjuntoEditable() {
       return this.conjuntoParaReglas?.estado === 'BORRADOR'
@@ -2609,13 +2193,6 @@ export default {
       if (this.soloLecturaRegla) return 'Regla de comisión'
       return this.formRegla.id ? 'Editar regla de comisión' : 'Nueva regla de comisión'
     },
-    reglasLookup() {
-      return this.reglasConjunto.filter(r => METODOS_TABLA.includes(r.metodoCalculo))
-    },
-    placeholderRegla() {
-      if (!this.conjuntoParaReglas) return 'Seleccione antes una tabla de comisiones'
-      return this.reglasLookup.length ? 'Seleccione una regla...' : 'La tabla no tiene reglas que busquen el importe en una tabla'
-    },
     conjuntosPublicados() {
       return this.conjuntosReglas.filter(c => c.estado === 'PUBLICADO').length
     },
@@ -2683,9 +2260,7 @@ export default {
       return FLAGS.map(f => {
         const flag = this.featureFlags.find(x => x.codigo === f.codigo)
         const descripcion = flag?.descripcion || f.descripcion
-        // Si el servidor trae su propia descripción, la aclaración va debajo como ayuda secundaria.
-        const ayuda = f.aclaracion && descripcion !== f.aclaracion ? `${descripcion}\n${f.aclaracion}` : descripcion
-        return { ...f, descripcion, ayuda, activo: !!flag?.activo, disponible: !!flag }
+        return { ...f, descripcion, ayuda: descripcion, activo: !!flag?.activo, disponible: !!flag }
       })
     },
     opcionesComercializadoraProductos() {
@@ -2708,20 +2283,19 @@ export default {
       switch (this.tabActivo) {
         case 'conjuntos': return this.conjuntosReglas
         case 'reglas': return this.conjuntoParaReglas ? this.reglasConjunto : []
-        case 'rangos': return this.reglaParaRangos ? this.valoresRango : []
         case 'retrocesiones': return this.politicasRetrocesion
         default: return this.productos
       }
     },
     cargandoTab() {
       return {
-        conjuntos: this.cargandoConjuntos, reglas: this.cargandoReglas, rangos: this.cargandoRangos,
+        conjuntos: this.cargandoConjuntos, reglas: this.cargandoReglas,
         productos: this.cargandoProductos, retrocesiones: this.cargandoRetrocesiones,
       }[this.tabActivo]
     },
     errorTab() {
       return {
-        conjuntos: this.errorConjuntos, reglas: this.errorReglas, rangos: this.errorRangos,
+        conjuntos: this.errorConjuntos, reglas: this.errorReglas,
         productos: this.errorProductos, retrocesiones: this.errorRetrocesiones,
       }[this.tabActivo]
     },
@@ -2758,8 +2332,7 @@ export default {
     },
     estadoVacio() {
       const nombres = {
-        conjuntos: 'las tablas de comisiones', reglas: 'las reglas de la tabla',
-        rangos: 'los tramos de la tabla', productos: 'los productos comerciales',
+        conjuntos: 'las tablas de comisiones', reglas: 'las reglas de la tabla', productos: 'los productos comerciales',
         retrocesiones: 'las políticas de retrocesión',
       }
       const sinTablas = {
@@ -2768,14 +2341,10 @@ export default {
           + 'Cree la primera y añádale sus reglas: mientras no haya ninguna activa, las comisiones se completan a mano.',
       }
       if (this.errorTab) return { error: true, icono: 'fas fa-exclamation-triangle', texto: `No se pudieron cargar ${nombres[this.tabActivo]}` }
-      if ((this.tabActivo === 'reglas' || this.tabActivo === 'rangos') && !this.conjuntosReglas.length) return sinTablas
+      if (this.tabActivo === 'reglas' && !this.conjuntosReglas.length) return sinTablas
       if (this.tabActivo === 'reglas' && !this.conjuntoParaReglas) {
         return { icono: 'fas fa-layer-group', texto: 'Seleccione una tabla de comisiones',
           detalle: 'Elija una tabla en el selector superior o pulse «Ver reglas» en la pestaña Tablas de comisiones.' }
-      }
-      if (this.tabActivo === 'rangos' && !this.reglaParaRangos) {
-        return { icono: 'fas fa-table', texto: 'Seleccione una regla que busque el importe en una tabla',
-          detalle: 'La vista avanzada muestra, fila a fila, los tramos de esas reglas. Para cambiar importes es más cómodo «Ver tabla».' }
       }
       if (this.filasTab.length) return { icono: 'fas fa-search', texto: 'No se encontraron registros que coincidan con la búsqueda' }
       switch (this.tabActivo) {
@@ -2786,8 +2355,6 @@ export default {
             + 'un % sobre el FEE, un importe por MWh, una tabla de importes... A cada contrato le debe corresponder una sola regla.'
             + (this.conjuntoEditable ? '' : ' Esta tabla ya no está en borrador: para añadirle reglas, cree una «Nueva versión».'),
         }
-        case 'rangos': return { icono: 'fas fa-table', texto: 'Esta regla todavía no tiene tramos', crear: this.conjuntoEditable ? 'Crear la primera fila' : null,
-          detalle: 'Es más cómodo rellenar los importes con «Ver tabla», en la lista de reglas.' }
         case 'retrocesiones': return {
           icono: 'fas fa-undo-alt', texto: 'Todavía no hay políticas de retrocesión', crear: 'Crear la primera política',
           detalle: 'Una política de retrocesión dice qué parte de la comisión se devolvería si el contrato se da de baja pronto '
@@ -2807,11 +2374,16 @@ export default {
     esMetodoTabla() {
       return METODOS_TABLA.includes(this.formRegla.metodoCalculo)
     },
-    usaParametrosCalculo() {
-      return !this.requiereMotivo && !this.esMetodoTabla
-    },
-    esDimensionTexto() {
-      return DIMENSIONES_TEXTO.includes(String(this.formRango.dimension || '').trim())
+    /** Tarjeta elegida: los tres métodos de tabla van juntos en «TABLA». */
+    grupoMetodo: {
+      get() {
+        return METODOS_TABLA.includes(this.formRegla.metodoCalculo) ? 'TABLA' : this.formRegla.metodoCalculo
+      },
+      set(valor) {
+        if (valor === this.grupoMetodo) return
+        this.formRegla.metodoCalculo = valor === 'TABLA' ? 'MATRIX_LOOKUP' : valor
+        this.onCambioMetodo()
+      },
     },
     // ---- editor visual de reglas ----
     productosDelConjunto() {
@@ -2851,13 +2423,6 @@ export default {
         numeroPagos: this.editorRegla.numeroPagos,
         nombreProducto: this.nombreProductoRegla,
       })
-    },
-    clavesAvanzadas() {
-      const e = this.editorRegla
-      return [...Object.keys(e.condExtras), ...Object.keys(e.calcExtras), ...Object.keys(e.pagoExtras)].join(', ')
-    },
-    hayCondicionesAvanzadas() {
-      return this.clavesAvanzadas.length > 0
     },
     // ---- códigos internos que se generan solos ----
     /** Código de un producto nuevo: el nombre en mayúsculas, sin repetir otro de la misma comercializadora. */
@@ -2925,7 +2490,6 @@ export default {
     formProducto: { handler() { this.revalidar(this.modalProducto, this.validarProducto) }, deep: true },
     formConjunto: { handler() { this.revalidar(this.modalConjunto, this.validarConjunto) }, deep: true },
     formRegla: { handler() { this.revalidar(this.modalRegla, this.validarRegla) }, deep: true },
-    formRango: { handler() { this.revalidar(this.modalRango, this.validarRango) }, deep: true },
     formRetrocesion: { handler() { this.revalidar(this.modalRetrocesion, this.validarRetrocesion) }, deep: true },
     formNuevaVersion: { handler() { this.revalidar(this.modalNuevaVersion, this.validarNuevaVersion) }, deep: true },
     editorRegla: { handler() { this.revalidar(this.modalRegla, this.validarRegla) }, deep: true },
@@ -3050,10 +2614,6 @@ export default {
         const conjunto = this.conjuntosReglas.find(c => c.id === conjuntoId)
         if (conjunto) this.reglasPanelFirmas = { ...this.reglasPanelFirmas, [conjuntoId]: firmaPanel(conjunto) }
         this.errorReglas = false
-        if (this.reglaParaRangosId && !this.reglaParaRangos) {
-          this.reglaParaRangosId = null
-          this.valoresRango = []
-        }
       } catch (e) {
         if (requestId !== this.reglasRequestId) return
         console.error('Error al cargar reglas MCAS:', e)
@@ -3063,36 +2623,11 @@ export default {
         if (requestId === this.reglasRequestId) this.cargandoReglas = false
       }
     },
-    async cargarRangos({ silencioso = false } = {}) {
-      const requestId = ++this.rangosRequestId
-      const reglaId = this.reglaParaRangosId
-      if (!reglaId) {
-        this.valoresRango = []
-        this.errorRangos = false
-        this.cargandoRangos = false
-        return
-      }
-      this.cargandoRangos = true
-      try {
-        const { data } = await axios.get(`/mcas/reglas/${reglaId}/valores-rango`)
-        if (requestId !== this.rangosRequestId) return
-        this.valoresRango = Array.isArray(data) ? data : []
-        this.errorRangos = false
-      } catch (e) {
-        if (requestId !== this.rangosRequestId) return
-        console.error('Error al cargar los tramos de la tabla MCAS:', e)
-        this.errorRangos = true
-        if (!silencioso) mostrarError(this.$swal, 'Error', textoError(e, 'No se pudieron cargar los tramos de la tabla.'))
-      } finally {
-        if (requestId === this.rangosRequestId) this.cargandoRangos = false
-      }
-    },
     actualizarTab() {
       this.cargarFeatureFlags()
       switch (this.tabActivo) {
         case 'conjuntos': return this.cargarConjuntos({ forzarPanel: true })
         case 'reglas': return Promise.all([this.cargarConjuntos({ forzarPanel: true }), this.cargarReglas()])
-        case 'rangos': return Promise.all([this.cargarConjuntos({ forzarPanel: true }), this.cargarReglas(), this.cargarRangos()])
         case 'retrocesiones': return this.cargarRetrocesiones()
         default: return this.cargarProductos()
       }
@@ -3133,16 +2668,12 @@ export default {
       this.onCambioConjunto()
     },
     onCambioConjunto() {
-      this.reglaParaRangosId = null
-      this.valoresRango = []
       this.reglasConjunto = []
       this.cargarReglas()
     },
     limpiarSeleccionConjunto() {
       this.conjuntoParaReglasId = null
-      this.reglaParaRangosId = null
       this.reglasConjunto = []
-      this.valoresRango = []
     },
     verReglas(c) {
       if (this.conjuntoParaReglasId !== c.id) {
@@ -3150,13 +2681,6 @@ export default {
         this.onCambioConjunto()
       }
       this.tabActivo = 'reglas'
-    },
-    verRangos(r) {
-      if (this.reglaParaRangosId !== r.id) {
-        this.reglaParaRangosId = r.id
-        this.cargarRangos()
-      }
-      this.tabActivo = 'rangos'
     },
 
     // -----------------------------------------------
@@ -3184,7 +2708,6 @@ export default {
       switch (id) {
         case 'conjuntos': return this.conjuntosReglas.length
         case 'reglas': return this.conjuntoParaReglas ? this.reglasConjunto.length : null
-        case 'rangos': return this.reglaParaRangos ? this.valoresRango.length : null
         case 'retrocesiones': return this.politicasRetrocesion.length
         default: return this.productos.length
       }
@@ -3195,7 +2718,6 @@ export default {
       switch (this.tabActivo) {
         case 'conjuntos': return this.abrirModalConjunto()
         case 'reglas': return this.abrirModalRegla()
-        case 'rangos': return this.abrirModalRango()
         case 'retrocesiones': return this.abrirModalRetrocesion()
         default: return this.abrirModalProducto()
       }
@@ -3213,7 +2735,6 @@ export default {
       this.modalProducto = false
       this.modalConjunto = false
       this.modalRegla = false
-      this.modalRango = false
       this.modalSimulacion = false
       this.modalRetrocesion = false
       this.modalNuevaVersion = false
@@ -3231,7 +2752,7 @@ export default {
       }
       // La rejilla atiende su propio Escape (pregunta antes de perder cambios).
       if (this.modalMatriz) return
-      if (this.modalProducto || this.modalConjunto || this.modalRegla || this.modalRango || this.modalSimulacion
+      if (this.modalProducto || this.modalConjunto || this.modalRegla || this.modalSimulacion
         || this.modalRetrocesion || this.modalNuevaVersion || this.modalActivacion) {
         e.preventDefault()
         this.cerrarModales()
@@ -3264,8 +2785,6 @@ export default {
       const f = this.formProducto
       const errores = {}
       if (esVacio(f.idComercializadora)) errores.idComercializadora = 'Seleccione una comercializadora'
-      // Al crear, vacío = se genera a partir del nombre (codigoProductoPropuesto).
-      if (f.id && esVacio(f.codigo)) errores.codigo = 'Un producto ya guardado necesita su código interno'
       if (esVacio(f.nombre)) errores.nombre = 'El nombre es obligatorio'
       else if (!f.id && esVacio(f.codigo) && !this.codigoProductoPropuesto) errores.nombre = 'El nombre debe tener alguna letra o cifra'
       if (f.activoDesde && f.activoHasta && f.activoHasta < f.activoDesde) errores.activoHasta = 'Debe ser posterior a la fecha de inicio'
@@ -3325,7 +2844,6 @@ export default {
       const f = this.formConjunto
       const errores = {}
       if (esVacio(f.nombre)) errores.nombre = 'Indique un nombre para la tabla'
-      if (f.id && esVacio(f.codigo)) errores.codigo = 'Una tabla ya guardada necesita su código interno'
       if (esVacio(f.idComercializadora)) errores.idComercializadora = 'Seleccione una comercializadora'
       if (esVacio(f.vigenciaDesde)) errores.vigenciaDesde = 'Indique desde cuándo es vigente'
       if (f.vigenciaDesde && f.vigenciaHasta && f.vigenciaHasta < f.vigenciaDesde) errores.vigenciaHasta = 'Debe ser posterior a la fecha de inicio'
@@ -3480,12 +2998,16 @@ export default {
       this.soloLecturaRegla = !!r && !this.conjuntoEditable
       this.formRegla = r
         ? { nombre: '', descripcion: '', ...r }
-        : { nombre: '', descripcion: '', codigo: '', prioridad: 100, activo: true, metodoCalculo: 'FEE_PERCENTAGE' }
-      const error = this.cargarEditorDesdeJson()
+        // Una regla nueva va al final de la lista (la prioridad solo ordena).
+        : { nombre: '', descripcion: '', codigo: '', prioridad: this.siguientePrioridad(), activo: true, metodoCalculo: 'FIXED_AMOUNT' }
+      this.cargarEditorDesdeJson()
       this.abrirModal('modalRegla')
-      if (error) this.erroresForm = { condicionesJson: `${error}. Corríjalo aquí o vuelva al formulario.` }
     },
-    /** JSON guardado → editor visual. Si no se puede leer, deja la regla en modo avanzado. */
+    siguientePrioridad() {
+      const usadas = this.reglasConjunto.map(r => Number(r.prioridad)).filter(Number.isFinite)
+      return usadas.length ? Math.max(...usadas) + 1 : 1
+    },
+    /** JSON guardado → editor visual. Si no se puede leer, el formulario lo avisa y no deja guardar. */
     cargarEditorDesdeJson() {
       const f = this.formRegla
       const cond = leerCondiciones(f.condicionesJson)
@@ -3493,7 +3015,7 @@ export default {
       const pago = leerPago(f.politicaPagoJson)
       const error = cond.error || calc.error || pago.error
       this.editorRegla = {
-        avanzado: !!error,
+        ilegible: !!error,
         condiciones: cond.form, condExtras: cond.extras,
         calculo: calc.form, calcExtras: calc.extras,
         numeroPagos: pago.numeroPagos, pagoExtras: pago.extras,
@@ -3506,21 +3028,6 @@ export default {
       this.formRegla.condicionesJson = escribirCondiciones(e.condiciones, e.condExtras)
       this.formRegla.calculoJson = escribirCalculo(this.formRegla.metodoCalculo, e.calculo, e.calcExtras)
       this.formRegla.politicaPagoJson = escribirPago(this.requiereMotivo ? '' : e.numeroPagos, e.pagoExtras)
-    },
-    alternarModoAvanzado() {
-      if (!this.editorRegla.avanzado) {
-        this.volcarEditorEnJson()
-        this.editorRegla.avanzado = true
-        this.erroresForm = {}
-        return
-      }
-      const errores = this.validarRegla()
-      if (errores.condicionesJson || errores.calculoJson || errores.politicaPagoJson) {
-        this.erroresForm = errores
-        return
-      }
-      this.cargarEditorDesdeJson()
-      this.erroresForm = {}
     },
     onCambioMetodo() {
       // Los parámetros avanzados del método anterior no sirven para el nuevo.
@@ -3544,15 +3051,10 @@ export default {
       const f = this.formRegla
       const errores = {}
       if (esVacio(f.nombre)) errores.nombre = 'Indique un nombre para la regla'
-      if (f.id && esVacio(f.codigo)) errores.codigo = 'Una regla ya guardada necesita su código interno'
       if (esVacio(f.metodoCalculo)) errores.metodoCalculo = 'Seleccione un método de cálculo'
-      if (!esVacio(f.prioridad) && !Number.isInteger(Number(f.prioridad))) errores.prioridad = 'Debe ser un número entero'
       if (METODOS_CON_MOTIVO.includes(f.metodoCalculo) && esVacio(f.motivoManual)) errores.motivoManual = 'Indique el mensaje que verá el usuario'
-      if (this.editorRegla.avanzado) {
-        const mensaje = 'Debe ser un objeto JSON válido, p. ej. {"clave": valor}'
-        if (!jsonValido(f.condicionesJson)) errores.condicionesJson = mensaje
-        if (this.usaParametrosCalculo && !jsonValido(f.calculoJson)) errores.calculoJson = mensaje
-        if (!jsonValido(f.politicaPagoJson)) errores.politicaPagoJson = mensaje
+      if (this.editorRegla.ilegible) {
+        errores.ilegible = 'La regla no se puede guardar desde el formulario'
       } else {
         Object.assign(errores,
           validarCondiciones(this.editorRegla.condiciones),
@@ -3562,7 +3064,7 @@ export default {
     },
     async guardarRegla() {
       if (this.soloLecturaRegla || this.mutacionEnCurso || !this.aplicarValidacion(this.validarRegla)) return
-      if (!this.editorRegla.avanzado) this.volcarEditorEnJson()
+      this.volcarEditorEnJson()
       const f = this.formRegla
       const payload = {
         ...f,
@@ -3655,77 +3157,6 @@ export default {
     },
 
     // -----------------------------------------------
-    // CRUD Rangos
-    // -----------------------------------------------
-    abrirModalRango(v = null) {
-      if (!v && (!this.reglaParaRangos || !this.conjuntoEditable)) return
-      this.formRango = v
-        ? { ...v }
-        : { minInclusivo: true, maxInclusivo: false, orden: this.valoresRango.length + 1 }
-      this.abrirModal('modalRango')
-    },
-    validarRango() {
-      const f = this.formRango
-      const errores = {}
-      const dimension = String(f.dimension || '').trim()
-      if (!dimension) errores.dimension = 'La dimensión es obligatoria'
-      if (!Number.isInteger(f.orden) || f.orden < 1) errores.orden = 'Debe ser un entero mayor que cero'
-      if (esVacio(f.valorResultado)) errores.valorResultado = 'El resultado es obligatorio'
-      if (DIMENSIONES_TEXTO.includes(dimension)) {
-        if (esVacio(f.valorCategoria)) errores.valorCategoria = 'Obligatorio para dimensiones de texto'
-      } else if (!esVacio(f.valorMin) && !esVacio(f.valorMax) && Number(f.valorMax) < Number(f.valorMin)) {
-        errores.valorMax = 'Debe ser mayor o igual que el mínimo'
-      }
-      return errores
-    },
-    async guardarRango() {
-      if (this.mutacionEnCurso || !this.aplicarValidacion(this.validarRango)) return
-      const payload = { ...this.formRango, dimension: String(this.formRango.dimension).trim() }
-      // Una dimensión de texto usa categoría y no admite mínimo/máximo, y viceversa.
-      if (DIMENSIONES_TEXTO.includes(payload.dimension)) {
-        payload.valorMin = null
-        payload.valorMax = null
-      } else {
-        payload.valorCategoria = null
-      }
-      this.mutacionEnCurso = true
-      try {
-        if (payload.id) {
-          await axios.put(`/mcas/valores-rango/${payload.id}`, payload)
-        } else {
-          await axios.post(`/mcas/reglas/${this.reglaParaRangos.id}/valores-rango`, payload)
-        }
-        this.cerrarModales()
-        await this.cargarRangos()
-        mostrarExito(this.$swal, 'Fila guardada', 'La fila de la tabla se ha guardado correctamente.')
-      } catch (e) {
-        mostrarError(this.$swal, 'Error al guardar', textoError(e, 'No se pudo guardar la fila de la tabla.'))
-      } finally {
-        this.mutacionEnCurso = false
-      }
-    },
-    async eliminarRango(v) {
-      if (this.mutacionEnCurso) return
-      const confirmado = await confirmar(this.$swal, {
-        titulo: '¿Eliminar la fila de la tabla?',
-        texto: `Se eliminará la fila ${v.orden ?? ''} de ${v.dimension}.`,
-        textoConfirmar: 'Sí, eliminar',
-        peligroso: true,
-      })
-      if (!confirmado) return
-      this.mutacionEnCurso = true
-      try {
-        await axios.delete(`/mcas/valores-rango/${v.id}`)
-        await this.cargarRangos()
-        mostrarExito(this.$swal, 'Fila eliminada', 'La fila de la tabla se ha eliminado.')
-      } catch (e) {
-        mostrarError(this.$swal, 'Error al eliminar', textoError(e, 'No se pudo eliminar la fila de la tabla.'))
-      } finally {
-        this.mutacionEnCurso = false
-      }
-    },
-
-    // -----------------------------------------------
     // CRUD Políticas de retrocesión
     // -----------------------------------------------
     abrirModalRetrocesion(p = null) {
@@ -3768,9 +3199,6 @@ export default {
     validarRetrocesion() {
       const f = this.formRetrocesion
       const errores = {}
-      // Al crear, vacío = se genera (codigoPoliticaPropuesto).
-      if (f.id && esVacio(f.codigo)) errores.codigo = 'Una política ya guardada necesita su código interno'
-      if (esVacio(f.version)) errores.version = 'La versión es obligatoria'
       if (esVacio(f.idComercializadora)) errores.idComercializadora = 'Seleccione una comercializadora'
       if (esVacio(f.metodo)) errores.metodo = 'Seleccione el método'
       if (esVacio(f.vigenciaDesde)) errores.vigenciaDesde = 'Indique desde cuándo es vigente'
@@ -3937,8 +3365,6 @@ export default {
     async seleccionarYCargar(c) {
       if (this.conjuntoParaReglasId !== c.id) {
         this.conjuntoParaReglasId = c.id
-        this.reglaParaRangosId = null
-        this.valoresRango = []
         this.reglasConjunto = []
         await this.cargarReglas()
       } else if (!this.reglasConjunto.length) {
@@ -4190,14 +3616,6 @@ export default {
       this.reglaMatriz = null
       this.ordenMatriz = null
     },
-    onTablaGuardada() {
-      if (this.reglaMatriz && this.reglaParaRangosId === this.reglaMatriz.id) this.cargarRangos({ silencioso: true })
-    },
-    irAVistaAvanzada() {
-      const r = this.reglaMatriz
-      this.cerrarMatriz()
-      if (r) this.verRangos(r)
-    },
 
     // -----------------------------------------------
     // Helpers de presentación
@@ -4252,17 +3670,6 @@ export default {
       if (v === null || v === undefined || v === '') return '—'
       return `${Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
     },
-    formatRango(v) {
-      if (!esVacio(v.valorCategoria)) return '—'
-      const partes = []
-      if (!esVacio(v.valorMin)) partes.push(`${v.minInclusivo ? '≥' : '>'} ${this.formatNumero(v.valorMin)}`)
-      if (!esVacio(v.valorMax)) partes.push(`${v.maxInclusivo ? '≤' : '<'} ${this.formatNumero(v.valorMax)}`)
-      return partes.length ? partes.join(' y ') : 'Cualquier valor'
-    },
-    formatResultado(v) {
-      if (esVacio(v.valorResultado)) return '—'
-      return `${this.formatNumero(v.valorResultado)} ${v.unidadResultado || '€'}`
-    },
     ayudaMetodo(m) {
       const map = {
         FIXED_AMOUNT: 'Siempre el mismo importe, sea cual sea el consumo.',
@@ -4276,22 +3683,6 @@ export default {
         NOT_COMMISSIONABLE: 'No comisiona: cierra la propuesta con importe 0 y un mensaje.',
       }
       return map[m] || m
-    },
-    ayudaCalculoJson(m) {
-      const map = {
-        FIXED_AMOUNT:   'Objeto con campo "importe"',
-        RATE_PER_MWH:   'Objeto con campo "tasa_eur_mwh"',
-        FEE_PERCENTAGE: 'Objeto con "porcentaje_aplicacion_fee" (factor decimal, ej: 0.44) y opcionalmente "fee_minimo_eur_mwh"',
-      }
-      return map[m] || 'Parámetros específicos del método'
-    },
-    ejemploCalculoJson(m) {
-      const map = {
-        FIXED_AMOUNT:   '{"importe": 411.84}',
-        RATE_PER_MWH:   '{"tasa_eur_mwh": 4.05}',
-        FEE_PERCENTAGE: '{"porcentaje_aplicacion_fee": 0.44, "fee_minimo_eur_mwh": 5.0}',
-      }
-      return map[m] || '{}'
     },
   },
 }

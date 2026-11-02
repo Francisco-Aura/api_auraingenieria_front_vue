@@ -105,7 +105,8 @@ function crearContexto(componente, extras = {}) {
   Object.assign(ctx, componente.data ? componente.data.call(ctx) : {}, extras);
   for (const [nombre, definicion] of Object.entries(componente.computed || {})) {
     const get = typeof definicion === 'function' ? definicion : definicion.get;
-    Object.defineProperty(ctx, nombre, { get: () => get.call(ctx), configurable: true });
+    const set = typeof definicion === 'function' ? undefined : definicion.set;
+    Object.defineProperty(ctx, nombre, { get: () => get.call(ctx), set: set && ((valor) => set.call(ctx, valor)), configurable: true });
   }
   return ctx;
 }

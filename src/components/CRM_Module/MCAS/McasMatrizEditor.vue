@@ -36,13 +36,8 @@
         <div v-else-if="noCartesiana" class="mcas-alert mcas-alert--warning">
           <i class="fas fa-exclamation-triangle"></i>
           <div>
-            Esta tabla no se puede mostrar en rejilla: {{ noCartesiana }}. Puede revisarla fila a fila en la «Vista avanzada».
-            <div class="matriz-acciones-aviso">
-              <button type="button" class="btn btn-outline" @click="$emit('vista-avanzada')">
-                <i class="fas fa-list"></i>
-                <span>Abrir vista avanzada</span>
-              </button>
-            </div>
+            Esta tabla no se puede mostrar en rejilla: {{ noCartesiana }}. Para corregirla, elimine la regla y créela de nuevo
+            con «Nueva regla»: su tabla se rellena pegando desde Excel.
           </div>
         </div>
 
@@ -293,10 +288,6 @@
           <span v-if="!editable" class="footer-note"><i class="fas fa-lock"></i> Solo lectura</span>
           <span v-else-if="cambios" class="footer-note"><i class="fas fa-pen"></i> Cambios sin guardar</span>
           <span v-else class="footer-note"><i class="fas fa-check"></i> Sin cambios</span>
-          <button type="button" class="btn btn-outline" title="Ver la tabla fila a fila, tal como la guarda el motor" @click="$emit('vista-avanzada')">
-            <i class="fas fa-list"></i>
-            <span>Vista avanzada</span>
-          </button>
         </div>
         <div class="footer-actions">
           <button v-if="editable && rejilla && !noCartesiana" type="button" class="btn btn-outline" @click="abrirPegado">
@@ -341,7 +332,7 @@ export default {
     // Productos de la comercializadora de la tabla: las cabeceras «Producto» enseñan su nombre y guardan su código.
     productos: { type: Array, default: () => [] },
   },
-  emits: ['cerrar', 'guardado', 'vista-avanzada'],
+  emits: ['cerrar', 'guardado'],
   data() {
     return {
       cargando: false,
