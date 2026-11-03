@@ -1,3 +1,4 @@
+```yaml
 image: node:20
 
 stages:
@@ -44,12 +45,10 @@ stages:
         -i ~/.ssh/id_rsa_gitlab \
         -o BatchMode=yes \
         -o ConnectTimeout=10 \
-        "babenza@${DEPLOY_HOST}" \
-        "echo SSH_OK && hostname"
+        "gitlab-deploy@${DEPLOY_HOST}" \
+        "echo SSH_OK && hostname && whoami"
 
   script:
-    - set -eo pipefail
-
     - echo "=== Instalando dependencias ==="
     - rm -rf node_modules dist
 
@@ -71,7 +70,8 @@ stages:
       ssh \
         -p "$DEPLOY_PORT" \
         -i ~/.ssh/id_rsa_gitlab \
-        "babenza@${DEPLOY_HOST}" \
+        -o BatchMode=yes \
+        "gitlab-deploy@${DEPLOY_HOST}" \
         "rm -rf /tmp/aura-frontend && mkdir -p /tmp/aura-frontend"
 
     - echo "=== Enviando frontend ==="
@@ -79,17 +79,18 @@ stages:
       rsync \
         -avz \
         --delete \
-        -e "ssh -p ${DEPLOY_PORT} -i /root/.ssh/id_rsa_gitlab" \
+        -e "ssh -p ${DEPLOY_PORT} -i ~/.ssh/id_rsa_gitlab" \
         dist/ \
-        "babenza@${DEPLOY_HOST}:/tmp/aura-frontend/"
+        "gitlab-deploy@${DEPLOY_HOST}:/tmp/aura-frontend/"
 
     - echo "=== Instalando frontend ==="
     - |
       ssh \
         -p "$DEPLOY_PORT" \
         -i ~/.ssh/id_rsa_gitlab \
-        "babenza@${DEPLOY_HOST}" \
-        "bash /home/babenza/deploy_frontend.sh"
+        -o BatchMode=yes \
+        "gitlab-deploy@${DEPLOY_HOST}" \
+        "sudo -n /usr/local/sbin/aura-deploy-frontend"
 
 
 # ======================================================
@@ -110,6 +111,7 @@ deploy_frontend_DES:
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
 
+
 # ======================================================
 # PRE
 # release -> Raspberry PRE
@@ -127,6 +129,7 @@ deploy_frontend_PRE:
   rules:
     - if: '$CI_COMMIT_BRANCH == "release"'
 
+
 # ======================================================
 # PRO
 # main -> Raspberry PRO
@@ -139,7 +142,8 @@ deploy_frontend_PRO:
   variables:
     DEPLOY_HOST: "5.34.148.92"
     DEPLOY_PORT: "22"
-    DEPLOY_PRIVATE_KEY: "$SSH_PRIVATE_KEY"
+    DEPLOY_PRIVATE_KEY: "$SSH_PRIVATE_KEY_PRO"
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
+```
