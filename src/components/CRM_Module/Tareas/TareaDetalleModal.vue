@@ -22,7 +22,11 @@
           <div v-if="tarea.descripcion" class="titulo-descripcion-header">
           <div class="campo-detalle descripcion-campo">
             <label>Descripción</label>
-            <div class="valor-campo descripcion-completa">{{ tarea.descripcion }}</div>
+            <div class="valor-campo descripcion-completa" :class="{ 'descripcion-recortada': descripcionLarga && !descripcionExpandida }">{{ tarea.descripcion }}</div>
+            <button v-if="descripcionLarga" type="button" class="descripcion-toggle" :aria-expanded="descripcionExpandida" @click="descripcionExpandida = !descripcionExpandida">
+              {{ descripcionExpandida ? 'Ver menos' : 'Ver más' }}
+              <i class="fas" :class="descripcionExpandida ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </button>
           </div>
         </div>
 
@@ -535,6 +539,7 @@ export default {
   },
   data() {
     return {
+      descripcionExpandida: false,
       estadoSeleccionado: null,
       comentarioCambioEstado: '',
       esEstadoBloqueado: false,
@@ -568,6 +573,11 @@ export default {
     }
   },
   computed: {
+    // Más de ~3 líneas: se recorta y se ofrece «Ver más» (así no quita sitio a los comentarios)
+    descripcionLarga() {
+      const texto = (this.tarea && this.tarea.descripcion) || ''
+      return texto.length > 220 || texto.split('\n').length > 3
+    },
     // Usuario actual logueado
     usuarioActual() {
       return JSON.parse(localStorage.getItem('usuario') || '{}')
@@ -626,6 +636,7 @@ export default {
       handler(val) {
         if (val && this.tarea && this.tarea.id) {
           // Inicializar estado como null para mostrar "Modificar estado"
+          this.descripcionExpandida = false
           this.estadoSeleccionado = null
           // Resetear campos de comentario
           this.comentarioCambioEstado = ''

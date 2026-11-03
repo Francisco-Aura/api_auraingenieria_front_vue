@@ -99,10 +99,40 @@
   border-left: 3px solid var(--color-accent-indigo);
   white-space: pre-wrap;
   word-wrap: break-word;
-  max-height: 52px;
+  /* Desplegada ("Ver más") crece hasta un tercio del modal y luego hace scroll */
+  max-height: 33vh;
   overflow-y: auto;
-  font-size: 0.8rem;
-  line-height: 1.2;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Por defecto, tres líneas: el resto del alto es para adjuntos y comentarios */
+.descripcion-completa.descripcion-recortada {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.descripcion-toggle {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent-indigo);
+  cursor: pointer;
+}
+
+.descripcion-toggle:hover {
+  text-decoration: underline;
+}
+
+.descripcion-toggle i {
+  font-size: 0.65rem;
+  margin-left: 2px;
 }
 
 .detalle-grid {
