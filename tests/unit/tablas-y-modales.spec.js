@@ -142,10 +142,19 @@ test('Cancelar y Cerrar en los modales y avisos van en gris visible, no en blanc
   assert.match(regla(css, '.swal2-styled:is(.swal2-cancel, .swal2-deny)', 'background:'), /var\(--aura-btn-cancelar-fondo\)/);
 });
 
-test('los puntos del cliente caben en el modal a 1280 px sin fijar Acciones', () => {
+test('los puntos del cliente van en un modal estrecho, con pocas columnas y la paginación estándar', () => {
   const css = sinComentarios(leer('src/components/CRM_Module/Clientes/PuntosSuministroClienteComponent.css'));
-  assert.match(css, /@media \(max-width: 1300px\) \{[\s\S]*\.cups-cell,\s*\.cups-cell \.btn-cups-link \{\s*font-size: 0\.72rem;/);
-  assert.match(leer('src/components/CRM_Module/Clientes/PuntosSuministroClienteComponent.vue'), /data-table data-table--acciones-fijas/);
+  const vue = leer('src/components/CRM_Module/Clientes/PuntosSuministroClienteComponent.vue');
+  // Modal de unos 1080 px (antes ocupaba el 98 % de la pantalla) y letra de tabla legible
+  assert.match(css, /\.modal-content\.ps-cliente-modal \{\s*width: 100%;\s*max-width: 1240px;/);
+  assert.match(css, /\.ps-cliente-modal \.data-table td \{[^}]*font-size: 0\.875rem;/);
+  // Seis columnas (las seis potencias van juntas en una) y la columna fija de Acciones
+  assert.equal((vue.match(/<th[ >]/g) || []).length, 6);
+  assert.match(vue, /data-table data-table--acciones-fijas/);
+  // Paginación como en el resto de tablas: filas por página, «Mostrando…» y botones
+  assert.match(vue, /class="pagination-controls"/);
+  assert.match(vue, /paginatedPuntos/);
+  assert.match(vue, /Registros por página:/);
 });
 
 test('el panel de notas del cliente conserva un histórico útil con poca altura', () => {

@@ -126,52 +126,6 @@
   z-index: var(--z-sticky);
 }
 
-.data-table th:first-child {
-  text-align: left;
-  min-width: 180px;
-  max-width: 220px;
-}
-
-.data-table th:nth-child(2) {
-  min-width: 120px;
-  max-width: 150px;
-}
-
-.data-table th:nth-child(3) {
-  min-width: 205px;
-}
-
-.data-table th:nth-child(4) {
-  min-width: 50px;
-  max-width: 60px;
-}
-
-/* Encabezados de potencias más compactos */
-.data-table th:nth-child(5),
-.data-table th:nth-child(6),
-.data-table th:nth-child(7),
-.data-table th:nth-child(8),
-.data-table th:nth-child(9),
-.data-table th:nth-child(10) {
-  padding: 0.75rem 0.3rem;
-  min-width: 55px;
-  max-width: 60px;
-  font-size: 0.75rem;
-}
-
-/* Nuevas columnas: Fecha Fin Contrato y Comercializadora */
-.data-table th:nth-child(11) {
-  min-width: 100px;
-  max-width: 120px;
-  font-size: 0.75rem;
-}
-
-.data-table th:nth-child(12) {
-  min-width: 120px;
-  max-width: 150px;
-  font-size: 0.75rem;
-}
-
 .data-table th i {
   margin-right: 0.35rem;
   color: black;
@@ -206,46 +160,6 @@
   border-bottom: 1px solid var(--neutral-100);
 }
 
-.data-table td:first-child {
-  min-width: 180px;
-  max-width: 220px;
-}
-
-.data-table td:nth-child(2) {
-  min-width: 120px;
-  max-width: 150px;
-}
-
-.data-table td:nth-child(4) {
-  min-width: 50px;
-  max-width: 60px;
-}
-
-/* Celdas de potencias más compactas */
-.data-table td:nth-child(5),
-.data-table td:nth-child(6),
-.data-table td:nth-child(7),
-.data-table td:nth-child(8),
-.data-table td:nth-child(9),
-.data-table td:nth-child(10) {
-  padding: 0.75rem 0.3rem;
-  min-width: 55px;
-  max-width: 60px;
-}
-
-/* Nuevas celdas: Fecha Fin Contrato y Comercializadora */
-.data-table td:nth-child(11) {
-  min-width: 100px;
-  max-width: 120px;
-  font-size: 0.75rem;
-}
-
-.data-table td:nth-child(12) {
-  min-width: 120px;
-  max-width: 150px;
-  font-size: 0.75rem;
-}
-
 /* Aviso de búsqueda sin resultados: ocupa toda la fila y no se resalta al pasar el ratón */
 .data-table tbody tr.fila-sin-resultados,
 .data-table tbody tr.fila-sin-resultados:hover {
@@ -265,15 +179,6 @@
 
 .text-center {
   text-align: center;
-}
-
-.potencia-cell {
-  white-space: nowrap;
-  font-weight: 500;
-  color: var(--neutral-700);
-  min-width: 55px;
-  max-width: 60px;
-  font-size: 0.75rem;
 }
 
 .action-buttons {
@@ -329,12 +234,6 @@
    styles/shared-motion.css */
 
 /* Estilos para columnas CUPS */
-.cups-cell {
-  min-width: 205px;
-  text-align: center;
-  white-space: nowrap;
-}
-
 .btn-cups-link {
   background: none;
   border: none;
@@ -442,33 +341,142 @@
   color: white;
 }
 
-/* Responsive design */
-@media (max-width: 1200px) {
-  .modal-content {
-    max-width: 98%;
-  }
-  
-  .data-table th,
-  .data-table td {
-    padding: 0.75rem 0.5rem;
-    font-size: 0.8rem;
-  }
-  
-  .potencia-cell {
-    min-width: 55px;
-    max-width: 60px;
-    font-size: 0.75rem;
-  }
-  .cups-value {
-    font-size: 0.8rem; /* Mantener tamaño legible en tablets */
-  }
+/* Modal de puntos de un cliente: estrecho, con letra legible y la tabla estándar paginada */
+.modal-content.ps-cliente-modal {
+  width: 100%;
+  max-width: 1240px;
+}
+
+.ps-cliente-modal .modal-body {
+  padding: 1rem 1.25rem;
+}
+
+.ps-cliente-modal .search-container {
+  margin-bottom: 1rem;
+}
+
+.ps-cliente-modal .data-table th {
+  padding: 0.7rem 0.75rem;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.ps-cliente-modal .data-table td {
+  padding: 0.65rem 0.75rem;
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+
+.ps-cliente-modal .col-fecha {
+  white-space: nowrap;
+}
+
+.ps-cliente-modal .col-potencias {
+  white-space: nowrap;
+}
+
+.ps-cliente-modal .actions-header,
+.ps-cliente-modal .actions-cell {
+  text-align: center;
+}
+
+.ps-direccion {
+  font-weight: 600;
+  color: var(--color-text-dark);
+  line-height: 1.3;
+}
+
+.ps-ubicacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.ps-ident {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #eef1f5;
+  color: #4b5766;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.ps-cliente-modal .cups-cell {
+  white-space: nowrap;
+}
+
+.ps-cliente-modal .cups-content {
+  justify-content: flex-start;
+}
+
+.ps-cliente-modal .btn-cups-link {
+  font-size: 0.82rem;
+}
+
+/* Las seis potencias en una fila: el periodo (P1 a P6) arriba y el valor debajo */
+.potencias-lista {
+  display: flex;
+  gap: 4px;
+}
+
+.potencia-celda {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 52px;
+  padding: 3px 6px;
+  border: 1px solid #dde3ea;
+  border-radius: 6px;
+  background: #fff;
+  line-height: 1.25;
+}
+
+.potencia-celda__periodo {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #6b7785;
+  letter-spacing: 0.03em;
+}
+
+.potencia-celda__valor {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--neutral-700);
+  white-space: nowrap;
+}
+
+.potencia-celda--vacia {
+  background: #f8fafc;
+  border-style: dashed;
+}
+
+.potencia-celda--vacia .potencia-celda__valor {
+  color: #9aa7b5;
+  font-weight: 400;
+}
+
+.texto-vacio {
+  color: var(--color-text-secondary);
+}
+
+.ps-cliente-modal .pagination-controls {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0 0;
+  border-top: 0;
+  background: transparent;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 768px) {
   .modal-overlay {
     padding: 0.5rem;
   }
-  
+
   .modal-content {
     width: 100%;
     max-height: 95%;
@@ -480,79 +488,5 @@
 
   .search-container {
     max-width: 100%;
-  }
-
-  .data-table th,
-  .data-table td {
-    padding: 0.5rem 0.25rem;
-    font-size: 0.75rem;
-  }
-
-  .potencia-cell {
-    min-width: 50px;
-    max-width: 55px;
-    font-size: 0.7rem;
-  }
-
-  .cups-value {
-    font-size: 0.75rem; /* Reducir solo ligeramente en móviles */
-    font-weight: 600; /* Mantener el peso para legibilidad */
-  }
-
-}
-
-/* Por debajo de 1500 px las cabeceras van sin icono: con él, «Comercializadora» y
-   las fechas no cabían y se cortaban */
-@media (max-width: 1499px) {
-  .data-table th i {
-    display: none;
-  }
-}
-
-/* Hasta 1366 px la tabla debe caber en el modal sin desplazarse (a 1280 px la columna fija
-   de Acciones tapaba Comercializadora): mínimos más estrechos, la dirección y los CUPS se
-   recortan con «…» y llevan el texto completo en el title */
-@media (max-width: 1366px) {
-  .data-table th:first-child,
-  .data-table td:first-child {
-    min-width: 150px;
-    max-width: 190px;
-  }
-
-  .data-table th:nth-child(2),
-  .data-table td:nth-child(2) {
-    min-width: 100px;
-    max-width: 130px;
-  }
-
-  .data-table th:nth-child(3),
-  .cups-cell {
-    min-width: 170px;
-  }
-}
-
-/* A 1280 px la tabla pasaba 7 px del modal y fijaba Acciones sin necesidad: lo que
-   manda es el texto (CUPS en una línea), así que CUPS con letra algo menor y
-   dirección e identificación con un máximo más corto (llevan el texto completo en title) */
-@media (max-width: 1300px) {
-  .data-table th:first-child,
-  .data-table td:first-child {
-    min-width: 135px;
-    max-width: 160px;
-  }
-
-  .data-table th:nth-child(2),
-  .data-table td:nth-child(2) {
-    max-width: 110px;
-  }
-
-  .data-table th:nth-child(3),
-  .cups-cell {
-    min-width: 150px;
-  }
-
-  .cups-cell,
-  .cups-cell .btn-cups-link {
-    font-size: 0.72rem;
   }
 }

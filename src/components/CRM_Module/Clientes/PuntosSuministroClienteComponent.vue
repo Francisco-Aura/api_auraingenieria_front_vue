@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="modal-overlay fade-in" role="dialog" aria-modal="true" aria-labelledby="detalle-cliente-title">
-    <div class="modal-content">
+    <div class="modal-content ps-cliente-modal">
       <div class="modal-header aura-modal-header">
         <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-building"></i></span>
         <div class="aura-modal-header__titulos">
@@ -42,46 +42,42 @@
           <table v-if="puntosSuministroLocal.length > 0 || cargandoPuntos" class="data-table data-table--acciones-fijas">
             <thead>
               <tr>
-                <th><i class="fas fa-map-marker-alt"></i> Dirección</th>
-                <th><i class="fas fa-id-card"></i> Identificación</th>
-                <th><i class="fas fa-bolt"></i> CUPS</th>
-                <th><i class="fas fa-tag"></i> Tipo</th>
-                <th><i class="fas fa-bolt"></i> P1</th>
-                <th><i class="fas fa-bolt"></i> P2</th>
-                <th><i class="fas fa-bolt"></i> P3</th>
-                <th><i class="fas fa-bolt"></i> P4</th>
-                <th><i class="fas fa-bolt"></i> P5</th>
-                <th><i class="fas fa-bolt"></i> P6</th>
-                <th><i class="fas fa-calendar-alt"></i> Fin Contrato</th>
-                <th><i class="fas fa-building"></i> Comercializadora</th>
+                <th class="col-direccion"><i class="fas fa-map-marker-alt"></i> Dirección</th>
+                <th class="col-cups"><i class="fas fa-bolt"></i> CUPS</th>
+                <th class="col-potencias"><i class="fas fa-plug"></i> Potencias contratadas (kW)</th>
+                <th class="col-fecha"><i class="fas fa-calendar-alt"></i> Fin contrato</th>
+                <th class="col-comercializadora"><i class="fas fa-building"></i> Comercializadora</th>
                 <th class="actions-header"><i class="fas fa-cogs"></i> Acciones</th>
               </tr>
             </thead>
             <tbody>
               <template v-if="cargandoPuntos">
                 <tr v-for="n in 5" :key="'skeleton-' + n" class="skeleton-row">
-                  <td v-for="col in 13" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
+                  <td v-for="col in 6" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
                 </tr>
               </template>
               <!-- Sin coincidencias en la búsqueda: antes solo quedaba la cabecera -->
               <tr v-if="!cargandoPuntos && filterPuntos && filteredPuntosSuministro.length === 0" class="fila-sin-resultados">
-                <td colspan="13">
+                <td colspan="6">
                   <div class="empty-state">
                     <i class="fas fa-search fa-2x text-muted"></i>
                     <p>No hay puntos de suministro que coincidan con la búsqueda</p>
                   </div>
                 </td>
               </tr>
-              <tr v-for="punto in filteredPuntosSuministro" v-show="!cargandoPuntos" :key="punto.id">
-                <td class="text-truncate" :title="`${punto.direccion}, ${punto.codigoPostal}, ${punto.poblacion}, ${punto.provincia}`">
-                  {{ punto.direccion }}, {{ punto.codigoPostal }}, {{ punto.poblacion }}, {{ punto.provincia }}
+              <tr v-for="punto in paginatedPuntos" v-show="!cargandoPuntos" :key="punto.id">
+                <td class="col-direccion" :title="`${punto.direccion}, ${punto.codigoPostal}, ${punto.poblacion}, ${punto.provincia}`">
+                  <div class="ps-direccion">{{ punto.direccion }}</div>
+                  <div class="ps-ubicacion">
+                    {{ punto.codigoPostal }} {{ punto.poblacion }}, {{ punto.provincia }}
+                    <span v-if="punto.identificacion" class="ps-ident" :title="`Identificación: ${punto.identificacion}`">{{ punto.identificacion }}</span>
+                  </div>
                 </td>
-                <td class="text-truncate text-center" :title="punto.identificacion">{{ punto.identificacion || '-' }}</td>
-                <td 
-                  class="cups-cell text-center" 
-                  :title="getCupsValue(punto)"
-                >
+                <td class="cups-cell" :title="`${getTipoCups(punto)}: ${getCupsValue(punto)}`">
                   <div class="cups-content">
+                    <span v-if="getCupsValue(punto) !== '-'" class="cups-indicator" :class="getTipoCupsClass(punto)">
+                      <i :class="getTipoCupsIcon(punto)"></i>
+                    </span>
                     <button
                       v-if="getCupsValue(punto) !== '-'"
                       class="btn-cups-link"
@@ -89,20 +85,19 @@
                       :title="`Ver ${getCupsValue(punto)} en Puntos de Suministro`"
                     >{{ getCupsValue(punto) }}</button>
                     <span v-else>-</span>
-                    <span v-if="getCupsValue(punto) !== '-'" class="cups-indicator" :class="getTipoCupsClass(punto)">
-                      <i :class="getTipoCupsIcon(punto)"></i>
-                    </span>
                   </div>
                 </td>
-                <td class="text-center">{{ getTipoCups(punto) }}</td>
-                <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia1) }}</td>
-                <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia2) }}</td>
-                <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia3) }}</td>
-                <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia4) }}</td>
-                <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia5) }}</td>
-                <td class="text-center potencia-cell">{{ formatPotencia(punto.potencia6) }}</td>
-                <td class="text-center">{{ formatDate(punto.fechaFinUltimoContrato) }}</td>
-                <td class="text-center">{{ punto.comercializadoraActual || '-' }}</td>
+                <td class="col-potencias">
+                  <div v-if="potenciasDe(punto).some(p => p.valor)" class="potencias-lista">
+                    <span v-for="p in potenciasDe(punto)" :key="p.periodo" class="potencia-celda" :class="{ 'potencia-celda--vacia': !p.valor }" :title="p.valor ? `Potencia contratada ${p.periodo}: ${p.valor} kW` : `${p.periodo}: sin potencia contratada`">
+                      <span class="potencia-celda__periodo">{{ p.periodo }}</span>
+                      <span class="potencia-celda__valor">{{ p.valor || '-' }}</span>
+                    </span>
+                  </div>
+                  <span v-else class="texto-vacio" title="Sin potencias contratadas">-</span>
+                </td>
+                <td class="col-fecha">{{ formatDate(punto.fechaFinUltimoContrato) }}</td>
+                <td class="col-comercializadora">{{ punto.comercializadoraActual || '-' }}</td>
                 <td class="actions-cell">
                   <div class="action-buttons">
                     <button class="btn-icon btn-view" @click="verDetallePunto(punto)" title="Ver detalle" aria-label="Ver detalle del punto de suministro">
@@ -116,6 +111,35 @@
           <div v-else class="empty-state">
             <i class="fas fa-bolt fa-3x text-muted"></i>
             <p>No hay puntos de suministro para mostrar</p>
+          </div>
+        </div>
+
+        <div v-if="puntosSuministroLocal.length > 0" class="pagination-controls">
+          <div class="records-per-page">
+            <label for="puntosPorPagina">Registros por página:</label>
+            <select v-model.number="recordsPerPage" id="puntosPorPagina" class="form-control">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="25">25</option>
+            </select>
+          </div>
+          <div class="pagination-info">
+            Mostrando {{ filteredPuntosSuministro.length ? paginationStart : 0 }} - {{ paginationEnd }} de {{ filteredPuntosSuministro.length }} registros
+          </div>
+          <div class="pagination-buttons">
+            <button class="btn btn-outline" :disabled="currentPage === 1" @click="currentPage = 1" title="Primera página" aria-label="Primera página">
+              <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button class="btn btn-outline" :disabled="currentPage === 1" @click="currentPage--" title="Página anterior" aria-label="Página anterior">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <span class="page-info">Página {{ currentPage }} de {{ totalPages || 1 }}</span>
+            <button class="btn btn-outline" :disabled="currentPage >= totalPages" @click="currentPage++" title="Página siguiente" aria-label="Página siguiente">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+            <button class="btn btn-outline" :disabled="currentPage >= totalPages" @click="currentPage = totalPages" title="Última página" aria-label="Última página">
+              <i class="fas fa-angle-double-right"></i>
+            </button>
           </div>
         </div>
         </div><!-- /tab puntos -->
@@ -176,6 +200,8 @@ export default {
   data() {
     return {
       filterPuntos: "",
+      currentPage: 1,
+      recordsPerPage: 5,
       formularioVisible: false,
       modificarPunto: null,
       modoConsulta: false,
@@ -202,8 +228,30 @@ export default {
         return this.normalizeText(concatenated).includes(filtro);
       });
     },
+    paginatedPuntos() {
+      const inicio = (this.currentPage - 1) * this.recordsPerPage;
+      return this.filteredPuntosSuministro.slice(inicio, inicio + this.recordsPerPage);
+    },
+    totalPages() {
+      return Math.ceil(this.filteredPuntosSuministro.length / this.recordsPerPage);
+    },
+    paginationStart() {
+      return (this.currentPage - 1) * this.recordsPerPage + 1;
+    },
+    paginationEnd() {
+      return Math.min(this.currentPage * this.recordsPerPage, this.filteredPuntosSuministro.length);
+    },
   },
   watch: {
+    filterPuntos() {
+      this.currentPage = 1;
+    },
+    recordsPerPage() {
+      this.currentPage = 1;
+    },
+    totalPages(nuevo) {
+      if (nuevo > 0 && this.currentPage > nuevo) this.currentPage = nuevo;
+    },
     puntosSuministro: {
       immediate: true,
       deep: true,
@@ -335,11 +383,14 @@ export default {
       return '';
     },
 
-    formatPotencia(potencia) {
-      if (potencia === null || potencia === undefined || potencia === 0) {
-        return '-';
+    // Las seis potencias contratadas (P1 a P6), cada una con su periodo; las que no tienen, vacías
+    potenciasDe(punto) {
+      const lista = [];
+      for (let i = 1; i <= 6; i++) {
+        const valor = parseFloat(punto['potencia' + i]);
+        lista.push({ periodo: 'P' + i, valor: valor ? valor.toFixed(2) : '' });
       }
-      return parseFloat(potencia).toFixed(2) + ' kW';
+      return lista;
     },
 
     formatDate(date) {
