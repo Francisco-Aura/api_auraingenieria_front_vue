@@ -110,7 +110,6 @@ deploy_frontend_DES:
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
 
-
 # ======================================================
 # PRE
 # release -> Raspberry PRE
@@ -127,7 +126,6 @@ deploy_frontend_PRE:
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "release"'
-
 
 # ======================================================
 # PRO
