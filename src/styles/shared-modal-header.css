@@ -258,10 +258,14 @@ div.aura-modal-header.aura-modal-header .aura-modal-header__boton:focus-visible 
   align-items: stretch;
   gap: 2px;
   padding: 0 16px;
-  background: #f4f6f9;
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  background: #fff;
+  border-bottom: 1px solid #cdd6e0;
+  /* Una sombra suave la separa del formulario, que va sobre un fondo gris */
+  box-shadow: 0 2px 4px rgba(16, 24, 40, 0.08);
   flex-shrink: 0;
   overflow-x: auto;
+  /* Sin esto el -1px de los botones hacía aparecer una mini barra de scroll vertical */
+  overflow-y: hidden;
 }
 
 button.aura-pestana {
@@ -275,7 +279,7 @@ button.aura-pestana {
   border-bottom: 3px solid transparent;
   border-radius: 0;
   background: transparent;
-  color: var(--color-text-secondary, #5b6b79);
+  color: #6b7785;
   font-size: 0.88rem;
   font-weight: 500;
   white-space: nowrap;
@@ -294,7 +298,7 @@ button.aura-pestana:hover {
 button.aura-pestana.aura-pestana--activa {
   color: var(--color-text-dark, #2c3e50);
   font-weight: 600;
-  background: #fff;
+  background: rgba(var(--color-brand-yellow-rgb), 0.14);
   border-bottom-color: var(--color-brand-yellow-hex, #fcd700);
 }
 

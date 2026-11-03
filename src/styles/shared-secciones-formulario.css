@@ -1,0 +1,133 @@
+/*
+ * Formularios con secciones (cliente, punto de suministro, contrato, servicio y los
+ * modales de MCAS): que se vea de un vistazo dónde empieza cada sección y qué es
+ * etiqueta y qué es dato.
+ *  - El fondo del formulario es un punto más oscuro que las tarjetas blancas.
+ *  - Cada sección es una tarjeta con una cabecera de tinte cálido (el amarillo de la
+ *    marca, muy suave) y una barra amarilla a la izquierda: no se confunde ni con el
+ *    gris del fondo ni con el blanco de los campos.
+ *  - Etiquetas más discretas y campos con el borde un poco más marcado.
+ * El relleno de cada tarjeta va en --sec-y / --sec-x y la cabecera lo compensa con margen
+ * negativo, así ocupa todo el ancho de la tarjeta sea cual sea su relleno.
+ * Los selectores llevan el contenedor delante para ganar a los CSS de cada componente.
+ */
+
+/* Fondo del formulario */
+:is(.compact-form-content, .tab-container, .pestana-contrato-cuerpo, .mcas-modal-body),
+.modern-form:not(.formulario-contrato),
+/* Los estilos de MCAS son «scoped» y pesan más: de ahí la clase repetida */
+div.mcas-modal-body.mcas-modal-body,
+.formulario-contrato .pestana-contrato-cuerpo,
+form.formulario-contrato > .pestana-contrato-cuerpo {
+  background: #e6ebf1;
+}
+
+/* Tarjeta de cada sección */
+:is(.compact-form-content, .tab-container, .pestana-contrato-cuerpo, .mcas-modal-body, .modern-form)
+  :is(.form-section, .form-section-compact, .form-section-modern, .installation-card) {
+  --sec-y: 0.75rem;
+  --sec-x: 0.75rem;
+  background: #fff;
+  border: 1px solid #cdd6e0;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+  overflow: hidden;
+}
+
+:is(.compact-form-content, .tab-container, .pestana-contrato-cuerpo, .mcas-modal-body, .modern-form) .form-section-modern {
+  --sec-y: 0.6rem;
+  --sec-x: 0.6rem;
+}
+
+.formulario-contrato .form-section-modern {
+  --sec-y: 0.75rem;
+  --sec-x: 0.9rem;
+}
+
+/* Los modales de MCAS no tenían tarjeta: sus secciones eran texto suelto sobre blanco */
+.mcas-modal-body .form-section {
+  --sec-y: 0.8rem;
+  --sec-x: 1rem;
+  padding: var(--sec-y) var(--sec-x);
+  border-radius: var(--radius-sm);
+}
+
+.mcas-modal-body .form-section + .form-section {
+  margin-top: 14px;
+}
+
+/* Cabecera: ocupa todo el ancho de la tarjeta, con la barra de marca a la izquierda */
+:is(.compact-form-content, .tab-container, .pestana-contrato-cuerpo, .mcas-modal-body, .modern-form)
+  :is(.section-header, .section-header-compact, .section-header-modern) {
+  margin: calc(-1 * var(--sec-y)) calc(-1 * var(--sec-x)) 0.6rem !important;
+  /* El icono nunca queda pegado a la barra amarilla, aunque la tarjeta no defina su relleno */
+  padding: 0.45rem var(--sec-x, 0.75rem) 0.45rem calc(var(--sec-x, 0.75rem) + 0.25rem) !important;
+  background: #fffcee;
+  border-bottom: 1px solid #f1ebc9 !important;
+  border-left: 4px solid var(--color-brand-yellow-hex);
+}
+
+:is(.compact-form-content, .tab-container, .pestana-contrato-cuerpo, .mcas-modal-body, .modern-form)
+  :is(.section-header, .section-header-compact, .section-header-modern) i {
+  color: #8a6d00;
+}
+
+:is(.compact-form-content, .tab-container, .pestana-contrato-cuerpo, .mcas-modal-body, .modern-form)
+  :is(.section-header, .section-header-compact, .section-header-modern) h3 {
+  letter-spacing: 0.01em;
+  color: #1f2a37;
+}
+
+/* «Servicios del cliente» (cliente) lleva su propia clase, pero es una sección más */
+.tab-container .services-section {
+  --sec-y: 0.75rem;
+  --sec-x: 0.75rem;
+  border-color: #cdd6e0;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+  overflow: hidden;
+}
+
+.tab-container .services-header h3 {
+  margin: calc(-1 * var(--sec-y)) calc(-1 * var(--sec-x)) 0.6rem !important;
+  padding: 0.45rem var(--sec-x, 0.75rem) 0.45rem calc(var(--sec-x, 0.75rem) + 0.25rem) !important;
+  background: #fffcee;
+  border-bottom: 1px solid #f1ebc9 !important;
+  border-left: 4px solid var(--color-brand-yellow-hex);
+  letter-spacing: 0.01em;
+  color: #1f2a37;
+}
+
+.tab-container .services-header h3 i {
+  color: #8a6d00;
+}
+
+/* Instalaciones: sus iconos van en verde (energía renovable) a propósito */
+.installation-card .section-header-compact i {
+  color: var(--color-success);
+}
+
+/* Etiqueta en gris medio y pequeña; el dato, con el borde más claro de ver */
+:is(.compact-form-content, .tab-container) :is(.form-compact-group, .form-group-compact) label {
+  font-size: 0.75rem;
+  color: #5b6773;
+}
+
+:is(.compact-form-content, .tab-container) :is(.form-compact-group, .form-group-compact) :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  border-color: #b4bfcc;
+}
+
+:is(.pestana-contrato-cuerpo, .modern-form) .form-group-modern label {
+  color: #5b6773;
+}
+
+:is(.pestana-contrato-cuerpo, .modern-form) .form-group-modern :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  border-color: #b4bfcc;
+}
+
+/* Un poco más compacto en vertical en el punto de suministro (campos de 32px como mínimo) */
+.compact-form-content :is(.form-compact-group, .form-group-compact) {
+  margin-bottom: 0.5rem;
+}
+
+.compact-form-content .form-compact-group :is(input, select):not([type="checkbox"]):not([type="radio"]) {
+  height: 32px;
+}

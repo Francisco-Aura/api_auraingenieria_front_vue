@@ -6,6 +6,8 @@ import './styles/swal-dialogs.css';
 import './assets/styles.css';
 import './styles/shared-animations.css';
 import './styles/shared-modern-forms.css';
+import './styles/shared-secciones-formulario.css';
+import './styles/shared-casillas.css';
 import './styles/shared-pagination.css';
 import './styles/shared-row-states.css';
 import './styles/shared-ui.css';
