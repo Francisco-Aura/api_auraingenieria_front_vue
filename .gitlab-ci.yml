@@ -1,4 +1,3 @@
-```yaml
 image: node:20
 
 stages:
@@ -92,14 +91,6 @@ stages:
         "gitlab-deploy@${DEPLOY_HOST}" \
         "sudo -n /usr/local/sbin/aura-deploy-frontend"
 
-
-# ======================================================
-# DES
-# develop -> Raspberry DES
-# SSH -> 5.34.148.92:2223
-# WEB -> http://5.34.148.92:8081
-# ======================================================
-
 deploy_frontend_DES:
   extends: .deploy_frontend
 
@@ -110,13 +101,6 @@ deploy_frontend_DES:
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
-
-
-# ======================================================
-# PRE
-# release -> Raspberry PRE
-# SSH -> 5.34.148.92:2222
-# ======================================================
 
 deploy_frontend_PRE:
   extends: .deploy_frontend
@@ -129,13 +113,6 @@ deploy_frontend_PRE:
   rules:
     - if: '$CI_COMMIT_BRANCH == "release"'
 
-
-# ======================================================
-# PRO
-# main -> Raspberry PRO
-# SSH -> 5.34.148.92:22
-# ======================================================
-
 deploy_frontend_PRO:
   extends: .deploy_frontend
 
@@ -146,4 +123,3 @@ deploy_frontend_PRO:
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-```
