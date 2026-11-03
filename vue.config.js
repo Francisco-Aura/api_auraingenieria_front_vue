@@ -21,6 +21,14 @@ module.exports = defineConfig({
       }
     },
     proxy: {
+      // Registro horario (módulo aparte, puerto 8124): en el servidor lo publica nginx quitando el prefijo.
+      // Vue CLI usa la clave como expresión regular SIN anclar, de ahí el «^»: así no atrapa la ruta de la intranet
+      // /dashboard/registro-horario. Va la primera para que '/api' no se quede con /registro-horario/api/...
+      '^/registro-horario/': {
+        target: 'http://127.0.0.1:8124',
+        changeOrigin: true,
+        pathRewrite: { '^/registro-horario': '' }
+      },
       '/api': {
         target: 'http://127.0.0.1:8986',
         changeOrigin: true

@@ -43,6 +43,7 @@
         <router-link to="/dashboard/planificador" class="menu-item" active-class="active">
           <i class="fas fa-project-diagram menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Planificador</span>
+          <span v-if="presupuestosPorValidar > 0" class="menu-dot" :title="presupuestosPorValidar + ' presupuesto(s) pendiente(s) de validar'" aria-label="Hay presupuestos pendientes de validar"></span>
           <div v-if="sidebarCollapsed" class="tooltip">Planificador</div>
         </router-link>
 
@@ -52,6 +53,12 @@
           <div v-if="sidebarCollapsed" class="tooltip">Gestión de Tareas</div>
         </router-link>
         
+        <router-link to="/dashboard/registro-horario" class="menu-item" active-class="active">
+          <i class="fas fa-user-clock menu-icon"></i>
+          <span v-if="!sidebarCollapsed" class="menu-text">Registro horario</span>
+          <div v-if="sidebarCollapsed" class="tooltip">Registro horario</div>
+        </router-link>
+
         <router-link v-if="nivelAcceso === 1" to="/dashboard/administracion" class="menu-item" active-class="active">
           <i class="fas fa-cog menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Administración</span>
@@ -164,11 +171,15 @@ export default {
         '/dashboard/tareas': 'Gestión de Tareas',
         '/dashboard/mcas': 'Configuración MCAS',
         '/dashboard/mcas-propuestas': 'Comisiones MCAS',
-        '/dashboard/planificador': 'Planificador'
+        '/dashboard/planificador': 'Planificador',
+        '/dashboard/registro-horario': 'Registro horario'
       },
       moduloTareasActivo: false,
       // Recuento de comisiones MCAS pendientes (solo administradores): { porValidar, porRevisar, enCorreccion, total }
-      pendientesMcas: null
+      pendientesMcas: null,
+      // Ofertas del presupuestador enviadas al cliente a la espera de que las valide el usuario 1 (solo se le avisa a él)
+      presupuestosPorValidar: 0,
+      temporizadorPresupuestos: null
     };
   },
   computed: {
@@ -187,7 +198,7 @@ export default {
     },
     // Aplicaciones que se muestran dentro de la página (iframe) y gestionan su propio desplazamiento
     esAplicacionIncrustada() {
-      return this.$route.path === '/dashboard/planificador';
+      return ['/dashboard/planificador', '/dashboard/registro-horario'].includes(this.$route.path);
     }
   },
   methods: {
@@ -256,6 +267,23 @@ export default {
         this.moduloTareasActivo = false
       }
     },
+    // Cuenta las ofertas enviadas pendientes de validar (una oferta con varias variantes cuenta una vez). Solo para quien valida.
+    async cargarPresupuestosPorValidar() {
+      const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+      if (!usuario || String(usuario.id) !== '1') {
+        this.presupuestosPorValidar = 0;
+        return;
+      }
+      try {
+        const res = await fetch('/planificador/api/budgets', { headers: { 'X-Usuario-Id': String(usuario.id) } });
+        if (!res.ok) return;
+        const presupuestos = await res.json();
+        const ofertas = new Set(presupuestos.filter((p) => p.status === 'enviado').map((p) => p.offer_id || p.id));
+        this.presupuestosPorValidar = ofertas.size;
+      } catch (error) {
+        // Sin planificador o sin red: no se enseña ningún aviso
+      }
+    },
     handleResize() {
       if (window.innerWidth < 900 && !this.sidebarCollapsed) {
         this.sidebarCollapsed = true;
@@ -296,6 +324,8 @@ export default {
     window.addEventListener('storage', this.alCambiarUsuarioEnOtraPestana);
     document.addEventListener('click', this.cerrarMenuUsuarioAlPulsarFuera);
     document.addEventListener('keydown', this.cerrarMenuUsuarioConEscape);
+    this.cargarPresupuestosPorValidar();
+    this.temporizadorPresupuestos = setInterval(this.cargarPresupuestosPorValidar, 60000);
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.handleResize);
@@ -303,11 +333,14 @@ export default {
     document.removeEventListener('click', this.cerrarMenuUsuarioAlPulsarFuera);
     document.removeEventListener('keydown', this.cerrarMenuUsuarioConEscape);
     this.sondeoPendientesMcas?.detener();
+    clearInterval(this.temporizadorPresupuestos);
   },
   watch: {
     // Cerrar menú de usuario al cambiar de ruta
     '$route'() {
       this.userMenuOpen = false;
+      // Al salir del planificador (donde se valida) se vuelve a contar
+      this.cargarPresupuestosPorValidar();
     }
   }
 };

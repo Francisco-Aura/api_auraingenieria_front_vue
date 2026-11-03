@@ -185,6 +185,18 @@
   color:white;
 }
 
+/* Punto rojo: hay algo pendiente dentro de la sección (sin número; el detalle está dentro) */
+.menu-dot {
+  position: absolute;
+  top: 12px;
+  left: 40px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e5384a;
+  border: 2px solid #11161d;
+}
+
 /* Tooltip for collapsed sidebar */
 .tooltip {
   position: absolute;
