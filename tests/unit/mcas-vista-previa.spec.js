@@ -15,6 +15,8 @@ let campos;
 test.before(async () => { campos = await importar(CAMPOS); });
 
 const vaciar = () => new Promise(setImmediate);
+// Por defecto, un administrador: la comisión (importe y avisos) solo la ven ellos
+global.localStorage = { getItem: () => JSON.stringify({ id: 1, nombre: 'Admin', nivelAcceso: 1 }) };
 const normalizar = (texto) => String(texto).replace(/\s/g, ' ');
 
 function diferido() {
@@ -85,7 +87,7 @@ test('cada dato que piden las tablas de comisiones tiene su campo en el formular
     TIPO_PRECIO: 'mcasTipoPrecio', TIPO_SUMINISTRO: 'mcasTipoSuministro', SEGMENTO: 'mcasSegmento',
     ES_RENOVACION: 'mcasEsRenovacion', TIPO_RENOVACION: 'mcasTipoRenovacion', ALTA_NUEVA: 'mcasAltaNueva',
     AMBITO: 'mcasAmbito', ZONA_COMISION: 'mcasZonaComision', TARIFA_ACCESO: 'idTarifaLuz',
-    PRODUCTO: 'mcasIdProductoComercial', CONSUMO: 'consumoAnual', POTENCIA: 'mcasPotenciaCalculo',
+    PRODUCTO: 'mcasIdProductoComercial', CONSUMO: 'consumoAnual', POTENCIA: 'potenciaContratada',
     FEE: 'mcasFeeEurMwh', GESTORA: 'mcasIdGestora',
   };
   for (const [clave, campo] of Object.entries(esperado)) {
@@ -101,10 +103,14 @@ test('sin vista previa se enseñan todos los campos, como antes', () => {
   assert.equal(todos.respaldo, true);
   assert.deepEqual(todos.otros, []);
   assert.deepEqual(todos.soloLectura, []);
-  for (const campo of ['mcasTipoPrecio', 'mcasTipoSuministro', 'mcasSegmento', 'mcasEsRenovacion', 'mcasAmbito',
-    'mcasZonaComision', 'mcasIdGestora', 'mcasIdProductoComercial', 'mcasFeeEurMwh', 'mcasPotenciaCalculo',
-    'mcasNumeroPagos', 'mcasAltaNueva', 'mcasFechaPrimeraAplicacion', 'mcasFechaUltimaRelacionComercializadora']) {
+  for (const campo of ['mcasTipoSuministro', 'mcasSegmento', 'mcasEsRenovacion', 'mcasAmbito',
+    'mcasZonaComision', 'mcasIdGestora', 'mcasFeeEurMwh', 'mcasNumeroPagos', 'mcasAltaNueva']) {
     assert.ok(todos.principales.includes(campo), campo);
+  }
+  // Van en la pestaña Contrato o ya no se escriben a mano (reunión del 04/11/2026)
+  for (const campo of ['mcasTipoPrecio', 'mcasIdProductoComercial', 'mcasPotenciaCalculo',
+    'mcasFechaPrimeraAplicacion', 'mcasFechaUltimaRelacionComercializadora']) {
+    assert.ok(!todos.principales.includes(campo), campo);
   }
   assert.ok(!todos.principales.includes('mcasTipoRenovacion'), 'el tipo de renovación solo en renovaciones');
   const renovacion = campos.organizarCamposMcas({ vistaPrevia: null, contrato: IRIS, esRenovacion: true });
@@ -121,9 +127,8 @@ test('con vista previa se enseña lo básico y lo que pide la comercializadora; 
 
   assert.equal(organizado.respaldo, false);
   assert.deepEqual(organizado.principales,
-    ['mcasTipoPrecio', 'mcasTipoSuministro', 'mcasEsRenovacion', 'mcasNumeroPagos', 'mcasSegmento', 'mcasFeeEurMwh']);
-  assert.deepEqual(organizado.otros, ['mcasAltaNueva', 'mcasAmbito', 'mcasZonaComision', 'mcasIdGestora',
-    'mcasIdProductoComercial', 'mcasPotenciaCalculo', 'mcasFechaPrimeraAplicacion', 'mcasFechaUltimaRelacionComercializadora']);
+    ['mcasTipoSuministro', 'mcasEsRenovacion', 'mcasNumeroPagos', 'mcasSegmento', 'mcasFeeEurMwh']);
+  assert.deepEqual(organizado.otros, ['mcasAltaNueva', 'mcasAmbito', 'mcasZonaComision', 'mcasIdGestora']);
   // Con valor entre los plegados: alta nueva (false también es un valor) y la gestora.
   assert.equal(organizado.otrosConValor, 2);
   // El consumo se rellena en la pestaña Contrato: aquí solo se enseña.
@@ -333,13 +338,15 @@ test('guardar envía el contrato normalizado, muestra el resumen y avisa a Comis
       post: async (url, datos) => { posts.push({ url, datos }); return { data: { id: 500 } }; },
       get: async (url) => { gets.push(url); return { data: url.endsWith('/resumen') ? RESUMEN : [] }; },
     } });
-    ctx.nuevoContrato = { ...IRIS, mcasPotenciaCalculo: '12,5' };
+    ctx.nuevoContrato = { ...IRIS, mcasPotenciaCalculo: '12,5', mcasFechaPrimeraAplicacion: '2026-12-01' };
     await ctx.guardarContrato();
 
     const enviado = posts.find((p) => /\/contratos$/.test(p.url));
     assert.ok(enviado, 'no se ha guardado el contrato');
     assert.equal(enviado.datos.mcasFeeEurMwh, 7.5);
-    assert.equal(enviado.datos.mcasPotenciaCalculo, 12.5);
+    // Ya no se rellenan a mano: un valor antiguo se envía vacío
+    assert.equal(enviado.datos.mcasPotenciaCalculo, null);
+    assert.equal(enviado.datos.mcasFechaPrimeraAplicacion, null);
     assert.deepEqual([1, 2, 3, 4, 5, 6].map((n) => enviado.datos['potencia' + n]), [30, 45, 0, '', null, 12]);
     assert.deepEqual(gets.filter((u) => u.startsWith('/mcas')), ['/mcas/propuestas/contrato/500/resumen']);
     assert.match(normalizar(ctx.avisos.at(-1).html), /Comisión pendiente de aprobar: 571,26 € en 1 pago\./);
@@ -388,16 +395,16 @@ test('los errores de la pestaña de comisión se pintan en su campo', () => {
 // A4 · «Mayor potencia»
 // ---------------------------------------------------------------------------
 
-test('«Mayor potencia» usa la mayor de P1 a P6 y el hueco vacío dice cuál será', () => {
+test('la potencia que usa la comisión es la mayor de P1 a P6 y se enseña en solo lectura', () => {
   const { ctx } = formulario();
   ctx.nuevoContrato = { ...IRIS };
   assert.equal(ctx.mayorPotenciaMcas, 45);
-  assert.equal(ctx.placeholderPotenciaMcas, 'Vacío = 45 kW (mayor contratada)');
-  ctx.usarMayorPotenciaMcas();
-  assert.equal(ctx.nuevoContrato.mcasPotenciaCalculo, 45);
+  ctx.vistaPrevia = { ...VISTA_IRIS, campos: [...VISTA_IRIS.campos,
+    { clave: 'POTENCIA', etiqueta: 'Potencia', falta: false, valores: [], usadoPor: ['Iris · pyme luz'] }] };
+  assert.deepEqual(ctx.filasSoloLecturaMcas.find((f) => f.campo === 'potenciaContratada').valor, '45 kW');
 
   ctx.nuevoContrato = { ...IRIS, pot1: '15.5', pot2: 0, pot6: 0 };
-  assert.equal(ctx.placeholderPotenciaMcas, 'Vacío = 15,5 kW (mayor contratada)');
+  assert.equal(ctx.mayorPotenciaMcas, 15.5);
 
   // P6 ya no manda: si P6 es la menor, se usa la mayor.
   ctx.nuevoContrato = { ...IRIS, pot1: 50, pot2: 0, pot6: 10 };
@@ -409,14 +416,10 @@ test('«Mayor potencia» usa la mayor de P1 a P6 y el hueco vacío dice cuál se
 
   ctx.nuevoContrato = { ...IRIS, pot1: 0, pot2: 0, pot6: 0 };
   assert.equal(ctx.mayorPotenciaMcas, null);
-  assert.equal(ctx.placeholderPotenciaMcas, 'Vacío = mayor potencia contratada');
-  ctx.nuevoContrato.mcasPotenciaCalculo = 7;
-  ctx.usarMayorPotenciaMcas();
-  assert.equal(ctx.nuevoContrato.mcasPotenciaCalculo, 7, 'sin potencias no se toca lo escrito');
+  assert.equal(ctx.filasSoloLecturaMcas.find((f) => f.campo === 'potenciaContratada').valor, 'Sin indicar');
 
   const html = plantilla(CONTRATOS);
-  assert.match(html, /v-model="nuevoContrato\.mcasPotenciaCalculo"[\s\S]{0,200}:placeholder="placeholderPotenciaMcas"/);
-  assert.match(html, /@click="usarMayorPotenciaMcas"[\s\S]{0,120}Mayor potencia/);
+  assert.doesNotMatch(html, /nuevoContrato\.mcasPotenciaCalculo|usarMayorPotenciaMcas|placeholderPotenciaMcas/);
   assert.doesNotMatch(html, /> P6\s*</);
   assert.doesNotMatch(html, /pot6 \|\| nuevoContrato\.pot1/);
 });
@@ -576,7 +579,7 @@ test('«Sin comisión automática» no pide el tipo de precio: recuadro gris que
   ctx.nuevoContrato = { ...IRIS, mcasTipoPrecio: null, fechaInicio: '' };
   assert.equal(ctx.cabeceraMcas.tono, 'neutro');
   assert.equal(ctx.cabeceraMcas.titulo, 'Sin comisión automática: este contrato no generará propuesta de comisión');
-  assert.equal(ctx.cabeceraMcas.detalle, 'Si el contrato debe comisionar, elija FIJO o INDEXADO en «Tipo de precio».');
+  assert.equal(ctx.cabeceraMcas.detalle, 'Si el contrato debe comisionar, elija FIJO o INDEXADO en «Tipo de precio» (pestaña Contrato).');
   assert.deepEqual(ctx.cabeceraMcas.faltan, []);
   assert.deepEqual(ctx.camposFaltanMcas, [], 'ningún campo marcado en naranja');
   assert.equal(ctx.marcaMcas, 'neutro');
@@ -673,8 +676,13 @@ test('la pestaña se dibuja una vez por campo: a la vista, en solo lectura o en 
   assert.match(panel, /v-for="f in cabeceraMcas\.faltan"[\s\S]{0,200}@click="irACampoMcas\(f\.campo\)"/);
   assert.match(panel, /v-if="cabeceraMcas\.estimacion"[^>]*>\s*Estimación\s*</);
   // Cada campo editable aparece una sola vez en la plantilla.
-  for (const campo of ['mcasTipoPrecio', 'mcasTipoSuministro', 'mcasSegmento', 'mcasFeeEurMwh', 'mcasZonaComision', 'mcasNumeroPagos']) {
+  for (const campo of ['mcasTipoSuministro', 'mcasSegmento', 'mcasFeeEurMwh', 'mcasZonaComision', 'mcasNumeroPagos']) {
     assert.equal((panel.match(new RegExp(`v-model(?:\\.number)?="nuevoContrato\\.${campo}"`, 'g')) || []).length, 1, campo);
+  }
+  // El tipo de precio y el producto, una vez y en la pestaña Contrato (reunión del 04/11/2026)
+  for (const campo of ['mcasTipoPrecio', 'mcasIdProductoComercial']) {
+    assert.equal((panel.match(new RegExp(`v-model="nuevoContrato\\.${campo}"`, 'g')) || []).length, 0, campo);
+    assert.equal((html.match(new RegExp(`v-model="nuevoContrato\\.${campo}"`, 'g')) || []).length, 1, campo);
   }
   // La caja fija de antes ya no está.
   assert.doesNotMatch(html, /Al guardar se calculará la comisión automática de este contrato/);
@@ -696,4 +704,124 @@ test('la pestaña habla en lenguaje llano, sin jerga ni tooltips técnicos', () 
   assert.match(panel, /placeholder="ej\.: 7,5"/);
   assert.match(panel, /class="mcas-campo-ayuda"/);
   assert.doesNotMatch(leer('src/components/CRM_Module/PuntosSuministro/ModalContratos.css'), /\.mcas-help|\.mcas-p6-btn/);
+});
+
+// ---------------------------------------------------------------------------
+// Reunión con el cliente del 04/11/2026
+// ---------------------------------------------------------------------------
+
+test('quien no es administrador ve si faltan datos, pero no la comisión', () => {
+  const previo = global.localStorage;
+  global.localStorage = { getItem: () => JSON.stringify({ id: 7, nombre: 'María Gestora', nivelAcceso: 2 }) };
+  try {
+    const { ctx } = formulario();
+    ctx.nuevoContrato = { ...IRIS };
+    ctx.vistaPrevia = { ...VISTA_IRIS, avisos: ['El FEE está por debajo del mínimo'] };
+    assert.equal(ctx.esAdminMcas, false);
+    assert.equal(ctx.cabeceraMcas.titulo, 'Datos de la comisión completos');
+    assert.equal(ctx.cabeceraMcas.estimacion, false);
+    assert.deepEqual(ctx.cabeceraMcas.avisos, []);
+    assert.doesNotMatch(JSON.stringify(ctx.cabeceraMcas), /571|€/);
+
+    ctx.vistaPrevia = { ...VISTA_IRIS, estado: 'REQUIERE_DATOS', campos: [{ clave: 'FEE', etiqueta: 'FEE del contrato', falta: true }] };
+    assert.deepEqual(ctx.cabeceraMcas.faltan.map((f) => f.campo), ['mcasFeeEurMwh']);
+  } finally {
+    global.localStorage = previo;
+  }
+  const html = plantilla(CONTRATOS);
+  assert.match(html, /esAdminMcas \? 'Actualizando la estimación…' : 'Comprobando los datos…'/);
+});
+
+test('no se guarda el contrato si la tabla de comisiones pide un dato que falta', async () => {
+  const posts = [];
+  const { ctx } = formulario({ axios: {
+    post: async (url) => {
+      posts.push(url);
+      return { data: url === '/mcas/vista-previa'
+        ? { ...VISTA_IRIS, estado: 'REQUIERE_DATOS', importe: null, campos: [{ clave: 'FEE', etiqueta: 'FEE del contrato', falta: true }] }
+        : { id: 500 } };
+    },
+    get: async () => ({ data: [] }),
+  } });
+  ctx.nuevoContrato = { ...IRIS, mcasFeeEurMwh: null };
+  await ctx.guardarContrato();
+
+  assert.deepEqual(posts, ['/mcas/vista-previa'], 'el contrato no se envía');
+  assert.equal(ctx.pestanaContrato, 'mcas', 'lleva al campo que falta');
+  assert.equal(ctx.avisos.at(-1).title, 'Faltan datos de la comisión');
+  assert.match(normalizar(ctx.avisos.at(-1).html), /FEE del contrato/);
+  assert.equal(ctx.guardando, false);
+
+  // Sin respuesta del servidor no se bloquea: la comisión se revisa después
+  const caido = formulario({ axios: {
+    post: async (url) => { if (url === '/mcas/vista-previa') throw new Error('500'); return { data: { id: 501 } }; },
+    get: async () => ({ data: [] }),
+  } }).ctx;
+  caido.nuevoContrato = { ...IRIS };
+  await caido.guardarContrato();
+  assert.equal(caido.avisos.at(-1).icon, 'success');
+});
+
+test('el tipo de precio y el producto van seguidos en la pestaña Contrato', async () => {
+  const html = plantilla(CONTRATOS);
+  const pestanaContrato = html.split(`v-show="pestanaContrato === 'contrato'"`)[1].split(`v-show="pestanaContrato === 'mcas'"`)[0];
+  assert.match(pestanaContrato, /id="comercializadoraActual"[\s\S]*id="mcasTipoPrecio"[\s\S]*id="mcasIdProductoComercial"/);
+
+  const { ctx } = formulario();
+  ctx.nuevoContrato = { ...IRIS, idComercializadoraActual: '' };
+  assert.equal(ctx.textoSinProductoMcas, 'Elija antes la comercializadora');
+  ctx.nuevoContrato = { ...IRIS, mcasTipoPrecio: null };
+  assert.equal(ctx.textoSinProductoMcas, 'Elija antes el tipo de precio');
+  ctx.nuevoContrato = { ...IRIS };
+  assert.equal(ctx.textoSinProductoMcas, '');
+
+  // El producto solo se quita si deja de encajar
+  ctx.productosComerciales = [
+    { id: 5, nombre: 'Plan Luz', idComercializadora: 14, tipoPrecio: 'FIJO', tipoSuministro: 'LUZ', activo: true },
+  ];
+  ctx.nuevoContrato = { ...IRIS, mcasIdProductoComercial: 5 };
+  ctx.descartarProductoIncompatibleMcas();
+  assert.equal(ctx.nuevoContrato.mcasIdProductoComercial, 5, 'sigue valiendo');
+  ctx.nuevoContrato.mcasTipoPrecio = 'INDEXADO';
+  ctx.descartarProductoIncompatibleMcas();
+  assert.equal(ctx.nuevoContrato.mcasIdProductoComercial, null, 'otro tipo de precio: ya no encaja');
+
+  // En la pestaña Comisión MCAS salen en solo lectura si la tabla los usa
+  ctx.nuevoContrato = { ...IRIS, mcasIdProductoComercial: 5 };
+  ctx.vistaPrevia = { ...VISTA_IRIS, campos: [...VISTA_IRIS.campos,
+    { clave: 'PRODUCTO', etiqueta: 'Producto', falta: false, valores: [], usadoPor: ['Iris · pyme luz'] }] };
+  assert.equal(ctx.filasSoloLecturaMcas.find((f) => f.campo === 'mcasIdProductoComercial').valor, 'Plan Luz');
+});
+
+test('un producto de una gestora sale sin gestora elegida y, al escogerlo, trae su gestora', () => {
+  const { ctx, componente } = formulario();
+  ctx.gestorasList = [{ id: 4, nombre: 'Gestora Norte' }];
+  ctx.productosComerciales = [
+    { id: 5, nombre: 'Plan Luz', idComercializadora: 14, tipoPrecio: 'FIJO', tipoSuministro: 'LUZ', activo: true },
+    { id: 6, nombre: 'Plan Norte', idComercializadora: 14, tipoPrecio: 'FIJO', tipoSuministro: 'LUZ', activo: true, idGestora: 4 },
+  ];
+  ctx.nuevoContrato = { ...IRIS, mcasIdGestora: null };
+  assert.deepEqual(ctx.productosComercializesFiltrados.map((p) => ctx.etiquetaProductoMcas(p)), ['Plan Luz', 'Plan Norte (gestora Gestora Norte)']);
+
+  componente.watch['nuevoContrato.mcasIdProductoComercial'].call(ctx, 6);
+  assert.equal(ctx.nuevoContrato.mcasIdGestora, 4);
+  // Con otra gestora elegida, los de la primera ya no salen
+  ctx.nuevoContrato = { ...IRIS, mcasIdGestora: 9 };
+  assert.deepEqual(ctx.productosComercializesFiltrados.map((p) => p.id), [5]);
+});
+
+test('sin tabla que encaje (solo de una gestora) el contrato se guarda: la comisión se completa a mano', async () => {
+  const posts = [];
+  const { ctx } = formulario({ axios: {
+    post: async (url) => {
+      posts.push(url);
+      return { data: url === '/mcas/vista-previa'
+        ? { estado: 'SIN_REGLAS', mensaje: 'La tabla de esta comercializadora es de una gestora.', campos: [{ clave: 'GESTORA', etiqueta: 'Gestora', falta: true }] }
+        : { id: 502 } };
+    },
+    get: async () => ({ data: [] }),
+  } });
+  ctx.nuevoContrato = { ...IRIS };
+  await ctx.guardarContrato();
+  assert.ok(posts.some((u) => /\/contratos$/.test(u)), 'el contrato se guarda');
 });

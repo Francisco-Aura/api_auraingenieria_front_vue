@@ -19,7 +19,8 @@ const CAMPO_POR_CLAVE = {
   TARIFA_ACCESO: 'idTarifaLuz',
   PRODUCTO: 'mcasIdProductoComercial',
   CONSUMO: 'consumoAnual',
-  POTENCIA: 'mcasPotenciaCalculo',
+  // Siempre la mayor de las potencias contratadas (P1 a P6), que se escriben en la pestaña Contrato
+  POTENCIA: 'potenciaContratada',
   FEE: 'mcasFeeEurMwh',
   GESTORA: 'mcasIdGestora',
 };
@@ -38,26 +39,27 @@ const ETIQUETA_CAMPO = {
   mcasIdGestora: 'Gestora',
   mcasIdProductoComercial: 'Tarifa de precios (producto)',
   mcasFeeEurMwh: 'FEE del contrato',
-  mcasPotenciaCalculo: 'Potencia de cálculo',
-  mcasFechaPrimeraAplicacion: 'Fecha de primera aplicación',
-  mcasFechaUltimaRelacionComercializadora: 'Última relación con la comercializadora',
+  potenciaContratada: 'Potencia contratada (la mayor)',
   consumoAnual: 'Consumo anual',
   idTarifaLuz: 'Tarifa de acceso',
   idTarifaGas: 'Tarifa de acceso',
 };
 
-/** Campos editables de la pestaña, en el orden en que se dibujan. */
+/**
+ * Campos editables de la pestaña, en el orden en que se dibujan. Desde la reunión del
+ * 04/11/2026 el tipo de precio y el producto van en la pestaña Contrato, y la potencia
+ * de cálculo, la primera aplicación y la última relación ya no se escriben a mano.
+ */
 const CAMPOS_PESTANA_MCAS = [
-  'mcasTipoPrecio', 'mcasTipoSuministro', 'mcasEsRenovacion', 'mcasTipoRenovacion', 'mcasNumeroPagos',
-  'mcasSegmento', 'mcasAltaNueva', 'mcasAmbito', 'mcasZonaComision', 'mcasIdGestora', 'mcasIdProductoComercial',
-  'mcasPotenciaCalculo', 'mcasFeeEurMwh', 'mcasFechaPrimeraAplicacion', 'mcasFechaUltimaRelacionComercializadora',
+  'mcasTipoSuministro', 'mcasEsRenovacion', 'mcasTipoRenovacion', 'mcasNumeroPagos',
+  'mcasSegmento', 'mcasAltaNueva', 'mcasAmbito', 'mcasZonaComision', 'mcasIdGestora', 'mcasFeeEurMwh',
 ];
 
 /** A la vista pida lo que pida la vista previa (el tipo de renovación, solo en renovaciones). */
-const CAMPOS_SIEMPRE_VISIBLES = ['mcasTipoPrecio', 'mcasTipoSuministro', 'mcasEsRenovacion', 'mcasTipoRenovacion', 'mcasNumeroPagos'];
+const CAMPOS_SIEMPRE_VISIBLES = ['mcasTipoSuministro', 'mcasEsRenovacion', 'mcasTipoRenovacion', 'mcasNumeroPagos'];
 
 /** Se rellenan en la pestaña Contrato: en esta solo se enseñan. */
-const CAMPOS_DE_PESTANA_CONTRATO = ['consumoAnual', 'idTarifaLuz', 'idTarifaGas'];
+const CAMPOS_DE_PESTANA_CONTRATO = ['consumoAnual', 'idTarifaLuz', 'idTarifaGas', 'mcasTipoPrecio', 'mcasIdProductoComercial', 'potenciaContratada'];
 
 export const TEXTO_SIN_REGLAS =
   'Esta comercializadora todavía no tiene tabla de comisiones: la comisión se completará a mano en Comisiones.';
@@ -174,10 +176,13 @@ function tituloEstimacion(vistaPrevia) {
 
 /**
  * Cabecera de la pestaña a partir de la vista previa: tono (ok, aviso, neutro), título,
- * lo que falta (con su campo), explicación y avisos del cálculo.
+ * lo que falta (con su campo), explicación y avisos del cálculo. Sin `verImporte` (quien
+ * no es administrador) solo dice si los datos están completos: ni importe ni avisos.
  */
-export function cabeceraVistaPrevia(vistaPrevia, contrato = {}) {
-  const avisos = (Array.isArray(vistaPrevia?.avisos) ? vistaPrevia.avisos : []).map(String).filter((a) => a.trim() !== '');
+export function cabeceraVistaPrevia(vistaPrevia, contrato = {}, { verImporte = true } = {}) {
+  const avisos = verImporte
+    ? (Array.isArray(vistaPrevia?.avisos) ? vistaPrevia.avisos : []).map(String).filter((a) => a.trim() !== '')
+    : [];
   const mensaje = String(vistaPrevia?.mensaje || '').trim();
   // Lo que el servidor echa en falta se enlaza en cualquier estado (p. ej. la gestora en «Sin reglas»).
   const faltan = vistaPrevia?.estado === 'CALCULADO' ? [] : faltantesVistaPrevia(vistaPrevia, contrato);
@@ -187,14 +192,23 @@ export function cabeceraVistaPrevia(vistaPrevia, contrato = {}) {
 
   switch (vistaPrevia?.estado) {
     case 'CALCULADO':
+      if (!verImporte) {
+        return cabecera('ok', 'Datos de la comisión completos', {
+          detalle: 'Al guardar el contrato se calculará la comisión y la revisará un administrador en Comisiones MCAS.',
+        });
+      }
       return cabecera('ok', tituloEstimacion(vistaPrevia), {
         estimacion: true,
         detalle: 'Es una estimación: el importe definitivo se calcula al guardar el contrato y lo aprueba un administrador en Comisiones MCAS.',
       });
     case 'REQUIERE_DATOS':
-      return faltan.length
-        ? cabecera('aviso', 'Para estimar la comisión falta:', { detalle: 'Complete estos datos y la estimación se actualizará sola.' })
-        : cabecera('aviso', mensaje || 'Faltan datos para estimar la comisión.');
+      // Sin estos datos el contrato no se guarda (reunión del 04/11/2026)
+      if (!faltan.length) return cabecera('aviso', mensaje || 'Faltan datos para calcular la comisión.');
+      return verImporte
+        ? cabecera('aviso', 'Para estimar la comisión falta:', {
+          detalle: 'Sin estos datos no se puede guardar el contrato. Al completarlos, la estimación se actualizará sola.',
+        })
+        : cabecera('aviso', 'Para calcular la comisión falta:', { detalle: 'Sin estos datos no se puede guardar el contrato.' });
     case 'SIN_REGLAS':
       // Ninguna tabla encaja: puede no haberla, o faltar la gestora, o no estar vigente en
       // esa fecha... El motivo lo da el servidor; el texto fijo queda para cuando no lo da.

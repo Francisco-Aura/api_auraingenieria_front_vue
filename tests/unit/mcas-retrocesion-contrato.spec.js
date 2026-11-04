@@ -329,12 +329,11 @@ test('la zona de comisión se elige en un desplegable: sin especificar, ZBR o ZA
   assert.doesNotMatch(html, /Excel Iberdrola/);
 });
 
-test('la potencia de cálculo vacía usa la mayor potencia contratada', () => {
+test('la potencia de cálculo ya no se escribe a mano: siempre la mayor contratada', () => {
   const html = plantilla(CONTRATOS);
-  assert.match(html, /v-model="nuevoContrato\.mcasPotenciaCalculo"[\s\S]{0,200}:placeholder="placeholderPotenciaMcas"/);
-  assert.equal(modalContratos().placeholderPotenciaMcas, 'Vacío = mayor potencia contratada');
-  // Con potencias, el hueco dice cuál se usará.
-  assert.equal(modalContratos({ nuevoContrato: { pot1: 10, pot2: 45 } }).placeholderPotenciaMcas, 'Vacío = 45 kW (mayor contratada)');
+  assert.doesNotMatch(html, /nuevoContrato\.mcasPotenciaCalculo/);
+  assert.doesNotMatch(html, /Mayor potencia/);
+  assert.equal(modalContratos({ nuevoContrato: { pot1: 10, pot2: 45 } }).mayorPotenciaMcas, 45);
 });
 
 test('el segmento se recomienda, pero no impide calcular ni consultar la comisión', () => {

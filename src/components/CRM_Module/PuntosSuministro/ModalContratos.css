@@ -694,31 +694,6 @@
   color: var(--text-primary);
 }
 
-/* «Mayor potencia»: escribe la mayor de P1…P6 en la potencia de cálculo */
-.mcas-potencia-btn {
-  background: rgba(var(--color-brand-yellow-rgb), 0.18);
-  border: 1px solid rgba(var(--color-brand-yellow-rgb), 0.5);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  padding: 0.3rem 0.55rem;
-  cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #7a6400;
-  white-space: nowrap;
-  transition: background-color 0.2s ease;
-}
-
-.mcas-potencia-btn:hover:not(:disabled) {
-  background: rgba(var(--color-brand-yellow-rgb), 0.32);
-  transform: none;
-  box-shadow: none;
-}
-
-.mcas-potencia-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* Sufijo de unidad junto a un campo (€/MWh) */
 .mcas-sufijo {
   padding: 0 0.5rem;
@@ -1381,14 +1356,16 @@
   margin-bottom: 0.65rem;
 }
 
+/* Más bajas desde que tipo de precio y producto van en «Fechas y comercializadora»
+   (04/11/2026): así la pestaña sigue cabiendo sin scroll. Se pueden estirar. */
 .textarea-contrato {
   width: 100%;
-  min-height: 150px !important;
+  min-height: 115px !important;
   font-size: 0.85rem;
 }
 
 .textarea-contrato--corta {
-  min-height: 90px !important;
+  min-height: 62px !important;
 }
 
 /* Estado de la comisión MCAS en su pestaña */
@@ -1652,8 +1629,7 @@
   min-width: 0;
 }
 
-.pestana-mcas .input-with-icon-modern > span,
-.pestana-mcas .input-with-icon-modern > .mcas-potencia-btn {
+.pestana-mcas .input-with-icon-modern > span {
   flex: 0 0 auto;
   white-space: nowrap;
 }

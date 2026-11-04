@@ -123,11 +123,11 @@ test('las reglas inactivas siguen visibles (atenuadas) en la administracion', ()
   assert.match(source, /r\.activo \? 'Activa' : 'Inactiva'/);
 });
 
-test('productos MCAS se filtran con fecha del contrato, gestora estricta y se limpian al cambiar dependencias', () => {
+test('productos MCAS se filtran con fecha del contrato y gestora (sin gestora elegida salen todos) y se revisan al cambiar dependencias', () => {
   const source = read('src/components/CRM_Module/PuntosSuministro/ModalContratos.vue');
   // Sin fecha de inicio se usa el día de hoy en hora local (no en UTC)
   assert.match(source, /const fechaContrato = this\.nuevoContrato\?\.fechaInicio \|\| fechaLocalISO\(\)/);
-  assert.match(source, /p\.idGestora != null && Number\(p\.idGestora\) !== Number\(idGestora\)/);
+  assert.match(source, /p\.idGestora != null && idGestora !== null && idGestora !== undefined && idGestora !== ''\s*&& Number\(p\.idGestora\) !== Number\(idGestora\)/);
   for (const dependencia of ['mcasTipoPrecio', 'mcasTipoSuministro', 'mcasIdGestora', 'fechaInicio']) {
     assert.match(source, new RegExp(`'nuevoContrato\\.${dependencia}'`));
   }

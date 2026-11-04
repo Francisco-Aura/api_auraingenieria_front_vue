@@ -227,6 +227,34 @@
                       </div>
                     </div>
                   </div>
+                  <!-- Seguidos (reunión del 04/11/2026): comercializadora, tipo de precio y producto.
+                       El desplegable de productos solo trae los de esa comercializadora y ese tipo de precio. -->
+                  <div class="fila-campos fila-campos--2">
+                    <div class="form-group-modern" :class="claseCampoMcas('mcasTipoPrecio')">
+                      <label for="mcasTipoPrecio">Tipo de precio</label>
+                      <div class="select-container-modern">
+                        <select id="mcasTipoPrecio" v-model="nuevoContrato.mcasTipoPrecio" class="form-select-modern"
+                                title="Fijo: precio pactado. Indexado: sigue al mercado. Sin comisión automática: el contrato no comisiona.">
+                          <option :value="null">Sin comisión automática</option>
+                          <option value="FIJO">FIJO</option>
+                          <option value="INDEXADO">INDEXADO</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group-modern" :class="claseCampoMcas('mcasIdProductoComercial')">
+                      <label for="mcasIdProductoComercial">Tarifa de precios (producto)</label>
+                      <div class="select-container-modern">
+                        <select id="mcasIdProductoComercial" v-model="nuevoContrato.mcasIdProductoComercial" class="form-select-modern"
+                                :disabled="!!textoSinProductoMcas"
+                                title="Oferta contratada con la comercializadora (por ejemplo, Plan Personalizado)">
+                          <option :value="null">{{ textoSinProductoMcas || 'Sin producto' }}</option>
+                          <option v-for="p in productosComercializesFiltrados" :key="p.id" :value="p.id">
+                            {{ etiquetaProductoMcas(p) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 </section>
 
                 <section class="form-section-modern">
@@ -256,13 +284,13 @@
                   <div class="form-group-modern">
                     <label for="observaciones">Observaciones generales</label>
                     <textarea id="observaciones" v-model="nuevoContrato.observaciones"
-                              class="form-control-modern textarea-modern textarea-contrato" rows="6" maxlength="10000"
+                              class="form-control-modern textarea-modern textarea-contrato" rows="4" maxlength="10000"
                               placeholder="Añada aquí cualquier observación relevante sobre el contrato..."></textarea>
                   </div>
                   <div class="form-group-modern">
                     <label for="comentarioRenovacion">Comentario de renovación</label>
                     <textarea id="comentarioRenovacion" v-model="nuevoContrato.comentarioRenovacion"
-                              class="form-control-modern textarea-modern textarea-contrato textarea-contrato--corta" rows="3" maxlength="10000"
+                              class="form-control-modern textarea-modern textarea-contrato textarea-contrato--corta" rows="2" maxlength="10000"
                               placeholder="Notas breves sobre la renovación..."></textarea>
                   </div>
                 </section>
@@ -522,7 +550,7 @@
                     </ul>
                     <span v-if="cabeceraMcas.detalle">{{ cabeceraMcas.detalle }}</span>
                     <span v-if="cargandoVistaPrevia && vistaPreviaMcasValida" class="mcas-estado-cargando">
-                      <i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Actualizando la estimación…
+                      <i class="fas fa-spinner fa-spin" aria-hidden="true"></i> {{ esAdminMcas ? 'Actualizando la estimación…' : 'Comprobando los datos…' }}
                     </span>
                   </div>
                 </div>
@@ -555,19 +583,7 @@
                       </p>
                       <div class="mcas-form-row">
                         <template v-for="campo in grupo.campos" :key="campo">
-                          <div v-if="campo === 'mcasTipoPrecio'" class="form-group-modern" :class="claseCampoMcas(campo)">
-                            <label for="mcasTipoPrecio"><i class="fas fa-tag"></i> Tipo de precio</label>
-                            <div class="select-container-modern">
-                              <select id="mcasTipoPrecio" v-model="nuevoContrato.mcasTipoPrecio" class="form-select-modern">
-                                <option :value="null">Sin comisión automática</option>
-                                <option value="FIJO">FIJO</option>
-                                <option value="INDEXADO">INDEXADO</option>
-                              </select>
-                            </div>
-                            <small class="mcas-campo-ayuda">Fijo: precio pactado. Indexado: sigue al mercado. Elija «Sin comisión automática» si el contrato no debe comisionar.</small>
-                          </div>
-
-                          <div v-else-if="campo === 'mcasTipoSuministro'" class="form-group-modern" :class="claseCampoMcas(campo)">
+                          <div v-if="campo === 'mcasTipoSuministro'" class="form-group-modern" :class="claseCampoMcas(campo)">
                             <label for="mcasTipoSuministro"><i class="fas fa-fire-alt"></i> Tipo de suministro</label>
                             <div class="select-container-modern">
                               <select id="mcasTipoSuministro" v-model="nuevoContrato.mcasTipoSuministro" class="form-select-modern"
@@ -677,34 +693,6 @@
                             <small class="mcas-campo-ayuda">Canal por el que se gestiona el contrato, si la comisión depende de él.</small>
                           </div>
 
-                          <div v-else-if="campo === 'mcasIdProductoComercial'" class="form-group-modern" :class="claseCampoMcas(campo)">
-                            <label for="mcasIdProductoComercial"><i class="fas fa-tag"></i> Tarifa de precios (producto)</label>
-                            <div class="select-container-modern">
-                              <select id="mcasIdProductoComercial" v-model="nuevoContrato.mcasIdProductoComercial" class="form-select-modern">
-                                <option :value="null">Sin producto</option>
-                                <option v-for="p in productosComercializesFiltrados" :key="p.id" :value="p.id">
-                                  {{ p.nombre }}
-                                </option>
-                              </select>
-                            </div>
-                            <small class="mcas-campo-ayuda">Oferta contratada con la comercializadora (por ejemplo, Plan Personalizado).</small>
-                          </div>
-
-                          <div v-else-if="campo === 'mcasPotenciaCalculo'" class="form-group-modern" :class="claseCampoMcas(campo)">
-                            <label for="mcasPotenciaCalculo"><i class="fas fa-tachometer-alt"></i> Potencia de cálculo (kW)</label>
-                            <div class="input-with-icon-modern">
-                              <i class="fas fa-tachometer-alt icon-prefix"></i>
-                              <input id="mcasPotenciaCalculo" type="number" step="0.0001" min="0"
-                                     v-model="nuevoContrato.mcasPotenciaCalculo"
-                                     class="form-control-modern" :placeholder="placeholderPotenciaMcas"/>
-                              <button type="button" class="mcas-potencia-btn" :disabled="mayorPotenciaMcas === null"
-                                      title="Escribir la mayor de las potencias contratadas (P1 a P6)" @click="usarMayorPotenciaMcas">
-                                <i class="fas fa-magic"></i> Mayor potencia
-                              </button>
-                            </div>
-                            <small class="mcas-campo-ayuda">Si la deja vacía, se usa la mayor potencia contratada.</small>
-                          </div>
-
                           <div v-else-if="campo === 'mcasFeeEurMwh'" class="form-group-modern" :class="claseCampoMcas(campo)">
                             <label for="mcasFeeEurMwh"><i class="fas fa-euro-sign"></i> FEE del contrato</label>
                             <div class="input-with-icon-modern">
@@ -719,25 +707,6 @@
                             <small v-else class="mcas-campo-ayuda">Importe negociado con el cliente. Solo hace falta si la comisión se calcula sobre el FEE.</small>
                           </div>
 
-                          <div v-else-if="campo === 'mcasFechaPrimeraAplicacion'" class="form-group-modern" :class="claseCampoMcas(campo)">
-                            <label for="mcasFechaPrimeraAplicacion"><i class="fas fa-calendar-check"></i> Fecha de primera aplicación</label>
-                            <div class="input-with-icon-modern">
-                              <i class="fas fa-calendar icon-prefix"></i>
-                              <input id="mcasFechaPrimeraAplicacion" type="date" v-model="nuevoContrato.mcasFechaPrimeraAplicacion"
-                                     class="form-control-modern"/>
-                            </div>
-                            <small class="mcas-campo-ayuda">Fecha desde la que se aplica el servicio de comisión.</small>
-                          </div>
-
-                          <div v-else-if="campo === 'mcasFechaUltimaRelacionComercializadora'" class="form-group-modern" :class="claseCampoMcas(campo)">
-                            <label for="mcasFechaUltimaRelacionComercializadora"><i class="fas fa-history"></i> Última relación con la comercializadora</label>
-                            <div class="input-with-icon-modern">
-                              <i class="fas fa-calendar icon-prefix"></i>
-                              <input id="mcasFechaUltimaRelacionComercializadora" type="date" v-model="nuevoContrato.mcasFechaUltimaRelacionComercializadora"
-                                     class="form-control-modern"/>
-                            </div>
-                            <small class="mcas-campo-ayuda">Fecha de la última baja del cliente con esta comercializadora.</small>
-                          </div>
                         </template>
                       </div>
                     </component>
@@ -952,8 +921,10 @@ const ESPERA_VISTA_PREVIA_MS = 600;
 // No influyen en la comisión: no viajan a la vista previa ni provocan otra petición al escribirlos.
 const CAMPOS_FUERA_VISTA_PREVIA = ['userFO', 'passwordFO', 'observaciones', 'comentarioRenovacion', 'eliminarArchivoContrato'];
 // Campos que se rellenan en la pestaña Contrato y el id de su control (el resto usa el nombre del campo).
-const CAMPOS_EN_PESTANA_CONTRATO = ['contrato', 'fechaInicio', 'idComercializadoraActual', 'consumoAnual', 'idTarifaLuz', 'idTarifaGas'];
-const ID_CAMPO_FORMULARIO = { fechaInicio: 'fechaInicioContrato', idComercializadoraActual: 'comercializadoraActual', idTarifaLuz: 'tarifaLuz', idTarifaGas: 'tarifaGas' };
+const CAMPOS_EN_PESTANA_CONTRATO = ['contrato', 'fechaInicio', 'idComercializadoraActual', 'consumoAnual', 'idTarifaLuz', 'idTarifaGas',
+  'mcasTipoPrecio', 'mcasIdProductoComercial', 'potenciaContratada'];
+const ID_CAMPO_FORMULARIO = { fechaInicio: 'fechaInicioContrato', idComercializadoraActual: 'comercializadoraActual', idTarifaLuz: 'tarifaLuz', idTarifaGas: 'tarifaGas',
+  potenciaContratada: 'pot1' };
 const ETIQUETA_AMBITO = { NA: 'N/A' };
 
 export default {
@@ -1243,14 +1214,18 @@ export default {
     },
 
     /**
-     * Deja un contrato listo para enviarlo al servidor: normaliza los decimales MCAS
-     * (FEE y potencia de cálculo, con coma o punto), copia los huecos pot1…pot6 a
-     * potencia1…potencia6 y fija el id al modificar. Lo usan el guardado (sobre el
-     * propio formulario) y la vista previa (sobre una copia).
+     * Deja un contrato listo para enviarlo al servidor: normaliza el FEE (con coma o
+     * punto), copia los huecos pot1…pot6 a potencia1…potencia6 y fija el id al
+     * modificar. La potencia de cálculo (siempre la mayor), la primera aplicación (la
+     * fecha de inicio) y la última relación con la comercializadora (la calcula el
+     * servidor) ya no se rellenan a mano. Lo usan el guardado (sobre el propio
+     * formulario) y la vista previa (sobre una copia).
      */
     payloadContrato(contrato = this.nuevoContrato) {
       contrato.mcasFeeEurMwh = this.normalizarDecimalMcas(contrato.mcasFeeEurMwh);
-      contrato.mcasPotenciaCalculo = this.normalizarDecimalMcas(contrato.mcasPotenciaCalculo);
+      contrato.mcasPotenciaCalculo = null;
+      contrato.mcasFechaPrimeraAplicacion = null;
+      contrato.mcasFechaUltimaRelacionComercializadora = null;
       if (contrato.mcasFeeEurMwh !== null) contrato.mcasFeeUnidad = 'EUR_MWH';
       for (let i = 1; i <= 6; i++) {
         if (contrato['pot' + i] !== undefined) contrato['potencia' + i] = contrato['pot' + i];
@@ -1319,8 +1294,51 @@ export default {
       elemento?.focus?.();
     },
 
-    usarMayorPotenciaMcas() {
-      if (this.mayorPotenciaMcas !== null) this.nuevoContrato.mcasPotenciaCalculo = this.mayorPotenciaMcas;
+    // El producto elegido solo se quita si ya no encaja (otra comercializadora, otro tipo de
+    // precio...). Sin la lista de productos todavía cargada no se puede saber: se deja.
+    descartarProductoIncompatibleMcas() {
+      this.$nextTick(() => {
+        const id = this.nuevoContrato?.mcasIdProductoComercial;
+        if (id === null || id === undefined || id === '' || !this.productosComerciales.length) return;
+        if (!this.productosComercializesFiltrados.some(p => String(p.id) === String(id))) {
+          this.nuevoContrato.mcasIdProductoComercial = null;
+        }
+      });
+    },
+
+    // Nombre del producto en el desplegable; si es de una gestora y el contrato aún no tiene, cuál.
+    etiquetaProductoMcas(producto) {
+      const conGestora = producto?.idGestora !== null && producto?.idGestora !== undefined;
+      const sinGestora = !this.nuevoContrato?.mcasIdGestora;
+      if (!conGestora || !sinGestora) return producto?.nombre;
+      const gestora = this.gestorasList.find(g => String(g.id) === String(producto.idGestora));
+      return `${producto.nombre} (gestora ${gestora ? gestora.nombre : producto.idGestora})`;
+    },
+
+    // Con tipo de precio, no se guarda si la tabla de comisiones pide datos que faltan
+    // (reunión del 04/11/2026). Solo en «Faltan datos»: sin tabla que encaje (p. ej. solo
+    // hay tablas de una gestora y el contrato no es de ninguna) la comisión se completa a
+    // mano y el contrato se guarda. Se pide la vista previa en ese momento para no fiarse
+    // de una vieja; si el servidor no responde, deja guardar (la comisión se revisa después).
+    async datosMcasCompletos() {
+      if (this.sinComisionMcas) return true;
+      if (this.temporizadorVistaPrevia || this.cargandoVistaPrevia || !this.vistaPreviaMcasValida) {
+        clearTimeout(this.temporizadorVistaPrevia);
+        this.temporizadorVistaPrevia = null;
+        await this.pedirVistaPrevia();
+      }
+      if (!this.vistaPreviaMcasValida || this.vistaPrevia.estado !== 'REQUIERE_DATOS') return true;
+      const faltan = faltantesVistaPrevia(this.vistaPrevia, this.nuevoContrato);
+      if (!faltan.length) return true;
+      await this.irACampoMcas(faltan[0].campo);
+      this.$swal.fire({
+        icon: 'warning',
+        title: 'Faltan datos de la comisión',
+        html: `<p>Complete estos datos antes de guardar el contrato:</p><p><strong>${faltan.map(f => escaparHtml(f.etiqueta)).join(', ')}</strong></p>`,
+        confirmButtonColor: '#fcd700',
+        confirmButtonText: 'Entendido'
+      });
+      return false;
     },
 
     claseCampoMcas(campo) {
@@ -1702,6 +1720,7 @@ export default {
       // después se le pregunta qué ha pasado, para contarlo tal cual.
       const consultaMcas = Boolean(this.nuevoContrato.mcasTipoPrecio);
       try {
+        if (!(await this.datosMcasCompletos())) return;
         // Decimales normalizados, potencias copiadas e id en modo edición (igual que la vista previa)
         this.payloadContrato(this.nuevoContrato);
 
@@ -2368,6 +2387,14 @@ export default {
         if (fila.campo === 'consumoAnual') {
           const consumo = this.normalizarDecimalMcas(c.consumoAnual);
           valor = consumo ? `${consumo.toLocaleString('es-ES', { maximumFractionDigits: 4 })} kWh` : 'Sin indicar';
+        } else if (fila.campo === 'mcasTipoPrecio') {
+          valor = c.mcasTipoPrecio || 'Sin comisión automática';
+        } else if (fila.campo === 'mcasIdProductoComercial') {
+          const producto = this.productosComerciales.find(p => String(p.id) === String(c.mcasIdProductoComercial));
+          valor = producto ? producto.nombre : 'Sin producto';
+        } else if (fila.campo === 'potenciaContratada') {
+          valor = this.mayorPotenciaMcas === null ? 'Sin indicar'
+            : `${this.mayorPotenciaMcas.toLocaleString('es-ES', { maximumFractionDigits: 4 })} kW`;
         } else {
           valor = fila.campo === 'idTarifaGas' ? this.getTarifaGasNombre(c.idTarifaGas) : this.getTarifaLuzNombre(c.idTarifaLuz);
         }
@@ -2381,15 +2408,15 @@ export default {
         return {
           tono: 'neutro', icono: 'fas fa-info-circle', faltan: [], avisos: [], estimacion: false,
           titulo: 'Sin comisión automática: este contrato no generará propuesta de comisión',
-          detalle: 'Si el contrato debe comisionar, elija FIJO o INDEXADO en «Tipo de precio».',
+          detalle: 'Si el contrato debe comisionar, elija FIJO o INDEXADO en «Tipo de precio» (pestaña Contrato).',
         };
       }
-      if (this.vistaPreviaMcasValida) return cabeceraVistaPrevia(this.vistaPrevia, this.nuevoContrato);
+      if (this.vistaPreviaMcasValida) return cabeceraVistaPrevia(this.vistaPrevia, this.nuevoContrato, { verImporte: this.esAdminMcas });
       const faltan = this.mcasFaltanCampos;
       let detalle = 'Al guardar, se aplica la tabla de comisiones de la comercializadora y la propuesta queda en Comisiones MCAS; '
         + 'cuando un administrador la aprueba, se crea el servicio de comisión en este punto de suministro. '
         + 'Si el contrato no debe comisionar, elija «Sin comisión automática» en «Tipo de precio».';
-      if (this.cargandoVistaPrevia) detalle = 'Calculando la comisión estimada…';
+      if (this.cargandoVistaPrevia) detalle = this.esAdminMcas ? 'Calculando la comisión estimada…' : 'Comprobando los datos de la comisión…';
       else if (this.errorVistaPrevia) detalle = 'No se ha podido calcular la estimación ahora mismo; al guardar el contrato se calculará igualmente.';
       return faltan.length
         ? { tono: 'aviso', icono: 'fas fa-exclamation-triangle', titulo: 'Para calcular la comisión falta:', detalle, faltan, avisos: [], estimacion: false }
@@ -2415,10 +2442,20 @@ export default {
       return potencias.length ? Math.max(...potencias) : null;
     },
 
-    placeholderPotenciaMcas() {
-      return this.mayorPotenciaMcas === null
-        ? 'Vacío = mayor potencia contratada'
-        : `Vacío = ${this.mayorPotenciaMcas.toLocaleString('es-ES', { maximumFractionDigits: 4 })} kW (mayor contratada)`;
+    // La comisión (importe, pagos y avisos del cálculo) solo la ven los administradores.
+    esAdminMcas() {
+      try {
+        return Number(JSON.parse(localStorage.getItem('usuario') || '{}')?.nivelAcceso) === 1;
+      } catch (e) {
+        return false;
+      }
+    },
+
+    // Por qué el desplegable de productos aún no se puede usar ('' si se puede).
+    textoSinProductoMcas() {
+      if (!this.nuevoContrato?.idComercializadoraActual) return 'Elija antes la comercializadora';
+      if (!this.nuevoContrato?.mcasTipoPrecio) return 'Elija antes el tipo de precio';
+      return '';
     },
 
     // Texto dinámico para el botón de guardar
@@ -2474,7 +2511,9 @@ export default {
         if (idComercializadora && Number(p.idComercializadora) !== Number(idComercializadora)) return false
         if (tipoPrecio && p.tipoPrecio !== tipoPrecio) return false
         if (tipoSuministro && p.tipoSuministro !== tipoSuministro) return false
-        if (p.idGestora != null && Number(p.idGestora) !== Number(idGestora)) return false
+        // Los de una gestora salen también sin gestora elegida: al escoger uno se pone la suya
+        if (p.idGestora != null && idGestora !== null && idGestora !== undefined && idGestora !== ''
+          && Number(p.idGestora) !== Number(idGestora)) return false
         if (p.activoDesde && p.activoDesde > fechaContrato) return false
         if (p.activoHasta && p.activoHasta < fechaContrato) return false
         return true
@@ -2713,21 +2752,27 @@ export default {
     // La zona sugerida se propone al llegar la vista previa (pedirVistaPrevia), que es
     // quien sabe si la tabla de comisiones de la nueva comercializadora la usa.
     'nuevoContrato.idComercializadoraActual'(newVal, oldVal) {
-      if (newVal !== oldVal && oldVal !== undefined) {
-        this.nuevoContrato.mcasIdProductoComercial = null
-      }
+      if (newVal !== oldVal && oldVal !== undefined) this.descartarProductoIncompatibleMcas()
     },
     'nuevoContrato.mcasTipoPrecio'(newVal, oldVal) {
-      if (newVal !== oldVal && oldVal !== undefined) this.nuevoContrato.mcasIdProductoComercial = null
+      if (newVal !== oldVal && oldVal !== undefined) this.descartarProductoIncompatibleMcas()
     },
     'nuevoContrato.mcasTipoSuministro'(newVal, oldVal) {
-      if (newVal !== oldVal && oldVal !== undefined) this.nuevoContrato.mcasIdProductoComercial = null
+      if (newVal !== oldVal && oldVal !== undefined) this.descartarProductoIncompatibleMcas()
+    },
+    // Un producto de una gestora trae su gestora si el contrato aún no tiene ninguna
+    'nuevoContrato.mcasIdProductoComercial'(id) {
+      if (id === null || id === undefined || id === '' || this.nuevoContrato?.mcasIdGestora) return
+      const producto = this.productosComerciales.find(p => String(p.id) === String(id))
+      if (producto && producto.idGestora !== null && producto.idGestora !== undefined) {
+        this.nuevoContrato.mcasIdGestora = producto.idGestora
+      }
     },
     'nuevoContrato.mcasIdGestora'(newVal, oldVal) {
-      if (newVal !== oldVal && oldVal !== undefined) this.nuevoContrato.mcasIdProductoComercial = null
+      if (newVal !== oldVal && oldVal !== undefined) this.descartarProductoIncompatibleMcas()
     },
     'nuevoContrato.fechaInicio'(newVal, oldVal) {
-      if (newVal !== oldVal && oldVal !== undefined) this.nuevoContrato.mcasIdProductoComercial = null
+      if (newVal !== oldVal && oldVal !== undefined) this.descartarProductoIncompatibleMcas()
     },
     // Vista previa de la comisión: se pide 600 ms después del último cambio que influye en ella
     firmaVistaPrevia(firma) {

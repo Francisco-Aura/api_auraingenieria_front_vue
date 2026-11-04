@@ -66,8 +66,10 @@ test('renovar desde la fila de un contrato usa la renovación, igual que «Renov
   ctx.nuevoContrato.contrato = 'CT-2026-0078';
   await ctx.guardarContrato();
 
-  assert.equal(posts.length, 1);
-  assert.match(posts[0].url, /\/contratos\/renovar\/77$/);
+  // Antes de guardar se comprueba la comisión (vista previa); el contrato se envía una vez
+  const guardados = posts.filter((p) => /\/contratos/.test(p.url));
+  assert.equal(guardados.length, 1);
+  assert.match(guardados[0].url, /\/contratos\/renovar\/77$/);
 });
 
 // ---------------------------------------------------------------------------
