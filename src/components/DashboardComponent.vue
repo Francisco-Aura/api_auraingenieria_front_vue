@@ -59,16 +59,12 @@
           <div v-if="sidebarCollapsed" class="tooltip">Registro horario</div>
         </router-link>
 
-        <router-link v-if="nivelAcceso === 1" to="/dashboard/administracion" class="menu-item" active-class="active">
+        <!-- Configuración MCAS se abre desde Administración (reunión del 04/11/2026): allí se queda marcada -->
+        <router-link v-if="nivelAcceso === 1" to="/dashboard/administracion" class="menu-item" active-class="active"
+                     :class="{ active: enConfiguracionMcas }">
           <i class="fas fa-cog menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Administración</span>
           <div v-if="sidebarCollapsed" class="tooltip">Administración</div>
-        </router-link>
-
-        <router-link v-if="nivelAcceso === 1" to="/dashboard/mcas" class="menu-item" active-class="active">
-          <i class="fas fa-sliders-h menu-icon"></i>
-          <span v-if="!sidebarCollapsed" class="menu-text">Configuración MCAS</span>
-          <div v-if="sidebarCollapsed" class="tooltip">Configuración MCAS</div>
         </router-link>
 
         <!-- Insignia con las comisiones por aprobar (abierto y plegado); el desglose va en el título -->
@@ -183,6 +179,9 @@ export default {
     };
   },
   computed: {
+    enConfiguracionMcas() {
+      return this.$route?.path === '/dashboard/mcas';
+    },
     pageTitle() {
       // Retorna el título basado en la ruta actual
       return this.routes[this.$route.path] || 'Dashboard';

@@ -50,6 +50,33 @@
         </div>
 
         <div class="tables-grid">
+          <!-- Configuración MCAS (comisiones automáticas): se abre desde aquí, ya no desde el menú -->
+          <div
+            v-if="mostrarTarjetaMcas"
+            class="table-card table-card--modulo"
+            role="button"
+            tabindex="0"
+            @click="abrirConfiguracionMcas"
+            @keydown.enter.self.prevent="abrirConfiguracionMcas"
+            @keydown.space.self.prevent="abrirConfiguracionMcas"
+          >
+            <div class="table-card-header">
+              <div class="table-icon-wrapper">
+                <i class="fas fa-sliders-h"></i>
+              </div>
+              <div class="table-info">
+                <h3>Configuración MCAS</h3>
+                <p>{{ descripcionMcas }}</p>
+              </div>
+            </div>
+            <div class="table-card-footer">
+              <span class="records-count">Comisiones automáticas</span>
+              <div class="action-indicator">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+            </div>
+          </div>
+
           <div 
             v-for="tabla in tablasFiltradas" 
             :key="tabla.nombre"
@@ -83,7 +110,7 @@
             </div>
           </div>
 
-          <div v-if="tablasFiltradas.length === 0" class="no-tables-found">
+          <div v-if="tablasFiltradas.length === 0 && !mostrarTarjetaMcas" class="no-tables-found">
             <i class="fas fa-search fa-3x"></i>
             <h3>No se encontraron tablas</h3>
             <p>Intenta con un término de búsqueda diferente</p>
@@ -355,6 +382,8 @@ const NOMBRES_COLUMNAS = {
   categorias: 'Categorías',
 };
 
+const DESCRIPCION_MCAS = 'Tablas de comisiones, reglas, productos, retrocesiones e interruptores de las comisiones automáticas';
+
 export default {
   name: 'AdministracionComponent',
   mixins: [ordenTabla],
@@ -460,6 +489,17 @@ export default {
       return campos[0] || 'nombre';
     },
     
+    descripcionMcas() {
+      return DESCRIPCION_MCAS;
+    },
+
+    // Sin búsqueda, o si lo buscado está en su nombre o en su descripción
+    mostrarTarjetaMcas() {
+      if (!this.globalFilter) return true;
+      const filtro = this.globalFilter.toLowerCase();
+      return `configuración mcas ${DESCRIPCION_MCAS}`.toLowerCase().includes(filtro);
+    },
+
     tablasFiltradas() {
       if (!this.globalFilter) return this.tablas;
       const filtro = this.globalFilter.toLowerCase();
@@ -515,6 +555,10 @@ export default {
     }
   },
   methods: {
+    abrirConfiguracionMcas() {
+      this.$router.push('/dashboard/mcas');
+    },
+
     async seleccionarTabla(tabla) {
       // Si es la misma tabla que ya estaba seleccionada (p.ej. un refresco tras
       // guardar/eliminar un registro o pulsar "Actualizar"), no reseteamos la

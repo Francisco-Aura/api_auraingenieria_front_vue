@@ -109,7 +109,19 @@ test('el interruptor de retrocesión no se enseña: hoy no tiene efecto', () => 
   const ctx = configuracion();
   ctx.featureFlags = [{ codigo: 'MCAS_RETROCESSION_ENABLED', activo: false }];
   assert.equal(ctx.flagsVista.find((x) => x.codigo === 'MCAS_RETROCESSION_ENABLED'), undefined);
-  assert.deepEqual(ctx.flagsVista.map((f) => f.label), ['Módulo', 'Precio fijo', 'Indexado']);
+  assert.deepEqual(ctx.flagsVista.map((f) => f.label), ['Módulo', 'Precio fijo', 'Indexado', 'Aprobación automática']);
+});
+
+test('«Aprobación automática» se puede encender aunque aún no exista en la base de datos', () => {
+  const ctx = configuracion();
+  ctx.featureFlags = [{ codigo: 'MCAS_ENABLED', activo: true }];
+  ctx.flagsError = false;
+  const auto = ctx.flagsVista.find((x) => x.codigo === 'MCAS_AUTO_APPROVAL_ENABLED');
+  assert.equal(auto.disponible, true);
+  assert.equal(auto.activo, false, 'sin fila cuenta como apagado');
+  // Si no se ha podido cargar la lista, no se sabe cómo está: no se deja tocar.
+  ctx.flagsError = true;
+  assert.equal(ctx.flagsVista.find((x) => x.codigo === 'MCAS_AUTO_APPROVAL_ENABLED').disponible, false);
 });
 
 // ---------------------------------------------------------------------------

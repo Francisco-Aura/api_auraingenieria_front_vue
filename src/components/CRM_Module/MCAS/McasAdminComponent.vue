@@ -1777,6 +1777,10 @@ const FLAGS = [
   { codigo: 'MCAS_INDEXED_ENABLED', label: 'Indexado',
     descripcion: 'Cálculo para contratos indexados (activar solo tras validar los fijos)', efecto: 'el cálculo para contratos indexados' },
   // MCAS_RETROCESSION_ENABLED no se enseña: hoy no tiene efecto (la retrocesión es solo informativa).
+  // Sin fila en la base de datos cuenta como apagado: al encenderlo se crea (no hace falta script).
+  { codigo: 'MCAS_AUTO_APPROVAL_ENABLED', label: 'Aprobación automática', sinFilaEsApagado: true,
+    descripcion: 'Las comisiones que se calculen bien al guardar el contrato se aprueban solas y se crea su servicio',
+    efecto: 'la aprobación automática de las comisiones' },
 ]
 
 // Configuración MCAS recién instalada (sin ninguna tabla): qué hacer, en orden.
@@ -2260,7 +2264,8 @@ export default {
       return FLAGS.map(f => {
         const flag = this.featureFlags.find(x => x.codigo === f.codigo)
         const descripcion = flag?.descripcion || f.descripcion
-        return { ...f, descripcion, ayuda: descripcion, activo: !!flag?.activo, disponible: !!flag }
+        const disponible = !!flag || (f.sinFilaEsApagado === true && !this.flagsError)
+        return { ...f, descripcion, ayuda: descripcion, activo: !!flag?.activo, disponible }
       })
     },
     opcionesComercializadoraProductos() {
@@ -2639,6 +2644,11 @@ export default {
       let texto = `Se ${activar ? 'activará' : 'desactivará'} ${f.efecto}.`
       if (activar && f.codigo === 'MCAS_INDEXED_ENABLED') {
         texto = 'La fase INDEXADO solo debe activarse tras validar los contratos a precio fijo.'
+      }
+      if (activar && f.codigo === 'MCAS_AUTO_APPROVAL_ENABLED') {
+        texto = 'Las comisiones que se calculen bien al guardar un contrato se aprobarán solas y se creará su servicio, '
+          + 'sin pasar por Comisiones MCAS. Actívelo solo cuando haya comprobado durante un tiempo que las tablas calculan bien. '
+          + 'Las que necesiten datos o revisión seguirán esperando a un administrador.'
       }
       const confirmado = await confirmar(this.$swal, {
         titulo: `¿${activar ? 'Activar' : 'Desactivar'} "${f.label}"?`,
