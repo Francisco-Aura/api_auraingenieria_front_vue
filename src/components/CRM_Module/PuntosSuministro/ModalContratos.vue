@@ -181,23 +181,27 @@
                   <div class="fila-campos fila-campos--3">
                     <div class="form-group-modern">
                       <label for="fechaEnvioContrato">Fecha envío <span class="required">*</span></label>
-                      <input type="date" id="fechaEnvioContrato" v-model="nuevoContrato.fechaEnvio"
-                             class="form-control-modern" :class="{ 'input-error': errores.fechaEnvio }"
-                             @change="errores.fechaEnvio = ''" required />
+                      <CampoFecha id="fechaEnvioContrato" v-model="nuevoContrato.fechaEnvio" required
+                                  :error="!!errores.fechaEnvio" @change="errores.fechaEnvio = ''" />
                       <small v-if="errores.fechaEnvio" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaEnvio }}</small>
                     </div>
                     <div class="form-group-modern">
                       <label for="fechaInicioContrato">Fecha inicio <span class="required">*</span></label>
-                      <input type="date" id="fechaInicioContrato" v-model="nuevoContrato.fechaInicio"
-                             class="form-control-modern" :class="{ 'input-error': errores.fechaInicio }"
-                             @change="errores.fechaInicio = ''" required />
+                      <CampoFecha id="fechaInicioContrato" v-model="nuevoContrato.fechaInicio" required
+                                  :error="!!errores.fechaInicio" :atajos="atajosInicioContrato"
+                                  @change="alCambiarInicioContrato" />
                       <small v-if="errores.fechaInicio" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaInicio }}</small>
                     </div>
                     <div class="form-group-modern">
-                      <label for="fechaFinContrato">Fecha fin <span class="required">*</span></label>
-                      <input type="date" id="fechaFinContrato" v-model="nuevoContrato.fechaFin"
-                             class="form-control-modern" :class="{ 'input-error': errores.fechaFin }"
-                             @change="errores.fechaFin = ''" required />
+                      <!-- La duración va en la línea de la etiqueta: debajo movía todo el formulario -->
+                      <div class="etiqueta-fecha">
+                        <label for="fechaFinContrato">Fecha fin <span class="required">*</span></label>
+                        <span v-if="duracionContrato" class="ayuda-fecha">Duración: {{ duracionContrato }}</span>
+                      </div>
+                      <CampoFecha id="fechaFinContrato" v-model="nuevoContrato.fechaFin" required
+                                  :error="!!errores.fechaFin" :hoy="false" :min="nuevoContrato.fechaInicio || ''"
+                                  :abrir-en="finUnAnioContrato" :atajos="atajosFinContrato" :marcas="marcasFinContrato"
+                                  @change="alCambiarFinContrato" />
                       <small v-if="errores.fechaFin" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaFin }}</small>
                     </div>
                   </div>
@@ -414,13 +418,8 @@
                         <i class="fas fa-calendar-alt"></i>
                         Fecha de gestión <span class="required">*</span>
                       </label>
-                      <input 
-                        type="date" 
-                        id="fechaDenunciaContrato" 
-                        v-model="nuevoContrato.fechaDenunciaContrato" 
-                        class="fecha-input-compacta" 
-                        :required="denunciaRealizada"
-                      />
+                      <CampoFecha id="fechaDenunciaContrato" v-model="nuevoContrato.fechaDenunciaContrato"
+                                  compacto :required="denunciaRealizada" />
                     </div>
                   </div>
                 </div>
@@ -900,7 +899,8 @@
 <script>
 import { descargarBlob } from '@/utils/descargas';
 import axios from "axios";
-import { fechaLocalISO, enVigorHoy, fechaES } from "@/utils/fechas";
+import { fechaLocalISO, enVigorHoy, fechaES, finDePeriodo, mesesExactos, sumarDias, textoDuracion, atajoPrimeroDelMes, atajosDuracion } from "@/utils/fechas";
+import CampoFecha from '@/components/comun/CampoFecha.vue';
 import { cupsRecortado } from "@/utils/cups";
 import { leerDecimal } from "@/utils/numeros";
 import { nombreComercializadora } from "@/utils/maestros";
@@ -929,7 +929,7 @@ const ETIQUETA_AMBITO = { NA: 'N/A' };
 
 export default {
   name: "ModalContratos",
-  components: {},
+  components: { CampoFecha },
   props: {
     visible: {
       type: Boolean,
@@ -1062,6 +1062,9 @@ export default {
       nombreArchivoExistente: '',
       eliminarArchivoExistente: false,
       contratoOriginalIdRenovar: null,
+      // Fecha fin puesta por la aplicación ({ de: contrato del formulario, fin, meses }): mientras
+      // nadie la cambie a mano, sigue a la fecha de inicio manteniendo la duración.
+      finPropuesta: null,
       selectedFile: null,
       arrastrandoPdf: false,
       errorArchivoContrato: '',
@@ -1345,6 +1348,56 @@ export default {
       return { 'mcas-campo--falta': this.camposFaltanMcas.includes(campo) };
     },
 
+    // ---- Fechas del contrato ----
+    // ¿La fecha fin actual la puso la aplicación (y nadie la ha tocado)? Va atada al objeto del
+    // formulario: al abrir otro contrato (nuevo, editar, renovar) deja de valer sola.
+    finPropuestaVigente() {
+      const p = this.finPropuesta;
+      return p && p.de === this.nuevoContrato && p.fin === this.nuevoContrato.fechaFin ? p : null;
+    },
+    proponerFin(inicio, meses) {
+      const fin = finDePeriodo(inicio, meses);
+      this.nuevoContrato.fechaFin = fin;
+      this.finPropuesta = fin ? { de: this.nuevoContrato, fin, meses } : null;
+    },
+    // Al poner la fecha de inicio: si la fecha fin está vacía (o la puso la aplicación), se
+    // propone la que toca (un año, o la duración elegida con los atajos) y se ve la duración.
+    alCambiarInicioContrato(inicio) {
+      this.errores.fechaInicio = '';
+      const propuesta = this.finPropuestaVigente();
+      if (!inicio) {
+        if (propuesta) this.nuevoContrato.fechaFin = '';
+        this.finPropuesta = null;
+      } else if (!this.nuevoContrato.fechaFin || propuesta) {
+        this.proponerFin(inicio, propuesta?.meses || 12);
+      }
+      this.comprobarOrdenFechasContrato();
+    },
+    alCambiarFinContrato(fin) {
+      const inicio = this.nuevoContrato.fechaInicio;
+      // Elegida con un atajo («2 años»): se recuerda la duración por si luego cambia el inicio
+      const meses = [12, 24, 36].find((m) => inicio && finDePeriodo(inicio, m) === fin);
+      this.finPropuesta = meses ? { de: this.nuevoContrato, fin, meses } : null;
+      this.errores.fechaFin = '';
+      this.comprobarOrdenFechasContrato();
+    },
+    // Aviso en el momento (antes salía solo al guardar)
+    comprobarOrdenFechasContrato() {
+      const { fechaInicio, fechaFin } = this.nuevoContrato;
+      if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
+        this.errores.fechaFin = 'La fecha de fin no puede ser anterior a la fecha de inicio';
+      }
+    },
+    // Al renovar, el nuevo contrato empieza al día siguiente de acabar el anterior y dura lo
+    // mismo (un año si no eran meses justos). Antes salían las fechas del anterior.
+    proponerFechasRenovacion(anterior) {
+      const finAnterior = this.formatDateForInput(anterior?.fechaFin);
+      if (!finAnterior) return;
+      const meses = mesesExactos(this.formatDateForInput(anterior.fechaInicio), finAnterior) || 12;
+      this.nuevoContrato.fechaInicio = sumarDias(finAnterior, 1);
+      this.proponerFin(this.nuevoContrato.fechaInicio, meses);
+    },
+
     // Método para actualizar el estado de denuncia
     actualizarDenuncia() {
       if (this.denunciaRealizada && !this.nuevoContrato.fechaDenunciaContrato) {
@@ -1547,6 +1600,7 @@ export default {
       this.nuevoContrato.idComercializadoraAnterior = this.contratoVigente.idComercializadoraAnterior || "";
       this.nuevoContrato.mcasIdProductoComercial = this.contratoVigente.mcasIdProductoComercial || null;
       this.completarDatosMcas();
+      this.proponerFechasRenovacion(this.contratoVigente);
       
       // Una renovación siempre parte sin archivo (el usuario puede adjuntar uno nuevo)
       this.contratoTieneArchivo = false;
@@ -1661,6 +1715,7 @@ export default {
       this.nuevoContrato.idComercializadoraAnterior = contrato.idComercializadoraAnterior || "";
       this.nuevoContrato.mcasIdProductoComercial = contrato.mcasIdProductoComercial || null;
       this.completarDatosMcas();
+      this.proponerFechasRenovacion(contrato);
       
       this.contratoTieneArchivo = false;
       this.nombreArchivoExistente = '';
@@ -2443,6 +2498,24 @@ export default {
     },
 
     // La comisión (importe, pagos y avisos del cálculo) solo la ven los administradores.
+    // Atajos del calendario de las fechas del contrato
+    atajosInicioContrato() {
+      return [atajoPrimeroDelMes()];
+    },
+    finUnAnioContrato() {
+      return finDePeriodo(this.nuevoContrato?.fechaInicio, 12);
+    },
+    atajosFinContrato() {
+      return atajosDuracion(this.nuevoContrato?.fechaInicio);
+    },
+    // En el calendario de la fecha fin, un punto en el día de inicio
+    marcasFinContrato() {
+      const inicio = this.nuevoContrato?.fechaInicio;
+      return inicio ? [{ fecha: inicio, texto: 'Inicio del contrato' }] : [];
+    },
+    duracionContrato() {
+      return textoDuracion(this.nuevoContrato?.fechaInicio, this.nuevoContrato?.fechaFin);
+    },
     esAdminMcas() {
       try {
         return Number(JSON.parse(localStorage.getItem('usuario') || '{}')?.nivelAcceso) === 1;

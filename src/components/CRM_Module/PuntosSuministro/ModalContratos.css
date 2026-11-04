@@ -1287,6 +1287,28 @@
   border-color: var(--color-danger-alt);
   box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15);
 }
+/* Duración del contrato, a la derecha de la etiqueta «Fecha fin» («1 año») */
+.etiqueta-fecha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.etiqueta-fecha label {
+  flex: 0 0 auto;
+}
+
+.ayuda-fecha {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
 .error-text {
   display: block;
   color: var(--color-danger-alt);

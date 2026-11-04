@@ -107,7 +107,7 @@
             <div class="form-group">
               <label><i class="fas fa-calendar-alt"></i> Fecha inicio</label>
               <div class="datetime-compact">
-                <input type="date" v-model="fechaInicio" class="form-control date-input" />
+                <CampoFecha v-model="fechaInicio" class="date-input" :borrable="false" />
                 <input type="time" v-model="horaInicio" class="form-control time-input" />
               </div>
             </div>
@@ -115,7 +115,8 @@
             <div class="form-group">
               <label><i class="fas fa-hourglass-end"></i> Fecha vencimiento</label>
               <div class="datetime-compact">
-                <input type="date" v-model="fechaVencimiento" class="form-control date-input" />
+                <CampoFecha v-model="fechaVencimiento" class="date-input" :borrable="false" :min="fechaInicio || ''"
+                            :atajos="atajosVencimiento" :marcas="marcasVencimiento" />
                 <input type="time" v-model="horaVencimiento" class="form-control time-input" />
               </div>
             </div>
@@ -295,10 +296,12 @@
 <script>
 import { textoError } from '@/utils/errores';
 import tareasApi from '@/services/tareasApi'
-import { fechaLocalISO } from '@/utils/fechas'
+import { fechaLocalISO, atajoDentroDe } from '@/utils/fechas'
+import CampoFecha from '@/components/comun/CampoFecha.vue'
 
 export default {
   name: 'TareaModalCorporativo',
+  components: { CampoFecha },
   emits: ['guardar', 'cerrar', 'update:value'],
   props: {
     value: {
@@ -366,6 +369,13 @@ export default {
     }
   },
   computed: {
+    // Atajos del calendario del vencimiento (los pulsa la persona; nada se rellena solo)
+    atajosVencimiento() {
+      return [atajoDentroDe(1, 'Mañana'), atajoDentroDe(7, 'En una semana')]
+    },
+    marcasVencimiento() {
+      return this.fechaInicio ? [{ fecha: this.fechaInicio, texto: 'Inicio de la tarea' }] : []
+    },
     esEdicion() {
       return this.tarea && this.tarea.id != null
     },

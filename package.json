@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@stomp/stompjs": "^7.1.1",
+    "@vuepic/vue-datepicker": "14.0.0",
     "axios": "^1.16.0",
     "core-js": "^3.8.3",
+    "date-fns": "4.4.0",
     "exceljs": "^4.4.0",
     "sockjs-client": "^1.6.1",
     "sweetalert2": "^11.21.2",

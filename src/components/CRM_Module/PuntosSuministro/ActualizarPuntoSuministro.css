@@ -201,6 +201,13 @@
 
 /* Modo consulta: los campos de solo lectura se distinguen de los editables. También en
    la pestaña «Instalaciones» (.form-group-compact), que antes parecía editable */
+/* Fechas (CampoFecha): mismas medidas que los demás campos de la ficha */
+.form-compact-group .campo-fecha {
+  --campo-fecha-alto: 34px;
+  --campo-fecha-letra: 0.875rem;
+  --campo-fecha-borde: #cfd6de;
+}
+
 :is(.form-compact-group, .form-group-compact) :is(input[readonly], textarea[readonly], select:disabled) {
   background-color: #f8fafc;
   color: var(--color-text-dark);

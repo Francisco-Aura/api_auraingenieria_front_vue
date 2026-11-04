@@ -39,9 +39,9 @@
           </select>
           
           <div v-if="tipoRango === 'personalizado'" class="date-inputs-compact">
-            <input type="date" v-model="fechaDesde" class="filter-input-compact" @change="aplicarFiltrosPersonalizados" />
+            <CampoFecha v-model="fechaDesde" :max="fechaHasta || ''" placeholder="Desde" @change="aplicarFiltrosPersonalizados" />
             <span class="date-separator">—</span>
-            <input type="date" v-model="fechaHasta" class="filter-input-compact" @change="aplicarFiltrosPersonalizados" />
+            <CampoFecha v-model="fechaHasta" :min="fechaDesde || ''" placeholder="Hasta" @change="aplicarFiltrosPersonalizados" />
           </div>
         </div>
       </div>
@@ -206,9 +206,11 @@
 
 <script>
 import { tareasApi } from '@/services/tareasApi'
+import CampoFecha from '@/components/comun/CampoFecha.vue'
 
 export default {
   name: 'EstadisticasTareasComponent',
+  components: { CampoFecha },
   data() {
     return {
       mostrarEstadisticas: false,

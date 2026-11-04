@@ -690,11 +690,14 @@
               <div class="form-grid form-grid--3">
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-prod-desde">Activo desde</label>
-                  <input id="mcas-prod-desde" v-model="formProducto.activoDesde" type="date" class="mcas-input">
+                  <CampoFecha id="mcas-prod-desde" v-model="formProducto.activoDesde" :max="formProducto.activoHasta || ''"
+                              :atajos="atajosDesdeMcas" />
                 </div>
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-prod-hasta">Activo hasta</label>
-                  <input id="mcas-prod-hasta" v-model="formProducto.activoHasta" type="date" class="mcas-input" :class="claseError('activoHasta')">
+                  <CampoFecha id="mcas-prod-hasta" v-model="formProducto.activoHasta" :error="!!erroresForm.activoHasta"
+                              :min="formProducto.activoDesde || ''" :atajos="atajosHastaMcas(formProducto.activoDesde)"
+                              :marcas="marcaDesdeMcas(formProducto.activoDesde, 'Activo desde')" />
                   <small v-if="erroresForm.activoHasta" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.activoHasta }}</small>
                 </div>
                 <div class="form-group">
@@ -794,7 +797,8 @@
               <div class="form-grid">
                 <div class="form-group">
                   <label class="mcas-label" for="mcas-conj-desde">Vigencia desde <span class="required-asterisk">*</span></label>
-                  <input id="mcas-conj-desde" v-model="formConjunto.vigenciaDesde" type="date" class="mcas-input" :class="claseError('vigenciaDesde')">
+                  <CampoFecha id="mcas-conj-desde" v-model="formConjunto.vigenciaDesde" required :error="!!erroresForm.vigenciaDesde"
+                              :max="formConjunto.vigenciaHasta || ''" :atajos="atajosDesdeMcas" />
                   <small v-if="erroresForm.vigenciaDesde" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.vigenciaDesde }}</small>
                 </div>
                 <div class="form-group">
@@ -802,7 +806,9 @@
                     Vigencia hasta
                     <i class="fas fa-info-circle help-icon" title="Dejar vacío si no tiene fecha de caducidad"></i>
                   </label>
-                  <input id="mcas-conj-hasta" v-model="formConjunto.vigenciaHasta" type="date" class="mcas-input" :class="claseError('vigenciaHasta')">
+                  <CampoFecha id="mcas-conj-hasta" v-model="formConjunto.vigenciaHasta" :error="!!erroresForm.vigenciaHasta"
+                              :min="formConjunto.vigenciaDesde || ''" :atajos="atajosHastaMcas(formConjunto.vigenciaDesde)"
+                              :marcas="marcaDesdeMcas(formConjunto.vigenciaDesde, 'Vigencia desde')" />
                   <small v-if="erroresForm.vigenciaHasta" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.vigenciaHasta }}</small>
                 </div>
               </div>
@@ -1344,7 +1350,8 @@
                   </div>
                   <div class="form-group">
                     <label class="mcas-label" for="mcas-retro-desde">Vigencia desde <span class="required-asterisk">*</span></label>
-                    <input id="mcas-retro-desde" v-model="formRetrocesion.vigenciaDesde" type="date" class="mcas-input" :class="claseError('vigenciaDesde')">
+                    <CampoFecha id="mcas-retro-desde" v-model="formRetrocesion.vigenciaDesde" required :error="!!erroresForm.vigenciaDesde"
+                                :max="formRetrocesion.vigenciaHasta || ''" :atajos="atajosDesdeMcas" />
                     <small v-if="erroresForm.vigenciaDesde" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.vigenciaDesde }}</small>
                   </div>
                   <div class="form-group">
@@ -1352,7 +1359,9 @@
                       Vigencia hasta
                       <i class="fas fa-info-circle help-icon" title="Dejar vacío si no tiene fecha de caducidad"></i>
                     </label>
-                    <input id="mcas-retro-hasta" v-model="formRetrocesion.vigenciaHasta" type="date" class="mcas-input" :class="claseError('vigenciaHasta')">
+                    <CampoFecha id="mcas-retro-hasta" v-model="formRetrocesion.vigenciaHasta" :error="!!erroresForm.vigenciaHasta"
+                                :min="formRetrocesion.vigenciaDesde || ''" :atajos="atajosHastaMcas(formRetrocesion.vigenciaDesde)"
+                                :marcas="marcaDesdeMcas(formRetrocesion.vigenciaDesde, 'Vigencia desde')" />
                     <small v-if="erroresForm.vigenciaHasta" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.vigenciaHasta }}</small>
                   </div>
                 </div>
@@ -1530,7 +1539,9 @@
                     Se aplica desde <span class="required-asterisk">*</span>
                     <i class="fas fa-info-circle help-icon" title="Primer día en que se usará. Al activarla, la versión anterior se cierra el día antes."></i>
                   </label>
-                  <input id="mcas-version-desde" v-model="formNuevaVersion.vigenciaDesde" type="date" class="mcas-input" :class="claseError('vigenciaDesde')">
+                  <CampoFecha id="mcas-version-desde" v-model="formNuevaVersion.vigenciaDesde" required :error="!!erroresForm.vigenciaDesde"
+                              :min="minimoNuevaVersion" :atajos="atajosDesdeMcas"
+                              :marcas="marcaDesdeMcas(conjuntoNuevaVersion && conjuntoNuevaVersion.vigenciaDesde, 'Inicio de la versión actual')" />
                   <small v-if="erroresForm.vigenciaDesde" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.vigenciaDesde }}</small>
                 </div>
               </div>
@@ -1674,7 +1685,9 @@ import axios from 'axios'
 import { COLORES_DIALOGO, confirmar, mostrarAviso, mostrarError, mostrarExito, textoError } from './mcasDialogs'
 // En una sola línea: los tests cargan este <script> en Node (tests/unit/helpers/sfc.js) y solo reconocen import de una línea.
 import { OPCIONES_CONDICION, TIPOS_LINEA, condicionesVacias, leerCondiciones, escribirCondiciones, normalizarCondiciones, validarCondiciones, calculoVacio, leerCalculo, escribirCalculo, validarCalculo, lineaVacia, leerPago, escribirPago, resumenRegla, resumenDeRegla, NOMBRES_METODO, aFactor, aPorcentaje } from './mcasReglas'
-import { fechaLocalISO } from '@/utils/fechas'
+import { fechaLocalISO, sumarDias, atajoPrimeroDelMes, atajoPrimeroDeEnero, atajoFinDeAnio } from '@/utils/fechas'
+import CampoFecha from '@/components/comun/CampoFecha.vue'
+import { campoFechaEnDialogo } from '@/components/comun/campoFechaEnDialogo'
 import { escaparHtml } from '@/utils/html'
 import { comprobacionesModulo } from './mcasEstados'
 import { estadoPorComercializadora, comprobacionActivacion, propuestaNuevaVersion, agruparIncidencias, nombreConjunto, nombreRegla } from './mcasActivacion'
@@ -2025,7 +2038,7 @@ function validarTramo(t, prefijo) {
 
 export default {
   name: 'McasAdminComponent',
-  components: { McasMatrizEditor },
+  components: { McasMatrizEditor, CampoFecha },
   data() {
     return {
       tabs: TABS,
@@ -2114,6 +2127,14 @@ export default {
     }
   },
   computed: {
+    atajosDesdeMcas() {
+      return [atajoPrimeroDelMes(), atajoPrimeroDeEnero()]
+    },
+    // La nueva versión tiene que empezar después que la actual (como pide validarNuevaVersion)
+    minimoNuevaVersion() {
+      const desde = this.conjuntoNuevaVersion?.vigenciaDesde
+      return desde ? sumarDias(desde, 1) : ''
+    },
     conjuntoParaReglas() {
       return this.conjuntosReglas.find(c => c.id === this.conjuntoParaReglasId) || null
     },
@@ -2768,6 +2789,14 @@ export default {
         this.cerrarModales()
       }
     },
+    // Atajos y marcas de los calendarios de vigencias (los pulsa la persona; nada se rellena solo)
+    atajosHastaMcas(desde) {
+      const fin = atajoFinDeAnio(desde || fechaLocalISO())
+      return fin ? [fin] : []
+    },
+    marcaDesdeMcas(desde, texto) {
+      return desde ? [{ fecha: desde, texto }] : []
+    },
     claseError(campo) {
       return { 'input-error': !!this.erroresForm[campo] }
     },
@@ -2956,8 +2985,14 @@ export default {
       if (this.mutacionEnCurso) return
       const hoy = fechaLocalISO()
       const nombreHtml = c.nombre ? `${escaparHtml(c.nombre)} (${escaparHtml(c.codigo)})` : escaparHtml(c.codigo)
+      const campoHasta = campoFechaEnDialogo({
+        id: 'swal-vigencia-hasta', required: true, modelValue: c.vigenciaHasta || hoy,
+        min: c.vigenciaDesde || '', max: c.vigenciaHasta || '',
+      })
       const { isConfirmed, value: hasta } = await this.$swal.fire({
         title: '¿Cerrar la vigencia de la tabla?',
+        didOpen: campoHasta.montar,
+        willClose: campoHasta.desmontar,
         html: `
           <div class="swal-accion-contenedor">
             <div class="swal-accion-caja">
@@ -2967,8 +3002,7 @@ export default {
               <i class="fas fa-calendar-alt"></i>
               Último día de vigencia *
             </label>
-            <input type="date" id="swal-vigencia-hasta" class="swal2-input swal-accion-input"
-              value="${escaparHtml(c.vigenciaHasta || hoy)}" min="${escaparHtml(c.vigenciaDesde || '')}"${c.vigenciaHasta ? ` max="${escaparHtml(c.vigenciaHasta)}"` : ''}>
+            ${campoHasta.html}
           </div>
         `,
         icon: 'question',
@@ -2978,7 +3012,7 @@ export default {
         cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
         confirmButtonColor: COLORES_DIALOGO.COLOR_CONFIRMAR,
         preConfirm: () => {
-          const valor = document.getElementById('swal-vigencia-hasta')?.value
+          const valor = campoHasta.valor()
           if (!valor) {
             this.$swal.showValidationMessage('Indique el último día de vigencia')
             return false

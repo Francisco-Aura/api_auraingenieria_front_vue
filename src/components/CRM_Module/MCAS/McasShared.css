@@ -888,6 +888,14 @@ select.column-filter {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Fechas (CampoFecha): mismas medidas que .mcas-input */
+.form-group .campo-fecha {
+  --campo-fecha-alto: 40px;
+  --campo-fecha-letra: 0.9rem;
+  --campo-fecha-borde: var(--border-color);
+  --campo-fecha-radio: 8px;
+}
+
 .mcas-input:focus {
   outline: none;
   border-color: var(--primary-color);

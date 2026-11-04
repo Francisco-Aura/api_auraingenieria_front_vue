@@ -143,7 +143,7 @@
                 </div>
                 <div class="form-compact-group">
                   <label for="fechaConcesion">F. concesión</label>
-                  <input type="date" id="fechaConcesion" v-model="puntoLocal.fechaConcesion" :readonly="modoConsulta" />
+                  <CampoFecha id="fechaConcesion" v-model="puntoLocal.fechaConcesion" :readonly="modoConsulta" />
                 </div>
               </div>
               <div class="form-row">
@@ -158,7 +158,7 @@
                 </div>
                 <div class="form-compact-group half">
                   <label for="fechaActivacionVertido">Fecha activación vertido</label>
-                  <input type="date" id="fechaActivacionVertido" v-model="puntoLocal.fechaActivacionVertido" :readonly="modoConsulta" />
+                  <CampoFecha id="fechaActivacionVertido" v-model="puntoLocal.fechaActivacionVertido" :readonly="modoConsulta" />
                 </div>
               </div>
             </div>
@@ -170,7 +170,7 @@
             <div class="form-section">
               <div class="form-compact-group">
                 <label for="fechaInstalacion">F. instalación</label>
-                <input type="date" id="fechaInstalacion" v-model="puntoLocal.fechaInstalacion" :readonly="modoConsulta" />
+                <CampoFecha id="fechaInstalacion" v-model="puntoLocal.fechaInstalacion" :readonly="modoConsulta" />
               </div>
             </div>
 
@@ -567,9 +567,12 @@
 <script>
 import axios from 'axios';
 import { fechaES } from '@/utils/fechas';
+import CampoFecha from '@/components/comun/CampoFecha.vue';
+import { campoFechaEnDialogo } from '@/components/comun/campoFechaEnDialogo';
 
 export default {
   name: 'ModalActualizarPunto',
+  components: { CampoFecha },
   props: {
     modificarPunto: {
       type: Object,
@@ -940,8 +943,11 @@ export default {
     },
     async confirmarBajaPunto() {
       try {
+        const campoFechaBaja = campoFechaEnDialogo({ id: 'swal-fecha-baja-punto', required: true });
         const { value: fechaBaja, isConfirmed } = await this.$swal.fire({
           title: '\u00bfDar de baja el punto de suministro?',
+          didOpen: campoFechaBaja.montar,
+          willClose: campoFechaBaja.desmontar,
           html: `
             <div class="swal-accion-contenedor">
               <div class="swal-accion-caja swal-accion-caja--danger">
@@ -955,12 +961,7 @@ export default {
                 <i class="fas fa-calendar-alt"></i>
                 Fecha de baja *
               </label>
-              <input 
-                type="date" 
-                id="swal-fecha-baja-punto" 
-                class="swal2-input swal-accion-input" 
-                required
-              />
+              ${campoFechaBaja.html}
             </div>
           `,
           icon: 'warning',
@@ -974,7 +975,7 @@ export default {
             popup: 'swal-baja-punto'
           },
           preConfirm: () => {
-            const fechaBaja = document.getElementById('swal-fecha-baja-punto').value;
+            const fechaBaja = campoFechaBaja.valor();
             if (!fechaBaja) {
               this.$swal.showValidationMessage('Por favor, seleccione una fecha de baja');
               return false;

@@ -948,6 +948,15 @@
 .ct-num { width: 44px; text-align: center; }
 .ct-estado { width: 120px; }
 .ct-fecha { min-width: 150px; }
+
+/* Fecha de pago de cada cuota: igual que .ct-input */
+.ct-fecha .campo-fecha {
+  --campo-fecha-alto: 29px;
+  --campo-fecha-letra: 0.83rem;
+  --campo-fecha-borde: #ced4da;
+  --campo-fecha-radio: 4px;
+  --campo-fecha-texto: #495057;
+}
 .ct-importe { width: 140px; }
 .ct-pagado { width: 70px; text-align: center; }
 .ct-acciones { width: 100px; text-align: center; }

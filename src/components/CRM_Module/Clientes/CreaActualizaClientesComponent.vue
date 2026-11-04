@@ -1126,6 +1126,7 @@ import { descargarRespuesta } from '@/utils/descargas';
 import { textoError } from '@/utils/errores';
 import { escaparHtml } from '@/utils/html';
 import { fechaCortaES, fechaES, fechaHoraES } from '@/utils/fechas';
+import { campoFechaEnDialogo } from '@/components/comun/campoFechaEnDialogo';
 import { iconoEstadoTarea, nombreEstado, textoPrioridad } from '@/utils/tareas';
 import { colorTextoSobre } from '@/utils/colores';
 import axios from 'axios';
@@ -1583,8 +1584,11 @@ export default {
     },
     async confirmarBajaCliente() {
       try {
+        const campoFechaBaja = campoFechaEnDialogo({ id: 'swal-fecha-baja', required: true });
         const { value: fechaBaja, isConfirmed } = await this.$swal.fire({
           title: '¿Dar de baja al cliente?',
+          didOpen: campoFechaBaja.montar,
+          willClose: campoFechaBaja.desmontar,
           html: `
             <div class="swal-accion-contenedor">
               <div class="swal-accion-caja swal-accion-caja--danger">
@@ -1602,12 +1606,7 @@ export default {
                 <i class="fas fa-calendar-alt"></i>
                 Fecha de baja *
               </label>
-              <input 
-                type="date" 
-                id="swal-fecha-baja" 
-                class="swal2-input swal-accion-input" 
-                required
-              />
+              ${campoFechaBaja.html}
             </div>
           `,
           icon: 'warning',
@@ -1621,7 +1620,7 @@ export default {
             popup: 'swal-baja-cliente'
           },
           preConfirm: () => {
-            const fechaBaja = document.getElementById('swal-fecha-baja').value;
+            const fechaBaja = campoFechaBaja.valor();
             if (!fechaBaja) {
               this.$swal.showValidationMessage('Por favor, seleccione una fecha de baja');
               return false;

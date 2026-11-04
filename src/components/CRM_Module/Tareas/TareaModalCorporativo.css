@@ -501,6 +501,17 @@ textarea.form-control {
   min-width: 0;
 }
 
+/* Fechas (CampoFecha): igual que los .form-control de la tarea */
+.datetime-compact .campo-fecha {
+  --campo-fecha-alto: 40px;
+  --campo-fecha-letra: 0.85rem;
+  --campo-fecha-borde: #e0e0e0;
+  --campo-fecha-borde-ancho: 2px;
+  --campo-fecha-radio: 8px;
+  --campo-fecha-fondo: #fafafa;
+  --campo-fecha-hueco-icono: 1.8rem;
+}
+
 /* La hora se veía cortada (el reloj del selector quedaba fuera del campo) */
 .time-input {
   flex: 0 0 auto;

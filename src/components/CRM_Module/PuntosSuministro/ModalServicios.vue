@@ -208,33 +208,18 @@
                 
                 <div class="form-group-modern">
                   <label for="fechaInicioServicio">Fecha inicio <span class="required">*</span></label>
-                  <div class="input-with-icon-modern">
-                    <i class="fas fa-play icon-prefix"></i>
-                    <input
-                      type="date"
-                      id="fechaInicioServicio"
-                      v-model="nuevoServicio.fechaInicioServicio"
-                      class="form-control-modern" :class="{ 'input-error': errores.fechaInicioServicio }"
-                      @change="errores.fechaInicioServicio = ''"
-                      required
-                    />
-                  </div>
+                  <CampoFecha id="fechaInicioServicio" v-model="nuevoServicio.fechaInicioServicio" required icono="fas fa-play"
+                              :error="!!errores.fechaInicioServicio" :atajos="atajosInicioServicio"
+                              @change="alCambiarFechaServicio('fechaInicioServicio')" />
                   <small v-if="errores.fechaInicioServicio" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaInicioServicio }}</small>
                 </div>
 
                 <div class="form-group-modern">
                   <label for="fechaFinServicio">Fecha fin <span class="required">*</span></label>
-                  <div class="input-with-icon-modern">
-                    <i class="fas fa-stop icon-prefix"></i>
-                    <input
-                      type="date"
-                      id="fechaFinServicio"
-                      v-model="nuevoServicio.fechaFinServicio"
-                      class="form-control-modern" :class="{ 'input-error': errores.fechaFinServicio }"
-                      @change="errores.fechaFinServicio = ''"
-                      required
-                    />
-                  </div>
+                  <CampoFecha id="fechaFinServicio" v-model="nuevoServicio.fechaFinServicio" required icono="fas fa-stop"
+                              :error="!!errores.fechaFinServicio" :hoy="false" :min="nuevoServicio.fechaInicioServicio || ''"
+                              :atajos="atajosFinServicio" :marcas="marcasFinServicio"
+                              @change="alCambiarFechaServicio('fechaFinServicio')" />
                   <small v-if="errores.fechaFinServicio" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaFinServicio }}</small>
                 </div>
                 
@@ -558,7 +543,7 @@
                     </span>
                   </td>
                   <td class="ct-fecha">
-                    <input type="date" v-model="cuota.fechaPago" @change="marcarEditado(cuota)" class="ct-input" />
+                    <CampoFecha v-model="cuota.fechaPago" @change="marcarEditado(cuota)" />
                   </td>
                   <td class="ct-importe">
                     <div class="ct-input-euro">
@@ -590,7 +575,8 @@
 
 <script>
 import axios from "axios";
-import { fechaLocalISO, enVigorHoy, terminadoHoy, fechaES } from "@/utils/fechas";
+import { fechaLocalISO, enVigorHoy, terminadoHoy, fechaES, atajoPrimeroDelMes, atajosDuracion } from "@/utils/fechas";
+import CampoFecha from '@/components/comun/CampoFecha.vue';
 import { cupsRecortado } from "@/utils/cups";
 import { nombreComercializadora } from "@/utils/maestros";
 import { escaparHtml } from "@/utils/html";
@@ -599,7 +585,7 @@ const FORMATO_EUROS = new Intl.NumberFormat('es-ES', { style: 'currency', curren
 
 export default {
   name: "ModalServicios",
-  components: {},
+  components: { CampoFecha },
   emits: ['cerrar-modal', 'servicio-creado', 'servicio-actualizado', 'servicio-renovado', 'recargar-servicios'],
   props: {
     visible: {
@@ -731,6 +717,16 @@ export default {
         valido = false;
       }
       return valido;
+    },
+    // Al cambiar una fecha se quita su error y, si el fin queda antes del inicio, se avisa ya
+    alCambiarFechaServicio(campo) {
+      this.errores[campo] = '';
+      const { fechaInicioServicio: inicio, fechaFinServicio: fin } = this.nuevoServicio;
+      if (inicio && fin && fin < inicio) {
+        this.errores.fechaFinServicio = 'La fecha de fin no puede ser anterior a la fecha de inicio';
+      } else if (this.errores.fechaFinServicio === 'La fecha de fin no puede ser anterior a la fecha de inicio') {
+        this.errores.fechaFinServicio = '';
+      }
     },
     // Importes en formato español: 92,5 → «92,50 €»
     formatearEuros(valor) {
@@ -2291,6 +2287,17 @@ export default {
   },
 
   computed: {
+    // Atajos del calendario de las fechas del servicio
+    atajosInicioServicio() {
+      return [atajoPrimeroDelMes()];
+    },
+    atajosFinServicio() {
+      return atajosDuracion(this.nuevoServicio?.fechaInicioServicio);
+    },
+    marcasFinServicio() {
+      const inicio = this.nuevoServicio?.fechaInicioServicio;
+      return inicio ? [{ fecha: inicio, texto: 'Inicio del servicio' }] : [];
+    },
     todosLosServiciosOrdenados() {
       const todosLosServicios = [...this.servicios, ...this.serviciosHistoricos];
       const serviciosUnicos = todosLosServicios.filter((servicio, index, array) => 

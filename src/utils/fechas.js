@@ -66,3 +66,146 @@ export function fechaHoraES(valor, vacio = '-') {
 export function fechaCortaES(valor, vacio = '') {
   return formatear(FORMATO_FECHA_CORTA, valor, vacio);
 }
+
+// ---- Campos de fecha (components/CampoFecha.vue) ----
+// Todo trabaja con textos 'AAAA-MM-DD' (lo que guardan los formularios) y días locales.
+
+const isoDe = (anio, mes, dia) => `${anio}-${dosCifras(mes)}-${dosCifras(dia)}`;
+const partes = (iso) => String(iso).slice(0, 10).split('-').map(Number);
+const esFechaReal = (anio, mes, dia) => {
+  const f = new Date(anio, mes - 1, dia);
+  return f.getFullYear() === anio && f.getMonth() === mes - 1 && f.getDate() === dia;
+};
+
+/**
+ * Lo que alguien escribe a mano en un campo de fecha, como fecha (medianoche local), o null
+ * si no se entiende. Admite «15/10/2026», «15-10-26», «15.10.2026», «15 10 2026», «15102026»,
+ * «151026», «15/10» y «1510» (del año en curso) y «2026-10-15» (pegada de otra pantalla).
+ * Los años de dos cifras son de este siglo.
+ */
+export function interpretarFechaEscrita(texto, hoy = new Date()) {
+  const limpio = String(texto ?? '').trim();
+  if (!limpio) return null;
+  let anio;
+  let mes;
+  let dia;
+  const trozos = limpio.split(/[\s/.-]+/).filter(Boolean);
+  if (!trozos.every((t) => /^\d+$/.test(t))) return null;
+  if (trozos.length === 3 && trozos[0].length === 4) {
+    [anio, mes, dia] = trozos.map(Number);
+  } else if (trozos.length === 3 || trozos.length === 2) {
+    [dia, mes] = trozos.map(Number);
+    if (trozos.length === 2) anio = hoy.getFullYear();
+    else if (trozos[2].length === 2) anio = 2000 + Number(trozos[2]);
+    else if (trozos[2].length === 4) anio = Number(trozos[2]);
+    else return null;
+  } else if (trozos.length === 1 && [4, 6, 8].includes(trozos[0].length)) {
+    const t = trozos[0];
+    dia = Number(t.slice(0, 2));
+    mes = Number(t.slice(2, 4));
+    anio = t.length === 4 ? hoy.getFullYear() : t.length === 6 ? 2000 + Number(t.slice(4)) : Number(t.slice(4));
+  } else {
+    return null;
+  }
+  if (anio < 1900 || anio > 2199 || !esFechaReal(anio, mes, dia)) return null;
+  return new Date(anio, mes - 1, dia);
+}
+
+/** 'AAAA-MM-DD' + `dias` días (negativos para restar). '' si la fecha no es válida. */
+export function sumarDias(iso, dias) {
+  if (!/^\d{4}-\d{2}-\d{2}/.test(String(iso ?? ''))) return '';
+  const [a, m, d] = partes(iso);
+  return fechaLocalISO(new Date(a, m - 1, d + dias));
+}
+
+/**
+ * Último día de un periodo de `meses` meses que empieza el día `inicio`: el mismo día
+ * `meses` meses después, menos uno (01/11/2026 + 12 meses: 31/10/2027; 29/02/2028 + 12
+ * meses: 28/02/2029). '' si el inicio no es válido.
+ */
+export function finDePeriodo(inicio, meses) {
+  if (!/^\d{4}-\d{2}-\d{2}/.test(String(inicio ?? ''))) return '';
+  const [a, m, d] = partes(inicio);
+  return fechaLocalISO(new Date(a, m - 1 + meses, d - 1));
+}
+
+/** Día 1 del mes siguiente a `hoy`, 'AAAA-MM-DD'. */
+export function primeroDelMesSiguiente(hoy = new Date()) {
+  return isoDe(hoy.getMonth() === 11 ? hoy.getFullYear() + 1 : hoy.getFullYear(), (hoy.getMonth() + 1) % 12 + 1, 1);
+}
+
+/** 1 de enero del año siguiente a `hoy`, 'AAAA-MM-DD'. */
+export function primeroDeEneroSiguiente(hoy = new Date()) {
+  return isoDe(hoy.getFullYear() + 1, 1, 1);
+}
+
+/** 31 de diciembre del año de la fecha `iso` ('AAAA-MM-DD'); '' si no es válida. */
+export function finDeAnio(iso) {
+  return /^\d{4}-\d{2}-\d{2}/.test(String(iso ?? '')) ? `${String(iso).slice(0, 4)}-12-31` : '';
+}
+
+/**
+ * Años, meses y días que dura un periodo del día `inicio` al día `fin`, ambos incluidos
+ * (01/11/2026 a 31/10/2027: 1 año). null si falta alguna o el fin es anterior al inicio.
+ */
+export function duracionPeriodo(inicio, fin) {
+  const desde = fechaLocalISO(inicio);
+  const hasta = fechaLocalISO(fin);
+  if (!desde || !hasta || hasta < desde) return null;
+  const [a, m, d] = partes(desde);
+  const finMasUno = sumarDias(hasta, 1);
+  let meses = 0;
+  while (fechaLocalISO(new Date(a, m - 1 + meses + 1, d)) <= finMasUno) meses += 1;
+  const tras = new Date(a, m - 1 + meses, d);
+  const [fa, fm, fd] = partes(finMasUno);
+  const dias = Math.round((Date.UTC(fa, fm - 1, fd) - Date.UTC(tras.getFullYear(), tras.getMonth(), tras.getDate())) / 86400000);
+  return { anios: Math.floor(meses / 12), meses: meses % 12, dias };
+}
+
+/** «1 año», «1 año y 6 meses», «2 meses y 3 días», «15 días»; '' si no hay periodo. */
+export function textoDuracion(inicio, fin) {
+  const p = duracionPeriodo(inicio, fin);
+  if (!p) return '';
+  const trozos = [];
+  if (p.anios) trozos.push(`${p.anios} ${p.anios === 1 ? 'año' : 'años'}`);
+  if (p.meses) trozos.push(`${p.meses} ${p.meses === 1 ? 'mes' : 'meses'}`);
+  if (p.dias) trozos.push(`${p.dias} ${p.dias === 1 ? 'día' : 'días'}`);
+  return trozos.length <= 1 ? trozos.join('') : `${trozos.slice(0, -1).join(', ')} y ${trozos[trozos.length - 1]}`;
+}
+
+// ---- Atajos de los calendarios ({ etiqueta, detalle, valor }) ----
+const ddmmaaaa = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '');
+const atajo = (etiqueta, valor) => ({ etiqueta, detalle: ddmmaaaa(valor), valor });
+
+/** «1 del mes que viene» */
+export function atajoPrimeroDelMes(hoy = new Date()) {
+  return atajo('1 del mes que viene', primeroDelMesSiguiente(hoy));
+}
+
+/** «1 de enero» del año que viene */
+export function atajoPrimeroDeEnero(hoy = new Date()) {
+  return atajo('1 de enero', primeroDeEneroSiguiente(hoy));
+}
+
+/** «31 de diciembre» del año de `iso` (o del actual); null si no hay fecha. */
+export function atajoFinDeAnio(iso = fechaLocalISO()) {
+  const valor = finDeAnio(iso);
+  return valor ? atajo('31 de diciembre', valor) : null;
+}
+
+/** «Mañana», «En una semana»… contando desde hoy. */
+export function atajoDentroDe(dias, etiqueta, hoy = new Date()) {
+  return atajo(etiqueta, sumarDias(fechaLocalISO(hoy), dias));
+}
+
+/** «1 año», «2 años», «3 años» desde `inicio` (último día de cada periodo); [] sin inicio. */
+export function atajosDuracion(inicio, anios = [1, 2, 3]) {
+  if (!fechaLocalISO(inicio)) return [];
+  return anios.map((n) => atajo(`${n} ${n === 1 ? 'año' : 'años'}`, finDePeriodo(fechaLocalISO(inicio), n * 12)));
+}
+
+/** Meses exactos de un periodo (12 si va del 01/11/2026 al 31/10/2027); null si no son meses justos. */
+export function mesesExactos(inicio, fin) {
+  const p = duracionPeriodo(inicio, fin);
+  return p && p.dias === 0 && (p.anios || p.meses) ? p.anios * 12 + p.meses : null;
+}

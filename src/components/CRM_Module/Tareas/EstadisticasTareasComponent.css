@@ -151,6 +151,15 @@
   gap: 8px;
 }
 
+/* Fechas del periodo personalizado (CampoFecha): como los filtros de al lado */
+.date-inputs-compact .campo-fecha {
+  --campo-fecha-ancho: 140px;
+  --campo-fecha-alto: 32px;
+  --campo-fecha-letra: 0.8rem;
+  --campo-fecha-borde: #d1d5db;
+  --campo-fecha-texto: #374151;
+}
+
 .date-separator {
   color: #6b7280;
   font-weight: 500;
