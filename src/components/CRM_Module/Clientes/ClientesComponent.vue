@@ -145,7 +145,7 @@
                         class="dropdown-menu"
                         @click.stop
                       >
-                        <div class="dropdown-item">
+                        <div class="dropdown-item dropdown-item--todos">
                           <label class="checkbox-label">
                             <input 
                               type="checkbox" 
