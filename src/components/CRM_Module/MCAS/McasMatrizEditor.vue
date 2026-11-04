@@ -1,5 +1,5 @@
 <template>
-  <div class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-matriz-titulo" @click.self="cerrar">
+  <div class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-matriz-titulo" v-cierre-fondo="cerrar">
     <div class="mcas-modal mcas-modal--matriz">
       <div class="mcas-modal-header aura-modal-header">
         <div class="mcas-modal-title">

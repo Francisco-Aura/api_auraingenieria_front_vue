@@ -396,7 +396,7 @@
     </div>
 
     <!-- MODAL DETALLE SERVICIO - FUERA DEL MODAL PRINCIPAL -->
-    <div v-if="mostrarModalDetalleServicio" class="modal-overlay detalle-contrato-modal" @click.self="cerrarModalDetalleServicio">
+    <div v-if="mostrarModalDetalleServicio" class="modal-overlay detalle-contrato-modal" v-cierre-fondo="cerrarModalDetalleServicio">
       <div class="modal-content detalle-contrato-content">
         <div class="modal-header aura-modal-header">
           <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-clipboard-list"></i></span>
@@ -497,7 +497,7 @@
     </div>
 
     <!-- MODAL GESTIÓN DE PAGOS - FUERA DEL MODAL PRINCIPAL -->
-    <div v-if="mostrarModalGestionPagos" class="modal-overlay detalle-contrato-modal" @click.self="pedirCerrarGestionPagos">
+    <div v-if="mostrarModalGestionPagos" class="modal-overlay detalle-contrato-modal" v-cierre-fondo="pedirCerrarGestionPagos">
       <div class="modal-content detalle-contrato-content">
         <div class="modal-header aura-modal-header">
           <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-euro-sign"></i></span>

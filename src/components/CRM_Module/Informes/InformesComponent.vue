@@ -291,7 +291,7 @@
   </div>
 
   <!-- Modal Comentario de Renovación -->
-  <div v-if="mostrarModalComentario" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="comentario-renovacion-title" @click.self="mostrarModalComentario = false">
+  <div v-if="mostrarModalComentario" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="comentario-renovacion-title" v-cierre-fondo="() => (mostrarModalComentario = false)">
     <div class="modal-comentario-renovacion">
       <div class="modal-header aura-modal-header">
         <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-comment-alt"></i></span>

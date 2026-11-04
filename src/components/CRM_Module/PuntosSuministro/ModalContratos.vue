@@ -772,7 +772,7 @@
     </div>
 
     <!-- MODAL DETALLE CONTRATO - FUERA DEL MODAL PRINCIPAL -->
-    <div v-if="mostrarModalDetalleContrato" class="modal-overlay detalle-contrato-modal" @click.self="cerrarModalDetalleContrato">
+    <div v-if="mostrarModalDetalleContrato" class="modal-overlay detalle-contrato-modal" v-cierre-fondo="cerrarModalDetalleContrato">
       <div class="modal-content detalle-contrato-content">
         <div class="modal-header aura-modal-header">
           <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-file-contract"></i></span>

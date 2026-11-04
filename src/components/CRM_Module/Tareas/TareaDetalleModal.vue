@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tarea-detalle-title" @click="cerrar">
+    <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tarea-detalle-title" v-cierre-fondo="cerrar">
       <div class="modal-content modal-detalle" @click.stop>
       <!-- Cabecera común de Aura: el título de la tarea hace de título del modal -->
       <div class="modal-header aura-modal-header">
@@ -237,7 +237,7 @@
             </div>
 
             <!-- Modal de confirmación de completación -->
-            <div v-if="mostrarConfirmacionCompletacion" class="modal-overlay-confirmacion" @click.self="cerrarConfirmacion">
+            <div v-if="mostrarConfirmacionCompletacion" class="modal-overlay-confirmacion" v-cierre-fondo="cerrarConfirmacion">
               <div class="modal-confirmacion-completar">
                 <div class="modal-header-confirmacion aura-modal-header">
                   <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-check-double"></i></span>

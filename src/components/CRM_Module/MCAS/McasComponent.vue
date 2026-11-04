@@ -327,7 +327,7 @@
       role="dialog"
       aria-modal="true"
       aria-labelledby="mcas-detalle-titulo"
-      @click.self="propuestaDetalle.estado !== 'EN_EDICION' && cerrarDetalle()"
+      v-cierre-fondo="() => propuestaDetalle.estado !== 'EN_EDICION' && cerrarDetalle()"
     >
       <div class="mcas-modal mcas-modal--ancho">
         <div class="mcas-modal-header aura-modal-header">

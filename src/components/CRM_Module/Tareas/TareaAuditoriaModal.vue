@@ -1,5 +1,5 @@
 <template>
-  <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="auditoria-modal-title" @click.stop="cerrar">
+  <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="auditoria-modal-title" v-cierre-fondo="cerrar">
     <div class="modal-auditoria" @click.stop>
       <!-- Header -->
       <div class="modal-header aura-modal-header">

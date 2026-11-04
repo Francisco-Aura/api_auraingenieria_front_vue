@@ -495,7 +495,7 @@
   </div>
 
   <!-- Panel Tareas/actividad del cliente -->
-  <div v-if="mostrarPanelTareas" class="tareas-panel-overlay" @click.self="cerrarPanelTareas">
+  <div v-if="mostrarPanelTareas" class="tareas-panel-overlay" v-cierre-fondo="cerrarPanelTareas">
     <div class="tareas-panel">
       <div class="tareas-panel-header aura-modal-header">
         <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-tasks"></i></span>

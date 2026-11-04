@@ -831,7 +831,7 @@
     </div>
 
     <!-- Modal Regla de Comisión -->
-    <div v-if="modalRegla" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-regla-titulo" @click.self="soloLecturaRegla && cerrarModales()">
+    <div v-if="modalRegla" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-regla-titulo" v-cierre-fondo="() => soloLecturaRegla && cerrarModales()">
       <div class="mcas-modal mcas-modal--ancho">
         <div class="mcas-modal-header aura-modal-header">
           <div class="mcas-modal-title">
@@ -1158,7 +1158,7 @@
     </div>
 
     <!-- Modal Probar con un contrato (simulación sin guardar) -->
-    <div v-if="modalSimulacion" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-sim-titulo" @click.self="cerrarModales">
+    <div v-if="modalSimulacion" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-sim-titulo" v-cierre-fondo="cerrarModales">
       <div class="mcas-modal mcas-modal--ancho">
         <div class="mcas-modal-header aura-modal-header">
           <div class="mcas-modal-title">
@@ -1301,7 +1301,7 @@
     </div>
 
     <!-- Modal Política de retrocesión -->
-    <div v-if="modalRetrocesion" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-retro-titulo" @click.self="soloLecturaRetrocesion && cerrarModales()">
+    <div v-if="modalRetrocesion" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-retro-titulo" v-cierre-fondo="() => soloLecturaRetrocesion && cerrarModales()">
       <div class="mcas-modal mcas-modal--ancho">
         <div class="mcas-modal-header aura-modal-header">
           <div class="mcas-modal-title">
@@ -1558,7 +1558,7 @@
     </div>
 
     <!-- Modal Activar una tabla de comisiones: comprobación, cambios y avisos -->
-    <div v-if="modalActivacion" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-activar-titulo" @click.self="cerrarModales">
+    <div v-if="modalActivacion" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-activar-titulo" v-cierre-fondo="cerrarModales">
       <div class="mcas-modal mcas-modal--ancho">
         <div class="mcas-modal-header aura-modal-header">
           <div class="mcas-modal-title">

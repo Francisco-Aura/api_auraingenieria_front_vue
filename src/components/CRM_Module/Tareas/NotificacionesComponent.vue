@@ -170,7 +170,7 @@
     <!-- Modal de todas las notificaciones: en <body> para cubrir toda la pantalla
          (dentro de la barra superior quedaba recortado y sin oscurecer el menú) -->
     <Teleport to="body">
-    <div v-if="modalTodasNotificaciones" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="notif-modal-title" @click="modalTodasNotificaciones = false">
+    <div v-if="modalTodasNotificaciones" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="notif-modal-title" v-cierre-fondo="() => (modalTodasNotificaciones = false)">
       <div class="modal-content" @click.stop>
         <div class="modal-header aura-modal-header">
           <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-bell"></i></span>

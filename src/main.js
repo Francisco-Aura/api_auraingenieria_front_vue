@@ -22,6 +22,7 @@ import axios from 'axios'
 // Importar SweetAlert2 (se cargará en un chunk separado)
 import Swal from 'sweetalert2';
 import desbordeTabla from './directives/desbordeTabla';
+import cierreFondo from './directives/cierreFondo';
 import { instalarCapasModales } from './services/capasModales';
 import { instalarDialogos } from './services/dialogos';
 
@@ -96,6 +97,7 @@ if (enMarcoAjeno) {
   instalarCapasModales();
   // Columna de acciones fija solo cuando la tabla no cabe (ver la directiva)
   app.directive('desborde-tabla', desbordeTabla);
+  app.directive('cierre-fondo', cierreFondo);
 
   app.use(router).mount('#app');
 }
