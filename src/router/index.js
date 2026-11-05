@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 // Importación síncrona solo para LoginComponent (primera pantalla)
 import LoginComponent from '@/components/LoginComponent.vue';
+import { planificadorDisponible } from '@/config/entornos';
 
 // Lazy loading para todos los demás componentes
 const DashboardComponent = () => import('@/components/DashboardComponent.vue');
@@ -52,7 +53,9 @@ const routes = [
       {
         path: 'planificador',
         component: PlanificadorComponent,
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true },
+        // Donde el Planificador no está disponible (PRO), entrar por la dirección también lleva al inicio
+        beforeEnter: () => (planificadorDisponible() ? true : '/dashboard/clientes')
       },
       {
         path: 'registro-horario',
