@@ -190,7 +190,7 @@ export default {
       }
       try {
         // El planificador lo cuenta: ofertas por validar y propuestas enviadas al cliente que esperan su respuesta
-        const res = await fetch('/planificador/api/budgets/pending-validation', { headers: { 'X-Usuario-Id': String(usuario.id) } });
+        const res = await fetch('/api/planificador/budgets/pending-validation', { headers: { 'X-Usuario-Id': String(usuario.id) } });
         if (!res.ok) return;
         const pendientes = await res.json();
         this.presupuestosPorValidar = pendientes.count || 0;

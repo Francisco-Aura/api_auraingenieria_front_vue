@@ -1,5 +1,10 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
+  // Dos páginas: la intranet y el Planificador (/planificador/, que la intranet enseña en un marco para no mezclar estilos)
+  pages: {
+    index: { entry: 'src/main.js', template: 'public/index.html', filename: 'index.html' },
+    planificador: { entry: 'src/planificador/main.js', template: 'public/planificador.html', filename: 'planificador/index.html', title: 'Planificador de proyectos' }
+  },
   devServer: {
     headers: {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
