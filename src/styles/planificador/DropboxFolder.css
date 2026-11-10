@@ -1,0 +1,92 @@
+.dbx-field {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dbx-field input {
+  width: 100%;
+}
+
+/* Empresa y lugar, uno junto al otro */
+.dbx-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end; /* los campos quedan alineados aunque una etiqueta ocupe dos líneas */
+  gap: 12px 18px;
+}
+
+/* El botón de elegir una carpeta que ya existe, separado de lo de encima */
+.dbx-pick {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+
+.dbx-pick .hint {
+  margin: 0 0 8px;
+}
+
+.dbx-two label {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 13px;
+}
+
+/* Con poco ancho (pantalla estrecha o con la vista previa del PDF al lado), uno debajo del otro */
+@media (max-width: 560px) {
+  .dbx-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dbx-note {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--bg-alt);
+  font-size: 13px;
+}
+
+.dbx-ok {
+  color: #1e7e34;
+}
+
+.dbx-same-day {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.dbx-same-day .dbx-note {
+  flex-basis: 100%;
+}
+
+.dbx-line {
+  margin: -8px 0 14px;
+  font-size: 13px;
+}
+
+.dbx-line p {
+  margin: 0;
+}
+
+.dbx-path {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.dbx-create {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 560px;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-alt);
+}

@@ -1,0 +1,246 @@
+/*
+ * GENERADO por scripts/generar-tema-oscuro.js: no se edita a mano.
+ * Colores claros/oscuros escritos a mano en los CSS, convertidos para el modo oscuro (html.tema-oscuro).
+ * Para regenerarlo:  node scripts/generar-tema-oscuro.js
+ */
+
+/* ---- App.css ---- */
+html.tema-oscuro .pending-tag {
+  color: #f3a468;
+}
+html.tema-oscuro .new-project .contract-state.ok {
+  color: #73e89f;
+}
+
+/* ---- comun/Chips.css ---- */
+html.tema-oscuro .review-badge {
+  color: color-mix(in srgb, #99daf7 75%, var(--text-h));
+}
+html.tema-oscuro .review-mark {
+  color: #99daf7;
+}
+
+/* ---- comun/Dialog.css ---- */
+html.tema-oscuro .foot-hint {
+  color: #f3a468;
+}
+html.tema-oscuro .deliv.ok .deliv-mark {
+  color: #6fec9d;
+}
+
+/* ---- contratos/ContractUpload.css ---- */
+html.tema-oscuro .conf.alta {
+  color: #73e89f;
+}
+html.tema-oscuro .conf.media,
+html.tema-oscuro .conf.baja {
+  color: #f3a468;
+}
+html.tema-oscuro .checks li.ok .check-icon {
+  color: #6fec9d;
+}
+html.tema-oscuro .checks li.warn .check-icon {
+  color: #f5c083;
+}
+
+/* ---- contratos/PaymentPlan.css ---- */
+html.tema-oscuro .plan-table tfoot .good td:nth-child(2) {
+  color: #73e89f;
+}
+
+/* ---- contratos/ScanViewer.css ---- */
+html.tema-oscuro .scan-body iframe {
+  background: #1b2127;
+}
+
+/* ---- inventario/Inventory.css ---- */
+html.tema-oscuro .tag.review {
+  color: #f3a468;
+}
+html.tema-oscuro .inv-stock.con {
+  color: #73e89f;
+}
+html.tema-oscuro .tag.cheapest {
+  color: #73e89f;
+}
+html.tema-oscuro .tag.no-price {
+  color: #f3a468;
+}
+html.tema-oscuro .prot-badge {
+  background: #282b2f;
+  color: #b9c1cb;
+}
+html.tema-oscuro .prot-badge.tone-cc {
+  background: #4a4020;
+  color: #f39b68;
+}
+html.tema-oscuro .prot-badge.tone-ac {
+  background: #1e3245;
+  color: #90b4f3;
+}
+html.tema-oscuro .prot-badge.tone-panel {
+  background: #2d3036;
+  color: #c3cad6;
+}
+html.tema-oscuro .prot-badge.tone-trafo {
+  background: #1c193a;
+  color: #c6b7e9;
+}
+html.tema-oscuro .brand-logo {
+  background: #1b2127;
+  border: 1px solid #515760;
+  color: #b9c1cb;
+}
+html.tema-oscuro .lists-manager {
+  border: 1px solid var(--border, #444951);
+}
+html.tema-oscuro .lists-col li {
+  border-top: 1px solid var(--border, #444951);
+}
+html.tema-oscuro .lists-remove {
+  color: #ec8282;
+}
+
+/* ---- inventario/PriceHistoryPanel.css ---- */
+html.tema-oscuro .ph-table .down {
+  color: #78e397;
+}
+
+/* ---- presupuestos/BudgetChanges.css ---- */
+html.tema-oscuro .bd-plus {
+  color: #9cb3f2;
+}
+html.tema-oscuro .bd-minus {
+  color: #ec8282;
+}
+
+/* ---- presupuestos/CostCalculator.css ---- */
+html.tema-oscuro .tag.sample {
+  color: #f3a468;
+}
+html.tema-oscuro .steps-nav button.done:not(.current) .step-num {
+  color: #73e89f;
+}
+html.tema-oscuro .tag.compat.ok {
+  color: #73e89f;
+}
+html.tema-oscuro .tag.compat.warn {
+  color: #f3a468;
+}
+html.tema-oscuro .sale-cell.profit .sale-value {
+  color: #73e89f;
+}
+html.tema-oscuro .sale-cell.profit.loss .sale-value {
+  color: #ec8282;
+}
+html.tema-oscuro .switch-track::after {
+  background: #1b2127;
+}
+html.tema-oscuro .tag.no-price {
+  color: #f3a468;
+}
+html.tema-oscuro .line-issue.bad,
+html.tema-oscuro .item-issue.bad {
+  color: #ec8282;
+}
+html.tema-oscuro .line-issue.warn,
+html.tema-oscuro .item-issue.warn {
+  color: #f19d6a;
+}
+html.tema-oscuro .tag.issue.bad {
+  color: #ec8282;
+}
+html.tema-oscuro .tag.issue.warn {
+  color: #f19d6a;
+}
+html.tema-oscuro .tag.stock.in {
+  color: #7bdfa3;
+}
+html.tema-oscuro .tag.stock.out {
+  color: #bcc1c9;
+}
+html.tema-oscuro .cost-table .suggested-head th {
+  color: #7bdfa3;
+}
+html.tema-oscuro .cost-table .suggested-why {
+  color: #7bdfa3;
+}
+html.tema-oscuro .tag.state.local {
+  color: #c5cbd5;
+}
+html.tema-oscuro .tag.state.borrador {
+  color: #7994e2;
+}
+html.tema-oscuro .tag.state.validado {
+  color: #7bdfa3;
+}
+html.tema-oscuro .tag.state.enviado {
+  color: #ed9c6e;
+}
+html.tema-oscuro .tag.state.descartado {
+  color: #e17a7a;
+}
+html.tema-oscuro .setup-problems {
+  color: #ec8282;
+}
+html.tema-oscuro .string-total.ok {
+  color: #73e89f;
+}
+html.tema-oscuro .string-total.bad {
+  color: #ec8282;
+}
+html.tema-oscuro .string-problems {
+  color: #ec8282;
+}
+html.tema-oscuro .costs-summary .status-box {
+  border-top: 1px solid #444951;
+}
+html.tema-oscuro .proposal-page .status-box {
+  border-top: 1px solid #444951;
+}
+html.tema-oscuro .variant-chip {
+  border: 1px solid var(--border, #444951);
+}
+html.tema-oscuro .variant-trash {
+  color: #ec8282;
+}
+html.tema-oscuro .proposal-doc {
+  border: 1px solid var(--border, #444951);
+}
+html.tema-oscuro .proposal-steps li:not(:last-child)::before {
+  background: var(--border, #2d3036);
+}
+html.tema-oscuro .proposal-steps .step-mark {
+  border: 2px solid var(--border, #444951);
+}
+html.tema-oscuro .proposal-logo {
+  border: 1px solid var(--border, #444951);
+}
+html.tema-oscuro .proposal-logo-box {
+  background: #1b2127;
+  border: 1px dashed var(--border, #4e5b6c);
+}
+
+/* ---- proyectos/ChangesView.css ---- */
+html.tema-oscuro .up {
+  color: #f3a468;
+}
+html.tema-oscuro .down {
+  color: #73e89f;
+}
+html.tema-oscuro .ok-text {
+  color: #73e89f;
+}
+html.tema-oscuro .warn-text {
+  color: #f3a468;
+}
+
+/* ---- proyectos/DropboxFolder.css ---- */
+html.tema-oscuro .dbx-ok {
+  color: #7be092;
+}
+
+/* ---- tareas/TaskBoard.css ---- */
+html.tema-oscuro .card-waiting {
+  color: #f3a468;
+}
