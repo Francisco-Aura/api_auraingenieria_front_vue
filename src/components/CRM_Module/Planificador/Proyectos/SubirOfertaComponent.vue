@@ -57,7 +57,7 @@ const esPdf = (archivo) => archivo.type === 'application/pdf' || /\.pdf$/i.test(
 export default {
   name: 'Subir-Oferta-Component',
   props: { campos: { type: Array, default: () => [] } },
-  emits: ['ocupado', 'datos-extraidos', 'extraccion', 'proyecto'],
+  emits: ['ocupado', 'datos-extraidos', 'extraccion', 'proyecto', 'archivo'],
   data() { return { ETIQUETAS_PROYECTO, CONFIANZA, ocupado: false, error: null, resultado: null, ilegible: null, arrastrando: false, profundidad: 0 } },
   computed: {
     encontrados() { return this.resultado ? Object.entries(this.resultado.fields) : [] },
@@ -92,6 +92,7 @@ export default {
       this.resultado = null
       this.ilegible = null
       if (!esPdf(archivo)) { this.error = 'Solo se puede subir el presupuesto en PDF.'; return }
+      this.$emit('archivo', archivo)
       this.ocupado = true
       this.$emit('ocupado', true)
       try {

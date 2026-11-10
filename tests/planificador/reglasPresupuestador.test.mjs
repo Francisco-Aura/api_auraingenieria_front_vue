@@ -202,7 +202,7 @@ test('strings (más strings de los que admite el inversor y cortocircuito por en
   // Strings distintos en la misma entrada y una entrada que no existe
   const mezcla = checkCompatibility(estado(lineas, { n: 18, strings: [{ id: 'a', panels: 12, input: 1 }, { id: 'b', panels: 6, input: 1 }, { id: 'c', panels: 0, input: 9 }] }), cat)
   assert.ok(mezcla.some((i) => /mezcla strings de 12 y 6/.test(i.message)))
-  assert.ok(mezcla.some((i) => /entrada 9 no existe/.test(i.message)))
+  assert.ok(mezcla.some((i) => /van a entradas que no existen/.test(i.message)))
 })
 
 test('el diseño de strings: sin strings no hay nada que comprobar y los que no suman los paneles dan error', () => {

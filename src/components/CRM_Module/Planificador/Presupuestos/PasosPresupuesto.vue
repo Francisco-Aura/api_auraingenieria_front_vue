@@ -34,7 +34,6 @@
             <li><span class="muted">Potencia a instalar</span> <strong>{{ s.targetKwp > 0 ? kw(s.targetKwp) + ' kWp' : 'sin indicar' }}</strong></li>
             <li><span class="muted">Paneles</span> <strong>{{ estado.moduleCount }} × {{ estado.moduleWp }} Wp</strong></li>
           </ul>
-          <button type="button" class="link-btn" @click="$emit('editar-parametros')">Editar parámetros</button>
         </div>
         <p v-if="s.targetKwp > 0" class="step-note info">
           Potencia objetivo <strong>{{ kw(s.targetKwp) }} kWp</strong> ÷ {{ wpPanel }} Wp por panel = <strong>{{ necesarios }} paneles</strong>
@@ -56,7 +55,6 @@
       <template v-else-if="paso.key === 'estructura'">
         <div class="fixed-params">
           <ul><li><span class="muted">Cubierta</span> <strong>{{ ROOF_LABEL[s.roof] }}</strong></li></ul>
-          <button type="button" class="link-btn" @click="$emit('editar-parametros')">Editar parámetros</button>
         </div>
         <p class="step-note info">Se enseña lo adecuado para cubierta {{ ROOF_LABEL[s.roof].toLowerCase() }}<template v-if="panel"> · paneles de {{ panel.attrs.largo_mm ?? '—' }} × {{ panel.attrs.ancho_mm ?? '—' }} mm, {{ estado.moduleCount }} unidades</template>.</p>
       </template>
@@ -71,7 +69,6 @@
             <li><span class="muted">Suministro</span> <strong>{{ SUMINISTRO[s.supply] }}</strong></li>
             <li><span class="muted">Baterías en el futuro</span> <strong>{{ s.futureBattery ? 'Sí (elegir un inversor híbrido)' : 'No' }}</strong></li>
           </ul>
-          <button type="button" class="link-btn" @click="$emit('editar-parametros')">Editar parámetros</button>
         </div>
         <template v-if="inversor">
           <p v-if="kwInversor > 0" class="step-note" :class="relacion >= 0.9 && relacion <= 1.35 ? 'ok' : 'warn'">
@@ -82,21 +79,14 @@
             <p v-if="plan" class="step-note info">Strings: de <strong>{{ plan.min }}</strong> a <strong>{{ plan.max }}</strong> paneles en serie (con el voltaje de invierno incluido).</p>
             <p v-else class="muted">Sin datos técnicos suficientes de este panel o inversor para comprobar las tensiones de los strings: puedes repartirlos igualmente.</p>
             <template v-if="plan && plan.length === null"><p v-for="t in plan.problems" :key="t" class="step-note warn">{{ t }}</p></template>
-            <disenador-strings :estado="estado" :panel="panel" :inversor="inversor" :unidades="unidadesInversor" @cambio="$emit('cambiar', { strings: $event })" />
+            <disenador-strings inicio-plegado :estado="estado" :panel="panel" :inversor="inversor" :unidades="unidadesInversor" @cambio="$emit('cambiar', { strings: $event })" />
           </template>
           <p v-else class="muted">{{ conStrings ? 'Elige un panel para diseñar los strings.' : 'Con microinversores u optimizadores no hay strings: cada panel va a su unidad.' }}</p>
           <p class="muted">Comprueba siempre los límites con la ficha del fabricante.</p>
         </template>
         <template v-else>
           <p class="muted">Elige un inversor para comprobar su potencia y los strings.</p>
-          <p v-if="(estado.strings || []).length === 0" class="muted">Diseña abajo los strings y aquí verás los inversores que los admiten.</p>
-          <p v-else-if="!panel" class="muted">Elige primero el panel para saber qué inversores admiten tus strings.</p>
-          <p v-else-if="compatibles.length === 0" class="step-note warn">Ningún inversor del inventario admite estos strings ({{ resumenStrings(estado.strings) }}) con este panel: cambia los strings abajo.</p>
-          <p v-else class="step-note info">
-            Admiten tus strings ({{ resumenStrings(estado.strings) }}):
-            {{ compatibles.slice(0, 3).map((c) => [c.item.brand, c.item.model].filter(Boolean).join(' ') + (c.units > 1 ? ' (' + c.units + ' uds.)' : '')).join(' · ') }}{{ compatibles.length > 3 ? ' y ' + (compatibles.length - 3) + ' más' : '' }}.
-          </p>
-          <disenador-strings :estado="estado" :panel="panel || null" :inversor="null" :unidades="1" @cambio="$emit('cambiar', { strings: $event })" />
+          <disenador-strings inicio-plegado :estado="estado" :panel="panel || null" :inversor="null" :unidades="1" @cambio="$emit('cambiar', { strings: $event })" />
         </template>
       </template>
 
@@ -108,7 +98,6 @@
       <template v-else-if="paso.key === 'cableado_cc'">
         <div class="fixed-params">
           <ul><li><span class="muted">Cable por polaridad (rojo y negro)</span> <strong>{{ s.cableMeters > 0 ? kw(s.cableMeters) + ' m' : 'sin indicar' }}</strong></li></ul>
-          <button type="button" class="link-btn" @click="$emit('editar-parametros')">Editar parámetros</button>
         </div>
         <p v-if="s.cableMeters > 0" class="step-note info">Con un margen del {{ Math.round(CABLE_MARGIN * 100) }} %: <strong>{{ withMargin(s.cableMeters) }} m de rojo y {{ withMargin(s.cableMeters) }} m de negro</strong>. Al añadir un cable se pone ya esa cantidad.</p>
         <p v-else class="muted">Sin metros indicados: edita los parámetros para que al añadir el cable se calcule la cantidad con su margen.</p>
@@ -133,7 +122,6 @@
       <template v-else-if="paso.key === 'alterna'">
         <div class="fixed-params">
           <ul><li><span class="muted">Cable de alterna (inversor → cuadro general)</span> <strong>{{ s.acMeters > 0 ? kw(s.acMeters) + ' m' : 'sin indicar' }}</strong></li></ul>
-          <button type="button" class="link-btn" @click="$emit('editar-parametros')">Editar parámetros</button>
         </div>
         <p v-if="s.acMeters > 0" class="step-note info">Con un margen del {{ Math.round(CABLE_MARGIN * 100) }} %: <strong>{{ withMargin(s.acMeters) }} m</strong>.</p>
       </template>

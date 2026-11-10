@@ -2034,7 +2034,7 @@ tr.group-row .group-toggle:hover { text-decoration: underline; }
 .budget-table-wrap { overflow-x: auto; }
 
 .variant-chip .variant-rename { margin-left: 2px; padding: 2px; opacity: 0.7; }
-.variant-chip .variant-rename:hover { opacity: 1; }
+.variant-chip .variant-rename:hover { opacity: 1; color: var(--text-h); } /* el lápiz no es de borrar: no se pone rojo (el rojo al pasar es del .icon-btn genérico) */
 
 /* Con el desglose a todo el ancho (presupuesto enviado), precio, presupuesto y beneficio van juntos y no repartidos por la pantalla */
 .costs-body.review .sale-bar { justify-content: start; column-gap: 56px; }
@@ -2047,3 +2047,14 @@ tr.group-row .group-toggle:hover { text-decoration: underline; }
 .proposal-logo-box { cursor: pointer; padding: 0; font: inherit; color: inherit; flex: none; width: 120px; height: 72px; display: grid; place-items: center; border: 1px dashed var(--border, #cfd0d3); border-radius: 8px; background: #fff; overflow: hidden; }
 .proposal-logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .proposal-doc .proposal-missing { flex-basis: 100%; margin: 0; }
+
+/* Diseño de strings plegable y sugerencias de inversores con sus unidades */
+.string-toggle { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.string-summary { font-size: 0.85rem; }
+.inverter-packs { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.inverter-pack { padding: 4px 10px; font-size: 0.85rem; }
+
+/* Título del presupuesto del proyecto con «Vaciar filas» a la derecha */
+.summary-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.summary-head h2 { margin: 0; }
+.summary-head button { padding: 4px 10px; font-size: 0.85rem; }

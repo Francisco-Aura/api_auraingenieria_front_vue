@@ -40,7 +40,7 @@
 
     <template v-else>
       <p v-if="!habilitado" class="step-note warn" role="status">Este servidor no tiene conexión con la intranet: aquí solo se pueden crear clientes potenciales.</p>
-      <p class="muted field-hint">Un cliente potencial se queda en este presupuesto hasta que se valide: entonces se dará de alta como cliente de la empresa.</p>
+      <p class="muted field-hint">Un cliente potencial se queda en este presupuesto: no se da de alta en la intranet.</p>
       <div class="survey-row">
         <label class="survey-field wide">
           Nombre del cliente
