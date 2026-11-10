@@ -43,4 +43,7 @@ axios.interceptors.request.use(config => {
 })
 
 iniciarTema()
+
+// Dentro de la intranet (marco) los paneles ocupan todo el espacio; solo suelto (pestaña propia) llevan margen
+if (window.self !== window.top) document.documentElement.classList.add('embedded')
 createApp(App).mount('#app')
