@@ -1,0 +1,11 @@
+.payment-mode .radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+
+.payment-mode .radio input {
+  margin-top: 4px;
+}

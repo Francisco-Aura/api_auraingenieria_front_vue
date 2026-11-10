@@ -1,0 +1,104 @@
+.ph-panel {
+  margin-top: 0.75rem;
+}
+
+.ph-toggle {
+  font-weight: 600;
+}
+
+.ph-body {
+  margin-top: 0.5rem;
+  min-width: 0;
+}
+
+.ph-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.ph-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.ph-axis {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.ph-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.ph-line.main {
+  stroke-width: 3;
+}
+
+.ph-dot {
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+
+.ph-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.ph-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.ph-legend-item.off {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.ph-swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  flex: none;
+}
+
+.ph-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.ph-table th,
+.ph-table td {
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.ph-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ph-table .up {
+  color: var(--danger);
+}
+
+.ph-table .down {
+  color: #1e8e3e;
+}
