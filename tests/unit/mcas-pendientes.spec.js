@@ -203,6 +203,7 @@ function dashboard({ nivelAcceso, sondeos }) {
   };
   const componente = cargarComponente(DASHBOARD, {
     NotificacionesComponent: {},
+    planificadorDisponible: () => true,
     tareasApi: { verificarModuloActivo: async () => false },
     textoPendientesMcas: modulo.textoPendientesMcas,
     crearSondeoPendientes: () => {

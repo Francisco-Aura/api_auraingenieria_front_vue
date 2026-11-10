@@ -1,0 +1,102 @@
+/* Todos los chips toman su color de --c y lo mezclan con el fondo, para que valgan en claro y oscuro. */
+
+.pill,
+.badge,
+.phase-chip {
+  --c: var(--accent);
+  display: inline-block;
+  padding: 1px 9px;
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--c) 70%, var(--text-h));
+  background: color-mix(in srgb, var(--c) 14%, transparent);
+}
+
+/* Retraso: más intenso cuanto mayor es el nivel */
+.delay-badge {
+  --c: #f59e0b;
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--c) 75%, var(--text-h));
+  background: color-mix(in srgb, var(--c) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+}
+
+.delay-badge.level-3 {
+  color: #fff;
+  background: var(--c);
+  border-color: var(--c);
+}
+
+/* Tarea con un cambio del contrato por revisar */
+.review-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+  color: color-mix(in srgb, #0ea5e9 75%, var(--text-h));
+  background: color-mix(in srgb, #0ea5e9 16%, transparent);
+  border: 1px solid color-mix(in srgb, #0ea5e9 50%, transparent);
+}
+
+.review-mark {
+  color: #0ea5e9;
+  font-weight: 700;
+}
+
+.pill-detail {
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.badge {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  border-radius: 5px;
+}
+
+.badge-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+button.phase-chip {
+  cursor: pointer;
+}
+
+button.phase-chip:hover {
+  background: color-mix(in srgb, var(--c) 26%, transparent);
+}
+
+.pbar {
+  --c: var(--accent);
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c) 18%, transparent);
+}
+
+.pbar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--c);
+  transition: width 0.2s;
+}

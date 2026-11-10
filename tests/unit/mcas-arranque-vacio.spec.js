@@ -463,6 +463,7 @@ test('al cerrar sesión el contador de Comisiones MCAS deja de preguntar en el m
   };
   const componente = cargarComponente(DASHBOARD, {
     NotificacionesComponent: {},
+    planificadorDisponible: () => true,
     tareasApi: { verificarModuloActivo: async () => false },
     textoPendientesMcas: modulo.textoPendientesMcas,
     axios: { post: async (url) => { peticiones.push(url); return {}; } },

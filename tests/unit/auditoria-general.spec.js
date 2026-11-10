@@ -7,6 +7,7 @@ const path = require('node:path');
 const test = require('node:test');
 const { pathToFileURL } = require('node:url');
 const { raiz, leer, plantilla, cargarComponente, crearContexto } = require('./helpers/sfc');
+const { esDelPlanificador } = require('./helpers/modulos-aparte');
 
 // Las pantallas leen el usuario de localStorage (no existe en Node)
 global.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
@@ -155,6 +156,7 @@ test('ninguna pantalla calcula «hoy» o una fecha de formulario pasando por UTC
   const recorrer = (carpeta) => {
     for (const nombre of fs.readdirSync(path.join(raiz, carpeta))) {
       const ruta = `${carpeta}/${nombre}`;
+      if (esDelPlanificador(ruta)) continue;
       if (fs.statSync(path.join(raiz, ruta)).isDirectory()) recorrer(ruta);
       else if (/\.(vue|js)$/.test(nombre) && ruta !== 'src/utils/fechas.js'
         && /toISOString\(\)\.(split|slice|substring)\(/.test(leer(ruta))) pendientes.push(ruta);

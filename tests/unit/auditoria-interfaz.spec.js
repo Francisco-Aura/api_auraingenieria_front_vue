@@ -4,6 +4,7 @@ const path = require('node:path');
 const test = require('node:test');
 const { pathToFileURL } = require('node:url');
 const { raiz, leer } = require('./helpers/sfc');
+const { esDelPlanificador } = require('./helpers/modulos-aparte');
 
 const sinComentarios = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 
@@ -131,6 +132,7 @@ test('nada se mueve al pasar el ratón salvo las tarjetas que se pulsan', () => 
   const archivos = [];
   const recorrer = (dir) => fs.readdirSync(path.join(raiz, dir), { withFileTypes: true }).forEach((e) => {
     const ruta = `${dir}/${e.name}`;
+    if (esDelPlanificador(ruta)) return;
     if (e.isDirectory()) recorrer(ruta); else if (ruta.endsWith('.css')) archivos.push(ruta);
   });
   recorrer('src');

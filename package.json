@@ -7,6 +7,7 @@
     "build": "vue-cli-service build",
     "build:analyze": "vue-cli-service build --report",
     "test": "node --test tests/unit/*.spec.js",
+    "test:planificador": "node --test tests/planificador/*.test.mjs",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {

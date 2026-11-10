@@ -40,10 +40,10 @@
           <div v-if="sidebarCollapsed" class="tooltip">Informes</div>
         </router-link>
 
-        <router-link to="/dashboard/planificador" class="menu-item" active-class="active">
+        <router-link v-if="planificadorDisponible" to="/dashboard/planificador" class="menu-item" active-class="active">
           <i class="fas fa-project-diagram menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Planificador</span>
-          <span v-if="presupuestosPorValidar > 0" class="menu-dot" :title="presupuestosPorValidar + ' presupuesto(s) pendiente(s) de validar'" aria-label="Hay presupuestos pendientes de validar"></span>
+          <span v-if="presupuestosPorValidar > 0" class="menu-dot" :title="presupuestosPorValidar + ' pendiente(s) en el presupuestador (por validar o con la propuesta enviada al cliente)'" aria-label="Hay pendientes en el presupuestador"></span>
           <div v-if="sidebarCollapsed" class="tooltip">Planificador</div>
         </router-link>
 
@@ -146,6 +146,7 @@ import axios from 'axios'
 import NotificacionesComponent from '@/components/CRM_Module/Tareas/NotificacionesComponent.vue'
 import { tareasApi } from '@/services/tareasApi'
 import { crearSondeoPendientes, textoPendientesMcas } from '@/services/mcasPendientes'
+import { planificadorDisponible } from '@/config/entornos'
 
 export default {
   name: 'Dashboard-Component',
@@ -173,6 +174,8 @@ export default {
       moduloTareasActivo: false,
       // Recuento de comisiones MCAS pendientes (solo administradores): { porValidar, porRevisar, enCorreccion, total }
       pendientesMcas: null,
+      // En PRO el Planificador no se enseña (ver src/config/entornos.js)
+      planificadorDisponible: planificadorDisponible(),
       // Ofertas del presupuestador enviadas al cliente a la espera de que las valide el usuario 1 (solo se le avisa a él)
       presupuestosPorValidar: 0,
       temporizadorPresupuestos: null
@@ -268,17 +271,18 @@ export default {
     },
     // Cuenta las ofertas enviadas pendientes de validar (una oferta con varias variantes cuenta una vez). Solo para quien valida.
     async cargarPresupuestosPorValidar() {
+      if (!this.planificadorDisponible) return;
       const usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
       if (!usuario || String(usuario.id) !== '1') {
         this.presupuestosPorValidar = 0;
         return;
       }
       try {
-        const res = await fetch('/planificador/api/budgets', { headers: { 'X-Usuario-Id': String(usuario.id) } });
+        // El planificador lo cuenta: ofertas por validar y propuestas enviadas al cliente que esperan su respuesta
+        const res = await fetch('/api/planificador/budgets/pending-validation', { headers: { 'X-Usuario-Id': String(usuario.id) } });
         if (!res.ok) return;
-        const presupuestos = await res.json();
-        const ofertas = new Set(presupuestos.filter((p) => p.status === 'enviado').map((p) => p.offer_id || p.id));
-        this.presupuestosPorValidar = ofertas.size;
+        const pendientes = await res.json();
+        this.presupuestosPorValidar = pendientes.count || 0;
       } catch (error) {
         // Sin planificador o sin red: no se enseña ningún aviso
       }

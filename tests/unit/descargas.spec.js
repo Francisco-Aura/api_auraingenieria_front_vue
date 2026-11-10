@@ -4,6 +4,7 @@ const test = require('node:test');
 const fs = require('node:fs');
 const path = require('node:path');
 const { leer, raiz } = require('./helpers/sfc');
+const { esDelPlanificador } = require('./helpers/modulos-aparte');
 
 const UTIL = 'src/utils/descargas.js';
 
@@ -62,6 +63,7 @@ test('ninguna pantalla crea ya el enlace de descarga a mano', () => {
   const recorrer = (dir) => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       const completa = path.join(dir, e.name);
+      if (esDelPlanificador(path.relative(raiz, completa))) continue;
       if (e.isDirectory()) recorrer(completa);
       else if (/\.(vue|js)$/.test(e.name)) fuentes.push(completa);
     }

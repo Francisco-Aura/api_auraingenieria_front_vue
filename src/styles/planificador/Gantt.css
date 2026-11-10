@@ -1,0 +1,483 @@
+.gantt {
+  --label-w: 340px;
+  --row-h: 36px;
+  --head-h: 26px;
+  --bar-h: 20px;
+  --grid: color-mix(in srgb, var(--border) 60%, transparent);
+  --weekend: color-mix(in srgb, var(--text) 5%, transparent);
+  --today: color-mix(in srgb, var(--accent) 16%, transparent);
+
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* ---- Barra de herramientas -------------------------------------------- */
+
+.gantt-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-alt);
+}
+
+.gantt-toolbar button {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.gantt-toolbar button.active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+}
+
+.gantt-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 2px 4px;
+  background: var(--border);
+}
+
+.gantt-hint {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+/* ---- Rejilla ----------------------------------------------------------- */
+
+.gantt-scroll {
+  overflow: auto;
+  max-height: 72svh;
+}
+
+.gantt-inner {
+  min-width: max-content;
+}
+
+/* Cada fila: columna de etiqueta (fija a la izquierda) + línea de tiempo en rejilla de días. */
+.gantt-row {
+  display: grid;
+  grid-template-columns: var(--label-w) calc(var(--days) * var(--day-w));
+}
+
+.gantt-label {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  height: var(--row-h);
+  padding: 0 12px;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.25;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--grid);
+}
+
+.gantt-label.nested {
+  padding-left: 28px;
+  /* banda con el color de la fase */
+  box-shadow: inset 4px 0 0 var(--c, transparent);
+}
+
+.gantt-row[data-task-id] > .gantt-label {
+  cursor: pointer;
+}
+
+.gantt-row[data-task-id] > .gantt-label:hover {
+  color: var(--text-h);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--c, var(--accent)) 60%, transparent);
+}
+
+.gantt-row.selected > .gantt-label {
+  background: color-mix(in srgb, var(--c, var(--accent)) 20%, var(--bg));
+  font-weight: 600;
+}
+
+/* Nombre en hasta dos líneas */
+.gantt-label > span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.gantt-timeline {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--days), var(--day-w));
+  grid-auto-rows: var(--row-h);
+  /* El separador va como sombra interior: un borde sumaría 1 px a cada fila y las flechas, que se
+     calculan con filas de exactamente --row-h, se irían descuadrando fila a fila. */
+  box-shadow: inset 0 -1px 0 var(--grid);
+}
+
+/* Fila bajo el ratón */
+.gantt-row[data-task-id]:hover > .gantt-timeline,
+.gantt-row.focus > .gantt-timeline {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.gantt-row.focus > .gantt-label {
+  background: color-mix(in srgb, var(--c, var(--accent)) 12%, var(--bg));
+}
+
+/* ---- Cabecera pegada arriba: fila de meses + fila de días ------------- */
+
+.gantt-head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+}
+
+.gantt-head .gantt-label {
+  height: calc(var(--head-h) * 2);
+  z-index: 6;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.gantt-head .gantt-timeline {
+  grid-auto-rows: var(--head-h);
+}
+
+.gantt-month {
+  grid-row: 1;
+  line-height: var(--head-h);
+  overflow: clip; /* clip no crea contenedor de scroll, así el sticky del texto sigue funcionando */
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--text-h);
+  border-left: 1px solid var(--border);
+}
+
+/* El nombre del mes se queda visible junto a la columna de etiquetas al hacer scroll */
+.gantt-month > span {
+  display: inline-block;
+  position: sticky;
+  left: calc(var(--label-w) + 8px);
+  padding-right: 8px;
+}
+
+.gantt-day {
+  grid-row: 2;
+  font-size: 11px;
+  line-height: var(--head-h);
+  overflow: visible;
+  white-space: nowrap;
+  color: var(--muted);
+  border-left: 1px solid var(--grid);
+}
+
+.gantt-day.weekend {
+  background: var(--weekend);
+}
+
+.gantt-day.today {
+  background: var(--today);
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+/* ---- Capa de fondo: fines de semana y columna de hoy ------------------ */
+
+.gantt-body {
+  position: relative;
+}
+
+.gantt-layer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--label-w);
+  width: calc(var(--days) * var(--day-w));
+  display: grid;
+  grid-template-columns: repeat(var(--days), var(--day-w));
+  z-index: 0;
+  pointer-events: none;
+}
+
+.gantt-layer > div {
+  border-left: 1px solid var(--grid);
+}
+
+.gantt-layer > .weekend {
+  background: var(--weekend);
+}
+
+.gantt-layer > .today {
+  background: var(--today);
+}
+
+/* ---- Barras ------------------------------------------------------------ */
+
+/* Contenedor de la barra: lleva a su lado la duración y el punto para enlazar */
+.gantt-item {
+  --bar: var(--c, var(--accent)); /* color de la fase, puesto en la fila */
+  grid-row: 1;
+  align-self: center;
+  position: relative;
+  z-index: 1;
+  height: var(--bar-h);
+  min-width: 7px; /* las tareas de un día siguen viéndose con zoom amplio */
+  margin: 0 1px;
+}
+
+.gantt-bar {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--bar);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--bar) 30%, var(--bg));
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.gantt-item.dragging .gantt-bar {
+  cursor: grabbing;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.3);
+}
+
+.gantt-progress {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--bar);
+  pointer-events: none;
+}
+
+/* Duración y avance, a la derecha de la barra (el nombre ya está en la columna izquierda) */
+.gantt-meta {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  margin-left: 32px; /* deja sitio al tronco de las flechas y al punto de enlace */
+  transform: translateY(-50%);
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.gantt-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  cursor: ew-resize;
+}
+
+.gantt-handle.start {
+  left: 0;
+}
+
+.gantt-handle.end {
+  right: 0;
+}
+
+/* ---- Pausada y bloqueada ---------------------------------------------- */
+
+.gantt-item.paused .gantt-bar {
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+.gantt-item.blocked .gantt-bar {
+  box-shadow: 0 0 0 2px #8b5cf6;
+}
+
+.gantt-item.done .gantt-bar {
+  opacity: 0.8;
+}
+
+/* ---- Retrasos: el color depende de la gravedad (ámbar, naranja, rojo) ---- */
+
+.gantt-item.late .gantt-bar {
+  background: color-mix(in srgb, var(--bar) 28%, var(--bg));
+}
+
+.gantt-item.late .gantt-progress {
+  background: color-mix(in srgb, var(--bar) 70%, transparent);
+}
+
+/* La propia tarea ha vencido: rayada, como una alerta activa */
+.gantt-item.late.own .gantt-bar {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--bar) 55%, transparent) 0 6px,
+    transparent 6px 12px
+  );
+}
+
+.gantt-item.late.level-3 .gantt-bar {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bar) 35%, transparent);
+}
+
+.gantt-item.late .gantt-meta {
+  color: var(--bar);
+}
+
+.late-meta {
+  font-weight: 700;
+}
+
+.late-mark {
+  font-weight: 700;
+}
+
+.late-count {
+  flex: none;
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Marca del plazo previsto original */
+.gantt-planned {
+  --alert: var(--danger);
+  grid-row: 1;
+  z-index: 2;
+  align-self: stretch;
+  margin: 4px 0;
+  pointer-events: none;
+  border-right: 2px dashed var(--alert);
+}
+
+/* Hito: rombo */
+.gantt-item.milestone {
+  margin-left: calc((var(--day-w) - var(--bar-h)) / 2);
+  width: var(--bar-h);
+}
+
+.gantt-item.milestone .gantt-bar {
+  border: none;
+  border-radius: 0;
+  background: var(--bar);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+
+.gantt-item.milestone .gantt-progress,
+.gantt-item.milestone .gantt-handle {
+  display: none;
+}
+
+/* ---- Cabeceras de fase con barra resumen ------------------------------- */
+
+.gantt-phase .gantt-label {
+  background: color-mix(in srgb, var(--c, var(--accent)) 12%, var(--bg));
+  box-shadow: inset 4px 0 0 var(--c, var(--accent));
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.gantt-phase .gantt-timeline {
+  background: color-mix(in srgb, var(--c, var(--accent)) 8%, transparent);
+}
+
+.phase-name {
+  cursor: pointer;
+}
+
+.phase-name:hover {
+  text-decoration: underline;
+}
+
+.gantt-phase .gantt-item {
+  height: 10px;
+}
+
+.gantt-phase-bar {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--c, var(--accent)) 28%, transparent);
+}
+
+.gantt-phase-bar .gantt-progress {
+  background: var(--c, var(--accent));
+}
+
+.phase-toggle {
+  flex: none;
+  margin-right: 6px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--muted);
+}
+
+/* ---- Flechas de dependencia ------------------------------------------- */
+
+/* Van por DEBAJO de las barras (las barras tapan el trazo al cruzarlas) y no son interactivas. */
+.gantt-arrows {
+  position: absolute;
+  top: 0;
+  left: var(--label-w);
+  z-index: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.gantt-arrow .line {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.gantt-arrow polygon {
+  fill: var(--muted);
+  opacity: 0.55;
+}
+
+.gantt-arrow.focused .line {
+  stroke: var(--accent);
+  stroke-width: 1.75;
+  opacity: 1;
+}
+
+.gantt-arrow.focused polygon {
+  fill: var(--accent);
+  opacity: 1;
+}
+
+
+.gantt-empty {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 16px;
+}
+
+/* ---- Pestañas de vista (Gantt / Lista / Documentos) ------------------- */
+
+.view-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.view-tabs button {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.view-tabs button.active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+}

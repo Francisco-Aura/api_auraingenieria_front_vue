@@ -6,6 +6,7 @@ const test = require('node:test');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { raiz, leer, plantilla, cargarComponente, crearContexto } = require('./helpers/sfc');
+const { esDelPlanificador } = require('./helpers/modulos-aparte');
 
 const F = require(path.join(raiz, 'src/utils/fechas.js'));
 const MODAL_CONTRATOS = 'src/components/CRM_Module/PuntosSuministro/ModalContratos.vue';
@@ -255,6 +256,7 @@ test('ninguna pantalla usa ya el selector de fecha del navegador', () => {
   const vues = [];
   const recorrer = (dir) => fs.readdirSync(dir, { withFileTypes: true }).forEach((e) => {
     const ruta = path.join(dir, e.name);
+    if (esDelPlanificador(path.relative(raiz, ruta))) return;
     if (e.isDirectory()) recorrer(ruta);
     else if (e.name.endsWith('.vue')) vues.push(ruta);
   });

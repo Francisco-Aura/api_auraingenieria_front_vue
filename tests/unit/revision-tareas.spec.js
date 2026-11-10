@@ -178,7 +178,7 @@ test('una categoría nueva se enseña activa, que es como la crea el servidor', 
 });
 
 test('si en otra pestaña se entra con otro usuario o se sale, esta se pone al día', () => {
-  const c = cargarComponente(DASHBOARD, {});
+  const c = cargarComponente(DASHBOARD, { planificadorDisponible: () => true });
   const ctx = crearContexto(c);
   const destinos = [];
   const original = global.window;

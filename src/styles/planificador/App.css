@@ -1,0 +1,623 @@
+/* Fondo de página gris azulado con paneles blancos, igual que los módulos de la intranet */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+  align-items: start;
+  min-height: 100svh;
+  padding: 20px;
+}
+
+.sidebar {
+  padding: 20px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+
+.content {
+  min-width: 0; /* permite que el Gantt haga scroll interno en vez de ensanchar la página */
+  padding: 24px 28px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+
+/* Alta de proyecto y presupuestador: sin barra lateral, el contenido ocupa todo el ancho */
+.layout.focus {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Incrustado en la intranet: sin margen alrededor, la barra lateral y el contenido llenan el espacio */
+html.embedded .layout {
+  gap: 0;
+  align-items: stretch;
+  padding: 0;
+}
+
+html.embedded .sidebar,
+html.embedded .content {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html.embedded .sidebar {
+  border-right: 1px solid var(--border);
+}
+
+.project-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.project-list li {
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+}
+
+.project-list li.active {
+  background: rgba(var(--brand-rgb), 0.22);
+}
+
+/* Contrato pendiente de generar: etiqueta en la lista de proyectos y aviso en el proyecto */
+.pending-tag {
+  margin-left: 4px;
+  padding: 0 6px;
+  border: 1px solid #f59e0b;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #b45309;
+  white-space: nowrap;
+}
+
+/* Separado de los botones de generar */
+.new-project .contract-box .hint.contract-state {
+  margin: 28px 0 0;
+}
+
+.new-project .contract-state.ok {
+  color: #15803d;
+}
+
+/* Borrador de un proyecto a medias: aparece en la lista, con su etiqueta, para seguir con él */
+.draft-entry .link {
+  font-style: italic;
+}
+
+.draft-tag {
+  margin-left: 4px;
+  padding: 0 6px;
+  border: 1px dashed var(--muted);
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: normal;
+  color: var(--muted);
+}
+
+/* «Finalizados»: proyectos con todas sus tareas hechas, plegados bajo la lista */
+.archived-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 4px 2px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.archived-toggle:hover:not(:disabled) {
+  color: var(--text-h);
+  filter: none;
+}
+
+.archived-list {
+  margin-top: 6px;
+}
+
+.archived-list .link {
+  color: var(--muted);
+}
+
+.archived-list li.active .link {
+  color: var(--text-h);
+}
+
+.project-finished {
+  margin: 0 0 14px;
+  padding: 9px 14px;
+  border: 1px solid color-mix(in srgb, #16a34a 45%, var(--border));
+  border-left: 5px solid #16a34a;
+  border-radius: 8px;
+  font-size: 14px;
+  background: color-mix(in srgb, #16a34a 8%, var(--bg));
+}
+
+.sidebar-title {
+  margin: 22px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.link {
+  flex: 1;
+  text-align: left;
+  background: none;
+  color: var(--text-h);
+}
+
+.icon-btn {
+  background: none;
+  color: var(--muted);
+  padding: 2px 8px;
+}
+
+.icon-btn:hover {
+  color: var(--danger);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.row input:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-form {
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Cabecera de tabla como en la intranet: texto oscuro en negrita y línea inferior más gruesa */
+th {
+  color: var(--text-h);
+  font-weight: 600;
+  border-bottom-width: 2px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.wide {
+  width: 100%;
+}
+
+.empty {
+  padding: 6px 8px;
+}
+
+.link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.project-meta {
+  margin: -8px 0 16px;
+}
+
+/* Resumen de retrasos del proyecto */
+.project-alert {
+  --alert: #f59e0b;
+  margin: 0 0 14px;
+  padding: 9px 14px;
+  border: 1px solid color-mix(in srgb, var(--alert) 60%, transparent);
+  border-left: 5px solid var(--alert);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--alert) 12%, var(--bg));
+}
+
+.project-alert.level-2 {
+  --alert: #f97316;
+}
+
+.project-alert.level-3 {
+  --alert: #dc2626;
+  background: color-mix(in srgb, var(--alert) 18%, var(--bg));
+}
+
+.project-alert strong {
+  color: var(--text-h);
+}
+
+/* Secciones del proyecto: pestañas subrayadas, distintas de los botones de "Ver como" */
+.section-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  margin-bottom: -1px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.section-tabs button:hover {
+  color: var(--text-h);
+}
+
+/* Secciones secundarias (Actividad y Documentos): juntas a la derecha y con menos peso visual */
+.section-tabs .tab-aside-group {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.section-tabs .tab-aside {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.section-tabs button.active {
+  border-bottom-color: var(--accent);
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.tab-count {
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg-alt);
+  color: var(--muted);
+}
+
+.section-tabs button.active .tab-count {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--text-h);
+}
+
+.view-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+.view-switch .view-tabs {
+  margin-bottom: 0;
+}
+
+.tab-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #0ea5e9;
+}
+
+.secondary {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Alta de proyecto: con un escaneo cargado, el documento queda al lado del formulario */
+.creator.with-scan {
+  display: grid;
+  grid-template-columns: minmax(380px, 520px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.creator-scan {
+  position: sticky;
+  top: 16px;
+}
+
+@media (max-width: 1000px) {
+  .creator.with-scan {
+    grid-template-columns: 1fr;
+  }
+
+  .creator-scan {
+    position: static;
+  }
+
+  .creator-scan .scan {
+    height: 70svh;
+  }
+}
+
+/* Mientras se lee el presupuesto: los campos se ven «cargando» (esqueleto animado) y no se pueden tocar */
+.new-project.reading > label,
+.new-project.reading fieldset {
+  pointer-events: none;
+}
+
+.new-project.reading > label input,
+.new-project.reading > label textarea,
+.new-project.reading fieldset input:not([type='radio']):not([type='checkbox']),
+.new-project.reading fieldset textarea {
+  border-color: transparent;
+  color: transparent;
+  background: linear-gradient(90deg, var(--bg-alt) 25%, var(--bg) 50%, var(--bg-alt) 75%);
+  background-size: 200% 100%;
+  animation: campo-cargando 1.3s ease-in-out infinite;
+}
+
+.new-project.reading input::placeholder,
+.new-project.reading textarea::placeholder {
+  color: transparent;
+}
+
+@keyframes campo-cargando {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Formulario de nuevo proyecto */
+.new-project {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 520px;
+}
+
+/* Título con los botones de borrador y cancelar también arriba (el formulario es largo) */
+.new-project-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+}
+
+.new-project-head h1 {
+  margin: 0;
+}
+
+.new-project-head .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.new-project .draft-saved {
+  font-size: 12px;
+}
+
+.new-project .draft-notice {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-left: 5px solid var(--accent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  font-size: 13px;
+}
+
+.new-project label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-h);
+}
+
+.new-project textarea,
+.doc-body {
+  font: inherit;
+  padding: 8px;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  resize: vertical;
+}
+
+/* Sección del contrato al principio del alta */
+.new-project .contract-first {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-alt);
+}
+
+.new-project .contract-first h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: var(--text-h);
+}
+
+.new-project .contract-first .contract-upload {
+  margin-bottom: 0;
+}
+
+/* Nombre y fecha rellenados desde el contrato */
+.new-project label.from-contract input {
+  border-color: #16a34a;
+  background: color-mix(in srgb, #16a34a 7%, var(--bg));
+}
+
+.date-warning {
+  margin: -6px 0 0;
+  font-size: 13px;
+}
+
+.new-project .contract-box .form-grid {
+  margin-bottom: 0;
+}
+
+.new-project .contract-box .hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.new-project fieldset {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.new-project .check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+}
+
+/* Proyecto sin pasos: cargar plantilla */
+.load-template {
+  max-width: 640px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.load-template h2 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  color: var(--text-h);
+}
+
+.load-template .row {
+  margin: 12px 0;
+}
+
+.load-template .check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+/* Documentos del proyecto */
+.documents {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doc-list button {
+  width: 100%;
+  padding: 9px 12px;
+  text-align: left;
+  line-height: 1.3;
+  background: none;
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.doc-list button:hover {
+  background: var(--bg-alt);
+}
+
+.doc-list button.active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.doc-page {
+  min-width: 0;
+  padding: 20px 26px 28px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.doc-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.doc-head h2 {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.3;
+  color: var(--text-h);
+}
+
+.doc-body {
+  min-height: 60svh;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.back-home {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
