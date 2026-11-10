@@ -1,5 +1,8 @@
 <template>
   <div class="costs budget-list">
+    <div v-if="conVolver" class="back-row">
+      <button type="button" class="secondary" @click="$emit('cerrar')">← Volver al inicio</button>
+    </div>
     <div class="costs-title"><h1>Presupuestos</h1></div>
     <div class="cost-filters" role="search">
       <label class="search">
@@ -126,7 +129,8 @@ const COLUMNAS = [
 export default {
   name: 'Lista-Presupuestos-Component',
   // abrir: un compartido (se ve su detalle) o un local (lo abre el asistente); duplicar-local: copia local para el asistente
-  emits: ['nuevo', 'abrir', 'abrir-local', 'duplicar-local'],
+  props: { conVolver: { type: Boolean, default: false } },
+  emits: ['nuevo', 'abrir', 'abrir-local', 'duplicar-local', 'cerrar'],
   data() {
     return {
       COLUMNAS, remotos: null, errorServidor: null, version: 0, mensaje: null, ocupado: null, consulta: '', filtro: 'todos',

@@ -1,11 +1,19 @@
 <template>
   <section class="string-designer" aria-label="Diseño de los strings">
     <header class="string-head">
-      <h3>Diseño de strings</h3>
+      <h3>
+        <button type="button" class="string-toggle" :aria-expanded="abierto" :title="abierto ? 'Plegar el diseño de strings' : 'Desplegar el diseño de strings'" @click="abierto = !abierto">
+          <span aria-hidden="true">{{ abierto ? '▾' : '▸' }}</span> Diseño de strings
+        </button>
+      </h3>
       <span class="tag state" :class="creado ? 'borrador' : 'local'" :title="creado ? 'Hay strings creados: cambia lo que quieras a mano' : 'Indica cuántos strings quieres crear'">
         {{ creado ? 'Repartido' : 'Sin repartir' }}
       </span>
+      <span v-if="!abierto" class="muted string-summary">
+        {{ creado ? diseno.length + ' string' + (diseno.length === 1 ? '' : 's') + ' · ' + total + ' de ' + objetivo + ' paneles' : 'sin strings' }}{{ hayProblemas ? ' · ⛔ revisar' : '' }}
+      </span>
     </header>
+    <template v-if="abierto">
     <p v-if="informe" class="muted string-help">
       {{ informe.limits ? 'Entre ' + informe.limits.min + ' y ' + informe.limits.max + ' paneles por string con este panel y este inversor.' : 'Faltan datos técnicos para comprobar las tensiones.' }}
       El inversor tiene {{ informe.inputsAvailable }} entrada{{ informe.inputsAvailable === 1 ? '' : 's' }}{{ unidades > 1 ? ' (' + unidades + ' inversores)' : '' }}:
@@ -100,12 +108,13 @@
     </footer>
 
     <p v-if="textoEntradas.length > 0" class="muted string-inputs">{{ textoEntradas.join(' · ') }}</p>
-    <ul v-if="informe && informe.strings.some((s) => s.problems.length > 0)" class="string-problems" role="alert">
+    <ul v-if="informe && informe.strings.some((s) => s.problems.some((m) => !isMissingInput(m)))" class="string-problems" role="alert">
       <li v-for="m in problemasDeStrings" :key="m">{{ m }}</li>
     </ul>
     <ul v-if="otrosProblemas.length > 0" class="string-problems" role="alert">
       <li v-for="m in otrosProblemas" :key="m">{{ m }}</li>
     </ul>
+    </template>
   </section>
 </template>
 
@@ -114,7 +123,7 @@ import CampoNumerico from './CampoNumerico.vue'
 import { MAX_STRING_PANELS, MIN_STRING_PANELS } from '@/utils/planificador/motor/pasosConfig'
 import {
   analyzeStrings, assignInputs, autoStrings, clampTotals, createStrings, inputsOf, newStringId, spreadPanels, spreadStrings
-} from '@/utils/planificador/motor/strings'
+, isMissingInput, missingInputsProblem } from '@/utils/planificador/motor/strings'
 
 // Diseño de los strings del presupuesto: cuántos hay y cuántos paneles lleva cada uno. Mientras no hay inversor elegido es libre;
 // al elegir panel e inversor cada string se comprueba contra ellos (tensiones), se le asigna una entrada y cada entrada se comprueba
@@ -123,6 +132,8 @@ export default {
   name: 'Disenador-Strings',
   components: { CampoNumerico },
   props: {
+    // Empieza plegado (en el presupuesto abierto; en el formulario de partida, desplegado)
+    inicioPlegado: { type: Boolean, default: false },
     // El presupuesto (con sus strings y nº de paneles)
     estado: { type: Object, required: true },
     // El panel y el inversor de strings elegidos; sin alguno de los dos solo se reparten los paneles
@@ -132,7 +143,7 @@ export default {
     unidades: { type: Number, default: 1 }
   },
   emits: ['cambio'],
-  data() { return { assignInputs, autoStrings, inputsOf } },
+  data() { return { assignInputs, autoStrings, inputsOf, isMissingInput, abierto: !this.inicioPlegado } },
   computed: {
     diseno() { return this.estado.strings || [] },
     creado() { return this.diseno.length > 0 },
@@ -148,7 +159,9 @@ export default {
     cambiaReparto() { return this.reparto.some((s, i) => s.panels !== this.diseno[i].panels || s.input !== this.diseno[i].input) },
     grapas() { return clampTotals(this.diseno) },
     sinAsignar() { return this.ctx !== null && this.diseno.some((s) => s.input < 1) },
-    problemasInforme() { return this.informe ? [...this.informe.problems, ...this.informe.inputs.flatMap((i) => i.problems)] : [] },
+    // Los avisos de «esta entrada no existe» se juntan en uno solo (con muchos strings eran decenas de líneas iguales)
+    problemaEntradas() { return this.informe ? missingInputsProblem(this.informe) : null },
+    problemasInforme() { return this.informe ? [...this.informe.problems, ...(this.problemaEntradas ? [this.problemaEntradas] : []), ...this.informe.inputs.flatMap((i) => i.problems)] : [] },
     // Sin inversor no se comprueban tensiones, pero el máximo y el mínimo de paneles por string valen siempre
     demasiado() {
       if (this.informe) return []
@@ -159,7 +172,7 @@ export default {
       })
     },
     otrosProblemas() { return [...this.problemasInforme, ...this.demasiado] },
-    problemasDeStrings() { return this.informe.strings.flatMap((s, i) => s.problems.map((m) => 'String ' + (i + 1) + ': ' + m)) },
+    problemasDeStrings() { return this.informe.strings.flatMap((s, i) => s.problems.filter((m) => !isMissingInput(m)).map((m) => 'String ' + (i + 1) + ': ' + m)) },
     hayProblemas() { return !!this.informe && (this.problemasInforme.length > 0 || this.informe.strings.some((s) => s.problems.length > 0)) },
     textoEntradas() {
       return ((this.informe && this.informe.inputs) || []).map((i) => {

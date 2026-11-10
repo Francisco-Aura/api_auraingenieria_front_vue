@@ -8,7 +8,7 @@
       <section v-for="col in columnas" :key="col.tipo" class="lists-col" :aria-label="col.titulo">
         <h3>{{ col.titulo }} <span v-if="col.filas" class="muted">({{ col.filas.length }})</span></h3>
         <form class="lists-add" @submit.prevent="anadir(col.tipo)">
-          <input v-model="nuevo[col.tipo]" :placeholder="col.marcador" :aria-label="col.marcador">
+          <input v-model="nuevo[col.tipo]" :placeholder="col.marcador" :aria-label="col.tipo === 'marca' ? 'Nombre de la nueva marca' : 'Nombre del nuevo proveedor'">
           <button type="submit" :disabled="!nuevo[col.tipo].trim()">Añadir</button>
         </form>
         <p v-if="col.filas === null" class="muted">Cargando…</p>

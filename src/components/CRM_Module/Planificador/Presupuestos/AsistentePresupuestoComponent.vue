@@ -2,13 +2,13 @@
   <datos-presupuesto-component v-if="vista === 'nuevo'" modo="nuevo" @cancelar="volverALista" @enviar="crearLocal" />
   <datos-presupuesto-component v-else-if="vista === 'parametros' && trabajo" modo="editar" :base="trabajo.state" @cancelar="vista = 'editar'" @enviar="cambiarParametros" />
   <editor-presupuesto-component
-    v-else-if="vista === 'editar' && trabajo" :key="trabajo.id" :presupuesto="trabajo" :guardando="guardando" :error-guardar="errorGuardar" :conflicto="conflicto"
+    v-else-if="vista === 'editar' && trabajo" :key="trabajo.id" :con-inventario="conInventario" @abrir-inventario="$emit('abrir-inventario')" :presupuesto="trabajo" :guardando="guardando" :error-guardar="errorGuardar" :conflicto="conflicto"
     @cambiar="actualizar" @numeros="actualizarNumeros" @volver="volverALista" @editar-parametros="vista = 'parametros'" @guardar="guardar()" @descartar="descartar"
     @duplicar="duplicarActual" @abrir-variante="abrirVariante" @variante-eliminada="varianteEliminada" @estado="cambiarEstado" @resolver="resolver"
   />
   <div v-else>
     <p v-if="aviso" class="step-note warn" role="alert">{{ aviso }}</p>
-    <lista-presupuestos-component @nuevo="vista = 'nuevo'" @abrir="(id) => abrir(id, true)" @abrir-local="(id) => abrir(id, false)" @duplicar-local="duplicarDesdeLista" />
+    <lista-presupuestos-component :con-volver="conVolver" @cerrar="$emit('cerrar')" @nuevo="vista = 'nuevo'" @abrir="(id) => abrir(id, true)" @abrir-local="(id) => abrir(id, false)" @duplicar-local="duplicarDesdeLista" />
   </div>
 </template>
 
@@ -30,6 +30,8 @@ const estadoHttp = (e) => (e && e.response ? e.response.status : null)
 // servidor cuando se pulsa «Guardar».
 export default {
   name: 'Asistente-Presupuesto-Component',
+  props: { conVolver: { type: Boolean, default: false }, conInventario: { type: Boolean, default: false } },
+  emits: ['cerrar', 'abrir-inventario'],
   components: { ListaPresupuestosComponent, DatosPresupuestoComponent, EditorPresupuestoComponent },
   data() {
     return { vista: 'lista', trabajo: null, guardando: false, errorGuardar: null, conflicto: null, aviso: '' }

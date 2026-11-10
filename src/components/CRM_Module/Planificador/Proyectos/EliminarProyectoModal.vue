@@ -1,7 +1,7 @@
 <template>
   <modal-component titulo="Eliminar proyecto" @cerrar="$emit('cerrar')">
     <p>Vas a eliminar <strong>{{ nombre }}</strong> con todas sus tareas, documentación aportada, cambios y registro de actividad.</p>
-    <p class="hint">Se borra <strong>definitivamente y al momento</strong>: no se puede deshacer ni recuperar.</p>
+    <p class="hint">Se borra <strong>definitivamente y al momento</strong>: no se puede deshacer ni recuperar.<template v-if="enDropbox"> La carpeta del proyecto y sus archivos en Dropbox se quedan como están: no se borran desde aquí.</template></p>
     <label class="check-row"><input v-model="entendido" type="checkbox"> Entiendo que el proyecto dejará de estar disponible para todo el equipo.</label>
     <label class="field">
       Para confirmar, escribe el nombre del proyecto:
@@ -24,7 +24,7 @@ import { mensajeError } from '@/services/planificadorApi'
 export default {
   name: 'Eliminar-Proyecto-Modal',
   components: { ModalComponent },
-  props: { nombre: { type: String, required: true }, alConfirmar: { type: Function, required: true } },
+  props: { nombre: { type: String, required: true }, alConfirmar: { type: Function, required: true }, enDropbox: { type: Boolean, default: false } },
   emits: ['cerrar'],
   data() { return { entendido: false, escrito: '', ocupado: false, error: null } },
   computed: { coincide() { return this.escrito.trim() === this.nombre.trim() } },

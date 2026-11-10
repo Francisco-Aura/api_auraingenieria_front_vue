@@ -1,5 +1,5 @@
 <template>
-  <div v-if="remoto && remoto.status !== 'descartado'" class="status-box">
+  <div v-if="!remoto || remoto.status !== 'descartado'" class="status-box">
     <template v-if="accion.tipo === 'validar'">
       <button type="button" @click="validar">Validar presupuesto</button>
       <span class="muted">Es el que elige el jefe: el resto de variantes de su oferta se descartan.</span>
@@ -12,19 +12,20 @@
       <span class="muted">Las variantes descartadas de su oferta volverán a Enviado.</span>
     </template>
     <template v-else-if="accion.tipo === 'enviar'">
-      <button type="button" class="secondary" :disabled="guardando || !accion.habilitado" :title="sinGuardar ? 'Guarda primero los cambios' : undefined"
+      <button type="button" class="secondary" :disabled="guardando || !accion.habilitado" :title="!remoto ? 'Guárdalo y compártelo primero' : sinGuardar ? 'Guarda primero los cambios' : undefined"
               @click="preguntar('Este presupuesto pasará a «Enviado» y ya no se podrá editar. Para cambiar algo, se duplicará como variante. ¿Marcarlo como enviado?', 'send')">
         Marcar como enviado
       </button>
-      <span class="muted">{{ sinGuardar ? 'Guarda primero los cambios.' : 'Cuando ya lo hayas revisado y mandado al cliente: desde ahí no se edita.' }}</span>
+      <span class="muted">{{ !remoto ? 'Guárdalo y compártelo primero.' : sinGuardar ? 'Guarda primero los cambios.' : 'Cuando ya lo hayas revisado y mandado al cliente: desde ahí no se edita.' }}</span>
     </template>
   </div>
-  <div v-else-if="!remoto" class="status-box"><span class="muted">Guárdalo y compártelo primero para poder marcarlo como enviado.</span></div>
 </template>
 
 <script>
 import { esValidador } from '@/services/usuarioActual'
 import { accionesDeEstado } from '@/utils/planificador/listaPresupuestos'
+
+const REGISTRAR_CLIENTES_POTENCIALES = false
 
 // Estado del presupuesto compartido: marcarlo como enviado al cliente y, para quien valida, validarlo.
 export default {
@@ -38,14 +39,15 @@ export default {
   emits: ['estado'],
   computed: {
     remoto() { return this.presupuesto.remote },
-    accion() { return this.remoto ? accionesDeEstado({ estado: this.remoto.status, esValidador: esValidador(), estadoPropuesta: this.estadoPropuesta, sinGuardar: this.sinGuardar }) : { tipo: 'ninguna' } }
+    accion() { return this.remoto ? accionesDeEstado({ estado: this.remoto.status, esValidador: esValidador(), estadoPropuesta: this.estadoPropuesta, sinGuardar: this.sinGuardar }) : { tipo: 'enviar', habilitado: false } }
   },
   methods: {
     preguntar(texto, accion) { if (window.confirm(texto)) this.$emit('estado', { accion }) },
     // Un cliente potencial se da de alta en la intranet al validar: hace falta su CIF (si el presupuesto no lo trae, se pide aquí)
     validar() {
       const cliente = this.presupuesto.state.customer
-      const potencial = !!cliente && cliente.kind === 'potencial'
+      // Desconectado: validar ya no da de alta al potencial en la intranet (ni pide CIF)
+      const potencial = REGISTRAR_CLIENTES_POTENCIALES && !!cliente && cliente.kind === 'potencial'
       let cif = ''
       if (potencial && !cliente.cif) {
         cif = (window.prompt('«' + cliente.name + '» es un cliente potencial y se dará de alta en la intranet al validar.\n\nEscribe su CIF:') || '').trim()

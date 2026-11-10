@@ -2,7 +2,8 @@
   <tr :class="tono || undefined">
     <td>
       <button type="button" class="product-link" title="Ver la ficha técnica" @click="$emit('ficha', item)">{{ [item.brand, item.model].filter(Boolean).join(' ') }}</button>
-      <span v-if="sugerencia" class="tag stock" :class="sugerencia.inStock ? 'in' : 'out'">{{ sugerencia.inStock ? 'En stock: ' + item.stock : 'Sin stock' }}</span>
+      <span v-if="sugerencia" class="tag stock" :class="sugerencia.inStock ? 'in' : 'out'">{{ sugerencia.inStock ? 'En stock: ' + item.stock : item.stock > 0 ? 'Stock: ' + item.stock + ' de ' + (sugerencia.units ?? 1) : 'Sin stock' }}</span>
+      <span v-if="sugerencia && (sugerencia.units ?? 1) > 1" class="tag state borrador" title="Unidades que hacen falta para las entradas de tus strings: se añaden solas">× {{ sugerencia.units }} uds.</span>
       <span v-if="item.datasheet" class="tag" title="Tiene la ficha técnica del fabricante adjunta">📄 Ficha</span>
       <span v-if="insignia" class="tag compat" :class="insignia.kind" :title="insignia.title">{{ insignia.text }}</span>
       <span v-if="conflicto" class="tag issue bad" title="No casa con lo que has elegido">⛔ Incompatible</span>
@@ -12,7 +13,7 @@
       <span v-if="!esVacio(item.attrs[f.key])" class="tag attr">{{ item.attrs[f.key] }}{{ unidad(f.label) }}</span>
       <span v-else class="muted">—</span>
     </td>
-    <td>{{ item.supplier || '—' }}</td>
+    <td><template v-if="item.supplier">{{ item.supplier }}</template><span v-else class="muted">—</span></td>
     <td class="num">
       <template v-if="item.unit_price > 0">{{ eur(item.unit_price) }}<span class="muted"> / {{ item.unit }}</span></template>
       <span v-else class="tag no-price" title="Este producto no tiene precio todavía: complétalo en el inventario">⚠ Sin precio</span>

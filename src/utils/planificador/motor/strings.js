@@ -217,11 +217,23 @@ export function analyzeStrings(design, ctx) {
     }
     return { strings, inputs, total, missing: target - total, inputsAvailable, limits, problems };
 }
+/** Los problemas de «esta entrada no existe» se juntan en uno solo (con 26 strings y un inversor eran decenas de líneas iguales). */
+export const isMissingInput = (message) => message.includes('no existe: el inversor');
+/** Un único aviso para todos los strings que van a entradas que el inversor no tiene; null si no hay ninguno. */
+export function missingInputsProblem(report) {
+    const lost = report.strings.flatMap((s, i) => (s.input > report.inputsAvailable ? [i + 1] : []));
+    if (lost.length === 0)
+        return null;
+    const last = Math.max(...report.strings.map((s) => s.input));
+    return `${lost.length} string${lost.length === 1 ? '' : 's'} (${lost.length > 6 ? `del ${lost[0]} al ${lost[lost.length - 1]}` : lost.join(', ')}) van a entradas que no existen: hay ${report.inputsAvailable} entrada${report.inputsAvailable === 1 ? '' : 's'} y usan hasta la ${last}. Faltan inversores.`;
+}
 /** Todos los problemas de un diseño, cada uno con el string o la entrada a la que se refiere. */
 export function reportProblems(report) {
+    const missing = missingInputsProblem(report);
     return [
         ...report.problems,
-        ...report.strings.flatMap((s, i) => s.problems.map((m) => `String ${i + 1}: ${m}`)),
+        ...(missing ? [missing] : []),
+        ...report.strings.flatMap((s, i) => s.problems.filter((m) => !isMissingInput(m)).map((m) => `String ${i + 1}: ${m}`)),
         ...report.inputs.flatMap((i) => i.problems),
     ];
 }

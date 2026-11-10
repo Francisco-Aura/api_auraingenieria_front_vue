@@ -2,7 +2,6 @@
 // de modo que sus estilos no se mezclan con los de la intranet.
 import { createApp } from 'vue'
 import App from './App.vue'
-import router from './router'
 import axios from 'axios'
 import { cabecerasUsuario } from '@/services/usuarioActual'
 import { iniciarTema } from '@/utils/planificador/tema'
@@ -29,6 +28,11 @@ import '@/styles/planificador/ContractUpload.css'
 import '@/styles/planificador/TaskDrawer.css'
 import '@/styles/planificador/ActivityView.css'
 import '@/styles/planificador/DeleteProject.css'
+import '@/styles/planificador/Home.css'
+import '@/styles/planificador/RichText.css'
+import '@/styles/planificador/ScanViewer.css'
+import '@/styles/planificador/ChangesView.css'
+import '@/styles/planificador/ProductSheet.css'
 
 axios.defaults.baseURL = '/api'
 
@@ -39,4 +43,4 @@ axios.interceptors.request.use(config => {
 })
 
 iniciarTema()
-createApp(App).use(router).mount('#app')
+createApp(App).mount('#app')

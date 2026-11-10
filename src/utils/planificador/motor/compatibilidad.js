@@ -75,6 +75,28 @@ export function stringContext(state, catalog) {
     const units = Math.max(1, central.filter((e) => e.item.id === inverter.id).reduce((s, e) => s + e.qty, 0));
     return { panel, inverter, units, moduleCount: state.moduleCount };
 }
+/**
+ * Con strings repartidos y un inversor de strings con su panel: si las entradas de los inversores que hay no bastan, sube las
+ * unidades del inversor a las que hacen falta (nunca las baja) y reasigna las entradas de los strings entre todos. null si no
+ * hay que cambiar nada o si los strings no valen con ese inversor (eso lo avisa la compatibilidad).
+ */
+export function sizeInverters(state, catalog) {
+    const ctx = stringContext(state, catalog);
+    if (!ctx || !state.strings || state.strings.length === 0 || state.moduleCount <= 0)
+        return null;
+    const fit = fitStrings(state.strings, ctx.panel, ctx.inverter, state.moduleCount);
+    if (!fit || fit.units <= ctx.units)
+        return null;
+    const first = state.lines.find((l) => l.itemId === ctx.inverter.id);
+    if (!first)
+        return null;
+    const extra = fit.units - ctx.units;
+    return {
+        ...state,
+        strings: fit.design,
+        lines: state.lines.map((l) => (l.id === first.id ? { ...l, qty: effectiveQty(l, state) + extra } : l)),
+    };
+}
 export function checkCompatibility(state, catalog) {
     const byId = new Map(catalog.items.map((i) => [i.id, i]));
     const entries = [];
@@ -416,11 +438,26 @@ export function issuesByItem(issues, state) {
     }
     return out;
 }
-/** Los avisos que saldrían al añadir un producto al presupuesto `context` (lo elegido hasta el paso en el que se mira). */
+/**
+ * Las unidades con las que se añadiría un inversor de strings al presupuesto `context`: las que hacen falta para las entradas de
+ * los strings ya diseñados (con los strings reasignados entre todos), o 1 si no hay diseño o el producto no es de strings.
+ */
+export function packOf(candidate, context, catalog) {
+    const none = { units: 1, strings: context.strings };
+    if (candidate.category !== 'inversores' || ['Microinversor', 'Optimizador'].includes(txt(candidate.attrs.tipo)))
+        return none;
+    const panel = context.lines.map((l) => (l.itemId ? catalog.items.find((i) => i.id === l.itemId) : undefined)).find((i) => i?.category === 'modulos');
+    if (!panel || !context.strings || context.strings.length === 0 || context.moduleCount <= 0)
+        return none;
+    const fit = fitStrings(context.strings, panel, candidate, context.moduleCount);
+    return fit ? { units: fit.units, strings: fit.design } : none;
+}
+/** Los avisos que saldrían al añadir un producto al presupuesto `context` (lo elegido hasta el paso en el que se mira); un inversor, con las unidades que hacen falta para sus strings. */
 export function candidateIssues(candidate, context, catalog) {
     const label = catalog.categories.find((c) => c.key === candidate.category)?.label ?? candidate.category;
-    const line = { ...newLine(candidate, label), id: '__candidato__' };
-    return checkCompatibility({ ...context, lines: [...context.lines, line] }, catalog).filter((i) => i.lineIds.includes(line.id));
+    const pack = packOf(candidate, context, catalog);
+    const line = { ...newLine(candidate, label), id: '__candidato__', qty: pack.units };
+    return checkCompatibility({ ...context, strings: pack.strings, lines: [...context.lines, line] }, catalog).filter((i) => i.lineIds.includes(line.id));
 }
 /**
  * Por qué un producto no casa con lo ya elegido: los avisos de fondo que saldrían al añadirlo al presupuesto `context`.
@@ -599,21 +636,25 @@ export function fitReasons(item, state, catalog) {
     return out;
 }
 /**
- * Los sugeridos de un paso: productos sin ningún aviso con lo ya elegido (`context`) y con algo que confirma que encajan.
- * Primero los que hay en stock; dentro de cada grupo, los que más cosas confirman y, a igualdad, los más baratos.
+ * Los sugeridos de un paso: productos sin ningún aviso con lo ya elegido (`context`). Los que hay en stock se sugieren siempre
+ * (aunque no haya nada que confirme que encajan, y sin tope); el resto, solo si algo lo confirma y hasta completar `limit`.
+ * Primero los de stock; dentro de cada grupo, los que más cosas confirman y, a igualdad, los más baratos.
  */
 export function suggestions(candidates, context, catalog, limit = 4) {
-    const found = [];
+    const stocked = [];
+    const others = [];
     for (const item of candidates) {
         if (item.sample || item.unit_price <= 0)
             continue;
         if (candidateIssues(item, context, catalog).length > 0)
             continue;
         const reasons = fitReasons(item, context, catalog);
-        if (reasons.length > 0)
-            found.push({ item, reasons, inStock: item.stock > 0 });
+        const units = packOf(item, context, catalog).units;
+        if (item.stock >= units)
+            stocked.push({ item, reasons: reasons.length > 0 ? reasons : ['en stock y sin incompatibilidades con lo elegido'], inStock: true, units });
+        else if (reasons.length > 0)
+            others.push({ item, reasons, inStock: false, units });
     }
-    return found
-        .sort((a, b) => Number(b.inStock) - Number(a.inStock) || b.reasons.length - a.reasons.length || a.item.unit_price - b.item.unit_price)
-        .slice(0, limit);
+    const order = (a, b) => b.reasons.length - a.reasons.length || a.item.unit_price - b.item.unit_price;
+    return [...stocked.sort(order), ...others.sort(order).slice(0, Math.max(0, limit - stocked.length))];
 }
