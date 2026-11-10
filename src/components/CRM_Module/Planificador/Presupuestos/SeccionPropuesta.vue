@@ -23,28 +23,19 @@
             <strong>Presentación de la propuesta</strong>
             <p class="muted proposal-help">Se genera con los datos del presupuesto; lo que no tiene, como la dirección del cliente, queda en blanco. Es un archivo HTML: se abre en el navegador, y para sacar el PDF se imprime (Ctrl+P, «Guardar como PDF»).</p>
           </div>
-          <button type="button" class="secondary" :disabled="ocupado || faltanGarantias.length > 0" @click="ejecutar(() => descargar(actual.id))">Descargar presentación</button>
-          <p v-if="faltanGarantias.length > 0" class="step-note warn proposal-missing" role="alert">
-            No se puede descargar la presentación porque falta {{ faltanGarantias.join(', ') }}. Complétala en el inventario.
-          </p>
+          <button type="button" class="secondary" :disabled="ocupado" @click="ejecutar(() => descargar(actual.id))">Descargar presentación</button>
         </section>
 
         <section class="proposal-logo" aria-label="Logo del cliente">
-          <button type="button" class="proposal-logo-box" :disabled="ocupado" :title="actual.client_logo ? 'Cambiar el logo' : 'Subir el logo de la empresa del cliente'" @click="$refs.logo.click()">
+          <button type="button" class="proposal-logo-box" :disabled="ocupado" title="Haz clic o arrastra una imagen para subir el logo" @click="$refs.logo.click()" @dragover.prevent @drop.prevent="soltarLogo">
             <img v-if="actual.client_logo" :src="actual.client_logo" alt="Logo de la empresa del cliente">
             <span v-else class="muted">+ Subir logo</span>
           </button>
           <div>
             <strong>Logo de la empresa del cliente</strong>
-            <p class="muted proposal-help">Se inserta solo en la presentación («Te lo ponemos fácil»). PNG, JPG, WebP o SVG.</p>
-            <div class="proposal-actions">
-              <button type="button" class="secondary" :disabled="ocupado" title="Subir el logo de la empresa del cliente" @click="$refs.logo.click()">
-                {{ actual.client_logo ? 'Cambiar logo' : 'Subir logo' }}
-              </button>
-              <button v-if="actual.client_logo" type="button" class="link-btn" :disabled="ocupado" @click="ejecutar(() => planificadorApi.borrarLogoPropuesta(actual.id))">Quitar</button>
-              <input ref="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirLogo">
-            </div>
+            <p class="muted proposal-help">Haz clic en la caja o arrastra la imagen: sustituye al logo anterior. Se inserta solo en la presentación («Te lo ponemos fácil»). PNG, JPG, WebP o SVG.</p>
           </div>
+          <input ref="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirLogo">
         </section>
 
         <ol class="proposal-steps">
@@ -128,7 +119,6 @@ export default {
   computed: {
     actual() { return this.lista && this.lista[0] },
     historial() { return this.lista ? this.lista.slice(1) : [] },
-    faltanGarantias() { return (this.actual && this.actual.missing_warranties) || [] },
     enviada() { return !!this.actual && this.actual.status !== 'borrador' },
     decidida() { return !!this.actual && (this.actual.status === 'aprobada' || this.actual.status === 'rechazada') }
   },
@@ -174,8 +164,14 @@ export default {
     subirLogo(evento) {
       const archivo = evento.target.files && evento.target.files[0]
       evento.target.value = ''
-      if (!archivo) return
-      // El logo se reduce en el navegador y se guarda en la propuesta
+      if (archivo) this.guardarLogo(archivo)
+    },
+    soltarLogo(evento) {
+      const archivo = evento.dataTransfer.files && evento.dataTransfer.files[0]
+      if (archivo && archivo.type.startsWith('image/')) this.guardarLogo(archivo)
+    },
+    // El logo se reduce en el navegador y se guarda en la propuesta
+    guardarLogo(archivo) {
       this.ejecutar(async () => planificadorApi.guardarLogoPropuesta(this.actual.id, await prepararLogo(archivo, 700)))
     },
     eliminarBorrador() {

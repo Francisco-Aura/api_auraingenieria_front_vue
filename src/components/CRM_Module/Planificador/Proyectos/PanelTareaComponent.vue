@@ -124,7 +124,7 @@
         <entregables-panel :tarea="tarea" :acciones="acciones" />
       </section>
 
-      <section v-if="tarea.description"><h4>Descripción</h4><p class="descripcion-tarea">{{ tarea.description }}</p></section>
+      <section v-if="tarea.description"><h4>Descripción</h4><texto-con-formato :texto="tarea.description" /></section>
 
       <footer class="drawer-foot"><button type="button" class="danger-btn" @click="$emit('eliminar', tarea.id)">Eliminar tarea</button></footer>
     </template>
@@ -153,6 +153,7 @@
 </template>
 
 <script>
+import TextoConFormato from './TextoConFormato.vue'
 import InsigniaTarea from './InsigniaTarea.vue'
 import EntregablesPanel from './EntregablesPanel.vue'
 import MaterialComponent from './MaterialComponent.vue'
@@ -165,7 +166,7 @@ import { moveBlockedReason, pendingDeliverables } from '@/utils/planificador/tar
 // Panel lateral con el detalle de una tarea (o de una fase): estado, fechas, dependencias, subtareas y documentación.
 export default {
   name: 'Panel-Tarea-Component',
-  components: { InsigniaTarea, EntregablesPanel, MaterialComponent },
+  components: { InsigniaTarea, EntregablesPanel, MaterialComponent , TextoConFormato},
   props: {
     seleccion: { type: Object, required: true },
     tareas: { type: Array, required: true },

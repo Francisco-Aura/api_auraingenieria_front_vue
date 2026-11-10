@@ -1,4 +1,4 @@
-.planificador-wrapper { padding: 16px; }
+.planificador-wrapper { padding: 0; }
 .planificador-error { color: #b00020; }
 
 .planificador-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }

@@ -30,6 +30,8 @@ async function pdf(url, cuerpo, params, nombreDefecto) {
 
 export const planificadorApi = {
   salud: () => datos(axios.get(`${BASE}/health`)),
+  // Funciones encendidas del servidor (presupuestador, inventario, archivos locales)
+  funciones: () => datos(axios.get(`${BASE}/features`)),
 
   // Marcas y proveedores
   marcas: () => datos(axios.get(`${BASE}/brands`)),

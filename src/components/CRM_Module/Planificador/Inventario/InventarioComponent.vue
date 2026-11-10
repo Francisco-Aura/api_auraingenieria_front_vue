@@ -1,5 +1,8 @@
 <template>
   <div class="inventory">
+    <div v-if="etiquetaVolver" class="back-row">
+      <button type="button" class="secondary" @click="$emit('cerrar')">{{ etiquetaVolver }}</button>
+    </div>
     <div class="costs-title">
       <h1>Inventario</h1>
       <div class="title-actions">
@@ -16,7 +19,8 @@
     <div v-if="revision && catalogo" class="inv-review" :class="{ due: revision.days_left <= 0 && !revision.notified }" role="status">
       <div>
         <strong>Revisión de precios</strong>
-        <span> · última revisión: {{ fechaCorta(revision.last_review) }}{{ revision.days_since === 0 ? ' (hoy)' : ' (hace ' + revision.days_since + (revision.days_since === 1 ? ' día)' : ' días)') }}</span>
+        <span v-if="revision.reviewed_products === 0"> · aún no se ha revisado ningún precio</span>
+        <span v-else> · última revisión: {{ fechaCorta(revision.last_review) }}{{ revision.days_since === 0 ? ' (hoy)' : ' (hace ' + revision.days_since + (revision.days_since === 1 ? ' día)' : ' días)') }}</span>
         <span class="muted">{{ textoRevision }}</span>
       </div>
       <button type="button" class="secondary" :disabled="ocupado || visibles.length === 0" @click="revisarVisibles">
@@ -158,6 +162,8 @@ const ORDENES = [
 // Inventario: los productos y sus características. Es el mismo catálogo que usa el presupuestador.
 export default {
   name: 'Inventario-Component',
+  props: { etiquetaVolver: { type: String, default: '' } },
+  emits: ['cerrar'],
   components: { IconoCategoria, LogoMarca, InsigniaProteccion, ListasMarcasProveedores, FichaProductoModal },
   data() {
     return {

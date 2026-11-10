@@ -75,7 +75,7 @@
           <strong>Parámetros del presupuesto</strong>
           <button type="button" class="link-btn" :disabled="bloqueado" @click="$emit('editar-parametros')">Editar parámetros</button>
           <div class="head-actions">
-            <button type="button" class="secondary" :disabled="estado.lines.length === 0 || bloqueado" @click="cambiar({ lines: [] })">Vaciar filas</button>
+            <button v-if="conInventario" type="button" class="secondary" title="Los precios y las características de los equipos se editan en el inventario" @click="$emit('abrir-inventario')">Precios en el inventario</button>
           </div>
         </div>
         <ul class="param-list">
@@ -83,7 +83,7 @@
             <span class="muted">Cliente</span>
             <strong v-if="estado.customer">
               {{ estado.customer.name }}<span v-if="estado.customer.kind === 'existente' && estado.customer.cif" class="muted"> · CIF {{ estado.customer.cif }}</span>
-              <span v-if="estado.customer.kind === 'potencial'" class="tag state local" title="Aún no existe en la intranet: se dará de alta cuando se valide el presupuesto">Potencial</span>
+              <span v-if="estado.customer.kind === 'potencial'" class="tag state local" title="Aún no existe en la intranet">Potencial</span>
             </strong>
             <span v-else class="tag issue warn" title="Elige el cliente en «Editar parámetros»: hace falta para guardarlo y compartirlo">Sin cliente</span>
           </li>
@@ -103,7 +103,10 @@
         </fieldset>
 
         <aside class="costs-summary" aria-label="Presupuesto de costes">
-          <h2>Presupuesto del proyecto</h2>
+          <div class="summary-head">
+            <h2>Presupuesto del proyecto</h2>
+            <button type="button" class="secondary" :disabled="bloqueado || estado.lines.length === 0" title="Quita todas las filas del presupuesto, de todos los pasos" @click="vaciarFilas">Vaciar filas</button>
+          </div>
           <div v-if="estado.lines.length > 1" class="order-switch" role="group" aria-label="Orden de las filas">
             <span class="muted">Orden</span>
             <button type="button" :class="{ active: orden === 'insercion' }" :aria-pressed="orden === 'insercion'" title="Las filas salen como las fuiste añadiendo" @click="elegirOrden('insercion')">De inserción</button>
@@ -146,7 +149,11 @@
                 <tbody>
                   <template v-for="linea in filasDe(partida.key)" :key="linea.id">
                     <tr :class="claseFila(linea)">
-                      <td>{{ lineName(linea) }}<span class="muted"> · {{ linea.unit }}</span></td>
+                      <td>
+                        <button v-if="productoDe(linea)" type="button" class="product-link" title="Ver la ficha técnica" @click="fichaAbierta = productoDe(linea)">{{ lineName(linea) }}</button>
+                        <template v-else>{{ lineName(linea) }}</template>
+                        <span class="muted"> · {{ linea.unit }}</span>
+                      </td>
                       <td class="num">
                         <campo-numerico :clase="'qty' + (linea.auto || linea.perPanel || (linea.clamp && estado.strings && estado.strings.length) ? ' auto' : '')" :etiqueta="'Cantidad de ' + lineName(linea)"
                                         :model-value="effectiveQty(linea, estado)" @update:model-value="cambiarLinea(linea.id, { qty: $event, auto: false, perPanel: undefined, clamp: undefined })" />
@@ -156,7 +163,9 @@
                         <button v-if="linea.priceEdited" type="button" class="link-btn manual-price" title="Precio puesto a mano: ya no sigue al inventario. Pulsa para volver a usar el del inventario." @click="volverAlInventario(linea.id)">↺ del inventario</button>
                       </td>
                       <td class="num">{{ eur(lineTotal(linea, estado)) }}<div class="muted ratio" title="Coste ratio W/p de la fila">{{ ratio(porWp(lineTotal(linea, estado))) }}</div></td>
-                      <td class="num"><button type="button" class="icon-btn trash" title="Quitar la fila" :aria-label="'Quitar ' + lineName(linea)" @click="quitarLinea(linea.id)">×</button></td>
+                      <td class="num"><button type="button" class="icon-btn trash" title="Quitar la fila" :aria-label="'Quitar ' + lineName(linea)" @click="quitarLinea(linea.id)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h18" /><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
+                      </button></td>
                     </tr>
                     <tr v-if="(avisosPorFila.get(linea.id) || []).length > 0" class="issue-row">
                       <td colspan="5">
@@ -178,8 +187,8 @@
           <div v-if="estado.lines.length > 0" class="export-box">
             <strong>Exportar a PDF</strong>
             <div class="export-actions">
-              <button type="button" :disabled="errores > 0 || exportando !== null" title="Costes y beneficio: para uso de la empresa" @click="exportar('interno')">{{ exportando === 'interno' ? 'Generando…' : 'PDF interno' }}</button>
-              <button type="button" class="secondary" :disabled="errores > 0 || exportando !== null" title="Solo la instalación y el precio de venta" @click="exportar('cliente')">{{ exportando === 'cliente' ? 'Generando…' : 'PDF para el cliente' }}</button>
+              <button type="button" :disabled="errores > 0 || exportando !== null" title="Con los costes, el coste por Wp y el beneficio: para uso interno" @click="exportar('interno')">{{ exportando === 'interno' ? 'Generando…' : 'PDF interno' }}</button>
+              <button type="button" class="secondary" :disabled="errores > 0 || exportando !== null" title="Solo la instalación y el precio de venta: sin costes ni beneficio" @click="exportar('cliente')">{{ exportando === 'cliente' ? 'Generando…' : 'PDF para el cliente' }}</button>
             </div>
             <p v-if="errorExportar" class="error" role="alert">{{ errorExportar }}</p>
             <p v-if="errores > 0" class="step-note warn export-blocked" role="status">Con {{ errores }} incompatibilidad{{ errores === 1 ? '' : 'es' }} sin resolver no se podrá exportar: cambia los productos marcados.</p>
@@ -208,7 +217,7 @@ import { planificadorApi, mensajeError } from '@/services/planificadorApi'
 import {
   effectiveQty, eur, lineName, lineTotal, newLine, parseCosts, pct, ratio, summarize, syncWithCatalog
 } from '@/utils/planificador/motor/costes'
-import { checkCompatibility, currentStrings, issuesByLine, levelClass, rebalanceStrings } from '@/utils/planificador/motor/compatibilidad'
+import { checkCompatibility, currentStrings, issuesByLine, levelClass, rebalanceStrings, sizeInverters } from '@/utils/planificador/motor/compatibilidad'
 import { descargarArchivo } from '@/utils/planificador/documentos/descarga'
 import { fuseQuantity } from '@/utils/planificador/motor/protecciones'
 import { ROOF_LABEL, STEPS, sortFixed, withMargin } from '@/utils/planificador/motor/pasosConfig'
@@ -223,12 +232,13 @@ export default {
   name: 'Editor-Presupuesto-Component',
   components: { TiraVariantes, SeccionPropuesta, CajaEstado, CampoNumerico, PasosPresupuesto, FichaTecnicaModal },
   props: {
+    conInventario: { type: Boolean, default: false },
     presupuesto: { type: Object, required: true },
     guardando: { type: Boolean, default: false },
     errorGuardar: { type: String, default: null },
     conflicto: { type: Object, default: null }
   },
-  emits: ['cambiar', 'numeros', 'volver', 'editar-parametros', 'guardar', 'descartar', 'duplicar', 'abrir-variante', 'variante-eliminada', 'estado', 'resolver'],
+  emits: ['abrir-inventario', 'cambiar', 'numeros', 'volver', 'editar-parametros', 'guardar', 'descartar', 'duplicar', 'abrir-variante', 'variante-eliminada', 'estado', 'resolver'],
   data() {
     return {
       ETIQUETA_BLOQUEO, AYUDA_BLOQUEO, ROOF_LABEL, catalogo: null, error: null, cambiosPrecio: [], ordenVista: null,
@@ -239,6 +249,12 @@ export default {
     estado() { return this.presupuesto.state },
     remoto() { return this.presupuesto.remote },
     bloqueado() { return !!this.remoto && this.remoto.status !== 'borrador' },
+    // El inversor elegido (la primera fila de inversores): al cambiarlo se vuelven a calcular las unidades que hacen falta para los strings
+    claveInversor() {
+      if (!this.catalogo) return ''
+      const fila = this.estado.lines.find((l) => l.itemId && (this.catalogo.items.find((i) => i.id === l.itemId) || {}).category === 'inversores')
+      return fila ? fila.itemId : ''
+    },
     validado() { return !!this.remoto && this.remoto.status === 'validado' },
     revisando() { return !!this.remoto && this.remoto.status === 'enviado' },
     sucio() { return isDirty(this.presupuesto) },
@@ -264,9 +280,13 @@ export default {
     validado(v) { this.pestana = v ? 'propuesta' : 'presupuesto' },
     // Lo que enseña la lista de este presupuesto (potencia, paneles, importe)
     resumen(r) { if (r) this.$emit('numeros', { kwp: r.wp / 1000, panels: this.estado.moduleCount, total: r.budget }) },
-    'estado.moduleCount'() { if (this.resumen) this.$emit('numeros', { kwp: this.resumen.wp / 1000, panels: this.estado.moduleCount, total: this.resumen.budget }) },
+    'estado.moduleCount'() { this.ajustarInversores(); if (this.resumen) this.$emit('numeros', { kwp: this.resumen.wp / 1000, panels: this.estado.moduleCount, total: this.resumen.budget }) },
     // El borrador en curso sigue al catálogo: con cada versión nueva, sus filas toman los precios del inventario
-    catalogo() { this.seguirCatalogo() }
+    catalogo() { this.seguirCatalogo(); this.ajustarInversores() },
+    // Los inversores que hacen falta para los strings se asignan solos: al cambiar los strings, los paneles o el inversor elegido se suben las
+    // unidades hasta que haya entradas para todos (si se bajan a mano después, se respeta)
+    'estado.strings'() { this.ajustarInversores() },
+    claveInversor() { this.ajustarInversores() }
   },
   mounted() {
     this.cargarCatalogo()
@@ -280,6 +300,13 @@ export default {
     window.removeEventListener('focus', this.alVolver)
   },
   methods: {
+    productoDe(linea) { return linea.itemId && this.catalogo ? this.catalogo.items.find((i) => i.id === linea.itemId) || null : null },
+    ajustarInversores() {
+      if (!this.catalogo || this.bloqueado || !this.claveInversor) return
+      const ajustado = sizeInverters(this.estado, this.catalogo)
+      if (ajustado) this.$emit('cambiar', ajustado)
+    },
+    vaciarFilas() { if (window.confirm('Se quitarán todas las filas del presupuesto, de todos los pasos. ¿Continuar?')) this.cambiar({ lines: [] }) },
     eur, pct, ratio, lineName, lineTotal, effectiveQty, levelClass,
     // PDF del presupuesto en curso: el servidor lo maqueta (con costes y beneficio, o solo el precio de venta para el cliente). Con
     // incompatibilidades sin resolver no se puede exportar: un PDF con equipos que no casan entre sí no debe salir.

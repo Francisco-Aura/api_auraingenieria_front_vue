@@ -1,14 +1,15 @@
 <template>
   <div class="layout" :class="{ focus: creando }">
     <aside v-if="!creando" class="sidebar">
+      <button v-if="conVolver" type="button" class="link back-home" @click="$emit('volver')">← Volver a inicio</button>
       <h1>Proyectos</h1>
       <ul class="project-list">
         <li v-for="p in abiertos" :key="p.id" :class="{ active: p.id === seleccionadoId }">
-          <button type="button" class="link" @click="elegir(p.id)">{{ p.name }}</button>
+          <button type="button" class="link" @click="elegir(p.id)">{{ p.name }}<span v-if="!p.contract_generated_at && p.contract_generated_at !== undefined" class="pending-tag" title="Contrato pendiente de generar">contrato</span></button>
           <button type="button" class="icon-btn" title="Eliminar proyecto" @click="eliminando = p">×</button>
         </li>
         <li v-for="d in borradores" :key="d.id" class="draft-entry">
-          <button type="button" class="link" :title="'Seguir con el borrador (' + (d.updated_by || 'alguien') + ')'" @click="abrirBorrador(d.id)">📝 {{ d.name || 'Proyecto sin nombre' }} <span class="draft-tag">borrador</span></button>
+          <button type="button" class="link" :title="'Seguir con el borrador (' + (d.updated_by || 'alguien') + ', ' + horaBorrador(d.updated_at) + ')'" @click="abrirBorrador(d.id)">📝 {{ d.name || 'Proyecto sin nombre' }} <span class="draft-tag">borrador</span></button>
           <button type="button" class="icon-btn" title="Descartar el borrador" @click="descartarBorrador(d)">×</button>
         </li>
         <li v-if="proyectos.length === 0 && borradores.length === 0" class="muted empty">Aún no hay proyectos.</li>
@@ -22,7 +23,7 @@
         </button>
         <ul v-if="verTerminados || terminadoAbierto" class="project-list archived-list">
           <li v-for="p in terminados" :key="p.id" :class="{ active: p.id === seleccionadoId }">
-            <button type="button" class="link" @click="elegir(p.id)">{{ p.name }}</button>
+            <button type="button" class="link" @click="elegir(p.id)">{{ p.name }}<span v-if="!p.contract_generated_at && p.contract_generated_at !== undefined" class="pending-tag" title="Contrato pendiente de generar">contrato</span></button>
             <button type="button" class="icon-btn" title="Eliminar proyecto" @click="eliminando = p">×</button>
           </li>
         </ul>
@@ -37,7 +38,7 @@
       <p v-else-if="!seleccionado" class="muted">Selecciona un proyecto o crea uno nuevo.</p>
       <template v-else>
         <h1>{{ seleccionado.name }}</h1>
-        <p class="muted project-meta"><template v-if="seleccionado.start_date">Inicio: {{ seleccionado.start_date }}</template><template v-if="seleccionado.description"> · {{ seleccionado.description }}</template> · <button type="button" class="link-btn" @click="editandoProyecto = true">Editar datos</button></p>
+        <p class="muted project-meta"><template v-if="seleccionado.start_date">Inicio: {{ seleccionado.start_date }}</template><template v-if="seleccionado.description"> · {{ seleccionado.description }}</template></p>
 
         <carpeta-dropbox-component :key="'dbx-' + seleccionado.id" :proyecto="seleccionado" @cambiado="proyectoActualizado" />
         <contrato-proyecto-component :key="'ctr-' + seleccionado.id" :proyecto="seleccionado" :base="contrato ? contrato.baseline : {}" @actualizado="proyectoActualizado" />
@@ -88,10 +89,7 @@
 
         <actividad-component v-if="seccion === 'actividad'" :key="seleccionado.id" :proyecto-id="seleccionado.id" :refrescar="versionActividad" :tarea-ids="idsTareas" @abrir-tarea="abrirTarea" />
 
-        <div v-if="seccion === 'docs'" class="documents">
-          <p v-if="seleccionado.documents.length === 0" class="muted">Este proyecto no tiene documentos.</p>
-          <article v-for="(d, i) in seleccionado.documents" :key="i" class="doc-page"><h2>{{ d.title }}</h2><p class="descripcion-tarea">{{ d.body }}</p></article>
-        </div>
+        <documentos-proyecto v-if="seccion === 'docs'" :key="seleccionado.id" :documentos="seleccionado.documents" :al-guardar="guardarDocumentos" />
       </template>
     </main>
 
@@ -99,7 +97,7 @@
                            @revisar-cambios="revisarCambios" @seleccionar="seleccion = $event" @cerrar="seleccion = null" @cambiar="(id, c) => cambiarTarea(id, c)" @pedir-estado="pedirEstado" @eliminar="quitarTarea" />
 
     <editar-proyecto-modal v-if="editandoProyecto && seleccionado" :key="seleccionado.id" :proyecto="seleccionado" :campos="camposContrato" :base="contrato ? contrato.baseline : {}" :al-guardar="guardarDatosProyecto" @cerrar="editandoProyecto = false" />
-    <eliminar-proyecto-modal v-if="eliminando" :nombre="eliminando.name" :al-confirmar="() => quitarProyecto(eliminando)" @cerrar="eliminando = null" />
+    <eliminar-proyecto-modal v-if="eliminando" :nombre="eliminando.name" :en-dropbox="!!eliminando.dropbox_path" :al-confirmar="() => quitarProyecto(eliminando)" @cerrar="eliminando = null" />
     <dialogos-tarea v-if="dialogo && tareaDialogo" :tipo="dialogo.tipo" :tarea="tareaDialogo" :acciones="accionesDe(tareaDialogo.id)" :al-bloquear="alBloquear" :al-finalizar="alFinalizar" @cerrar="dialogo = null" />
   </div>
 </template>
@@ -123,11 +121,16 @@ import { todayStr } from '@/utils/planificador/tareas/fechas'
 import { levelOf, projectSlip } from '@/utils/planificador/tareas/retraso'
 import { moveBlockedReason } from '@/utils/planificador/tareas/flujo'
 import { projectLabelOf } from '@/utils/planificador/documentos/carpetas'
+import DocumentosProyecto from './DocumentosProyecto.vue'
+import { horaBorrador } from '@/utils/planificador/borradores'
 
 // Proyectos y tareas: lista de proyectos, alta con plantilla y borradores, tablero y lista de tareas con su panel, y actividad.
 export default {
   name: 'Proyectos-Component',
-  components: { NuevoProyectoComponent, ListaTareasComponent, TableroTareasComponent, CronogramaComponent, PanelTareaComponent, ActividadComponent, EliminarProyectoModal, DialogosTarea, CambiosComponent, EditarProyectoModal, CarpetaDropboxComponent, ContratoProyectoComponent },
+  // enlace: {proyecto, tarea} de un aviso de la intranet; con-volver: hay más herramientas y se puede volver al inicio
+  props: { enlace: { type: Object, default: null }, conVolver: { type: Boolean, default: false } },
+  emits: ['volver'],
+  components: { NuevoProyectoComponent, ListaTareasComponent, TableroTareasComponent, CronogramaComponent, PanelTareaComponent, ActividadComponent, EliminarProyectoModal, DialogosTarea, CambiosComponent, EditarProyectoModal, CarpetaDropboxComponent, ContratoProyectoComponent , DocumentosProyecto},
   data() {
     return {
       proyectos: [], plantillas: [], borradores: [], seleccionadoId: null, cargadasDe: null, tareas: [], seleccion: null, contrato: null, camposContrato: [], editandoProyecto: false, estadoDropbox: null,
@@ -152,14 +155,18 @@ export default {
     acciones() { return this.accionesDe(this.seleccion && this.seleccion.kind === 'task' ? this.seleccion.id : '') }
   },
   watch: {
+    seleccionadoId() { this.guardarDondeEstaba() },
+    seccion() { this.guardarDondeEstaba() },
+    vista() { this.guardarDondeEstaba() },
     // Si al aportar el último documento la tarea se cierra sola, el diálogo de finalizar ya no hace falta
     tareaDialogo(t) { if (t && this.dialogo && this.dialogo.tipo === 'finalize' && t.status === 'done') this.dialogo = null }
   },
   async mounted() {
     await this.ejecutar(async () => { this.proyectos = await planificadorApi.proyectos() })
+    await this.recuperarDondeEstaba()
     planificadorApi.dropboxEstado().then((e) => { this.estadoDropbox = e }, () => { this.estadoDropbox = { enabled: false, base: '' } })
     planificadorApi.camposContrato().then((c) => { this.camposContrato = c }, () => undefined)
-    planificadorApi.plantillas().then((p) => { this.plantillas = p }, () => { this.error = 'No se pudieron cargar las plantillas.' })
+    planificadorApi.plantillas().then((p) => { this.plantillas = p }, () => { this.error = 'No se pudieron cargar las plantillas. Es posible que el servidor se esté reiniciando: recarga la página (Ctrl+F5).' })
     this.cargarBorradores()
     this.alVolver = () => { if (document.visibilityState === 'visible') this.cargarBorradores() }
     document.addEventListener('visibilitychange', this.alVolver)
@@ -170,12 +177,29 @@ export default {
     window.removeEventListener('focus', this.alVolver)
   },
   methods: {
+    horaBorrador,
     levelOf,
     esTerminado(p) {
       return p.id === this.seleccionadoId && this.cargadasDe === p.id && this.tareas.length > 0 ? this.tareas.every((t) => t.status === 'done') : !!p.finished
     },
     async ejecutar(accion) {
       try { this.error = null; await accion() } catch (e) { this.error = mensajeError(e) }
+    },
+    // Un aviso de la intranet abre el proyecto y despliega la tarea; si no, se vuelve a donde se estaba antes de recargar
+    async recuperarDondeEstaba() {
+      let guardado = null
+      try { guardado = JSON.parse(sessionStorage.getItem('planificador:nav:proyectos') || 'null') } catch (e) { guardado = null }
+      const enlace = this.enlace && this.enlace.proyecto ? this.enlace : null
+      const id = enlace ? enlace.proyecto : guardado && guardado.seleccionadoId
+      if (!id || !this.proyectos.some((p) => p.id === id)) return
+      await this.elegir(id)
+      if (enlace) { if (enlace.tarea && this.tareas.some((t) => t.id === enlace.tarea)) this.abrirTarea(enlace.tarea) } else if (guardado) {
+        if (guardado.seccion) this.seccion = guardado.seccion
+        if (guardado.vista) this.vista = guardado.vista
+      }
+    },
+    guardarDondeEstaba() {
+      try { sessionStorage.setItem('planificador:nav:proyectos', JSON.stringify({ seleccionadoId: this.seleccionadoId, seccion: this.seccion, vista: this.vista })) } catch (e) { /* sin almacenamiento de sesión: se empieza sin proyecto abierto */ }
     },
     cargarBorradores() { planificadorApi.borradores().then((b) => { this.borradores = b }, () => undefined) },
     async elegir(id) {
@@ -202,6 +226,13 @@ export default {
       })
     },
     // Guarda los datos del proyecto y el contrato de referencia (recalcula importes y datos vigentes)
+    async guardarDocumentos(documentos) {
+      const id = this.seleccionadoId
+      await this.ejecutar(async () => {
+        const p = await planificadorApi.actualizarProyecto(id, { documents: documentos })
+        this.proyectos = this.proyectos.map((x) => (x.id === id ? p : x))
+      })
+    },
     async guardarDatosProyecto(datos) {
       const p = await planificadorApi.actualizarProyecto(this.seleccionadoId, datos)
       this.proyectos = this.proyectos.map((x) => (x.id === p.id ? p : x))

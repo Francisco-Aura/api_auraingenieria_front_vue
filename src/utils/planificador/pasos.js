@@ -67,12 +67,16 @@ export function pasoHecho(paso, state, catalogo) {
  * comprueban contra otro concreto. Devuelve el motivo si no se puede abrir el paso `indice`, o null.
  */
 export function motivoBloqueo(indice, state, catalogo) {
+  // Hasta el último paso en el que hay algo elegido todo está abierto (aunque se hayan vaciado pasos anteriores); a partir de ahí solo se
+  // puede dejar un paso sin elegir
+  const ultimoElegido = STEPS.reduce((ultimo, s, i) => (pasoHecho(s, state, catalogo) ? i : ultimo), -1)
+  if (indice <= ultimoElegido) return null
   const destino = STEPS[indice]
   const requerido = destino.requires ? STEPS.find((s) => s.key === destino.requires) : undefined
   if (requerido && !pasoHecho(requerido, state, catalogo)) {
     return `«${destino.title}» depende de «${requerido.title}»: elige antes algo allí para poder comprobar la compatibilidad.`
   }
-  const faltan = STEPS.slice(0, indice).filter((s) => !pasoHecho(s, state, catalogo))
+  const faltan = STEPS.slice(ultimoElegido + 1, indice)
   if (faltan.length > 1) return `Solo se puede saltar un paso y faltan por elegir: ${faltan.map((s) => `«${s.title}»`).join(', ')}.`
   return null
 }
