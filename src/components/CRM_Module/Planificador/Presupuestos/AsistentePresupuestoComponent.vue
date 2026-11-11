@@ -10,7 +10,7 @@
     <p v-if="aviso" class="step-note warn" role="alert">{{ aviso }}</p>
     <lista-presupuestos-component ref="lista" :con-volver="conVolver" @cerrar="$emit('cerrar')" @nuevo="vista = 'nuevo'" @abrir="(id) => abrir(id, true)" @abrir-local="(id) => abrir(id, false)" @duplicar="pedirDuplicado" />
   </div>
-  <duplicar-presupuesto-modal v-if="duplicando" :nombre="duplicando.nombre" :variante="duplicando.variante" @cerrar="duplicando = null" @confirmar="duplicar" />
+  <duplicar-presupuesto-modal v-if="duplicando" :nombre="duplicando.nombre" :variante="duplicando.variante" :como-inicial="duplicando.como" @cerrar="duplicando = null" @confirmar="duplicar" />
 </template>
 
 <script>
@@ -141,12 +141,14 @@ export default {
       this.volcar()
       this.duplicando = { ...datos, desdeEditor: false }
     },
-    duplicarActual() {
+    // `como` = 'variante' si se llega desde «+ Nueva variante» (sale marcada); desde «Duplicar», una copia
+    duplicarActual(como) {
       const w = this.trabajo
       if (!w) return
       this.volcar()
       this.duplicando = {
-        id: w.id, compartido: !!w.remote, variante: !!w.remote && w.remote.status !== 'descartado', nombre: budgetName(w.state), desdeEditor: true
+        id: w.id, compartido: !!w.remote, variante: !!w.remote && w.remote.status !== 'descartado', nombre: budgetName(w.state), desdeEditor: true,
+        como: como === 'variante' ? 'variante' : 'copia'
       }
     },
     // El estado del presupuesto que se duplica: el de la copia abierta, el de este navegador o el del servidor

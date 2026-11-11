@@ -11,7 +11,7 @@
     </div>
 
     <tira-variantes v-if="presupuesto.remote" :presupuesto-id="presupuesto.id" :refrescar="presupuesto.remote.status + '|' + estadoPropuesta"
-                    @abrir="$emit('abrir-variante', $event)" @nueva="$emit('duplicar')" @eliminada="$emit('variante-eliminada', $event)" />
+                    @abrir="$emit('abrir-variante', $event)" @nueva="$emit('duplicar', 'variante')" @eliminada="$emit('variante-eliminada', $event)" />
 
     <div v-if="validado" class="budget-tabs" role="tablist" aria-label="Secciones del presupuesto validado">
       <button type="button" role="tab" :aria-selected="pestana === 'propuesta'" :class="{ active: pestana === 'propuesta' }" @click="pestana = 'propuesta'">Propuesta al cliente</button>

@@ -48,10 +48,12 @@ export default {
   props: {
     nombre: { type: String, default: '' },
     // Un presupuesto compartido (no descartado) también se puede duplicar como variante de su oferta
-    variante: { type: Boolean, default: false }
+    variante: { type: Boolean, default: false },
+    // Lo que sale marcado: 'copia' (por defecto) o 'variante' (si se llega desde «+ Nueva variante»)
+    comoInicial: { type: String, default: 'copia' }
   },
   emits: ['cerrar', 'confirmar'],
-  data() { return { cliente: 'mismo', como: 'copia', nombreVariante: '' } },
+  data() { return { cliente: 'mismo', como: this.comoInicial, nombreVariante: '' } },
   methods: {
     confirmar() {
       const variante = this.variante && this.cliente === 'mismo' && this.como === 'variante'

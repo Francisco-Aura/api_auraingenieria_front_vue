@@ -87,7 +87,7 @@
                 <div class="row-actions">
                   <button type="button" class="secondary" :disabled="ocupado === it.row.id" @click="abrir(it.row)">Abrir</button>
                   <button type="button" class="secondary" :disabled="ocupado === it.row.id"
-                          :title="esVariantable(it.row) ? 'Crea una variante nueva (borrador) de la misma oferta' : 'Crea una copia local con la que puedes trabajar sin tocar el original'"
+                          title="Copia el presupuesto entero: eliges si con el mismo cliente u otro"
                           @click="duplicar(it.row)">Duplicar</button>
                   <button v-if="it.row.kind === 'local' || it.row.mine || !it.row.owner || admin" type="button" class="icon-btn trash" title="Eliminar"
                           :aria-label="'Eliminar ' + it.row.name" :disabled="ocupado === it.row.id" @click="eliminar(it.row)">
