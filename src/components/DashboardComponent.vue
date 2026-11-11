@@ -143,8 +143,9 @@ export default {
       return this.routes[this.$route.path] || 'Dashboard';
     },
     // Aplicaciones que se muestran dentro de la página (iframe) y gestionan su propio desplazamiento
+    // (el Registro horario ya no: es una pantalla de la intranet y se desplaza con la página)
     esAplicacionIncrustada() {
-      return ['/dashboard/planificador', '/dashboard/registro-horario'].includes(this.$route.path);
+      return ['/dashboard/planificador'].includes(this.$route.path);
     }
   },
   methods: {

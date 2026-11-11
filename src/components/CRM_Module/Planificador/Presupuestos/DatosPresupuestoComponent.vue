@@ -56,7 +56,7 @@
       <fieldset v-if="cuenta >= 1 && !sinStrings" class="setup-card">
         <legend>Strings</legend>
         <disenador-strings :estado="estadoStrings" :panel="ctxStrings && ctxStrings.panel" :inversor="ctxStrings && ctxStrings.inverter"
-                           :unidades="ctxStrings ? ctxStrings.units : 1" @cambio="v.strings = $event" />
+                           :unidades="ctxStrings ? ctxStrings.units : 1" :grupos="ctxStrings ? ctxStrings.groups : null" @cambio="v.strings = $event" />
       </fieldset>
 
       <fieldset class="setup-card">

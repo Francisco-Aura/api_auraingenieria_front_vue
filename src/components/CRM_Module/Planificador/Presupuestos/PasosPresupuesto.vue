@@ -79,7 +79,7 @@
             <p v-if="plan" class="step-note info">Strings: de <strong>{{ plan.min }}</strong> a <strong>{{ plan.max }}</strong> paneles en serie (con el voltaje de invierno incluido).</p>
             <p v-else class="muted">Sin datos técnicos suficientes de este panel o inversor para comprobar las tensiones de los strings: puedes repartirlos igualmente.</p>
             <template v-if="plan && plan.length === null"><p v-for="t in plan.problems" :key="t" class="step-note warn">{{ t }}</p></template>
-            <disenador-strings inicio-plegado :estado="estado" :panel="panel" :inversor="inversor" :unidades="unidadesInversor" @cambio="$emit('cambiar', { strings: $event })" />
+            <disenador-strings inicio-plegado :estado="estado" :panel="panel" :inversor="inversor" :unidades="unidadesInversor" :grupos="gruposInversores" @cambio="$emit('cambiar', { strings: $event })" />
           </template>
           <p v-else class="muted">{{ conStrings ? 'Elige un panel para diseñar los strings.' : 'Con microinversores u optimizadores no hay strings: cada panel va a su unidad.' }}</p>
           <p class="muted">Comprueba siempre los límites con la ficha del fabricante.</p>
@@ -152,7 +152,7 @@ import SeccionCatalogo from './SeccionCatalogo.vue'
 import DisenadorStrings from './DisenadorStrings.vue'
 import { CABLE_MARGIN, ROOF_LABEL, STEPS, panelCount, stringPlan, withMargin } from '@/utils/planificador/motor/pasosConfig'
 import { FUSES_PER_STRING, fuseCoverage } from '@/utils/planificador/motor/protecciones'
-import { issuesByItem } from '@/utils/planificador/motor/compatibilidad'
+import { issuesByItem, stringContext } from '@/utils/planificador/motor/compatibilidad'
 import {
   conflictosDelPaso, contarPaso, contarSeccion, elegidos, filtroPorDefecto, guardarPaso, inversoresCompatibles, motivoBloqueo, pasoGuardado, pasoHecho,
   resumenStrings, sugeridosDelPaso, unidadesDeInversor
@@ -190,6 +190,8 @@ export default {
     kwInversor() { return this.inversor ? Number(this.inversor.attrs.potencia_kw) : 0 },
     relacion() { return this.kwInversor > 0 ? this.kwpPaneles / this.kwInversor : 0 },
     unidadesInversor() { return unidadesDeInversor(this.estado, this.inversor) },
+    // Todos los modelos de inversor de strings elegidos, con sus unidades (para comprobar los strings contra cada uno)
+    gruposInversores() { const c = stringContext(this.estado, this.catalogo); return c ? c.groups : null },
     // Con microinversores u optimizadores no hay strings
     conStrings() { return !!this.inversor && !['Microinversor', 'Optimizador'].includes(String(this.inversor.attrs.tipo ?? '')) },
     plan() { return this.panel && this.inversor ? stringPlan(this.panel, this.inversor, this.estado.moduleCount, this.unidadesInversor) : null },

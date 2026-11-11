@@ -73,7 +73,19 @@ export function stringContext(state, catalog) {
     if (!panel || !inverter)
         return null;
     const units = Math.max(1, central.filter((e) => e.item.id === inverter.id).reduce((s, e) => s + e.qty, 0));
-    return { panel, inverter, units, moduleCount: state.moduleCount };
+    return { panel, inverter, units, groups: inverterGroupsOf(central), moduleCount: state.moduleCount };
+}
+/** Los modelos de inversor de strings del presupuesto con sus unidades, en el orden de las filas (varios modelos = entradas seguidas). */
+function inverterGroupsOf(central) {
+    const groups = [];
+    for (const e of central) {
+        const g = groups.find((x) => x.item.id === e.item.id);
+        if (g)
+            g.units += e.qty;
+        else
+            groups.push({ item: e.item, units: e.qty });
+    }
+    return groups.map((g) => ({ item: g.item, units: Math.max(1, g.units) }));
 }
 /**
  * Con strings repartidos y un inversor de strings con su panel: si las entradas de los inversores que hay no bastan, sube las
@@ -83,6 +95,9 @@ export function stringContext(state, catalog) {
 export function sizeInverters(state, catalog) {
     const ctx = stringContext(state, catalog);
     if (!ctx || !state.strings || state.strings.length === 0 || state.moduleCount <= 0)
+        return null;
+    // Con varios modelos de inversor ya elegidos a mano, no se ajustan unidades solas: es una combinación decidida por quien presupuesta
+    if (ctx.groups.length > 1)
         return null;
     const fit = fitStrings(state.strings, ctx.panel, ctx.inverter, state.moduleCount);
     if (!fit || fit.units <= ctx.units)
@@ -149,10 +164,20 @@ export function checkCompatibility(state, catalog) {
         else if (panel && inverter) {
             // Se comprueba el diseño que se ha creado (si todavía no hay strings, no hay nada que comprobar): tensiones, entradas,
             // corrientes y que sumen los paneles
-            const ctx = { panel, inverter, units: inverterUnits, moduleCount: n };
+            // Con varios modelos de inversor, las entradas se cuentan entre todos y cada string se comprueba con el de su entrada
+            const groups = inverterGroupsOf(central);
+            for (const g of groups.slice(1)) {
+                const other = stringPlan(panel, g.item, n, g.units);
+                if (other && other.length === null) {
+                    const e = central.find((c) => c.item.id === g.item.id);
+                    for (const p of other.problems)
+                        add('error', `strings-imposible|${p}`, 'inversor', `${names(modules)} con ${name(e)}: ${p}`, modules, [e]);
+                }
+            }
+            const ctx = { panel, inverter, units: inverterUnits, groups, moduleCount: n };
             const report = state.strings ? analyzeStrings(state.strings, ctx) : null;
             for (const p of report ? reportProblems(report) : [])
-                add('error', `strings-diseno|${p}`, 'inversor', `${names(modules)} con ${name(central[0])}: ${p}`, modules, [central[0]]);
+                add('error', `strings-diseno|${p}`, 'inversor', `${names(modules)} con ${groups.length > 1 ? names(central) : name(central[0])}: ${p}`, modules, groups.length > 1 ? central : [central[0]]);
         }
     }
     // Potencia: la de los paneles frente a la del inversor
