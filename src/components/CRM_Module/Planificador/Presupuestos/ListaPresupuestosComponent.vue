@@ -87,7 +87,7 @@
                 <div class="row-actions">
                   <button type="button" class="secondary" :disabled="ocupado === it.row.id" @click="abrir(it.row)">Abrir</button>
                   <button type="button" class="secondary" :disabled="ocupado === it.row.id"
-                          :title="esVariantable(it.row) ? 'Crea una variante nueva (borrador) de la misma oferta' : 'Crea una copia local con la que puedes trabajar sin tocar el original'"
+                          title="Copia el presupuesto entero: eliges si con el mismo cliente u otro"
                           @click="duplicar(it.row)">Duplicar</button>
                   <button v-if="it.row.kind === 'local' || it.row.mine || !it.row.owner || admin" type="button" class="icon-btn trash" title="Eliminar"
                           :aria-label="'Eliminar ' + it.row.name" :disabled="ocupado === it.row.id" @click="eliminar(it.row)">
@@ -128,9 +128,9 @@ const COLUMNAS = [
 // borradores compartidos (guardados en el servidor, visibles para todos los usuarios de la intranet).
 export default {
   name: 'Lista-Presupuestos-Component',
-  // abrir: un compartido (se ve su detalle) o un local (lo abre el asistente); duplicar-local: copia local para el asistente
+  // abrir: un compartido (se ve su detalle) o un local (lo abre el asistente); duplicar: lo hace el asistente
   props: { conVolver: { type: Boolean, default: false } },
-  emits: ['nuevo', 'abrir', 'abrir-local', 'duplicar-local', 'cerrar'],
+  emits: ['nuevo', 'abrir', 'abrir-local', 'duplicar', 'cerrar'],
   data() {
     return {
       COLUMNAS, remotos: null, errorServidor: null, version: 0, mensaje: null, ocupado: null, consulta: '', filtro: 'todos',
@@ -201,17 +201,14 @@ export default {
       if (fila.kind === 'local') this.$emit('abrir-local', fila.id)
       else this.$emit('abrir', fila.id)
     },
+    // El asistente pregunta cómo duplicar (mismo cliente u otro) y lo hace; después llama a refrescar()
     duplicar(fila) {
-      if (!esVariantable(fila)) { this.$emit('duplicar-local', { id: fila.id, compartido: fila.kind !== 'local' }); return }
-      this.ejecutar(fila.id, async () => {
-        try {
-          const nueva = await planificadorApi.variantePresupuesto(fila.id)
-          this.$emit('abrir', nueva.id)
-          return null
-        } catch (e) {
-          return mensajeError(e)
-        }
-      })
+      this.$emit('duplicar', { id: fila.id, compartido: fila.kind !== 'local', variante: esVariantable(fila), nombre: fila.name })
+    },
+    // Vuelve a leer los presupuestos locales y los del servidor (tras crear uno desde fuera de la lista)
+    refrescar() {
+      this.version += 1
+      this.cargar()
     },
     eliminar(fila) {
       const compartido = fila.kind !== 'local'

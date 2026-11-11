@@ -1923,8 +1923,14 @@ th .sort-btn.on .sort-icon {
   color: #15803d;
 }
 
-.string-total.bad {
+.string-total.bad,
+.string-range.bad {
   color: #b91c1c;
+}
+
+.string-range {
+  margin: -4px 0 10px;
+  font-size: 0.9rem;
 }
 
 .string-problems {

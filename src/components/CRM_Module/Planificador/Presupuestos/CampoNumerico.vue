@@ -1,7 +1,7 @@
 <template>
   <span class="num-field">
     <input :class="clase" inputmode="decimal" :aria-label="etiqueta" :value="texto === null ? String(modelValue).replace('.', ',') : texto"
-           @input="escribir" @keydown="teclas" @blur="texto = null">
+           @input="escribir" @keydown="teclas" @blur="salir">
     <!-- Solo para el ratón: con teclado se usan las flechas del propio campo. -->
     <span class="steppers" aria-hidden="true">
       <button type="button" tabindex="-1" @mousedown.prevent @click="subir(1, $event)">▲</button>
@@ -27,9 +27,14 @@ export default {
     // Cuánto suben o bajan las flechas cuando el valor no tiene decimales
     paso: { type: Number, default: 1 }
   },
-  emits: ['update:modelValue'],
+  // «fin»: el usuario ha terminado de poner el valor (sale del campo o usa las flechas); para quien quiera corregirlo entonces
+  emits: ['update:modelValue', 'fin'],
   data() { return { texto: null } },
   methods: {
+    salir() {
+      this.texto = null
+      this.$emit('fin')
+    },
     escribir(e) {
       this.texto = e.target.value
       const n = Number(e.target.value.replace(',', '.'))
@@ -50,6 +55,7 @@ export default {
       const unidad = base * (mods.ctrlKey || mods.metaKey ? 100 : mods.shiftKey ? 10 : 1)
       this.texto = null
       this.$emit('update:modelValue', Math.max(0, redondear(desde + dir * unidad)))
+      this.$emit('fin')
     }
   }
 }

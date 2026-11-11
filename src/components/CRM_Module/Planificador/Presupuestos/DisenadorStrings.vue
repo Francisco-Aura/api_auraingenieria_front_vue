@@ -29,8 +29,15 @@
 
     <label class="string-count">
       ¿Cuántos strings quieres crear?
-      <campo-numerico :model-value="diseno.length" etiqueta="Número de strings" @update:model-value="fijarCantidad" />
+      <campo-numerico :model-value="diseno.length" etiqueta="Número de strings" @update:model-value="fijarCantidad" @fin="ajustarCantidad" />
     </label>
+    <p v-if="rango" class="string-range muted" :class="{ bad: fueraDeRango }" role="status">
+      Con {{ fmt(rango.total) }} paneles hacen falta entre <strong>{{ rango.min }}</strong> y <strong>{{ rango.max }}</strong> strings
+      (de {{ rango.perMin }} a {{ rango.perMax }} paneles cada uno).
+    </p>
+    <p v-else-if="objetivo > 0" class="string-range bad" role="status">
+      Con {{ fmt(objetivo) }} paneles no se puede formar ningún string válido: revisa los paneles del presupuesto.
+    </p>
 
     <div class="strings-wrap">
       <table class="strings-table">
@@ -103,7 +110,7 @@
         <button v-if="sinAsignar && ctx" type="button" class="secondary" title="Reparte los strings entre las entradas del inversor, sin cambiar sus paneles" @click="$emit('cambio', assignInputs(diseno, totalInputs(ctx)))">Asignar entradas</button>
         <button v-if="hayProblemas && ctx" type="button" class="secondary" title="Cambia los strings por unos que valgan para este panel y este inversor" @click="$emit('cambio', autoStrings(ctx))">Proponer strings para este inversor</button>
         <button type="button" class="secondary" :disabled="!creado || !cambiaReparto" title="Reparte los paneles por igual entre los strings que hay, sin cambiar cuántos son" @click="$emit('cambio', reparto)">Repartir automáticamente</button>
-        <button type="button" class="secondary" @click="anadir">+ Añadir string</button>
+        <button type="button" class="secondary" :disabled="rango && diseno.length >= rango.max" :title="rango && diseno.length >= rango.max ? 'Ya hay el máximo de strings: ' + rango.max : undefined" @click="anadir">+ Añadir string</button>
       </div>
     </footer>
 
@@ -123,7 +130,7 @@ import CampoNumerico from './CampoNumerico.vue'
 import { MAX_STRING_PANELS, MIN_STRING_PANELS } from '@/utils/planificador/motor/pasosConfig'
 import {
   analyzeStrings, assignInputs, autoStrings, clampTotals, createStrings, inputOwner, newStringId, spreadPanels, spreadStrings, totalInputs
-, isMissingInput, missingInputsProblem } from '@/utils/planificador/motor/strings'
+, groupStringProblems, isMissingInput, missingInputsProblem, stringCountRange } from '@/utils/planificador/motor/strings'
 
 // Diseño de los strings del presupuesto: cuántos hay y cuántos paneles lleva cada uno. Mientras no hay inversor elegido es libre;
 // al elegir panel e inversor cada string se comprueba contra ellos (tensiones), se le asigna una entrada y cada entrada se comprueba
@@ -169,14 +176,18 @@ export default {
     // Sin inversor no se comprueban tensiones, pero el máximo y el mínimo de paneles por string valen siempre
     demasiado() {
       if (this.informe) return []
-      return this.diseno.flatMap((s, i) => {
-        if (s.panels > MAX_STRING_PANELS) return ['String ' + (i + 1) + ': no puede llevar más de ' + MAX_STRING_PANELS + ' paneles (lleva ' + s.panels + ').']
-        if (s.panels > 0 && s.panels < MIN_STRING_PANELS) return ['String ' + (i + 1) + ': no puede llevar menos de ' + MIN_STRING_PANELS + ' paneles (lleva ' + s.panels + ').']
+      return groupStringProblems(this.diseno.flatMap((s, i) => {
+        if (s.panels > MAX_STRING_PANELS) return [{ n: i + 1, text: 'Un string no puede llevar más de ' + MAX_STRING_PANELS + ' paneles y este lleva ' + s.panels + '.' }]
+        if (s.panels > 0 && s.panels < MIN_STRING_PANELS) return [{ n: i + 1, text: 'Un string no puede llevar menos de ' + MIN_STRING_PANELS + ' paneles y este lleva ' + s.panels + '.' }]
         return []
-      })
+      }))
     },
     otrosProblemas() { return [...this.problemasInforme, ...this.demasiado] },
-    problemasDeStrings() { return this.informe.strings.flatMap((s, i) => s.problems.filter((m) => !isMissingInput(m)).map((m) => 'String ' + (i + 1) + ': ' + m)) },
+    // Los avisos iguales de varios strings se juntan en uno («Strings 1 a 5: …»)
+    problemasDeStrings() { return groupStringProblems(this.informe.strings.flatMap((s, i) => s.problems.filter((m) => !isMissingInput(m)).map((m) => ({ n: i + 1, text: m })))) },
+    // Cuántos strings caben con estos paneles (y, con inversor, con los límites de tensión de ese panel y ese inversor)
+    rango() { return stringCountRange(this.objetivo, this.informe ? this.informe.limits : null) },
+    fueraDeRango() { return !!this.rango && this.creado && (this.diseno.length < this.rango.min || this.diseno.length > this.rango.max) },
     hayProblemas() { return !!this.informe && (this.problemasInforme.length > 0 || this.informe.strings.some((s) => s.problems.length > 0)) },
     textoEntradas() {
       return ((this.informe && this.informe.inputs) || []).map((i) => {
@@ -214,10 +225,16 @@ export default {
     quitarN(s) { return this.faltan < 0 ? Math.min(-this.faltan, Math.max(0, s.panels - 1)) : 0 },
     cambiar(id, cambios) { this.$emit('cambio', this.diseno.map((s) => (s.id === id ? { ...s, ...cambios } : s))) },
     quitar(id) { this.$emit('cambio', this.diseno.filter((s) => s.id !== id)) },
-    fijarCantidad(n) {
-      const cuantos = Math.min(Math.max(0, Math.round(n)), 60)
+    // Mientras se escribe solo se tapa por arriba (un «1» camino del «17» no se puede corregir aún); al salir del campo, o con las
+    // flechas, también por abajo: no se puede dejar un número de strings con el que sobran paneles por string.
+    fijarCantidad(n, ajustar = false) {
+      const tope = this.rango ? this.rango.max : 60
+      let cuantos = Math.min(Math.max(0, Math.round(n)), tope)
+      if (ajustar && this.rango && cuantos > 0) cuantos = Math.max(cuantos, this.rango.min)
+      if (cuantos === this.diseno.length) return
       this.$emit('cambio', cuantos === 0 ? null : createStrings(cuantos, this.diseno, this.estado.moduleCount, this.ctx))
     },
+    ajustarCantidad() { this.$nextTick(() => { if (this.creado) this.fijarCantidad(this.diseno.length, true) }) },
     anadir() {
       const usadas = new Set(this.diseno.map((s) => s.input))
       const libre = this.ctx ? Array.from({ length: totalInputs(this.ctx) }, (_, i) => i + 1).find((k) => !usadas.has(k)) || 0 : 0

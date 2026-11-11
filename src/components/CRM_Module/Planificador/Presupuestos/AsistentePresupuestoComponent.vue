@@ -8,14 +8,16 @@
   />
   <div v-else>
     <p v-if="aviso" class="step-note warn" role="alert">{{ aviso }}</p>
-    <lista-presupuestos-component :con-volver="conVolver" @cerrar="$emit('cerrar')" @nuevo="vista = 'nuevo'" @abrir="(id) => abrir(id, true)" @abrir-local="(id) => abrir(id, false)" @duplicar-local="duplicarDesdeLista" />
+    <lista-presupuestos-component ref="lista" :con-volver="conVolver" @cerrar="$emit('cerrar')" @nuevo="vista = 'nuevo'" @abrir="(id) => abrir(id, true)" @abrir-local="(id) => abrir(id, false)" @duplicar="pedirDuplicado" />
   </div>
+  <duplicar-presupuesto-modal v-if="duplicando" :nombre="duplicando.nombre" :variante="duplicando.variante" :como-inicial="duplicando.como" @cerrar="duplicando = null" @confirmar="duplicar" />
 </template>
 
 <script>
 import ListaPresupuestosComponent from './ListaPresupuestosComponent.vue'
 import DatosPresupuestoComponent from './DatosPresupuestoComponent.vue'
 import EditorPresupuestoComponent from './EditorPresupuestoComponent.vue'
+import DuplicarPresupuestoModal from './DuplicarPresupuestoModal.vue'
 import { planificadorApi, mensajeError } from '@/services/planificadorApi'
 import { parseCosts } from '@/utils/planificador/motor/costes'
 import {
@@ -32,9 +34,10 @@ export default {
   name: 'Asistente-Presupuesto-Component',
   props: { conVolver: { type: Boolean, default: false }, conInventario: { type: Boolean, default: false } },
   emits: ['cerrar', 'abrir-inventario'],
-  components: { ListaPresupuestosComponent, DatosPresupuestoComponent, EditorPresupuestoComponent },
+  components: { ListaPresupuestosComponent, DatosPresupuestoComponent, EditorPresupuestoComponent, DuplicarPresupuestoModal },
   data() {
-    return { vista: 'lista', trabajo: null, guardando: false, errorGuardar: null, conflicto: null, aviso: '' }
+    // duplicando: el presupuesto que se está duplicando mientras se elige el cliente de la copia
+    return { vista: 'lista', trabajo: null, guardando: false, errorGuardar: null, conflicto: null, aviso: '', duplicando: null }
   },
   mounted() {
     this.temporizador = null
@@ -133,39 +136,60 @@ export default {
       try { nombres.push(...(await planificadorApi.presupuestos()).map((b) => b.name)) } catch (e) { /* sin servidor: solo los de este navegador */ }
       return nombres
     },
-    async duplicarDesdeLista({ id, compartido }) {
+    // Duplicar (desde la lista o desde el editor): primero se pregunta si la copia lleva el mismo cliente o uno nuevo
+    pedirDuplicado(datos) {
       this.volcar()
-      let estado
-      if (compartido) {
-        try { estado = parseCosts((await planificadorApi.presupuesto(id)).data) } catch (e) { this.aviso = 'No se ha podido duplicar: ' + mensajeError(e); return }
-      } else {
-        const local = getLocal(id)
-        if (!local) { this.aviso = 'Este presupuesto ya no está en este navegador.'; return }
-        estado = local.state
-      }
-      putLocal(copyOf(estado, await this.nombresTomados()))
-      this.$forceUpdate()
-      this.vista = 'lista'
+      this.duplicando = { ...datos, desdeEditor: false }
     },
-    // Un presupuesto compartido se duplica como variante de su oferta (en el servidor); uno local, como copia local
-    async duplicarActual() {
+    // `como` = 'variante' si se llega desde «+ Nueva variante» (sale marcada); desde «Duplicar», una copia
+    duplicarActual(como) {
       const w = this.trabajo
       if (!w) return
       this.volcar()
-      if (w.remote && w.remote.status !== 'descartado') {
-        // El nombre es opcional: vacío = «Versión N»; cancelar no crea nada
-        const nombre = window.prompt('Nombre de la nueva variante (opcional).\nSi lo dejas vacío se llamará «Versión N».')
-        if (nombre === null) return
-        try {
-          const v = await planificadorApi.variantePresupuesto(w.id, nombre.trim())
-          const problema = await this.abrirPresupuesto(v.id, true)
-          if (problema) this.errorGuardar = problema
-        } catch (e) {
-          this.errorGuardar = 'No se ha podido crear la variante: ' + mensajeError(e)
-        }
-        return
+      this.duplicando = {
+        id: w.id, compartido: !!w.remote, variante: !!w.remote && w.remote.status !== 'descartado', nombre: budgetName(w.state), desdeEditor: true,
+        como: como === 'variante' ? 'variante' : 'copia'
       }
-      this.entrar(copyOf(w.state, await this.nombresTomados()))
+    },
+    // El estado del presupuesto que se duplica: el de la copia abierta, el de este navegador o el del servidor
+    async estadoParaDuplicar({ id, compartido, desdeEditor }) {
+      if (desdeEditor && this.trabajo) return this.trabajo.state
+      if (compartido) return parseCosts((await planificadorApi.presupuesto(id)).data)
+      const local = getLocal(id)
+      if (!local) throw new Error('Este presupuesto ya no está en este navegador.')
+      return local.state
+    },
+    // Por defecto es una copia local entera (con el mismo cliente o sin él, para elegir otro en «Parámetros»); solo si se pide
+    // expresamente, un compartido se duplica como variante de su oferta (en el servidor)
+    async duplicar({ cliente, variante, nombre }) {
+      const d = this.duplicando
+      this.duplicando = null
+      if (!d) return
+      const problema = (texto) => { if (d.desdeEditor) this.errorGuardar = texto; else this.aviso = texto }
+      this.aviso = ''
+      try {
+        if (variante && d.variante) {
+          const v = await planificadorApi.variantePresupuesto(d.id, nombre)
+          const fallo = await this.abrirPresupuesto(v.id, true)
+          if (fallo) problema(fallo)
+          return
+        }
+        const estado = await this.estadoParaDuplicar(d)
+        const copia = copyOf(estado, await this.nombresTomados(), cliente === 'otro')
+        if (cliente === 'otro') {
+          this.entrar(copia)
+          this.vista = 'parametros'
+        } else if (d.desdeEditor) {
+          this.entrar(copia)
+        } else {
+          putLocal(copia)
+          this.volverALista()
+          // La lista ya está montada: hay que decirle que vuelva a leer (si no, la copia no sale hasta recargar la página)
+          this.$nextTick(() => { if (this.$refs.lista) this.$refs.lista.refrescar() })
+        }
+      } catch (e) {
+        problema('No se ha podido duplicar: ' + mensajeError(e))
+      }
     },
     // Elimina la variante abierta (la tira ya la ha borrado en el servidor) y abre otra de su oferta
     async varianteEliminada(siguienteId) {
