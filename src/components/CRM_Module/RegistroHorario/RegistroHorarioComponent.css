@@ -87,7 +87,8 @@ html.tema-oscuro .registro-horario {
 .registro-horario h2 { font-size: 17px; }
 .registro-horario h3 { font-size: 14px; }
 .registro-horario p { margin: 0; }
-.registro-horario button, .registro-horario input, .registro-horario select { font: inherit; color: inherit; }
+/* :where() no suma prioridad: así «color: inherit» no pisa el color propio de .rh-btn-primario (texto negro sobre amarillo) */
+.registro-horario :where(button, input, select) { font: inherit; color: inherit; }
 .registro-horario button { cursor: pointer; }
 .registro-horario :focus-visible { outline: 2px solid var(--rh-foco); outline-offset: 2px; }
 
