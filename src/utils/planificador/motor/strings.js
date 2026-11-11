@@ -268,13 +268,70 @@ export function missingInputsProblem(report) {
     const last = Math.max(...report.strings.map((s) => s.input));
     return `${lost.length} string${lost.length === 1 ? '' : 's'} (${lost.length > 6 ? `del ${lost[0]} al ${lost[lost.length - 1]}` : lost.join(', ')}) van a entradas que no existen: hay ${report.inputsAvailable} entrada${report.inputsAvailable === 1 ? '' : 's'} y usan hasta la ${last}. Faltan inversores.`;
 }
-/** Todos los problemas de un diseño, cada uno con el string o la entrada a la que se refiere. */
+/** «1», «1 y 2», «1 a 5», «1 a 5 y 7»: los números de string de un aviso, juntando los seguidos. */
+function stringNumbers(nums) {
+    const parts = [];
+    for (let i = 0; i < nums.length;) {
+        let j = i;
+        while (j + 1 < nums.length && nums[j + 1] === nums[j] + 1)
+            j++;
+        if (j - i >= 2)
+            parts.push(`${nums[i]} a ${nums[j]}`);
+        else
+            for (let k = i; k <= j; k++)
+                parts.push(String(nums[k]));
+        i = j + 1;
+    }
+    return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} y ${parts[parts.length - 1]}` : parts[0];
+}
+/**
+ * Junta los avisos iguales de varios strings en uno solo («Strings 1 a 5: no pueden llevar más de 20 paneles (llevan de 65 a 66)»):
+ * con muchos strings casi iguales salían decenas de líneas repetidas. `entries` son { n: número de string, text: aviso de analyzeStrings }.
+ */
+export function groupStringProblems(entries) {
+    const limit = /^Un string no puede llevar (más|menos) de (\d+) paneles y este lleva (\d+)\.$/;
+    const groups = new Map();
+    for (const { n, text } of entries) {
+        const m = limit.exec(text);
+        const key = m ? `${m[1]}-${m[2]}` : text;
+        const group = groups.get(key) ?? { nums: [], counts: [], m, text };
+        group.nums.push(n);
+        if (m)
+            group.counts.push(Number(m[3]));
+        groups.set(key, group);
+    }
+    return [...groups.values()].map(({ nums, counts, m, text }) => {
+        if (m) {
+            const lo = Math.min(...counts);
+            const hi = Math.max(...counts);
+            if (nums.length === 1)
+                return `String ${nums[0]}: no puede llevar ${m[1]} de ${m[2]} paneles (lleva ${lo}).`;
+            return `Strings ${stringNumbers(nums)}: no pueden llevar ${m[1]} de ${m[2]} paneles (llevan ${lo === hi ? lo : `de ${lo} a ${hi}`}).`;
+        }
+        return `${nums.length === 1 ? 'String' : 'Strings'} ${stringNumbers(nums)}: ${text}`;
+    });
+}
+/**
+ * Cuántos strings se pueden crear con los paneles del presupuesto: con `limits` (paneles mínimos y máximos por string con ese panel y
+ * ese inversor) o con los generales (4 a 20). null si con tan pocos paneles no hay ningún reparto posible.
+ */
+export function stringCountRange(moduleCount, limits) {
+    const total = Math.round(moduleCount);
+    const perMin = Math.max(MIN_STRING_PANELS, limits?.min ?? MIN_STRING_PANELS);
+    const perMax = Math.min(MAX_STRING_PANELS, limits?.max ?? MAX_STRING_PANELS);
+    if (!(total > 0) || perMin > perMax)
+        return null;
+    const min = Math.ceil(total / perMax);
+    const max = Math.floor(total / perMin);
+    return min >= 1 && min <= max ? { min, max, perMin, perMax, total } : null;
+}
+/** Todos los problemas de un diseño, cada uno con el string o la entrada a la que se refiere (los iguales, juntos). */
 export function reportProblems(report) {
     const missing = missingInputsProblem(report);
     return [
         ...report.problems,
         ...(missing ? [missing] : []),
-        ...report.strings.flatMap((s, i) => s.problems.filter((m) => !isMissingInput(m)).map((m) => `String ${i + 1}: ${m}`)),
+        ...groupStringProblems(report.strings.flatMap((s, i) => s.problems.filter((m) => !isMissingInput(m)).map((m) => ({ n: i + 1, text: m })))),
         ...report.inputs.flatMap((i) => i.problems),
     ];
 }
