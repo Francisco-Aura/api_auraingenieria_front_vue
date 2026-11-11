@@ -58,6 +58,7 @@ export function aplicarValores(base, v) {
 export function problemasDe(v, count) {
   const problemas = []
   if (!v.customer) problemas.push('Elige el cliente del presupuesto: uno existente o un cliente potencial nuevo.')
+  if (!v.reference.trim()) problemas.push('Escribe el nombre del proyecto (por ejemplo «Nave 2»): con el cliente identifica a qué proyecto pertenece el presupuesto.')
   if (!(v.targetKwp > 0)) problemas.push('Indica la potencia que se quiere instalar (kWp).')
   if (!(v.moduleWp > 0)) problemas.push('Indica la potencia de cada panel (Wp).')
   if (!(count >= 1)) problemas.push('El presupuesto necesita al menos un panel.')

@@ -129,7 +129,7 @@
       <seccion-catalogo
         v-for="sec in paso.sections" :key="sec.id" :seccion="sec" :catalogo="catalogo" :estado="estado" :filtro-defecto="filtroPorDefecto(sec, s)" :inversor="inversor || null"
         :avisos="avisosPorProducto" :conflictos="conflictos" :sugeridos="sugeridos.get(sec.id) || []"
-        @anadir="$emit('anadir', $event)" @quitar="$emit('quitar', $event)" @ficha="$emit('ficha', $event)"
+        @anadir="$emit('anadir', $event)" @quitar="$emit('quitar', $event)" @ficha="$emit('ficha', $event)" @editar="$emit('editar', $event)"
       />
 
       <!-- Siempre a la vista: se elige y se sigue sin volver a subir a la barra de pasos -->
@@ -173,7 +173,7 @@ export default {
     // Para recordar el paso de cada presupuesto por separado
     presupuestoId: { type: String, required: true }
   },
-  emits: ['cambiar', 'anadir', 'quitar', 'ficha', 'editar-parametros'],
+  emits: ['cambiar', 'anadir', 'quitar', 'ficha', 'editar', 'editar-parametros'],
   data() {
     return {
       STEPS, ROOF_LABEL, SUMINISTRO, CABLE_MARGIN, FUSES_PER_STRING, actual: 0, seccionActiva: '', listo: false

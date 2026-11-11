@@ -156,8 +156,8 @@
     </form>
 
     <template #pie>
-      <button v-if="!creando" type="button" class="secondary" :disabled="bloqueado" title="Crea un producto nuevo con estos mismos datos para cambiar lo que haga falta" @click="duplicar">Duplicar</button>
-      <button v-if="!creando" type="button" class="secondary danger" :disabled="bloqueado" @click="quitar">Quitar del inventario</button>
+      <button v-if="!creando && !sencilla" type="button" class="secondary" :disabled="bloqueado" title="Crea un producto nuevo con estos mismos datos para cambiar lo que haga falta" @click="duplicar">Duplicar</button>
+      <button v-if="!creando && !sencilla" type="button" class="secondary danger" :disabled="bloqueado" @click="quitar">Quitar del inventario</button>
       <span v-if="problema && cambiado" class="plan-problem inv-problem">{{ problema }}</span>
       <span v-if="error" class="plan-problem inv-problem">{{ error }}</span>
       <button type="button" class="secondary" @click="cerrar">Cancelar</button>
@@ -189,6 +189,8 @@ export default {
     copia: { type: Object, default: null },
     marcas: { type: Array, default: () => [] },
     proveedores: { type: Array, default: () => [] },
+    // Abierta desde el presupuestador: solo se edita (sin duplicar ni quitar del inventario)
+    sencilla: { type: Boolean, default: false },
     ocupado: { type: Boolean, default: false }
   },
   emits: ['cerrar', 'guardado', 'borrado', 'revisar', 'duplicar', 'recargar'],

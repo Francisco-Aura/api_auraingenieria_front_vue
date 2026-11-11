@@ -1,6 +1,6 @@
 import { effectiveQty, isPerModule, lineName, newLine } from './costes.js';
 import { fuseKind, fuseNeed, fuseReason } from './protecciones.js';
-import { analyzeStrings, autoStrings, clampTotals, effectiveStrings, fitStrings, reportProblems, spreadPanels, spreadStrings, summarizeStrings } from './strings.js';
+import { analyzeStrings, assignInputs, autoStrings, clampTotals, effectiveStrings, fitStrings, isValidDesign, reportProblems, spreadPanels, spreadStrings, summarizeStrings, totalInputs } from './strings.js';
 import { batteryCompat, COLD_VOC, ROOF_ITEM_VALUES, ROOF_LABEL, stringPlan } from './pasosConfig.js';
 /** Reglas cuyo error es una incompatibilidad de fondo (el resto depende de cantidades o de la potencia y solo avisa). */
 const HARD_RULES = new Set([
@@ -100,7 +100,17 @@ export function sizeInverters(state, catalog) {
     if (ctx.groups.length > 1)
         return null;
     const fit = fitStrings(state.strings, ctx.panel, ctx.inverter, state.moduleCount);
-    if (!fit || fit.units <= ctx.units)
+    if (fit && fit.units <= ctx.units) {
+        // Hay entradas de sobra: si los strings siguen en las entradas de cuando había menos inversores (dos por entrada en las primeras
+        // y las otras libres) y repartidos entre todas valen, se reasignan solos. Un diseño que ya vale no se toca.
+        if (!isValidDesign(state.strings, ctx)) {
+            const reasignado = assignInputs(state.strings, totalInputs(ctx));
+            if (isValidDesign(reasignado, ctx))
+                return { ...state, strings: reasignado };
+        }
+        return null;
+    }
+    if (!fit)
         return null;
     const first = state.lines.find((l) => l.itemId === ctx.inverter.id);
     if (!first)
@@ -300,6 +310,17 @@ export function checkCompatibility(state, catalog) {
             add('error', 'cubierta', 'estructura', `${name(e)} es para cubierta ${roofOf.toLowerCase()} y el presupuesto está en cubierta ${ROOF_LABEL[survey.roof].toLowerCase()}.`, [e]);
         }
     }
+    // Varias filas «por módulo» de una misma categoría que se reparten los paneles (247 coplanares + 24 inclinados = 271) suman el
+    // total: es correcto y no hace falta avisar de cada una por separado. Valen también varias vueltas completas (dos repartos de 271).
+    const repartidas = new Set();
+    if (n > 0) {
+        for (const categoria of ['estructura', 'mano_obra']) {
+            const filas = cat(categoria).filter((e) => !(num(e.item.attrs.modulos_por_kit) > 0) && isPerModule(e.item.unit) && !e.line.auto && e.qty !== n);
+            const suma = filas.reduce((total, e) => total + e.qty, 0);
+            if (filas.length > 1 && suma > 0 && suma % n === 0)
+                filas.forEach((e) => repartidas.add(e.line.id));
+        }
+    }
     for (const e of [...cat('estructura'), ...cat('mano_obra')]) {
         const perKit = num(e.item.attrs.modulos_por_kit);
         const perPanel = num(e.item.attrs.uds_por_panel);
@@ -310,7 +331,7 @@ export function checkCompatibility(state, catalog) {
             else if (covers - n >= perKit)
                 add('warn', 'estructura-kits', 'estructura', `${name(e)} cubre ${fmt(covers, 0)} paneles y solo hay ${n}: sobra algún kit.`, [e]);
         }
-        else if (isPerModule(e.item.unit) && n > 0 && e.qty !== n && !e.line.auto) {
+        else if (isPerModule(e.item.unit) && n > 0 && e.qty !== n && !e.line.auto && !repartidas.has(e.line.id)) {
             add('warn', 'estructura-modulos', 'estructura', `${name(e)} se calcula por módulo: tiene ${fmt(e.qty, 0)} y el presupuesto lleva ${n} paneles.`, [e]);
         }
         if (perPanel !== null && perPanel > 0 && n > 0 && e.qty < Math.ceil(n * perPanel)) {

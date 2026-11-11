@@ -41,15 +41,17 @@ test('sin cliente se conserva el nombre que ya tenía el presupuesto', () => {
   assert.equal(aplicarValores(base, { ...valoresDe(base), customer: null }).client, 'Antiguo SL')
 })
 
-test('problemas para crear: cliente, potencia a instalar, potencia del panel y al menos un panel', () => {
+test('problemas para crear: cliente, nombre del proyecto, potencia a instalar, potencia del panel y al menos un panel', () => {
   const v = valoresDe(vacio())
-  assert.deepEqual(problemasDe({ ...v, customer: null, targetKwp: 0, moduleWp: 0 }, 0), [
+  assert.deepEqual(problemasDe({ ...v, customer: null, reference: '', targetKwp: 0, moduleWp: 0 }, 0), [
     'Elige el cliente del presupuesto: uno existente o un cliente potencial nuevo.',
+    'Escribe el nombre del proyecto (por ejemplo «Nave 2»): con el cliente identifica a qué proyecto pertenece el presupuesto.',
     'Indica la potencia que se quiere instalar (kWp).',
     'Indica la potencia de cada panel (Wp).',
     'El presupuesto necesita al menos un panel.'
   ])
-  assert.deepEqual(problemasDe({ ...v, customer: potencial, targetKwp: 10, moduleWp: 600 }, 17), [])
+  assert.equal(problemasDe({ ...v, customer: potencial, reference: '   ', targetKwp: 10, moduleWp: 600 }, 17).length, 1, 'un nombre en blanco no vale')
+  assert.deepEqual(problemasDe({ ...v, customer: potencial, reference: 'Nave 2', targetKwp: 10, moduleWp: 600 }, 17), [])
 })
 
 test('el cuerpo para el servidor lleva el cliente y los números del listado; solo el existente manda su id', () => {

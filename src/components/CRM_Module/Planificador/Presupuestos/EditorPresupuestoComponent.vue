@@ -11,7 +11,7 @@
     </div>
 
     <tira-variantes v-if="presupuesto.remote" :presupuesto-id="presupuesto.id" :refrescar="presupuesto.remote.status + '|' + estadoPropuesta"
-                    @abrir="$emit('abrir-variante', $event)" @nueva="$emit('duplicar', 'variante')" @eliminada="$emit('variante-eliminada', $event)" />
+                    @abrir="$emit('abrir-variante', $event)" @nueva="$emit('duplicar')" @eliminada="$emit('variante-eliminada', $event)" />
 
     <div v-if="validado" class="budget-tabs" role="tablist" aria-label="Secciones del presupuesto validado">
       <button type="button" role="tab" :aria-selected="pestana === 'propuesta'" :class="{ active: pestana === 'propuesta' }" @click="pestana = 'propuesta'">Propuesta al cliente</button>
@@ -99,7 +99,7 @@
       <div class="costs-body" :class="{ review: bloqueado }">
         <fieldset v-if="!bloqueado" class="locked-fieldset">
           <pasos-presupuesto :catalogo="catalogo" :estado="estado" :avisos="avisos" :presupuesto-id="presupuesto.id" @cambiar="cambiar" @anadir="anadirProducto"
-                             @quitar="quitarProducto" @ficha="fichaAbierta = $event" @editar-parametros="$emit('editar-parametros')" />
+                             @quitar="quitarProducto" @ficha="fichaAbierta = $event" @editar="editarProducto" @editar-parametros="$emit('editar-parametros')" />
         </fieldset>
 
         <aside class="costs-summary" aria-label="Presupuesto de costes">
@@ -152,6 +152,9 @@
                       <td>
                         <button v-if="productoDe(linea)" type="button" class="product-link" title="Ver la ficha técnica" @click="fichaAbierta = productoDe(linea)">{{ lineName(linea) }}</button>
                         <template v-else>{{ lineName(linea) }}</template>
+                        <button v-if="productoDe(linea)" type="button" class="icon-btn product-edit" title="Editar el producto en el inventario (precio, características…)" :aria-label="'Editar ' + lineName(linea)" @click="editarProducto(productoDe(linea))">
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3" /></svg>
+                        </button>
                         <span class="muted"> · {{ linea.unit }}</span>
                       </td>
                       <td class="num">
@@ -188,7 +191,7 @@
             <strong>Exportar a PDF</strong>
             <div class="export-actions">
               <button type="button" :disabled="errores > 0 || exportando !== null" title="Con los costes, el coste por Wp y el beneficio: para uso interno" @click="exportar('interno')">{{ exportando === 'interno' ? 'Generando…' : 'PDF interno' }}</button>
-              <button type="button" class="secondary" :disabled="errores > 0 || exportando !== null" title="Solo la instalación y el precio de venta: sin costes ni beneficio" @click="exportar('cliente')">{{ exportando === 'cliente' ? 'Generando…' : 'PDF para el cliente' }}</button>
+              <button type="button" class="secondary" :disabled="errores > 0 || exportando !== null" title="La propuesta para el cliente (presentación con la instalación y el precio de venta, sin costes ni beneficio): se abre el cuadro de impresión para guardarla como PDF" @click="exportar('cliente')">{{ exportando === 'cliente' ? 'Generando…' : 'PDF para el cliente' }}</button>
             </div>
             <p v-if="errorExportar" class="error" role="alert">{{ errorExportar }}</p>
             <p v-if="errores > 0" class="step-note warn export-blocked" role="status">Con {{ errores }} incompatibilidad{{ errores === 1 ? '' : 'es' }} sin resolver no se podrá exportar: cambia los productos marcados.</p>
@@ -202,6 +205,11 @@
       </div>
     </template>
 
+    <!-- El producto se edita sin salir del presupuesto: al guardar, sus filas toman el precio nuevo del inventario -->
+    <ficha-producto-modal
+      v-if="productoEditando" :key="productoEditando" :catalogo="catalogo" :producto-id="productoEditando" :marcas="marcas" :proveedores="proveedores" :sencilla="true" :ocupado="ocupadoInventario"
+      @cerrar="productoEditando = null" @guardado="alGuardarProducto" @borrado="alGuardarProducto" @recargar="cargarCatalogo" @revisar="revisarPrecios"
+    />
     <ficha-tecnica-modal v-if="fichaAbierta" :producto="catalogo.items.find((i) => i.id === fichaAbierta.id) || fichaAbierta" :categoria="catalogo.categories.find((c) => c.key === fichaAbierta.category)" @cerrar="fichaAbierta = null" />
   </div>
 </template>
@@ -213,12 +221,13 @@ import CajaEstado from './CajaEstado.vue'
 import CampoNumerico from './CampoNumerico.vue'
 import PasosPresupuesto from './PasosPresupuesto.vue'
 import FichaTecnicaModal from './FichaTecnicaModal.vue'
+import FichaProductoModal from '../Inventario/FichaProductoModal.vue'
 import { planificadorApi, mensajeError } from '@/services/planificadorApi'
 import {
   effectiveQty, eur, lineName, lineTotal, newLine, parseCosts, pct, ratio, summarize, syncWithCatalog
 } from '@/utils/planificador/motor/costes'
 import { checkCompatibility, currentStrings, issuesByLine, levelClass, rebalanceStrings, sizeInverters } from '@/utils/planificador/motor/compatibilidad'
-import { descargarArchivo } from '@/utils/planificador/documentos/descarga'
+import { descargarArchivo, imprimirHtml } from '@/utils/planificador/documentos/descarga'
 import { fuseQuantity } from '@/utils/planificador/motor/protecciones'
 import { ROOF_LABEL, STEPS, sortFixed, withMargin } from '@/utils/planificador/motor/pasosConfig'
 import { canonical, isDirty } from '@/utils/planificador/almacenPresupuestos'
@@ -230,7 +239,7 @@ const AYUDA_BLOQUEO = { borrador: '', enviado: 'no se puede editar: para cambiar
 // con los datos de partida ya fijados. Este componente solo edita: dónde se guarda (local o borrador compartido) lo decide el contenedor.
 export default {
   name: 'Editor-Presupuesto-Component',
-  components: { TiraVariantes, SeccionPropuesta, CajaEstado, CampoNumerico, PasosPresupuesto, FichaTecnicaModal },
+  components: { TiraVariantes, SeccionPropuesta, CajaEstado, CampoNumerico, PasosPresupuesto, FichaTecnicaModal, FichaProductoModal },
   props: {
     conInventario: { type: Boolean, default: false },
     presupuesto: { type: Object, required: true },
@@ -242,7 +251,7 @@ export default {
   data() {
     return {
       ETIQUETA_BLOQUEO, AYUDA_BLOQUEO, ROOF_LABEL, catalogo: null, error: null, cambiosPrecio: [], ordenVista: null,
-      fichaAbierta: null, exportando: null, errorExportar: null, estadoPropuesta: '', pestana: this.presupuesto.remote && this.presupuesto.remote.status === 'validado' ? 'propuesta' : 'presupuesto'
+      fichaAbierta: null, productoEditando: null, marcas: [], proveedores: [], ocupadoInventario: false, exportando: null, errorExportar: null, estadoPropuesta: '', pestana: this.presupuesto.remote && this.presupuesto.remote.status === 'validado' ? 'propuesta' : 'presupuesto'
     }
   },
   computed: {
@@ -254,6 +263,11 @@ export default {
       if (!this.catalogo) return ''
       const fila = this.estado.lines.find((l) => l.itemId && (this.catalogo.items.find((i) => i.id === l.itemId) || {}).category === 'inversores')
       return fila ? fila.itemId : ''
+    },
+    // Cuántas unidades del inversor elegido lleva el presupuesto (para repartir los strings entre sus entradas al cambiarlas)
+    unidadesInversor() {
+      if (!this.claveInversor) return 0
+      return this.estado.lines.filter((l) => l.itemId === this.claveInversor).reduce((s, l) => s + effectiveQty(l, this.estado), 0)
     },
     validado() { return !!this.remoto && this.remoto.status === 'validado' },
     revisando() { return !!this.remoto && this.remoto.status === 'enviado' },
@@ -286,7 +300,9 @@ export default {
     // Los inversores que hacen falta para los strings se asignan solos: al cambiar los strings, los paneles o el inversor elegido se suben las
     // unidades hasta que haya entradas para todos (si se bajan a mano después, se respeta)
     'estado.strings'() { this.ajustarInversores() },
-    claveInversor() { this.ajustarInversores() }
+    claveInversor() { this.ajustarInversores() },
+    // Si se cambian a mano las unidades del inversor, los strings se vuelven a repartir entre sus entradas (si hace falta)
+    unidadesInversor() { this.ajustarInversores() }
   },
   mounted() {
     this.cargarCatalogo()
@@ -316,6 +332,10 @@ export default {
       this.errorExportar = null
       const estado = this.estado
       try {
+        if (modo === 'cliente') {
+          await this.propuestaParaElCliente()
+          return
+        }
         const { blob, nombre } = await planificadorApi.pdfPresupuesto({
           client: estado.client, moduleWp: estado.moduleWp, moduleCount: estado.moduleCount, saleRatio: estado.saleRatio,
           // El diseño de strings que vale ahora (a medida o automático): paneles de cada string y entrada del inversor
@@ -332,10 +352,52 @@ export default {
         this.exportando = null
       }
     },
+    // El documento para el cliente es la propuesta (la misma presentación que luego se entrega desde la pestaña «Propuesta al cliente»),
+    // sacada del presupuesto tal como está: se imprime a PDF desde el navegador y, si no deja, se descarga el archivo para imprimirlo.
+    async propuestaParaElCliente() {
+      const estado = this.estado
+      const { blob, nombre } = await planificadorApi.propuestaDelBorrador({
+        name: [estado.client, estado.reference].filter(Boolean).join(' · '),
+        data: estado,
+        kwp: this.resumen.wp / 1000,
+        panels: estado.moduleCount,
+        budget_total: this.resumen.budget
+      })
+      try {
+        await imprimirHtml(await blob.text())
+      } catch (e) {
+        descargarArchivo(blob, nombre)
+      }
+    },
     fechaHora(iso) { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) },
     tituloPaso(clave) { const p = STEPS.find((x) => x.key === clave); return p ? p.title : clave },
     async cargarCatalogo() {
       try { this.catalogo = await planificadorApi.catalogo() } catch (e) { this.error = mensajeError(e) }
+    },
+    // Editar un producto desde el presupuestador (el lápiz junto a su nombre): se abre su ficha del inventario con las listas de marcas y
+    // proveedores; al guardar se vuelve a leer el catálogo y las filas del borrador toman el precio nuevo (aviso «Precios actualizados»)
+    async editarProducto(item) {
+      try {
+        const [m, p] = await Promise.all([planificadorApi.marcas(), planificadorApi.proveedores()])
+        this.marcas = m.map((x) => x.name)
+        this.proveedores = p.map((x) => x.name)
+      } catch (e) { /* sin las listas se edita igualmente: se vuelven a pedir al abrir otro producto */ }
+      this.productoEditando = item.id
+    },
+    async alGuardarProducto() {
+      this.productoEditando = null
+      await this.cargarCatalogo()
+    },
+    async revisarPrecios(ids) {
+      this.ocupadoInventario = true
+      try {
+        await planificadorApi.marcarRevisados(ids)
+        await this.cargarCatalogo()
+      } catch (e) {
+        this.error = mensajeError(e)
+      } finally {
+        this.ocupadoInventario = false
+      }
     },
     seguirCatalogo() {
       if (!this.catalogo || this.bloqueado) return
