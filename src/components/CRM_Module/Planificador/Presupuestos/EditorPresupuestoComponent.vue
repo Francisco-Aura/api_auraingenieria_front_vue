@@ -99,7 +99,7 @@
       <div class="costs-body" :class="{ review: bloqueado }">
         <fieldset v-if="!bloqueado" class="locked-fieldset">
           <pasos-presupuesto :catalogo="catalogo" :estado="estado" :avisos="avisos" :presupuesto-id="presupuesto.id" @cambiar="cambiar" @anadir="anadirProducto"
-                             @quitar="quitarProducto" @ficha="fichaAbierta = $event" @editar="editarProducto" @editar-parametros="$emit('editar-parametros')" />
+                             @quitar="quitarProducto" @ficha="fichaAbierta = $event" @editar-parametros="$emit('editar-parametros')" />
         </fieldset>
 
         <aside class="costs-summary" aria-label="Presupuesto de costes">
@@ -152,9 +152,6 @@
                       <td>
                         <button v-if="productoDe(linea)" type="button" class="product-link" title="Ver la ficha técnica" @click="fichaAbierta = productoDe(linea)">{{ lineName(linea) }}</button>
                         <template v-else>{{ lineName(linea) }}</template>
-                        <button v-if="productoDe(linea)" type="button" class="icon-btn product-edit" title="Editar el producto en el inventario (precio, características…)" :aria-label="'Editar ' + lineName(linea)" @click="editarProducto(productoDe(linea))">
-                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3" /></svg>
-                        </button>
                         <span class="muted"> · {{ linea.unit }}</span>
                       </td>
                       <td class="num">
@@ -191,7 +188,8 @@
             <strong>Exportar a PDF</strong>
             <div class="export-actions">
               <button type="button" :disabled="errores > 0 || exportando !== null" title="Con los costes, el coste por Wp y el beneficio: para uso interno" @click="exportar('interno')">{{ exportando === 'interno' ? 'Generando…' : 'PDF interno' }}</button>
-              <button type="button" class="secondary" :disabled="errores > 0 || exportando !== null" title="La propuesta para el cliente (presentación con la instalación y el precio de venta, sin costes ni beneficio): se abre el cuadro de impresión para guardarla como PDF" @click="exportar('cliente')">{{ exportando === 'cliente' ? 'Generando…' : 'PDF para el cliente' }}</button>
+              <button type="button" class="secondary" :disabled="errores > 0 || exportando !== null" title="La propuesta para el cliente en PDF (presentación con la instalación, el precio de venta y la página de firma, sin costes ni beneficio)" @click="exportar('cliente')">{{ exportando === 'cliente' ? 'Generando…' : 'PDF para el cliente' }}</button>
+              <button type="button" class="secondary" :disabled="errores > 0 || exportando !== null" title="La misma propuesta como archivo HTML: se abre en el navegador y se puede mandar tal cual" @click="exportar('html')">{{ exportando === 'html' ? 'Generando…' : 'HTML de la propuesta' }}</button>
             </div>
             <p v-if="errorExportar" class="error" role="alert">{{ errorExportar }}</p>
             <p v-if="errores > 0" class="step-note warn export-blocked" role="status">Con {{ errores }} incompatibilidad{{ errores === 1 ? '' : 'es' }} sin resolver no se podrá exportar: cambia los productos marcados.</p>
@@ -210,7 +208,7 @@
       v-if="productoEditando" :key="productoEditando" :catalogo="catalogo" :producto-id="productoEditando" :marcas="marcas" :proveedores="proveedores" :sencilla="true" :ocupado="ocupadoInventario"
       @cerrar="productoEditando = null" @guardado="alGuardarProducto" @borrado="alGuardarProducto" @recargar="cargarCatalogo" @revisar="revisarPrecios"
     />
-    <ficha-tecnica-modal v-if="fichaAbierta" :producto="catalogo.items.find((i) => i.id === fichaAbierta.id) || fichaAbierta" :categoria="catalogo.categories.find((c) => c.key === fichaAbierta.category)" @cerrar="fichaAbierta = null" />
+    <ficha-tecnica-modal v-if="fichaAbierta" :producto="catalogo.items.find((i) => i.id === fichaAbierta.id) || fichaAbierta" :categoria="catalogo.categories.find((c) => c.key === fichaAbierta.category)" @cerrar="fichaAbierta = null" @editar="editarDesdeFicha" />
   </div>
 </template>
 
@@ -332,8 +330,8 @@ export default {
       this.errorExportar = null
       const estado = this.estado
       try {
-        if (modo === 'cliente') {
-          await this.propuestaParaElCliente()
+        if (modo === 'cliente' || modo === 'html') {
+          await this.propuestaParaElCliente(modo)
           return
         }
         const { blob, nombre } = await planificadorApi.pdfPresupuesto({
@@ -353,16 +351,31 @@ export default {
       }
     },
     // El documento para el cliente es la propuesta (la misma presentación que luego se entrega desde la pestaña «Propuesta al cliente»),
-    // sacada del presupuesto tal como está: se imprime a PDF desde el navegador y, si no deja, se descarga el archivo para imprimirlo.
-    async propuestaParaElCliente() {
+    // sacada del presupuesto tal como está. En PDF la hace el servidor con Chrome; si no lo tiene (501), se abre el cuadro de impresión del
+    // navegador para guardarla como PDF y, si tampoco deja, se descarga el HTML.
+    async propuestaParaElCliente(formato) {
       const estado = this.estado
-      const { blob, nombre } = await planificadorApi.propuestaDelBorrador({
+      const cuerpo = {
         name: [estado.client, estado.reference].filter(Boolean).join(' · '),
         data: estado,
         kwp: this.resumen.wp / 1000,
         panels: estado.moduleCount,
         budget_total: this.resumen.budget
-      })
+      }
+      if (formato === 'cliente') {
+        try {
+          const pdf = await planificadorApi.propuestaPdfDelBorrador(cuerpo)
+          descargarArchivo(pdf.blob, pdf.nombre)
+          return
+        } catch (e) {
+          if (!(e && e.response && e.response.status === 501)) throw e
+        }
+      }
+      const { blob, nombre } = await planificadorApi.propuestaDelBorrador(cuerpo)
+      if (formato === 'html') {
+        descargarArchivo(blob, nombre)
+        return
+      }
       try {
         await imprimirHtml(await blob.text())
       } catch (e) {
@@ -374,8 +387,13 @@ export default {
     async cargarCatalogo() {
       try { this.catalogo = await planificadorApi.catalogo() } catch (e) { this.error = mensajeError(e) }
     },
-    // Editar un producto desde el presupuestador (el lápiz junto a su nombre): se abre su ficha del inventario con las listas de marcas y
+    // Editar un producto desde el presupuestador (el lápiz de su ficha, que se abre desde el nombre): se abre su ficha del inventario con las listas de marcas y
     // proveedores; al guardar se vuelve a leer el catálogo y las filas del borrador toman el precio nuevo (aviso «Precios actualizados»)
+    editarDesdeFicha() {
+      const item = this.fichaAbierta
+      this.fichaAbierta = null
+      if (item) this.editarProducto(item)
+    },
     async editarProducto(item) {
       try {
         const [m, p] = await Promise.all([planificadorApi.marcas(), planificadorApi.proveedores()])
