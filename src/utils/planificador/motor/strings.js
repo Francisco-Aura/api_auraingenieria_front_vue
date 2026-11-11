@@ -120,7 +120,7 @@ export function assignInputs(spread, inputs) {
 }
 // ---- Con el inventario: qué inversores admiten unos strings ya diseñados ------------------------------------------------
 /** Si un diseño vale con este panel e inversor (analyzeStrings sin problemas), sin montar los mensajes: para probar muchos inversores deprisa. */
-function isValidDesign(design, ctx) {
+export function isValidDesign(design, ctx) {
     const limits = stringLimits(ctx.panel, ctx.inverter);
     if (!limits || design.length === 0)
         return false;
@@ -325,6 +325,48 @@ export function stringCountRange(moduleCount, limits) {
     const max = Math.floor(total / perMin);
     return min >= 1 && min <= max ? { min, max, perMin, perMax, total } : null;
 }
+/**
+ * Cómo repartir los paneles que faltan en strings nuevos: los menos posibles y lo más iguales posible, dentro de los límites de
+ * paneles por string (24 con límite de 6 a 19 → [12, 12]). Devuelve los tamaños, de mayor a menor, o null si no se puede.
+ */
+export function splitMissing(missing, limits) {
+    const total = Math.round(missing);
+    const perMin = Math.max(MIN_STRING_PANELS, limits?.min ?? MIN_STRING_PANELS);
+    const perMax = Math.min(MAX_STRING_PANELS, limits?.max ?? MAX_STRING_PANELS);
+    if (!(total > 0) || perMin > perMax)
+        return null;
+    const count = Math.ceil(total / perMax);
+    if (Math.floor(total / count) < perMin)
+        return null;
+    return Array.from({ length: count }, (_, i) => Math.floor(total / count) + (i < total % count ? 1 : 0));
+}
+/**
+ * Junta los avisos iguales de varias entradas en uno solo: «Las entradas 1 a 4 reciben 2 strings en paralelo: 32 A y admiten 30 A.»
+ * en vez de uno por entrada. Recibe los textos tal como los da analyzeStrings («La entrada N …»); los que no empiezan así se dejan.
+ */
+export function groupInputProblems(messages) {
+    const plural = (t) => t.replace(/\brecibe\b/, 'reciben').replace(/\badmite\b/, 'admiten').replace(/^da\b/, 'dan').replace(/^mezcla\b/, 'mezclan');
+    const groups = new Map();
+    const out = [];
+    for (const text of messages) {
+        const m = /^La entrada (\d+) (.*)$/.exec(text);
+        if (!m) {
+            out.push(text);
+            continue;
+        }
+        if (!groups.has(m[2])) {
+            const g = { nums: [], rest: m[2] };
+            groups.set(m[2], g);
+            out.push(g);
+        }
+        groups.get(m[2]).nums.push(Number(m[1]));
+    }
+    return out.map((o) => {
+        if (typeof o === 'string')
+            return o;
+        return o.nums.length === 1 ? `La entrada ${o.nums[0]} ${o.rest}` : `Las entradas ${stringNumbers(o.nums)} ${plural(o.rest)}`;
+    });
+}
 /** Todos los problemas de un diseño, cada uno con el string o la entrada a la que se refiere (los iguales, juntos). */
 export function reportProblems(report) {
     const missing = missingInputsProblem(report);
@@ -332,7 +374,7 @@ export function reportProblems(report) {
         ...report.problems,
         ...(missing ? [missing] : []),
         ...groupStringProblems(report.strings.flatMap((s, i) => s.problems.filter((m) => !isMissingInput(m)).map((m) => ({ n: i + 1, text: m })))),
-        ...report.inputs.flatMap((i) => i.problems),
+        ...groupInputProblems(report.inputs.flatMap((i) => i.problems)),
     ];
 }
 /**

@@ -2032,7 +2032,6 @@ tr.group-row .group-toggle:hover { text-decoration: underline; }
 .strings-table th:last-child, .strings-table td.string-tools { width: 1%; }
 .strings-table td.string-tools { text-align: right; white-space: nowrap; }
 .strings-table td.string-tools > * { vertical-align: middle; }
-.string-tools .string-adjust { min-width: 0; padding: 2px 10px; margin-right: 10px; font-size: 0.85rem; }
 
 /* Columnas de ancho fijo: al desplegar una oferta (o filtrar) las columnas no se mueven */
 .budget-table { table-layout: fixed; min-width: 1000px; }
@@ -2064,3 +2063,16 @@ tr.group-row .group-toggle:hover { text-decoration: underline; }
 .summary-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
 .summary-head h2 { margin: 0; }
 .summary-head button { padding: 4px 10px; font-size: 0.85rem; }
+
+/* Lápiz junto al nombre de un producto del presupuestador: abre su ficha del inventario para cambiar el precio o las características */
+.product-edit {
+  margin-left: 4px;
+  padding: 2px 4px;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+.product-edit:hover,
+.product-edit:focus-visible {
+  opacity: 1;
+}

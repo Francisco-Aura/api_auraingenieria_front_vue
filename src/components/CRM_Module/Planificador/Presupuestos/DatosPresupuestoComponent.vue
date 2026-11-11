@@ -15,9 +15,13 @@
         <legend>Cliente</legend>
         <selector-cliente v-model="v.customer" :nombre-sugerido="inicio.client" :invalido="intentado && !v.customer" />
         <label class="survey-field wide">
-          Referencia (opcional)
-          <input v-model="v.reference" placeholder="Ej.: Nave 2, fotovoltaica" maxlength="80">
-          <span class="muted field-hint">Para distinguir varios presupuestos del mismo cliente</span>
+          Nombre del proyecto
+          <input v-model="v.reference" list="proyectos-del-cliente" placeholder="Ej.: Nave 2, fotovoltaica" maxlength="80" autocomplete="off">
+          <datalist id="proyectos-del-cliente"><option v-for="p in proyectosSugeridos" :key="p" :value="p" /></datalist>
+          <span class="muted field-hint">
+            Los presupuestos del mismo cliente con el mismo nombre de proyecto son versiones unos de otros (v1, v2…):
+            {{ proyectosSugeridos.length > 0 ? 'elige uno de los que ya tiene para no escribirlo distinto.' : 'escríbelo igual en todos.' }}
+          </span>
         </label>
       </fieldset>
 
@@ -88,6 +92,8 @@ import { EMPTY_COSTS, EMPTY_SURVEY } from '@/utils/planificador/motor/costes'
 import { stringContext } from '@/utils/planificador/motor/compatibilidad'
 import { spreadPanels, spreadStrings } from '@/utils/planificador/motor/strings'
 import { valoresDe, cuantosPaneles, aplicarValores, problemasDe } from '@/utils/planificador/datosPresupuesto'
+import { budgetName, listLocal } from '@/utils/planificador/almacenPresupuestos'
+import { proyectosDeCliente } from '@/utils/planificador/proyectos'
 
 // Datos de partida del presupuesto: el cliente, la potencia a instalar, el panel, el suministro, la cubierta, los strings y el
 // precio de venta. Se piden al crear el presupuesto (y se pueden cambiar con «Editar parámetros»): los pasos ya no los preguntan.
@@ -102,9 +108,11 @@ export default {
   emits: ['enviar', 'cancelar'],
   data() {
     const inicio = this.base || { ...EMPTY_COSTS, survey: EMPTY_SURVEY }
-    return { inicio, v: valoresDe(inicio), intentado: false, catalogo: null }
+    // nombresExistentes: los nombres de los presupuestos que ya hay (de este navegador y del servidor), para sugerir los proyectos del cliente
+    return { inicio, v: valoresDe(inicio), intentado: false, catalogo: null, nombresExistentes: [] }
   },
   computed: {
+    proyectosSugeridos() { return proyectosDeCliente(this.v.customer && this.v.customer.name, this.nombresExistentes) },
     auto() { return panelCount(this.v.targetKwp, this.v.moduleWp) },
     cuenta() { return cuantosPaneles(this.v) },
     kwpReales() { return (this.v.moduleWp * this.cuenta) / 1000 },
@@ -130,7 +138,11 @@ export default {
       this.v.strings = this.ctxStrings ? spreadStrings(diseno, this.ctxStrings) : spreadPanels(diseno, n)
     }
   },
-  mounted() { planificadorApi.catalogo().then((c) => { this.catalogo = c }, () => undefined) },
+  mounted() {
+    planificadorApi.catalogo().then((c) => { this.catalogo = c }, () => undefined)
+    this.nombresExistentes = listLocal().map((l) => budgetName(l.state))
+    planificadorApi.presupuestos().then((lista) => { this.nombresExistentes = [...this.nombresExistentes, ...lista.map((b) => b.name)] }, () => undefined)
+  },
   methods: {
     kw(n) { return n.toLocaleString('es-ES', { maximumFractionDigits: 2 }) },
     enviar() {

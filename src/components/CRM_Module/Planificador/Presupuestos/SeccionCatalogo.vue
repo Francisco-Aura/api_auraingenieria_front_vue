@@ -42,11 +42,11 @@
             <tr class="group-row suggested-head">
               <th :colspan="numColumnas" scope="colgroup"><span aria-hidden="true">★</span> Sugeridos<span class="muted"> · encajan con lo elegido{{ filasSugeridas.some((s) => s.inStock) ? ' y los que hay en stock van primero' : '' }}</span></th>
             </tr>
-            <fila-producto v-for="s in filasSugeridas" :key="'s' + s.item.id" v-bind="propsFila(s.item, s)" @anadir="$emit('anadir', $event)" @quitar="$emit('quitar', $event)" @ficha="$emit('ficha', $event)" />
+            <fila-producto v-for="s in filasSugeridas" :key="'s' + s.item.id" v-bind="propsFila(s.item, s)" @anadir="$emit('anadir', $event)" @quitar="$emit('quitar', $event)" @ficha="$emit('ficha', $event)" @editar="$emit('editar', $event)" />
           </template>
           <template v-if="restantes.length > 0">
             <tr v-if="filasSugeridas.length > 0 || incompatibles.length > 0" class="group-row"><th :colspan="numColumnas" scope="colgroup">Compatibles</th></tr>
-            <fila-producto v-for="i in restantes" :key="i.id" v-bind="propsFila(i, null)" @anadir="$emit('anadir', $event)" @quitar="$emit('quitar', $event)" @ficha="$emit('ficha', $event)" />
+            <fila-producto v-for="i in restantes" :key="i.id" v-bind="propsFila(i, null)" @anadir="$emit('anadir', $event)" @quitar="$emit('quitar', $event)" @ficha="$emit('ficha', $event)" @editar="$emit('editar', $event)" />
           </template>
           <template v-if="incompatibles.length > 0">
             <tr class="group-row incompatible-head">
@@ -57,7 +57,7 @@
               </th>
             </tr>
             <template v-if="incompatiblesAbiertos">
-              <fila-producto v-for="i in incompatibles" :key="'x' + i.id" v-bind="propsFila(i, null)" @anadir="$emit('anadir', $event)" @quitar="$emit('quitar', $event)" @ficha="$emit('ficha', $event)" />
+              <fila-producto v-for="i in incompatibles" :key="'x' + i.id" v-bind="propsFila(i, null)" @anadir="$emit('anadir', $event)" @quitar="$emit('quitar', $event)" @ficha="$emit('ficha', $event)" @editar="$emit('editar', $event)" />
             </template>
           </template>
         </tbody>
@@ -92,7 +92,7 @@ export default {
     conflictos: { type: Map, default: () => new Map() },
     sugeridos: { type: Array, default: () => [] }
   },
-  emits: ['anadir', 'quitar', 'ficha'],
+  emits: ['anadir', 'quitar', 'ficha', 'editar'],
   data() { return { filtros: {}, orden: null, verTodo: false, verIncompatibles: false } },
   computed: {
     categoria() { return this.catalogo.categories.find((c) => c.key === this.seccion.category) },

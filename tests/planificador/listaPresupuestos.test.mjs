@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  etiquetaEstado, esMio, puedeBorrar, construirFilas, contarPendientes, filtrarFilas, armarTabla, esVariantable, accionesDeEstado
+  etiquetaEstado, esMio, puedeBorrar, construirFilas, contarPendientes, filtrarFilas, armarTabla, esVariantable, accionesDeEstado, opcionesFiltro
 } from '../../src/utils/planificador/listaPresupuestos.js'
 import { canonical } from '../../src/utils/planificador/almacenPresupuestos.js'
 import { EMPTY_COSTS } from '../../src/utils/planificador/motor/costes.js'
@@ -125,8 +125,49 @@ test('la tabla recoge las variantes de una oferta en una fila que se despliega, 
   const abierta = armarTabla(todas, null, new Set(['o1']))
   assert.deepEqual(abierta.items.map((i) => (i.tipo === 'grupo' ? 'G' : i.row.id)), ['G', 'a', 'b', 'c'])
   assert.equal(abierta.items[1].hija, true)
-  assert.equal(abierta.etiquetas.get('a'), 'Versión 1')
-  assert.equal(abierta.etiquetas.get('b'), 'Con batería')
+  assert.equal(abierta.etiquetas.get('a'), 'v1')
+  assert.equal(abierta.etiquetas.get('b'), 'v2 · Con batería')
+})
+
+test('el mismo cliente y el mismo proyecto son un grupo aunque no compartan oferta (los locales no la tienen); el v2 del nombre no cuenta', () => {
+  const estado = (client, reference) => ({ ...EMPTY_COSTS, client, reference, customer: { kind: 'existente', id: 5, name: client } })
+  const todas = filas(
+    [remoto('r1', { name: 'Pepe · Nave 2', offer_id: 'o9', created_at: '2026-11-01T10:00:00.000000+00:00' })],
+    [
+      local('l1', { state: estado('Pepe', 'nave  2 v2'), createdAt: '2026-11-02T10:00:00.000Z' }),
+      local('l2', { state: estado('Pepe', 'Nave 3') }),
+      local('l3', { state: estado('Ana', 'Nave 2') })
+    ]
+  )
+  const por = (id) => todas.find((f) => f.id === id)
+  assert.equal(por('l1').grupo, 'o9', 'el local entra en la oferta del compartido')
+  assert.equal(por('r1').grupo, 'o9')
+  assert.equal(por('l2').grupo, '', 'otro proyecto: suelto')
+  assert.equal(por('l3').grupo, '', 'otro cliente: suelto')
+  const tabla = armarTabla(todas, null, new Set(['o9']))
+  assert.equal(tabla.items[0].tipo, 'grupo')
+  assert.equal(tabla.items[0].count, 2)
+  assert.equal(tabla.etiquetas.get('r1'), 'v1')
+  assert.equal(tabla.etiquetas.get('l1'), 'v2', 'el orden lo da la fecha de creación')
+  // Dos locales del mismo proyecto, sin ninguna oferta del servidor
+  const dos = filas([], [local('a', { state: estado('Pepe', 'Nave 2') }), local('b', { state: estado('Pepe', 'Nave 2') })])
+  assert.equal(dos[0].grupo, dos[1].grupo)
+  assert.ok(dos[0].grupo.startsWith('proyecto:'))
+})
+
+test('filtros de cliente y de proyecto: los proyectos son los del cliente elegido y un mismo cliente escrito distinto cuenta como uno', () => {
+  const estado = (client, reference) => ({ ...EMPTY_COSTS, client, reference, customer: { kind: 'existente', id: 5, name: client } })
+  const todas = filas([], [
+    local('a', { state: estado('Pepe', 'Nave 2') }), local('b', { state: estado('PEPE', 'Nave 3') }), local('c', { state: estado('Ana', 'Casa') })
+  ])
+  const o = opcionesFiltro(todas, '')
+  assert.equal(o.clientes.length, 2, 'Pepe y PEPE son un solo cliente')
+  assert.ok(o.clientes.some((c) => c.etiqueta === 'Ana'))
+  const clientePepe = todas.find((f) => f.id === 'a').clienteClave
+  assert.equal(opcionesFiltro(todas, clientePepe).proyectos.length, 2)
+  assert.deepEqual(filtrarFilas(todas, '', 'todos', clientePepe).map((f) => f.id).sort(), ['a', 'b'])
+  const nave3 = todas.find((f) => f.id === 'b').proyectoClave
+  assert.deepEqual(filtrarFilas(todas, '', 'todos', clientePepe, nave3).map((f) => f.id), ['b'])
 })
 
 test('ordenar por una columna no separa nunca una oferta (cuenta su fila principal); sin importe, al final en cualquier sentido', () => {
@@ -150,13 +191,13 @@ test('el ciclo del orden: ascendente → descendente → sin ordenar, y números
   assert.deepEqual(sortRows(['10', '2', null, 'b'], { key: 'k', dir: 'asc' }, (r) => r), ['2', '10', 'b', null])
 })
 
-test('variantLabels: el nombre de la variante o «Versión N» por orden de creación', () => {
+test('variantLabels: «vN» por orden de creación y, si tiene nombre, «vN · nombre»', () => {
   const m = variantLabels([
     { id: 'b', created_at: '2026-11-02', variant_name: '  ' }, { id: 'a', created_at: '2026-11-01', variant_name: '' }, { id: 'c', created_at: '2026-11-03', variant_name: 'Plus' }
   ])
-  assert.equal(m.get('a'), 'Versión 1')
-  assert.equal(m.get('b'), 'Versión 2')
-  assert.equal(m.get('c'), 'Plus')
+  assert.equal(m.get('a'), 'v1')
+  assert.equal(m.get('b'), 'v2')
+  assert.equal(m.get('c'), 'v3 · Plus')
 })
 
 test('esVariantable: un compartido se duplica como variante; un local o descartado, como copia local', () => {

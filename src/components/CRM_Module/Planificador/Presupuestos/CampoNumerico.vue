@@ -27,14 +27,10 @@ export default {
     // Cuánto suben o bajan las flechas cuando el valor no tiene decimales
     paso: { type: Number, default: 1 }
   },
-  // «fin»: el usuario ha terminado de poner el valor (sale del campo o usa las flechas); para quien quiera corregirlo entonces
-  emits: ['update:modelValue', 'fin'],
+  emits: ['update:modelValue'],
   data() { return { texto: null } },
   methods: {
-    salir() {
-      this.texto = null
-      this.$emit('fin')
-    },
+    salir() { this.texto = null },
     escribir(e) {
       this.texto = e.target.value
       const n = Number(e.target.value.replace(',', '.'))
@@ -55,7 +51,6 @@ export default {
       const unidad = base * (mods.ctrlKey || mods.metaKey ? 100 : mods.shiftKey ? 10 : 1)
       this.texto = null
       this.$emit('update:modelValue', Math.max(0, redondear(desde + dir * unidad)))
-      this.$emit('fin')
     }
   }
 }
