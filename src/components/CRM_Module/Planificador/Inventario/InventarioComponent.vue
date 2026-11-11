@@ -10,7 +10,7 @@
         <button type="button" @click="abrir(null)">+ Nuevo producto</button>
       </div>
     </div>
-    <listas-marcas-proveedores v-if="mostrarListas" @cambiado="cargarListas" />
+    <listas-marcas-proveedores v-if="mostrarListas" @cambiado="logosCambiados" />
     <p class="muted inv-note">
       Los productos de aquí son los que se eligen en el presupuestador. Cada categoría tiene sus características
       (potencia, tensión…) y además se pueden añadir las que hagan falta.
@@ -133,9 +133,9 @@
 
     <ficha-producto-modal
       v-if="ficha" :key="ficha.clave" :catalogo="catalogo" :producto-id="ficha.id" :categoria-inicial="categoriaFiltro" :copia="ficha.copia"
-      :marcas="marcas" :marcas-con-logo="marcasConLogo" :proveedores="proveedores" :version-logos="versionLogos" :ocupado="ocupado"
+      :marcas="marcas" :proveedores="proveedores" :ocupado="ocupado"
       @cerrar="ficha = null" @guardado="alGuardar" @borrado="alGuardar" @revisar="marcarRevisados" @recargar="cargar"
-      @logos-cambiados="logosCambiados" @duplicar="duplicar"
+      @duplicar="duplicar"
     />
   </div>
 </template>
