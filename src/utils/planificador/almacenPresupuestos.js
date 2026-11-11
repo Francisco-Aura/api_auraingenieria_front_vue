@@ -99,8 +99,13 @@ export function nextVersionReference(state, takenNames) {
             highest = Math.max(highest, n);
     return label(highest + 1);
 }
-/** Una copia de otro presupuesto, local y con el número de versión siguiente (v2, v3…): una versión propia sin tocar la original. */
-export function copyOf(state, takenNames = []) {
+/**
+ * Una copia de otro presupuesto, local y con el número de versión siguiente (v2, v3…): una versión propia sin tocar la original.
+ * Con `newClient` la copia sale sin cliente ni referencia (es para otro cliente: se elige al abrirla), sin número de versión.
+ */
+export function copyOf(state, takenNames = [], newClient = false) {
+    if (newClient)
+        return newLocal({ ...state, client: '', customer: null, reference: '' });
     return newLocal({ ...state, reference: nextVersionReference(state, takenNames) });
 }
 /** La copia de trabajo de un borrador del servidor, tal cual está allí (sin cambios sin guardar). */
