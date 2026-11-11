@@ -6,6 +6,9 @@
         <span class="muted">{{ producto.supplier || 'Sin proveedor' }}</span>
         <strong v-if="producto.unit_price > 0" class="sheet-price">{{ eur(producto.unit_price) }} <span class="muted">/ {{ producto.unit }}</span></strong>
         <span v-else class="tag no-price sheet-price">⚠ Sin precio</span>
+        <button type="button" class="icon-btn product-edit" title="Editar el producto en el inventario (precio, características…)" :aria-label="'Editar ' + nombre" @click="$emit('editar')">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3" /></svg>
+        </button>
       </div>
 
       <dl v-if="propias.length > 0" class="sheet-data">
@@ -73,12 +76,12 @@ import { agruparFilas, esValorVacio, leerClaveExtra } from '@/utils/planificador
 import { camposDe, unidadDe } from '@/utils/planificador/formularioEquipo'
 
 // Ficha técnica de un producto del inventario: sus datos, sus características, sus proveedores y precios, el historial y, si tiene, el PDF de
-// la ficha del fabricante a la vista. Se abre desde el nombre del producto en el presupuestador (se edita en el Inventario).
+// la ficha del fabricante a la vista. Se abre desde el nombre del producto en el presupuestador; el lápiz de la cabecera abre su edición.
 export default {
   name: 'Ficha-Tecnica-Modal',
   components: { ModalComponent, HistorialPreciosPanel },
   props: { producto: { type: Object, required: true }, categoria: { type: Object, default: null } },
-  emits: ['cerrar'],
+  emits: ['cerrar', 'editar'],
   computed: {
     nombre() { return [this.producto.brand, this.producto.model].filter(Boolean).join(' ') || 'Producto sin nombre' },
     urlFicha() { return planificadorApi.urlFicha(this.producto.id) },

@@ -2,9 +2,6 @@
   <tr :class="tono || undefined">
     <td>
       <button type="button" class="product-link" title="Ver la ficha técnica" @click="$emit('ficha', item)">{{ [item.brand, item.model].filter(Boolean).join(' ') }}</button>
-      <button type="button" class="icon-btn product-edit" title="Editar el producto en el inventario (precio, características…)" :aria-label="'Editar ' + [item.brand, item.model].filter(Boolean).join(' ')" @click="$emit('editar', item)">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3" /></svg>
-      </button>
       <span v-if="sugerencia" class="tag stock" :class="sugerencia.inStock ? 'in' : 'out'">{{ sugerencia.inStock ? 'En stock: ' + item.stock : item.stock > 0 ? 'Stock: ' + item.stock + ' de ' + (sugerencia.units ?? 1) : 'Sin stock' }}</span>
       <span v-if="sugerencia && (sugerencia.units ?? 1) > 1" class="tag state borrador" title="Unidades que hacen falta para las entradas de tus strings: se añaden solas">× {{ sugerencia.units }} uds.</span>
       <span v-if="item.datasheet" class="tag" title="Tiene la ficha técnica del fabricante adjunta">📄 Ficha</span>
@@ -62,7 +59,7 @@ export default {
     espec: { type: String, default: '' },
     esVacio: { type: Function, required: true }
   },
-  emits: ['anadir', 'quitar', 'ficha', 'editar'],
+  emits: ['anadir', 'quitar', 'ficha'],
   computed: {
     // Las filas de detalle y de aviso de un producto comparten el fondo de su fila (añadido o sugerido): se ven como un solo bloque
     tono() { return this.anadido ? 'added' : this.sugerencia ? 'suggested-row' : '' },
