@@ -16,7 +16,7 @@
     <template v-if="abierto">
     <p v-if="informe" class="muted string-help">
       {{ informe.limits ? 'Entre ' + informe.limits.min + ' y ' + informe.limits.max + ' paneles por string con este panel y este inversor.' : 'Faltan datos técnicos para comprobar las tensiones.' }}
-      El inversor tiene {{ informe.inputsAvailable }} entrada{{ informe.inputsAvailable === 1 ? '' : 's' }}{{ unidades > 1 ? ' (' + unidades + ' inversores)' : '' }}:
+      {{ variosModelos ? 'Los inversores tienen' : 'El inversor tiene' }} {{ informe.inputsAvailable }} entrada{{ informe.inputsAvailable === 1 ? '' : 's' }}{{ variosModelos ? ' en total (' + nombresModelos + ')' : unidades > 1 ? ' (' + unidades + ' inversores)' : '' }}:
       los strings de una misma entrada tienen que ser iguales.
     </p>
     <p class="string-clamps" role="status">
@@ -100,7 +100,7 @@
         <span v-if="faltan !== 0 && creado" class="muted"> · usa «{{ faltan > 0 ? '+' : '−' }}N» en un string para {{ faltan > 0 ? 'sumarle lo que falta' : 'quitarle lo que sobra' }}</span>
       </span>
       <div class="string-actions">
-        <button v-if="sinAsignar && ctx" type="button" class="secondary" title="Reparte los strings entre las entradas del inversor, sin cambiar sus paneles" @click="$emit('cambio', assignInputs(diseno, inputsOf(ctx.inverter, ctx.units)))">Asignar entradas</button>
+        <button v-if="sinAsignar && ctx" type="button" class="secondary" title="Reparte los strings entre las entradas del inversor, sin cambiar sus paneles" @click="$emit('cambio', assignInputs(diseno, totalInputs(ctx)))">Asignar entradas</button>
         <button v-if="hayProblemas && ctx" type="button" class="secondary" title="Cambia los strings por unos que valgan para este panel y este inversor" @click="$emit('cambio', autoStrings(ctx))">Proponer strings para este inversor</button>
         <button type="button" class="secondary" :disabled="!creado || !cambiaReparto" title="Reparte los paneles por igual entre los strings que hay, sin cambiar cuántos son" @click="$emit('cambio', reparto)">Repartir automáticamente</button>
         <button type="button" class="secondary" @click="anadir">+ Añadir string</button>
@@ -122,7 +122,7 @@
 import CampoNumerico from './CampoNumerico.vue'
 import { MAX_STRING_PANELS, MIN_STRING_PANELS } from '@/utils/planificador/motor/pasosConfig'
 import {
-  analyzeStrings, assignInputs, autoStrings, clampTotals, createStrings, inputsOf, newStringId, spreadPanels, spreadStrings
+  analyzeStrings, assignInputs, autoStrings, clampTotals, createStrings, inputOwner, newStringId, spreadPanels, spreadStrings, totalInputs
 , isMissingInput, missingInputsProblem } from '@/utils/planificador/motor/strings'
 
 // Diseño de los strings del presupuesto: cuántos hay y cuántos paneles lleva cada uno. Mientras no hay inversor elegido es libre;
@@ -140,16 +140,20 @@ export default {
     panel: { type: Object, default: null },
     inversor: { type: Object, default: null },
     // Cuántos inversores de este modelo hay en el presupuesto
-    unidades: { type: Number, default: 1 }
+    unidades: { type: Number, default: 1 },
+    // Todos los modelos de inversor de strings del presupuesto con sus unidades ([{ item, units }]); con varios, las entradas se cuentan seguidas
+    grupos: { type: Array, default: null }
   },
   emits: ['cambio'],
-  data() { return { assignInputs, autoStrings, inputsOf, isMissingInput, abierto: !this.inicioPlegado } },
+  data() { return { assignInputs, autoStrings, totalInputs, isMissingInput, abierto: !this.inicioPlegado } },
   computed: {
     diseno() { return this.estado.strings || [] },
     creado() { return this.diseno.length > 0 },
     objetivo() { return Math.round(this.estado.moduleCount) },
     // Con panel e inversor elegidos se comprueba contra ellos; si no, el diseño es libre
-    ctx() { return this.panel && this.inversor ? { panel: this.panel, inverter: this.inversor, units: this.unidades, moduleCount: this.estado.moduleCount } : null },
+    ctx() { return this.panel && this.inversor ? { panel: this.panel, inverter: this.inversor, units: this.unidades, ...(this.grupos && this.grupos.length > 0 ? { groups: this.grupos } : {}), moduleCount: this.estado.moduleCount } : null },
+    variosModelos() { return !!this.grupos && this.grupos.length > 1 },
+    nombresModelos() { return (this.grupos || []).map((g) => g.units + ' × ' + [g.item.brand, g.item.model].filter(Boolean).join(' ')).join(' + ') },
     informe() { return this.ctx ? analyzeStrings(this.diseno, this.ctx) : null },
     total() { return this.informe ? this.informe.total : this.diseno.reduce((s, x) => s + (x.panels > 0 ? x.panels : 0), 0) },
     faltan() { return this.objetivo - this.total },
@@ -189,7 +193,13 @@ export default {
       const sobran = paneles % tramos
       return Array.from({ length: tramos }, (_, i) => base + (i < sobran ? 1 : 0)).join(' + ')
     },
-    etiquetaEntrada(k) { return this.unidades > 1 ? 'Entrada ' + k + ' · inversor ' + Math.ceil(k / this.porInversor) : 'Entrada ' + k },
+    etiquetaEntrada(k) {
+      if (this.variosModelos && this.ctx) {
+        const dueno = inputOwner(this.ctx, k)
+        return dueno ? 'Entrada ' + k + ' · inversor ' + dueno.unit + ' (' + [dueno.item.brand, dueno.item.model].filter(Boolean).join(' ') + ')' : 'Entrada ' + k
+      }
+      return this.unidades > 1 ? 'Entrada ' + k + ' · inversor ' + Math.ceil(k / this.porInversor) : 'Entrada ' + k
+    },
     problemasDeFila(i, s) {
       const comprobacion = this.informe && this.informe.strings[i]
       const deEntrada = (this.informe && this.informe.inputs.find((k) => k.input === s.input)) || { problems: [] }
@@ -210,7 +220,7 @@ export default {
     },
     anadir() {
       const usadas = new Set(this.diseno.map((s) => s.input))
-      const libre = this.ctx ? Array.from({ length: inputsOf(this.ctx.inverter, this.ctx.units) }, (_, i) => i + 1).find((k) => !usadas.has(k)) || 0 : 0
+      const libre = this.ctx ? Array.from({ length: totalInputs(this.ctx) }, (_, i) => i + 1).find((k) => !usadas.has(k)) || 0 : 0
       const quiere = this.faltan > 0 ? this.faltan : (this.informe && this.informe.limits && this.informe.limits.min) || MIN_STRING_PANELS
       const paneles = Math.max(MIN_STRING_PANELS, Math.min(quiere, (this.informe && this.informe.limits && this.informe.limits.max) || MAX_STRING_PANELS))
       this.$emit('cambio', [...this.diseno, { id: newStringId(), panels: paneles, input: libre }])
