@@ -191,7 +191,7 @@
             <strong>Exportar a PDF</strong>
             <div class="export-actions">
               <button type="button" :disabled="errores > 0 || exportando !== null" title="Con los costes, el coste por Wp y el beneficio: para uso interno" @click="exportar('interno')">{{ exportando === 'interno' ? 'Generando…' : 'PDF interno' }}</button>
-              <button type="button" class="secondary" :disabled="errores > 0 || exportando !== null" title="Solo la instalación y el precio de venta: sin costes ni beneficio" @click="exportar('cliente')">{{ exportando === 'cliente' ? 'Generando…' : 'PDF para el cliente' }}</button>
+              <button type="button" class="secondary" :disabled="errores > 0 || exportando !== null" title="La propuesta para el cliente (presentación con la instalación y el precio de venta, sin costes ni beneficio): se abre el cuadro de impresión para guardarla como PDF" @click="exportar('cliente')">{{ exportando === 'cliente' ? 'Generando…' : 'PDF para el cliente' }}</button>
             </div>
             <p v-if="errorExportar" class="error" role="alert">{{ errorExportar }}</p>
             <p v-if="errores > 0" class="step-note warn export-blocked" role="status">Con {{ errores }} incompatibilidad{{ errores === 1 ? '' : 'es' }} sin resolver no se podrá exportar: cambia los productos marcados.</p>
@@ -227,7 +227,7 @@ import {
   effectiveQty, eur, lineName, lineTotal, newLine, parseCosts, pct, ratio, summarize, syncWithCatalog
 } from '@/utils/planificador/motor/costes'
 import { checkCompatibility, currentStrings, issuesByLine, levelClass, rebalanceStrings, sizeInverters } from '@/utils/planificador/motor/compatibilidad'
-import { descargarArchivo } from '@/utils/planificador/documentos/descarga'
+import { descargarArchivo, imprimirHtml } from '@/utils/planificador/documentos/descarga'
 import { fuseQuantity } from '@/utils/planificador/motor/protecciones'
 import { ROOF_LABEL, STEPS, sortFixed, withMargin } from '@/utils/planificador/motor/pasosConfig'
 import { canonical, isDirty } from '@/utils/planificador/almacenPresupuestos'
@@ -332,6 +332,10 @@ export default {
       this.errorExportar = null
       const estado = this.estado
       try {
+        if (modo === 'cliente') {
+          await this.propuestaParaElCliente()
+          return
+        }
         const { blob, nombre } = await planificadorApi.pdfPresupuesto({
           client: estado.client, moduleWp: estado.moduleWp, moduleCount: estado.moduleCount, saleRatio: estado.saleRatio,
           // El diseño de strings que vale ahora (a medida o automático): paneles de cada string y entrada del inversor
@@ -346,6 +350,23 @@ export default {
         this.errorExportar = mensajeError(e)
       } finally {
         this.exportando = null
+      }
+    },
+    // El documento para el cliente es la propuesta (la misma presentación que luego se entrega desde la pestaña «Propuesta al cliente»),
+    // sacada del presupuesto tal como está: se imprime a PDF desde el navegador y, si no deja, se descarga el archivo para imprimirlo.
+    async propuestaParaElCliente() {
+      const estado = this.estado
+      const { blob, nombre } = await planificadorApi.propuestaDelBorrador({
+        name: [estado.client, estado.reference].filter(Boolean).join(' · '),
+        data: estado,
+        kwp: this.resumen.wp / 1000,
+        panels: estado.moduleCount,
+        budget_total: this.resumen.budget
+      })
+      try {
+        await imprimirHtml(await blob.text())
+      } catch (e) {
+        descargarArchivo(blob, nombre)
       }
     },
     fechaHora(iso) { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) },
