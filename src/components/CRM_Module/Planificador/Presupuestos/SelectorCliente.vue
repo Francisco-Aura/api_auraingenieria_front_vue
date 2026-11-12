@@ -49,7 +49,11 @@
       </div>
       <p v-if="invalido && !pot.name.trim()" class="error">Pon el nombre del cliente.</p>
       <div class="survey-row">
-        <label class="survey-field">CIF (hará falta al validar el presupuesto) <input :value="pot.cif" maxlength="50" @input="editar({ cif: $event.target.value })"></label>
+        <label class="survey-field">
+          CIF de la empresa
+          <input :value="pot.cif" :class="{ 'required-empty': cifInvalido && pot.cif.trim().length < 5 }" maxlength="50" placeholder="Ej.: B12345678" @input="editar({ cif: $event.target.value })">
+          <span class="muted field-hint">Obligatorio: sale en la propuesta y hará falta al validar el presupuesto.</span>
+        </label>
       </div>
       <div class="survey-row">
         <label class="survey-field">Teléfono (opcional) <input :value="pot.phone" inputmode="tel" maxlength="40" @input="editar({ phone: $event.target.value })"></label>
@@ -72,7 +76,9 @@ export default {
     modelValue: { type: Object, default: null },
     // Nombre con el que rellenar el cliente potencial (el texto que tenía un presupuesto anterior a la vinculación)
     nombreSugerido: { type: String, default: '' },
-    invalido: { type: Boolean, default: false }
+    invalido: { type: Boolean, default: false },
+    // Marca en rojo el CIF del cliente potencial si falta (se pone al intentar guardar)
+    cifInvalido: { type: Boolean, default: false }
   },
   emits: ['update:modelValue'],
   data() {

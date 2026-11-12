@@ -13,7 +13,7 @@
     <form class="setup-form" novalidate @submit.prevent="enviar">
       <fieldset class="setup-card">
         <legend>Cliente</legend>
-        <selector-cliente v-model="v.customer" :nombre-sugerido="inicio.client" :invalido="intentado && !v.customer" />
+        <selector-cliente v-model="v.customer" :nombre-sugerido="inicio.client" :invalido="intentado && !v.customer" :cif-invalido="intentado" />
         <label class="survey-field wide">
           Nombre del proyecto
           <input v-model="v.reference" list="proyectos-del-cliente" placeholder="Ej.: Nave 2, fotovoltaica" maxlength="80" autocomplete="off">
@@ -23,7 +23,7 @@
             {{ proyectosSugeridos.length > 0 ? 'elige uno de los que ya tiene para no escribirlo distinto.' : 'escríbelo igual en todos.' }}
           </span>
         </label>
-        <label class="survey-field wide">
+        <label v-if="!esPotencial" class="survey-field wide">
           CIF de la empresa
           <input v-model="v.cif" :class="{ 'required-empty': intentado && (!v.cif || v.cif.trim().length < 5) }" placeholder="Ej.: B12345678" maxlength="30" autocomplete="off">
           <span class="muted field-hint">Obligatorio: sale en la propuesta que se le entrega al cliente.</span>
@@ -148,11 +148,17 @@ export default {
         return i && i.category === 'inversores' && ['Microinversor', 'Optimizador'].includes(String(i.attrs.tipo ?? '').trim())
       })
     },
+    esPotencial() { return !!this.v.customer && this.v.customer.kind === 'potencial' },
     problemas() { return problemasDe(this.v, this.cuenta) }
   },
   watch: {
     // Si el cliente elegido ya trae su CIF (los de la intranet), se rellena solo mientras no se haya escrito otro
-    'v.customer'(c) { if (c && c.cif && !this.v.cif) this.v.cif = c.cif },
+    // El CIF del cliente potencial es el de la empresa (se escribe en su ficha); el de uno de la intranet se rellena solo mientras no se escriba otro
+    'v.customer'(c) {
+      if (!c) return
+      if (c.kind === 'potencial') this.v.cif = c.cif || ''
+      else if (c.cif && !this.v.cif) this.v.cif = c.cif
+    },
     // Si cambian los paneles (potencia, panel o número) y ya hay strings repartidos, se reparten de nuevo entre los mismos strings
     cuenta(n) {
       const diseno = this.v.strings

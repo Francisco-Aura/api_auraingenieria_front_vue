@@ -2,7 +2,8 @@
 // (la especificación): cada regla de compatibilidad, qué reglas ocultan el producto («hard»), las constantes y tablas
 // de intensidad, los criterios de «Sugeridos» y la regla de strings iguales.
 import test from 'node:test'
-import { splitMissing } from '../../src/utils/planificador/motor/strings.js'
+import { splitMissing, spreadPanels, createStrings, fixedCount, releaseFixed, canSpreadRest } from '../../src/utils/planificador/motor/strings.js'
+import { parseCosts } from '../../src/utils/planificador/motor/costes.js'
 import assert from 'node:assert/strict'
 import { checkCompatibility, hardConflicts, issuesByLine, fitReasons, suggestions, sizeInverters } from '../../src/utils/planificador/motor/compatibilidad.js'
 import { stringPlan, stringLimits, COLD_VOC, HOT_VMP, MIN_STRING_PANELS, MAX_STRING_PANELS } from '../../src/utils/planificador/motor/pasosConfig.js'
@@ -719,3 +720,46 @@ test('splitMissing reparte lo que falta en los menos strings posibles y lo más 
     assert.equal(splitMissing(4, limites), null);
     assert.equal(splitMissing(0, limites), null);
 });
+
+test('strings fijados a mano: «repartir» no los toca y los demás se reparten lo que queda', () => {
+  // 271 paneles en 15 strings con los dos últimos fijados en 12: los otros 13 llevan (271 − 24) ÷ 13 = 19
+  const diseno = Array.from({ length: 15 }, (_, i) => ({ id: 's' + i, panels: i >= 13 ? 12 : 18, input: 0, ...(i >= 13 ? { fixed: true } : {}) }))
+  const repartido = spreadPanels(diseno, 271)
+  assert.deepEqual(repartido.map((s) => s.panels), [...Array(13).fill(19), 12, 12])
+  assert.equal(fixedCount(repartido), 2, 'siguen fijados')
+  // Con paneles que no se dividen, los que sobran van a los primeros sin fijar
+  assert.deepEqual(spreadPanels(diseno, 272).map((s) => s.panels), [20, ...Array(12).fill(19), 12, 12])
+  // Cambiar cuántos strings hay también respeta los fijados
+  const mas = createStrings(16, diseno, 271, null)
+  assert.equal(mas.length, 16)
+  assert.equal(mas.reduce((sum, s) => sum + s.panels, 0), 271)
+  assert.equal(mas[13].panels, 12)
+  assert.equal(mas[14].panels, 12)
+})
+
+test('strings fijados: si no queda para el resto, se reparte por igual y se sueltan los fijados', () => {
+  const diseno = [{ id: 'a', panels: 30, input: 0, fixed: true }, { id: 'b', panels: 5, input: 0 }, { id: 'c', panels: 5, input: 0 }]
+  const r = spreadPanels(diseno, 31) // sobran 1 panel para dos strings
+  assert.deepEqual(r.map((s) => s.panels), [11, 10, 10])
+  assert.equal(fixedCount(r), 0)
+  // Soltar los fijados los deja entrar de nuevo en el reparto
+  assert.equal(fixedCount(releaseFixed([{ id: 'a', panels: 12, input: 0, fixed: true }])), 0)
+})
+
+test('strings fijados: el presupuesto guardado conserva la marca', () => {
+  const guardado = parseCosts({ strings: [{ id: 'a', panels: 12, input: 1, fixed: true }, { id: 'b', panels: 19, input: 2 }] })
+  assert.equal(guardado.strings[0].fixed, true)
+  assert.equal('fixed' in guardado.strings[1], false)
+})
+
+test('strings fijados: se reparte el resto al momento solo si queda para los demás, y «por igual» empieza de nuevo', () => {
+  const diseno = Array.from({ length: 15 }, (_, i) => ({ id: 's' + i, panels: 18, input: 0, ...(i >= 13 ? { fixed: true } : {}) }))
+  assert.equal(canSpreadRest(diseno, 271), true)
+  assert.equal(canSpreadRest(diseno.map((s) => ({ ...s, fixed: false })), 271), false, 'sin fijados no hay nada que repartir aparte')
+  // Si lo escrito se lleva todo (p. ej. un «300» a medio teclear), no se reparte: los demás se quedan como están
+  assert.equal(canSpreadRest([{ id: 'a', panels: 300, input: 0, fixed: true }, { id: 'b', panels: 5, input: 0 }], 271), false)
+  // Volver a repartir por igual: se sueltan los fijados y todos quedan parejos
+  const parejo = spreadPanels(releaseFixed(diseno), 271)
+  assert.equal(fixedCount(parejo), 0)
+  assert.equal(Math.max(...parejo.map((s) => s.panels)) - Math.min(...parejo.map((s) => s.panels)), 1)
+})

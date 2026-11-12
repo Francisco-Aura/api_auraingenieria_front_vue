@@ -2090,3 +2090,35 @@ tr.group-row .group-toggle:hover { text-decoration: underline; }
   margin-right: 6px;
   vertical-align: -2px;
 }
+
+/* Diseñador de strings: el string que se ha puesto a mano queda «fijado» y «Repartir» no lo toca */
+.string-panels { white-space: nowrap; }
+.string-panels .tag.fijado {
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  margin: 0 0 0 6px;
+  padding: 0 7px;
+  font-size: 11px;
+  background: color-mix(in srgb, var(--brand) 28%, transparent);
+  color: var(--text);
+}
+.string-more { position: relative; display: inline-block; }
+.string-more > summary { list-style: none; cursor: pointer; display: inline-block; padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); }
+.string-more > summary::-webkit-details-marker { display: none; }
+.string-more-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 260px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  box-shadow: var(--shadow-card);
+}

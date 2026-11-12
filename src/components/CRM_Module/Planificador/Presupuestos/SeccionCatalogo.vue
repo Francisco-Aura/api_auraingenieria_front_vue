@@ -9,7 +9,7 @@
       <template v-for="f in definiciones" :key="f.key">
         <label v-if="f.opciones.length > 1">
           {{ f.label }}
-          <select v-model="filtros[f.key]"><option value="">Todos</option><option v-for="o in f.opciones" :key="o" :value="o">{{ o }}</option></select>
+          <select :value="filtros[f.key] || ''" @change="filtros[f.key] = $event.target.value"><option value="">Todos</option><option v-for="o in f.opciones" :key="o" :value="o">{{ o === 'Todas' ? 'Cualquier cubierta' : o }}</option></select>
         </label>
       </template>
       <button v-if="hayFiltros" type="button" class="link-btn clear" @click="filtros = {}">Quitar filtros</button>

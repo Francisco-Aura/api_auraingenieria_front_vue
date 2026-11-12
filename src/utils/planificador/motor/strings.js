@@ -82,7 +82,7 @@ export function spreadStrings(design, ctx) {
     const k = design.length;
     if (k === 0 || n <= 0)
         return design;
-    const spread = design.map((s, i) => ({ ...s, panels: Math.floor(n / k) + (i < n % k ? 1 : 0) }));
+    const spread = spreadEvenly(design, n);
     const inputs = totalInputs(ctx);
     const mixed = spread.some((s) => s.input >= 1 && spread.some((o) => o.input === s.input && o.panels !== s.panels));
     const invalid = spread.some((s) => s.input < 1 || s.input > inputs);
@@ -396,8 +396,45 @@ export function spreadPanels(design, moduleCount) {
     const k = design.length;
     if (k === 0 || n <= 0)
         return design;
-    return design.map((s, i) => ({ ...s, panels: Math.floor(n / k) + (i < n % k ? 1 : 0) }));
+    return spreadEvenly(design, n);
 }
+/**
+ * Reparte `n` paneles entre los strings: los fijados a mano (`fixed`) se quedan como están y los demás se llevan el resto por igual
+ * (los que sobren, de uno en uno a los primeros). Si no queda para dar al menos un panel a cada uno de los demás, o no hay ninguno sin
+ * fijar, el reparto vuelve a ser por igual entre todos y se sueltan los fijados.
+ */
+function spreadEvenly(design, n) {
+    const fixed = design.filter((s) => s.fixed && s.panels > 0);
+    const free = design.filter((s) => !(s.fixed && s.panels > 0));
+    const rest = n - fixed.reduce((sum, s) => sum + s.panels, 0);
+    if (fixed.length === 0 || free.length === 0 || rest < free.length) {
+        return design.map((s, i) => ({ ...withoutFixed(s), panels: Math.floor(n / design.length) + (i < n % design.length ? 1 : 0) }));
+    }
+    let turn = 0;
+    return design.map((s) => {
+        if (s.fixed && s.panels > 0)
+            return s;
+        const panels = Math.floor(rest / free.length) + (turn < rest % free.length ? 1 : 0);
+        turn++;
+        return { ...s, panels };
+    });
+}
+/** El string sin la marca de fijado. */
+function withoutFixed(s) {
+    const limpio = { ...s };
+    delete limpio.fixed;
+    return limpio;
+}
+/** ¿Se puede repartir lo que queda entre los strings sin fijar? (hay fijados, hay libres y a cada libre le toca al menos un panel). */
+export function canSpreadRest(design, moduleCount) {
+    const fixed = design.filter((s) => s.fixed && s.panels > 0);
+    const free = design.length - fixed.length;
+    return fixed.length > 0 && free > 0 && Math.round(moduleCount) - fixed.reduce((sum, s) => sum + s.panels, 0) >= free;
+}
+/** Cuántos strings hay fijados a mano. */
+export const fixedCount = (design) => (design ?? []).filter((s) => s.fixed && s.panels > 0).length;
+/** El diseño sin ningún string fijado (vuelven a entrar en los repartos). */
+export const releaseFixed = (design) => (design ?? []).map(withoutFixed);
 /** `count` strings con los paneles repartidos por igual (conservando los que ya había); con inversor, además cada uno en su entrada. */
 export function createStrings(count, current, moduleCount, ctx) {
     const base = Array.from({ length: count }, (_, i) => current[i] ?? { id: newStringId(), panels: 0, input: 0 });

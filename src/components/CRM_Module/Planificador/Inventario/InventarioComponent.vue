@@ -85,7 +85,7 @@
           <template v-for="f in filtrosCategoria" :key="f.key">
             <label v-if="opcionesFiltro(f).length > 1" class="inv-tool">
               <span class="inv-tool-label">{{ f.label }}</span>
-              <select v-model="filtrosAtributo[f.key]"><option value="">Todos</option><option v-for="o in opcionesFiltro(f)" :key="o" :value="o">{{ o }}</option></select>
+              <select :value="filtrosAtributo[f.key] || ''" @change="filtrosAtributo[f.key] = $event.target.value"><option value="">Todos</option><option v-for="o in opcionesFiltro(f)" :key="o" :value="o">{{ o === 'Todas' ? 'Cualquier cubierta' : o }}</option></select>
             </label>
           </template>
           <label class="inv-tool">

@@ -9,7 +9,8 @@ export function valoresDe(state) {
   return {
     customer: state.customer,
     reference: state.reference,
-    cif: state.cif || '',
+    // El CIF de la empresa; en presupuestos anteriores solo estaba en el cliente potencial
+    cif: state.cif || (state.customer && state.customer.cif) || '',
     clientLogo: state.clientLogo || '',
     targetKwp: s.targetKwp,
     moduleWp: state.moduleWp,

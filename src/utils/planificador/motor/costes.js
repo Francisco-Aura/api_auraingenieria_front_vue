@@ -47,7 +47,7 @@ function parseStrings(raw) {
         const d = s;
         const n = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.round(v) : 0);
         const parts = n(d.parts);
-        return { id: typeof d.id === 'string' && d.id ? d.id : `s-${i}`, panels: n(d.panels), input: n(d.input), ...(parts > 1 ? { parts } : {}) };
+        return { id: typeof d.id === 'string' && d.id ? d.id : `s-${i}`, panels: n(d.panels), input: n(d.input), ...(parts > 1 ? { parts } : {}), ...(d.fixed === true ? { fixed: true } : {}) };
     });
     return list;
 }
