@@ -357,7 +357,8 @@ export default {
       const estado = this.estado
       const cuerpo = {
         name: [estado.client, estado.reference].filter(Boolean).join(' · '),
-        data: estado,
+        // El diseño de strings que vale ahora (vacío con microinversores o sin panel), no uno viejo guardado
+        data: { ...estado, strings: currentStrings(estado, this.catalogo).map((x) => ({ panels: x.panels, input: x.input })) },
         kwp: this.resumen.wp / 1000,
         panels: estado.moduleCount,
         budget_total: this.resumen.budget
