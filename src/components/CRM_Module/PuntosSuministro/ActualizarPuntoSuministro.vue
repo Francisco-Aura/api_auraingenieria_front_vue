@@ -65,7 +65,11 @@
                 </div>
                 <div class="form-compact-group">
                   <label for="provincia">Provincia <span v-if="!modoConsulta" class="required">*</span></label>
-                  <input type="text" id="provincia" v-model="puntoLocal.provincia" :readonly="modoConsulta" :class="{ 'input-error': errores.provincia }" @input="errores.provincia = ''" maxlength="100" required />
+                  <!-- Desplegable con las 52 provincias (reunión del 04/11/2026): de ella sale la zona de comisión -->
+                  <select id="provincia" v-model="puntoLocal.provincia" :disabled="modoConsulta" :class="{ 'input-error': errores.provincia }" @change="errores.provincia = ''" required>
+                    <option value="">Seleccionar...</option>
+                    <option v-for="p in opcionesProvincia" :key="p.valor" :value="p.valor">{{ p.etiqueta }}</option>
+                  </select>
                   <small v-if="errores.provincia" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.provincia }}</small>
                 </div>
               </div>
@@ -567,6 +571,7 @@
 <script>
 import axios from 'axios';
 import { fechaES } from '@/utils/fechas';
+import { opcionesProvincia, provinciaDeLista } from '@/utils/provincias';
 import CampoFecha from '@/components/comun/CampoFecha.vue';
 import { campoFechaEnDialogo } from '@/components/comun/campoFechaEnDialogo';
 
@@ -633,6 +638,10 @@ export default {
     };
   },
   computed: {
+    // Las 52 provincias y, si lo guardado no se reconoce, también ese texto hasta que se elija una
+    opcionesProvincia() {
+      return opcionesProvincia(this.puntoLocal?.provincia);
+    },
     potenciasArray() {
       return Array(6).fill().map((_, index) => ({
         id: index + 1,
@@ -768,6 +777,8 @@ export default {
 
       this.puntoLocal = {
         ...newVal,
+        // Lo que se escribió a mano y se reconoce («MURCIA») ya sale con el nombre de la lista
+        provincia: provinciaDeLista(newVal.provincia) || String(newVal.provincia || '').trim(),
         exencionImpuestoElectrico: newVal.exencionImpuestoElectrico === true || newVal.exencionImpuestoElectrico === 1,
         propiedadModem: newVal.propiedadModem === true || newVal.propiedadModem === 1,
         potenciaBIE: newVal.potenciaBIE || 0.0,
@@ -860,6 +871,9 @@ export default {
       }
       if (!this.puntoLocal.provincia?.trim()) {
         this.errores.provincia = 'Provincia es obligatoria';
+        valido = false;
+      } else if (!provinciaDeLista(this.puntoLocal.provincia)) {
+        this.errores.provincia = 'Elija la provincia de la lista';
         valido = false;
       }
 

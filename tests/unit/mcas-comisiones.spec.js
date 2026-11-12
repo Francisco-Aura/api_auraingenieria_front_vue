@@ -113,7 +113,7 @@ test('la guía dice que rechazar abre la edición, que la revisión manual se co
   assert.doesNotMatch(guia[0], /no se crea nada/);
   const pasos = [...guia[0].matchAll(/<li class="mcas-guia-paso">([\s\S]*?)<\/li>/g)].map((m) => texto(m[1]));
   assert.equal(pasos.length, 3);
-  assert.match(pasos[0], /Guarde el contrato con la pestaña «Comisión MCAS» completa/);
+  assert.match(pasos[0], /Guarde el contrato con la pestaña «Otros datos» completa/);
   assert.match(pasos[1], /Revise la propuesta/);
   assert.match(pasos[1], /regla publicada/);
   assert.match(pasos[1], /requiere revisión/);

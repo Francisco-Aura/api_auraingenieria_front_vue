@@ -86,7 +86,7 @@ test('cada dato que piden las tablas de comisiones tiene su campo en el formular
   const esperado = {
     TIPO_PRECIO: 'mcasTipoPrecio', TIPO_SUMINISTRO: 'mcasTipoSuministro', SEGMENTO: 'mcasSegmento',
     ES_RENOVACION: 'mcasEsRenovacion', TIPO_RENOVACION: 'mcasTipoRenovacion', ALTA_NUEVA: 'mcasAltaNueva',
-    AMBITO: 'mcasAmbito', ZONA_COMISION: 'mcasZonaComision', TARIFA_ACCESO: 'idTarifaLuz',
+    ZONA_COMISION: 'zonaComision', TARIFA_ACCESO: 'idTarifaLuz',
     PRODUCTO: 'mcasIdProductoComercial', CONSUMO: 'consumoAnual', POTENCIA: 'potenciaContratada',
     FEE: 'mcasFeeEurMwh', GESTORA: 'mcasIdGestora',
   };
@@ -96,6 +96,11 @@ test('cada dato que piden las tablas de comisiones tiene su campo en el formular
   // La tarifa de acceso de un contrato de gas es la tarifa de gas.
   assert.equal(campos.campoDeClave('TARIFA_ACCESO', { mcasTipoSuministro: 'GAS' }), 'idTarifaGas');
   assert.equal(campos.campoDeClave('DESCONOCIDO', {}), null);
+  // El ámbito ya no existe y la zona no es un campo del formulario: sale de la provincia del punto
+  assert.equal(campos.campoDeClave('AMBITO', {}), null);
+  assert.equal(campos.CAMPO_ZONA, 'zonaComision');
+  assert.equal(campos.esCampoCalculado('zonaComision'), true);
+  assert.equal(campos.esCampoCalculado('mcasFeeEurMwh'), false);
 });
 
 test('sin vista previa se enseñan todos los campos, como antes', () => {
@@ -103,13 +108,16 @@ test('sin vista previa se enseñan todos los campos, como antes', () => {
   assert.equal(todos.respaldo, true);
   assert.deepEqual(todos.otros, []);
   assert.deepEqual(todos.soloLectura, []);
-  for (const campo of ['mcasTipoSuministro', 'mcasSegmento', 'mcasEsRenovacion', 'mcasAmbito',
-    'mcasZonaComision', 'mcasIdGestora', 'mcasFeeEurMwh', 'mcasNumeroPagos', 'mcasAltaNueva']) {
+  for (const campo of ['mcasTipoSuministro', 'mcasSegmento', 'mcasEsRenovacion',
+    'mcasIdGestora', 'mcasFeeEurMwh', 'mcasAltaNueva']) {
     assert.ok(todos.principales.includes(campo), campo);
   }
   // Van en la pestaña Contrato o ya no se escriben a mano (reunión del 04/11/2026)
+  // y el nº de pagos es de la comercializadora (respuestas del cliente del 05/11/2026)
+  // ni el ámbito ni la zona de comisión (la zona sale de la provincia del punto)
   for (const campo of ['mcasTipoPrecio', 'mcasIdProductoComercial', 'mcasPotenciaCalculo',
-    'mcasFechaPrimeraAplicacion', 'mcasFechaUltimaRelacionComercializadora']) {
+    'mcasFechaPrimeraAplicacion', 'mcasFechaUltimaRelacionComercializadora', 'mcasNumeroPagos',
+    'mcasAmbito', 'mcasZonaComision', 'zonaComision']) {
     assert.ok(!todos.principales.includes(campo), campo);
   }
   assert.ok(!todos.principales.includes('mcasTipoRenovacion'), 'el tipo de renovación solo en renovaciones');
@@ -121,14 +129,14 @@ test('sin vista previa se enseñan todos los campos, como antes', () => {
 });
 
 test('con vista previa se enseña lo básico y lo que pide la comercializadora; el resto, plegado', () => {
-  const contrato = { ...IRIS, mcasIdGestora: 4, mcasAmbito: '' };
+  const contrato = { ...IRIS, mcasIdGestora: 4 };
   const copia = JSON.parse(JSON.stringify(contrato));
   const organizado = campos.organizarCamposMcas({ vistaPrevia: VISTA_IRIS, contrato, esRenovacion: false });
 
   assert.equal(organizado.respaldo, false);
   assert.deepEqual(organizado.principales,
-    ['mcasTipoSuministro', 'mcasEsRenovacion', 'mcasNumeroPagos', 'mcasSegmento', 'mcasFeeEurMwh']);
-  assert.deepEqual(organizado.otros, ['mcasAltaNueva', 'mcasAmbito', 'mcasZonaComision', 'mcasIdGestora']);
+    ['mcasTipoSuministro', 'mcasEsRenovacion', 'mcasSegmento', 'mcasFeeEurMwh']);
+  assert.deepEqual(organizado.otros, ['mcasAltaNueva', 'mcasIdGestora']);
   // Con valor entre los plegados: alta nueva (false también es un valor) y la gestora.
   assert.equal(organizado.otrosConValor, 2);
   // El consumo se rellena en la pestaña Contrato: aquí solo se enseña.
@@ -379,7 +387,7 @@ test('al modificar un contrato guardado, la pestaña enseña su comisión actual
 
 test('los errores de la pestaña de comisión se pintan en su campo', () => {
   const html = plantilla(CONTRATOS);
-  for (const campo of ['mcasTipoSuministro', 'mcasFeeEurMwh', 'mcasNumeroPagos']) {
+  for (const campo of ['mcasTipoSuministro', 'mcasFeeEurMwh']) {
     assert.match(html, new RegExp(`<(?:select|input)[^>]*v-model(?:\\.number)?="nuevoContrato\\.${campo}"[^>]*:class="\\{ 'input-error': errores\\.${campo} \\}"`), campo);
     assert.match(html, new RegExp(`<small v-if="errores\\.${campo}" class="error-text"><i class="fas fa-exclamation-circle"></i> \\{\\{ errores\\.${campo} \\}\\}</small>`), campo);
   }
@@ -387,7 +395,10 @@ test('los errores de la pestaña de comisión se pintan en su campo', () => {
   const { ctx } = formulario();
   ctx.nuevoContrato = { ...IRIS, mcasTipoSuministro: '', mcasFeeEurMwh: '-3', mcasNumeroPagos: 20 };
   assert.equal(ctx.validarContrato(), false);
-  assert.ok(ctx.errores.mcasTipoSuministro && ctx.errores.mcasFeeEurMwh && ctx.errores.mcasNumeroPagos);
+  assert.ok(ctx.errores.mcasTipoSuministro && ctx.errores.mcasFeeEurMwh);
+  // El nº de pagos ya no es del contrato: un valor antiguo no da error ni se envía
+  assert.equal(ctx.errores.mcasNumeroPagos, undefined);
+  assert.equal(ctx.payloadContrato({ ...IRIS, mcasNumeroPagos: 20 }).mcasNumeroPagos, null);
   assert.equal(ctx.pestanaConErrores('mcas'), true);
 });
 
@@ -607,76 +618,45 @@ test('los enlaces llevan a la pestaña y al campo que hay que rellenar', async (
   }
 });
 
-test('la zona se propone por el CUPS cuando la tabla de comisiones la usa, no por el nombre', async () => {
-  const conZona = (valores = ['ZBR', 'ZAR']) => ({ ...VISTA_IRIS, campos: [{ clave: 'ZONA_COMISION', etiqueta: 'Zona de comisión', falta: true, valores }] });
+test('la zona de comisión no se propone ni se elige: el formulario enseña la que calcula el servidor', async () => {
+  const conZona = { ...VISTA_IRIS, zonaComision: 'ZBR',
+    campos: [...VISTA_IRIS.campos, { clave: 'ZONA_COMISION', etiqueta: 'Zona de comisión (provincia del punto de suministro)', falta: false, valores: ['ZBR', 'ZAR'] }] };
 
-  const endesa = formulario({ extras: { comercializadoras: [{ id: 14, nombre: 'ENDESA ENERGIA S.A.U.' }] } }).ctx;
-  endesa.nuevoContrato = { ...IRIS };
-  endesa.vistaPrevia = conZona();
-  endesa.sugerirZonaMcas();
-  assert.equal(endesa.nuevoContrato.mcasZonaComision, 'ZAR');
+  // Con un CUPS que antes proponía ZAR, al llegar la vista previa el contrato no se toca
+  const { ctx } = formulario({ axios: { post: async () => ({ data: conZona }) } });
+  ctx.nuevoContrato = { ...IRIS };
+  await ctx.pedirVistaPrevia();
+  assert.equal(ctx.nuevoContrato.mcasZonaComision, null);
+  assert.equal(typeof ctx.sugerirZonaMcas, 'undefined');
 
-  const zbr = formulario({ extras: { puntoSuministro: { id: 9, CUPSluz: 'ES0031405555555555XY0F' } } }).ctx;
-  zbr.nuevoContrato = { ...IRIS };
-  zbr.vistaPrevia = conZona();
-  zbr.sugerirZonaMcas();
-  assert.equal(zbr.nuevoContrato.mcasZonaComision, 'ZBR');
-
-  const iberdrolaSinZona = formulario({ extras: { comercializadoras: [{ id: 14, nombre: 'IBERDROLA CLIENTES, S.A.U.' }] } }).ctx;
-  iberdrolaSinZona.nuevoContrato = { ...IRIS };
-  iberdrolaSinZona.vistaPrevia = VISTA_IRIS;
-  iberdrolaSinZona.sugerirZonaMcas();
-  assert.equal(iberdrolaSinZona.nuevoContrato.mcasZonaComision, null, 'si la tabla no usa la zona, no se rellena');
-
-  const noPermitida = formulario().ctx;
-  noPermitida.nuevoContrato = { ...IRIS };
-  noPermitida.vistaPrevia = conZona(['ZBR']);
-  noPermitida.sugerirZonaMcas();
-  assert.equal(noPermitida.nuevoContrato.mcasZonaComision, null, 'solo se propone una zona que la tabla admite');
-
-  const guardado = formulario({ extras: { modoEdicion: true } }).ctx;
-  guardado.nuevoContrato = { ...IRIS };
-  guardado.vistaPrevia = conZona();
-  guardado.sugerirZonaMcas();
-  assert.equal(guardado.nuevoContrato.mcasZonaComision, null, 'no se toca un contrato ya guardado');
-
-  // La propuesta llega con la vista previa.
-  const alLlegar = formulario({ axios: { post: async () => ({ data: conZona() }) } }).ctx;
-  alLlegar.nuevoContrato = { ...IRIS };
-  await alLlegar.pedirVistaPrevia();
-  assert.equal(alLlegar.nuevoContrato.mcasZonaComision, 'ZAR');
+  // Se enseña en solo lectura, con lo que ha salido, y nunca entre los campos editables
+  const organizado = campos.organizarCamposMcas({ vistaPrevia: conZona, contrato: IRIS, esRenovacion: false });
+  assert.deepEqual(organizado.soloLectura.find((f) => f.campo === 'zonaComision'),
+    { clave: 'ZONA_COMISION', campo: 'zonaComision', etiqueta: 'Zona de comisión', falta: false, calculado: true });
+  assert.ok(![...organizado.principales, ...organizado.otros].some((c) => /zona|ambito/i.test(c)));
+  assert.equal(ctx.filasSoloLecturaMcas.find((f) => f.campo === 'zonaComision').valor, 'ZBR');
 });
 
-test('las opciones de zona y ámbito del formulario salen de la vista previa', () => {
+test('ni la zona ni el ámbito tienen campo en el formulario del contrato', () => {
   const { ctx } = formulario();
   ctx.nuevoContrato = { ...IRIS };
-  assert.deepEqual(ctx.opcionesZonaMcas, ['ZBR', 'ZAR']);
-  assert.deepEqual(ctx.opcionesAmbitoMcas.map((o) => o.valor), ['DENTRO', 'FUERA', 'NA']);
-
-  ctx.vistaPrevia = { ...VISTA_IRIS, campos: [
-    { clave: 'ZONA_COMISION', etiqueta: 'Zona de comisión', falta: false, valores: ['ZAR'] },
-    { clave: 'AMBITO', etiqueta: 'Ámbito', falta: false, valores: ['DENTRO', 'FUERA'] },
-  ] };
-  ctx.nuevoContrato.mcasZonaComision = 'ZBR';
-  assert.deepEqual(ctx.opcionesZonaMcas, ['ZAR', 'ZBR'], 'la zona guardada sigue siendo elegible');
-  assert.deepEqual(ctx.opcionesAmbitoMcas.map((o) => o.valor), ['DENTRO', 'FUERA']);
-
+  assert.equal(ctx.opcionesZonaMcas, undefined);
+  assert.equal(ctx.opcionesAmbitoMcas, undefined);
   const html = plantilla(CONTRATOS);
-  assert.match(html, /<select id="mcasZonaComision" v-model="nuevoContrato\.mcasZonaComision"[\s\S]*?<option :value="null">Sin especificar<\/option>\s*<option v-for="zona in opcionesZonaMcas"/);
-  assert.match(html, /<option v-for="opcion in opcionesAmbitoMcas" :key="opcion\.valor" :value="opcion\.valor">\{\{ opcion\.etiqueta \}\}<\/option>/);
+  assert.doesNotMatch(html, /mcasZonaComision|mcasAmbito|opcionesZonaMcas|opcionesAmbitoMcas/);
 });
 
-test('la pestaña se dibuja una vez por campo: a la vista, en solo lectura o en «Otros datos»', () => {
+test('la pestaña se dibuja una vez por campo: a la vista, en solo lectura o en «Más datos»', () => {
   const html = plantilla(CONTRATOS);
   const panel = html.split(`v-show="pestanaContrato === 'mcas'"`)[1];
   assert.ok(panel);
   assert.match(panel, /<template v-for="grupo in gruposCamposMcas" :key="grupo\.id">\s*<component :is="grupo\.plegado \? 'details' : 'div'"/);
-  assert.match(panel, /<summary v-if="grupo\.plegado"[^>]*>[\s\S]{0,80}Otros datos \(\{\{ camposMcas\.otrosConValor \}\} con valor\)/);
+  assert.match(panel, /<summary v-if="grupo\.plegado"[^>]*>[\s\S]{0,80}Más datos \(\{\{ camposMcas\.otrosConValor \}\} con valor\)/);
   assert.match(panel, /v-for="fila in filasSoloLecturaMcas"[\s\S]{0,700}@click="irACampoMcas\(fila\.campo\)"[^>]*>\s*Cambiar en pestaña «Contrato»/);
   assert.match(panel, /v-for="f in cabeceraMcas\.faltan"[\s\S]{0,200}@click="irACampoMcas\(f\.campo\)"/);
   assert.match(panel, /v-if="cabeceraMcas\.estimacion"[^>]*>\s*Estimación\s*</);
   // Cada campo editable aparece una sola vez en la plantilla.
-  for (const campo of ['mcasTipoSuministro', 'mcasSegmento', 'mcasFeeEurMwh', 'mcasZonaComision', 'mcasNumeroPagos']) {
+  for (const campo of ['mcasTipoSuministro', 'mcasSegmento', 'mcasFeeEurMwh']) {
     assert.equal((panel.match(new RegExp(`v-model(?:\\.number)?="nuevoContrato\\.${campo}"`, 'g')) || []).length, 1, campo);
   }
   // El tipo de precio y el producto, una vez y en la pestaña Contrato (reunión del 04/11/2026)

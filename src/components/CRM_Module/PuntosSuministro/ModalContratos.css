@@ -1582,13 +1582,19 @@
   font-size: 0.78rem;
 }
 
+/* Dato que no se cambia en el contrato (la zona de comisión): de dónde sale */
+.mcas-solo-lectura__nota {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
 /* Campo que la vista previa echa en falta (el rojo de un error manda sobre este aviso) */
 .mcas-campo--falta :is(.form-control-modern, .form-select-modern):not(.input-error) {
   border-color: #f3b33d;
   box-shadow: 0 0 0 2px rgba(243, 179, 61, 0.18);
 }
 
-/* «Otros datos»: campos que la tabla de comisiones no usa, plegados */
+/* «Más datos»: campos que la tabla de comisiones no usa, plegados */
 .mcas-otros {
   margin: 0.25rem 0 0.5rem;
   border: 1px solid var(--border-color);

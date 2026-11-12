@@ -107,7 +107,7 @@
             <span class="estado-modulo-titulo">Políticas de retrocesión publicadas: {{ errorRetrocesiones ? 'sin datos' : retrocesionesPublicadas }}</span>
             <span class="estado-modulo-detalle">{{ errorRetrocesiones
               ? 'No se pudieron cargar: revíselas en la pestaña Retrocesiones.'
-              : 'Informativo: cada propuesta muestra su retrocesión potencial; nunca se descuenta en el alta.' }}</span>
+              : 'Opcional: dicen cuánto se devuelve si el contrato se da de baja antes del año. En el alta nunca se descuenta nada.' }}</span>
           </div>
         </div>
       </div>
@@ -249,15 +249,46 @@
             <i class="fas fa-plus"></i>
             <span>Nueva política</span>
           </button>
+          <button v-if="tabActivo === 'cobros'" class="btn btn-primary" @click="abrirModalCobro()">
+            <i class="fas fa-plus"></i>
+            <span>Nuevas condiciones</span>
+          </button>
+          <button v-if="tabActivo === 'zonas'" class="btn btn-primary" @click="abrirModalZona()">
+            <i class="fas fa-plus"></i>
+            <span>Nueva zona</span>
+          </button>
         </div>
+      </div>
+
+      <!-- Cobros: de aquí sale solo cómo se cobra cada comisión (respuesta del cliente a la duda 8) -->
+      <div v-if="tabActivo === 'cobros'" class="context-bar">
+        <span class="context-meta">
+          <i class="fas fa-info-circle"></i>
+          <span><strong>Vale para todas las comercializadoras.</strong> Ponga en cuántos pagos cobra cada una y cuándo llega el primero:
+          la comisión de cada contrato lo coge de aquí sola, según su comercializadora. Una comercializadora sin fila cobra en 1 pago el día de inicio del contrato.</span>
+        </span>
+      </div>
+
+      <!-- Zonas: solo Iberdrola (reunión del 04/11/2026 y respuesta a la duda 5) -->
+      <div v-if="tabActivo === 'zonas'" class="context-bar">
+        <span class="context-meta">
+          <i class="fas fa-info-circle"></i>
+          <span><strong>Solo para Iberdrola.</strong> Marque qué provincias son de cada zona (ZAR y ZBR):
+          la zona de cada contrato sale sola de la provincia de su punto de suministro.</span>
+        </span>
+        <span v-if="avisoZonasSinResto" class="context-meta context-meta--aviso">
+          <i class="fas fa-exclamation-triangle"></i>
+          {{ avisoZonasSinResto }}
+        </span>
       </div>
 
       <!-- Retrocesiones: recordatorio de que son informativas -->
       <div v-if="tabActivo === 'retrocesiones'" class="context-bar">
         <span class="context-meta">
           <i class="fas fa-info-circle"></i>
-          Cada propuesta muestra la retrocesión potencial de la política publicada que le corresponde. Es informativa:
-          nunca se descuenta en el alta y solo se aplicaría si el contrato causa baja anticipada.
+          Cada propuesta muestra la retrocesión potencial de la política publicada que le corresponde; en el alta nunca se descuenta nada.
+          Con el interruptor «Retrocesión» encendido, si el contrato se da de baja o cambia de comercializadora antes de 365 días,
+          en Comisiones MCAS sale una retrocesión por aprobar con el importe de su política.
         </span>
       </div>
 
@@ -507,6 +538,57 @@
                 </tr>
               </template>
 
+              <!-- Condiciones de cobro -->
+              <template v-if="tabActivo === 'cobros'">
+                <tr v-for="c in filasPaginadas" :key="c.id">
+                  <td class="text-truncate" :title="nombreComercializadora(c.idComercializadora)">{{ nombreComercializadora(c.idComercializadora) }}</td>
+                  <td class="text-truncate">
+                    <template v-if="c.idGestora">{{ nombreGestora(c.idGestora) }}</template>
+                    <span v-else class="celda-vacia">Todas (generales)</span>
+                  </td>
+                  <td>
+                    <template v-if="c.numeroPagos">{{ textoPagosCobro(c.numeroPagos) }}</template>
+                    <span v-else class="celda-vacia">{{ textoPagosCobro(null) }}</span>
+                  </td>
+                  <td class="text-truncate" :title="[textoPrimerCobro(c), c.observaciones].filter(Boolean).join(' · ')">
+                    {{ textoPrimerCobro(c) }}
+                    <span v-if="c.observaciones" class="celda-secundaria">{{ c.observaciones }}</span>
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <button class="btn-icon btn-edit" title="Editar condiciones de cobro" aria-label="Editar condiciones de cobro" @click="abrirModalCobro(c)">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn-icon btn-delete" title="Eliminar condiciones de cobro" aria-label="Eliminar condiciones de cobro" :disabled="mutacionEnCurso" @click="eliminarCobro(c)">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+
+              <!-- Zonas de comisión -->
+              <template v-if="tabActivo === 'zonas'">
+                <tr v-for="z in filasPaginadas" :key="z.id">
+                  <td class="text-truncate" :title="nombreComercializadora(z.idComercializadora)">{{ nombreComercializadora(z.idComercializadora) }}</td>
+                  <td><strong>{{ z.zona }}</strong></td>
+                  <td class="text-truncate" :title="textoProvinciasZona(z, 60)">
+                    <span v-if="z.esResto" class="celda-vacia">{{ textoProvinciasZona(z) }}</span>
+                    <template v-else>{{ textoProvinciasZona(z) }}</template>
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <button class="btn-icon btn-edit" title="Editar zona" aria-label="Editar zona" @click="abrirModalZona(z)">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn-icon btn-delete" title="Eliminar zona" aria-label="Eliminar zona" :disabled="mutacionEnCurso" @click="eliminarZona(z)">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+
               <!-- Políticas de retrocesión -->
               <template v-if="tabActivo === 'retrocesiones'">
                 <tr v-for="p in filasPaginadas" :key="p.id" :class="{ 'fila-inactiva': p.estado === 'ARCHIVADO' }">
@@ -619,6 +701,177 @@
     <!-- ===================================================
          MODALES (patrón del modal de Administración)
     =================================================== -->
+
+    <!-- Modal Condiciones de cobro (respuestas del cliente del 05/11/2026, dudas 8 y 9) -->
+    <div v-if="modalCobro" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-cobro-titulo">
+      <div class="mcas-modal">
+        <div class="mcas-modal-header aura-modal-header">
+          <div class="mcas-modal-title">
+            <div class="mcas-modal-icon"><i :class="formCobro.id ? 'fas fa-edit' : 'fas fa-calendar-check'"></i></div>
+            <div class="title-text">
+              <h2 id="mcas-modal-cobro-titulo">{{ formCobro.id ? 'Editar' : 'Nuevas' }} condiciones de cobro</h2>
+              <p>En cuántos pagos cobra la comercializadora la comisión y cuándo llega el primero</p>
+            </div>
+          </div>
+          <button type="button" class="close-button" title="Cerrar" aria-label="Cerrar" @click="cerrarModales">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form class="mcas-modal-form" novalidate @submit.prevent="guardarCobro">
+          <div class="mcas-modal-body">
+            <section class="form-section">
+              <div class="section-header"><i class="fas fa-building"></i><h3>Comercializadora</h3></div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="mcas-label" for="mcas-cobro-comercializadora">Comercializadora <span class="required-asterisk">*</span></label>
+                  <select id="mcas-cobro-comercializadora" v-model="formCobro.idComercializadora" class="mcas-input" :class="claseError('idComercializadora')" data-autofocus>
+                    <option value="">Seleccionar...</option>
+                    <option v-for="c in comercializadoras" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+                  </select>
+                  <small v-if="erroresForm.idComercializadora" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.idComercializadora }}</small>
+                </div>
+                <div class="form-group">
+                  <label class="mcas-label" for="mcas-cobro-gestora">
+                    Gestora
+                    <i class="fas fa-info-circle help-icon" title="Déjelo en «Todas». Solo si una gestora cobra distinto (por ejemplo, Nexo, que junta varios meses en una liquidación), cree otra fila para ella: sus contratos usarán esa."></i>
+                  </label>
+                  <select id="mcas-cobro-gestora" v-model="formCobro.idGestora" class="mcas-input" :class="claseError('idGestora')">
+                    <option :value="null">Todas (condiciones generales)</option>
+                    <option v-for="g in gestoras" :key="g.id" :value="g.id">{{ g.nombre }}</option>
+                  </select>
+                  <small v-if="erroresForm.idGestora" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.idGestora }}</small>
+                </div>
+              </div>
+            </section>
+
+            <section class="form-section">
+              <div class="section-header"><i class="fas fa-credit-card"></i><h3>Cobro de la comisión</h3></div>
+              <div class="form-grid form-grid--3">
+                <div class="form-group">
+                  <label class="mcas-label" for="mcas-cobro-pagos">Nº de pagos</label>
+                  <select id="mcas-cobro-pagos" v-model="formCobro.numeroPagos" class="mcas-input" :class="claseError('numeroPagos')">
+                    <option v-for="n in 12" :key="n" :value="n">{{ n === 1 ? '1 pago' : n + ' pagos' }}</option>
+                  </select>
+                  <small v-if="erroresForm.numeroPagos" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.numeroPagos }}</small>
+                </div>
+                <div class="form-group">
+                  <label class="mcas-label" for="mcas-cobro-meses">Primer cobro (desde el inicio)</label>
+                  <select id="mcas-cobro-meses" v-model.number="formCobro.mesesHastaPrimerCobro" class="mcas-input" :class="claseError('mesesHastaPrimerCobro')">
+                    <option v-for="n in mesesCobro" :key="n" :value="n">{{ n === 0 ? 'El mismo mes' : n === 1 ? '1 mes después' : n + ' meses después' }}</option>
+                  </select>
+                  <small v-if="erroresForm.mesesHastaPrimerCobro" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.mesesHastaPrimerCobro }}</small>
+                </div>
+                <div class="form-group">
+                  <label class="mcas-label" for="mcas-cobro-dia">Qué día</label>
+                  <select id="mcas-cobro-dia" v-model="formCobro.diaPrimerCobro" class="mcas-input">
+                    <option v-for="d in diasCobro" :key="d.value" :value="d.value">{{ d.label }}</option>
+                  </select>
+                </div>
+                <div class="form-group form-group--completo">
+                  <label class="mcas-label" for="mcas-cobro-observaciones">Observaciones</label>
+                  <textarea id="mcas-cobro-observaciones" v-model="formCobro.observaciones" class="mcas-input" rows="2" maxlength="500" placeholder="Opcional: de dónde sale, excepciones…"></textarea>
+                </div>
+              </div>
+              <p class="form-hint-inline">
+                <i class="fas fa-calendar-check"></i> {{ ejemploFormCobro }}
+                <template v-if="Number(formCobro.numeroPagos) !== 1">Las cuotas siguientes, una cada mes.</template>
+              </p>
+            </section>
+          </div>
+          <div class="mcas-modal-footer">
+            <span class="footer-note"><span class="required-asterisk">*</span> Campos obligatorios</span>
+            <div class="footer-actions">
+              <button type="button" class="btn btn-cancel" @click="cerrarModales">
+                <i class="fas fa-times"></i>
+                <span>Cancelar</span>
+              </button>
+              <button type="submit" class="btn btn-save" :disabled="mutacionEnCurso">
+                <i :class="mutacionEnCurso ? 'fas fa-spinner fa-spin' : 'fas fa-save'"></i>
+                <span>{{ formCobro.id ? 'Actualizar' : 'Guardar' }}</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Zona de comisión (reunión del 04/11/2026 y respuesta del cliente a la duda 5) -->
+    <div v-if="modalZona" class="mcas-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mcas-modal-zona-titulo">
+      <div class="mcas-modal">
+        <div class="mcas-modal-header aura-modal-header">
+          <div class="mcas-modal-title">
+            <div class="mcas-modal-icon"><i :class="formZona.id ? 'fas fa-edit' : 'fas fa-map-marked-alt'"></i></div>
+            <div class="title-text">
+              <h2 id="mcas-modal-zona-titulo">{{ formZona.id ? 'Editar' : 'Nueva' }} zona de comisión</h2>
+              <p>Las provincias que forman la zona. La de cada contrato sale de la provincia de su punto de suministro</p>
+            </div>
+          </div>
+          <button type="button" class="close-button" title="Cerrar" aria-label="Cerrar" @click="cerrarModales">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form class="mcas-modal-form" novalidate @submit.prevent="guardarZona">
+          <div class="mcas-modal-body">
+            <section class="form-section">
+              <div class="section-header"><i class="fas fa-map-marked-alt"></i><h3>Zona</h3></div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="mcas-label" for="mcas-zona-comercializadora">Comercializadora <span class="required-asterisk">*</span></label>
+                  <select id="mcas-zona-comercializadora" v-model="formZona.idComercializadora" class="mcas-input" :class="claseError('idComercializadora')" data-autofocus>
+                    <option value="">Seleccionar...</option>
+                    <option v-for="c in comercializadoras" :key="c.id" :value="c.id">{{ c.nombre }}</option>
+                  </select>
+                  <small v-if="erroresForm.idComercializadora" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.idComercializadora }}</small>
+                </div>
+                <div class="form-group">
+                  <label class="mcas-label" for="mcas-zona-nombre">
+                    Nombre de la zona <span class="required-asterisk">*</span>
+                    <i class="fas fa-info-circle help-icon" title="El mismo nombre que se elige en las reglas y en las tablas de importes, en «Zona de comisión» (por ejemplo, ZAR o ZBR)."></i>
+                  </label>
+                  <input id="mcas-zona-nombre" v-model="formZona.zona" class="mcas-input mcas-input--mayusculas" :class="claseError('zona')" maxlength="20" placeholder="Por ejemplo, ZAR" autocomplete="off">
+                  <small v-if="erroresForm.zona" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.zona }}</small>
+                </div>
+              </div>
+            </section>
+
+            <section class="form-section">
+              <div class="section-header"><i class="fas fa-map-marker-alt"></i><h3>Provincias</h3></div>
+              <label class="zona-resto" for="mcas-zona-resto">
+                <input id="mcas-zona-resto" v-model="formZona.esResto" type="checkbox">
+                <span>
+                  Son todas las demás provincias
+                  <small>Las que no estén en la otra zona (por ejemplo, la ZBR si en la ZAR ya ha marcado las suyas). Así no hay que marcarlas una a una.</small>
+                </span>
+              </label>
+              <template v-if="!formZona.esResto">
+                <div class="zona-provincias" :class="{ 'zona-provincias--error': erroresForm.provincias }" role="group" aria-label="Provincias de la zona">
+                  <label v-for="p in provinciasFormZona" :key="p.codigo" class="zona-provincia" :class="{ 'zona-provincia--ocupada': p.ocupadaPor }"
+                         :title="p.ocupadaPor ? `Ya está en la zona ${p.ocupadaPor} de esta comercializadora` : null">
+                    <input type="checkbox" :checked="p.marcada" :disabled="!!p.ocupadaPor" @change="alternarProvinciaZona(p.codigo)">
+                    <span>{{ p.nombre }}<small v-if="p.ocupadaPor"> ({{ p.ocupadaPor }})</small></span>
+                  </label>
+                </div>
+                <p class="form-hint-inline"><i class="fas fa-check-square"></i> {{ resumenFormZona }}</p>
+              </template>
+              <small v-if="erroresForm.provincias" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.provincias }}</small>
+            </section>
+          </div>
+          <div class="mcas-modal-footer">
+            <span class="footer-note"><span class="required-asterisk">*</span> Campos obligatorios</span>
+            <div class="footer-actions">
+              <button type="button" class="btn btn-cancel" @click="cerrarModales">
+                <i class="fas fa-times"></i>
+                <span>Cancelar</span>
+              </button>
+              <button type="submit" class="btn btn-save" :disabled="mutacionEnCurso">
+                <i :class="mutacionEnCurso ? 'fas fa-spinner fa-spin' : 'fas fa-save'"></i>
+                <span>{{ formZona.id ? 'Actualizar' : 'Guardar' }}</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Modal Producto Comercial -->
     <!-- Los formularios no se cierran al pulsar fuera: se perdería lo escrito (solo con Cancelar, la X o Esc) -->
@@ -938,13 +1191,6 @@
                     </select>
                   </div>
                   <div class="form-group">
-                    <label class="mcas-label" for="mcas-cond-ambito">Ámbito</label>
-                    <select id="mcas-cond-ambito" v-model="editorRegla.condiciones.ambito" class="mcas-input">
-                      <option value="">Cualquiera</option>
-                      <option v-for="o in opcionesCondicion.ambito" :key="o.value" :value="o.value">{{ o.label }}</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
                     <label class="mcas-label" for="mcas-cond-producto">
                       Producto comercial
                       <i class="fas fa-info-circle help-icon" title="Productos de la comercializadora de la tabla (pestaña Productos). El contrato debe tener elegido ese producto."></i>
@@ -968,9 +1214,12 @@
                   <div class="form-group">
                     <label class="mcas-label" for="mcas-cond-zona">
                       Zona de comisión
-                      <i class="fas fa-info-circle help-icon" title="Mismo código que se escribe en el campo «Zona comisión» del contrato (p. ej. ZBR)."></i>
+                      <i class="fas fa-info-circle help-icon" title="Solo Iberdrola: la zona del contrato sale de la provincia de su punto de suministro, con las provincias de la pestaña Zonas."></i>
                     </label>
-                    <input id="mcas-cond-zona" v-model="editorRegla.condiciones.zona_comision" class="mcas-input" placeholder="Cualquiera">
+                    <select id="mcas-cond-zona" v-model="editorRegla.condiciones.zona_comision" class="mcas-input">
+                      <option value="">Cualquiera</option>
+                      <option v-for="z in opcionesZonaRegla" :key="z" :value="z">{{ z }}</option>
+                    </select>
                   </div>
                 </div>
 
@@ -998,8 +1247,8 @@
                 <div class="rango-condicion">
                   <div class="rango-condicion-titulo">
                     <span class="mcas-label">
-                      Potencia de cálculo (kW)
-                      <i class="fas fa-info-circle help-icon" title="Campo «Potencia de cálculo (kW)» del contrato."></i>
+                      Potencia contratada (kW)
+                      <i class="fas fa-info-circle help-icon" title="La mayor de las potencias P1 a P6 del contrato."></i>
                     </span>
                   </div>
                   <div class="form-grid">
@@ -1011,6 +1260,25 @@
                       <label class="mcas-label" for="mcas-cond-potencia-max">Hasta</label>
                       <input id="mcas-cond-potencia-max" v-model="editorRegla.condiciones.potenciaMax" type="number" min="0" step="any" class="mcas-input" :class="claseError('potenciaMax')" placeholder="Sin máximo">
                       <small v-if="erroresForm.potenciaMax" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.potenciaMax }}</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="rango-condicion">
+                  <div class="rango-condicion-titulo">
+                    <span class="mcas-label">
+                      Meses desde que el punto dejó esta comercializadora
+                      <i class="fas fa-info-circle help-icon" title="Solo cuenta si el punto ya estuvo con esta comercializadora (se mira en sus contratos anteriores). Por ejemplo, «Hasta 12» con «No comisionable»: no comisiona si vuelve antes de un año. Si el contrato cumple esto, se usa esta regla aunque encaje también en otra."></i>
+                    </span>
+                  </div>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label class="mcas-label" for="mcas-cond-meses-min">Desde</label>
+                      <input id="mcas-cond-meses-min" v-model="editorRegla.condiciones.mesesRelacionMin" type="number" min="0" step="1" class="mcas-input" placeholder="Sin mínimo">
+                    </div>
+                    <div class="form-group">
+                      <label class="mcas-label" for="mcas-cond-meses-max">Hasta</label>
+                      <input id="mcas-cond-meses-max" v-model="editorRegla.condiciones.mesesRelacionMax" type="number" min="0" step="1" class="mcas-input" :class="claseError('mesesRelacionMax')" placeholder="Sin máximo">
+                      <small v-if="erroresForm.mesesRelacionMax" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.mesesRelacionMax }}</small>
                     </div>
                   </div>
                 </div>
@@ -1108,13 +1376,21 @@
                   </div>
                   <div v-if="!requiereMotivo" class="form-group">
                     <label class="mcas-label" for="mcas-regla-pagos">
-                      Nº de pagos sugerido
-                      <i class="fas fa-info-circle help-icon" title="Solo se usa si el contrato no indica su propio «Nº de pagos»."></i>
+                      Nº de pagos
+                      <i class="fas fa-info-circle help-icon" title="Solo si esta regla se cobra en pagos distintos de los de la comercializadora (pestaña Cobros y cuotas); por ejemplo, un tramo de consumo que se cobra en 3 pagos."></i>
                     </label>
                     <select id="mcas-regla-pagos" v-model="editorRegla.numeroPagos" class="mcas-input">
-                      <option value="">Sin sugerencia (1 pago)</option>
+                      <option value="">Los de la comercializadora</option>
                       <option v-for="n in 12" :key="n" :value="n">{{ n === 1 ? '1 pago' : n + ' pagos' }}</option>
                     </select>
+                  </div>
+                  <div v-if="!requiereMotivo" class="form-group">
+                    <label class="mcas-label" for="mcas-regla-porcentaje">
+                      % de lo calculado que se cobra
+                      <i class="fas fa-info-circle help-icon" title="Vacío: todo lo calculado. Por ejemplo, 80 para una renovación tácita que se cobra al 80 %. La propuesta enseña lo calculado y el descuento."></i>
+                    </label>
+                    <input id="mcas-regla-porcentaje" v-model="formRegla.porcentajeResultado" type="number" min="1" max="200" step="any" class="mcas-input" :class="claseError('porcentajeResultado')" placeholder="100">
+                    <small v-if="erroresForm.porcentajeResultado" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ erroresForm.porcentajeResultado }}</small>
                   </div>
                 </div>
               </section>
@@ -1690,6 +1966,9 @@ import CampoFecha from '@/components/comun/CampoFecha.vue'
 import { campoFechaEnDialogo } from '@/components/comun/campoFechaEnDialogo'
 import { escaparHtml } from '@/utils/html'
 import { comprobacionesModulo } from './mcasEstados'
+import { DIAS_COBRO, MESES_MAX, condicionCobroVacia, ejemploCobro, textoPagosCobro, textoPrimerCobro, validarCondicionCobro } from './mcasCobros'
+import { zonaVacia, textoProvinciasZona, provinciasOcupadas, validarZona, zonaAPayload, zonasDeComercializadora, comercializadorasSinResto } from './mcasZonas'
+import { PROVINCIAS, nombreProvincia } from '@/utils/provincias'
 import { estadoPorComercializadora, comprobacionActivacion, propuestaNuevaVersion, agruparIncidencias, nombreConjunto, nombreRegla } from './mcasActivacion'
 import McasMatrizEditor from './McasMatrizEditor.vue'
 
@@ -1789,11 +2068,13 @@ const FLAGS = [
     descripcion: 'Cálculo para contratos a precio fijo', efecto: 'el cálculo para contratos a precio fijo' },
   { codigo: 'MCAS_INDEXED_ENABLED', label: 'Indexado',
     descripcion: 'Cálculo para contratos indexados (activar solo tras validar los fijos)', efecto: 'el cálculo para contratos indexados' },
-  // MCAS_RETROCESSION_ENABLED no se enseña: hoy no tiene efecto (la retrocesión es solo informativa).
   // Sin fila en la base de datos cuenta como apagado: al encenderlo se crea (no hace falta script).
   { codigo: 'MCAS_AUTO_APPROVAL_ENABLED', label: 'Aprobación automática', sinFilaEsApagado: true,
     descripcion: 'Las comisiones que se calculen bien al guardar el contrato se aprueban solas y se crea su servicio',
     efecto: 'la aprobación automática de las comisiones' },
+  { codigo: 'MCAS_RETROCESSION_ENABLED', label: 'Retrocesión', sinFilaEsApagado: true, textoPropio: true,
+    descripcion: 'Cuando un contrato comisionado se da de baja o cambia de comercializadora antes de 365 días, sale en Comisiones MCAS una retrocesión por aprobar',
+    efecto: 'las retrocesiones automáticas por baja antes del año' },
 ]
 
 // Configuración MCAS recién instalada (sin ninguna tabla): qué hacer, en orden.
@@ -1806,6 +2087,8 @@ const PRIMEROS_PASOS = [
     texto: 'Pulse «Nueva tabla», elija la comercializadora y la fecha desde la que vale. Se crea en borrador: puede cambiarla cuanto quiera hasta activarla.' },
   { titulo: 'Añada las reglas',
     texto: 'En la pestaña «Reglas», «Nueva regla»: a qué contratos se aplica (por ejemplo, pymes de luz) y cómo se calcula la comisión.' },
+  { titulo: 'Indique cómo cobra',
+    texto: 'Pestaña «Cobros y cuotas»: en cuántos pagos cobra la comercializadora la comisión y cuándo llega el primero. Si es Iberdrola, marque además sus provincias en la pestaña «Zonas».' },
   { titulo: 'Pruébela con un contrato',
     texto: '«Probar con un contrato» calcula la comisión de un contrato real con la tabla en borrador, sin guardar nada.' },
   { titulo: 'Actívela',
@@ -1821,8 +2104,12 @@ const TABS = [
     ayuda: 'Cada regla dice a qué contratos se aplica y cómo se calcula la comisión. A cada contrato le debe corresponder una sola regla de la tabla.' },
   { id: 'productos', label: 'Productos', icono: 'fas fa-tags',
     ayuda: 'Ofertas y tarifas de cada comercializadora. Solo hacen falta si la comisión cambia según la oferta contratada.' },
+  { id: 'cobros', label: 'Cobros y cuotas', icono: 'fas fa-calendar-check',
+    ayuda: 'Para todas las comercializadoras: en cuántos pagos cobra cada una la comisión y cuándo llega el primero. La comisión de cada contrato lo coge de aquí sola.' },
+  { id: 'zonas', label: 'Zonas', icono: 'fas fa-map-marked-alt',
+    ayuda: 'Solo para Iberdrola: qué provincias son ZAR y cuáles ZBR. La zona de cada contrato sale sola de la provincia de su punto de suministro.' },
   { id: 'retrocesiones', label: 'Retrocesiones', icono: 'fas fa-undo-alt',
-    ayuda: 'Qué parte de la comisión se devolvería si el contrato causa baja anticipada. Es informativa: la propuesta muestra la retrocesión potencial y nunca se descuenta en el alta.' },
+    ayuda: 'Qué parte de la comisión se devuelve si el contrato se da de baja o cambia de comercializadora antes de 365 días. Con el interruptor «Retrocesión» encendido, la retrocesión sale sola en Comisiones MCAS para aprobarla.' },
 ]
 
 // Columnas por pestaña: `valor` alimenta filtro y orden (salvo `orden` explícito).
@@ -1857,6 +2144,25 @@ const COLUMNAS = {
     { key: 'vigencia', label: 'Vigencia', icono: 'fas fa-calendar-alt', ancho: '16%', filtro: 'texto',
       valor: (p, vm) => vm.formatVigencia(p.activoDesde, p.activoHasta), orden: p => p.activoDesde },
     { key: 'estado', label: 'Estado', icono: 'fas fa-toggle-on', ancho: '9%', filtro: 'select', opciones: ACTIVO_INACTIVO, valor: p => String(!!p.activo) },
+  ],
+  cobros: [
+    { key: 'comercializadora', label: 'Comercializadora', icono: 'fas fa-building', ancho: '26%', filtro: 'select',
+      opciones: vm => vm.opcionesComercializadoraCobros, valor: c => String(c.idComercializadora),
+      orden: (c, vm) => vm.nombreComercializadora(c.idComercializadora) },
+    { key: 'gestora', label: 'Gestora', icono: 'fas fa-handshake', ancho: '18%', filtro: 'texto',
+      valor: (c, vm) => (c.idGestora ? vm.nombreGestora(c.idGestora) : 'Todas (generales)') },
+    { key: 'pagos', label: 'Pagos', icono: 'fas fa-credit-card', ancho: '16%', filtro: 'texto',
+      valor: c => textoPagosCobro(c.numeroPagos), orden: c => c.numeroPagos ?? 0 },
+    { key: 'primerCobro', label: 'Primer cobro', icono: 'fas fa-calendar-check', ancho: '30%', filtro: 'texto',
+      valor: c => textoPrimerCobro(c), orden: c => (c.mesesHastaPrimerCobro ?? 0) * 10 + ['MISMO_DIA', 'DIA_1', 'ULTIMO_DIA_MES'].indexOf(c.diaPrimerCobro) },
+  ],
+  zonas: [
+    { key: 'comercializadora', label: 'Comercializadora', icono: 'fas fa-building', ancho: '26%', filtro: 'select',
+      opciones: vm => vm.opcionesComercializadoraZonas, valor: z => String(z.idComercializadora),
+      orden: (z, vm) => vm.nombreComercializadora(z.idComercializadora) },
+    { key: 'zona', label: 'Zona', icono: 'fas fa-map-marked-alt', ancho: '14%', filtro: 'texto', valor: z => z.zona },
+    { key: 'provincias', label: 'Provincias', icono: 'fas fa-map-marker-alt', ancho: '50%', filtro: 'texto',
+      valor: z => textoProvinciasZona(z, nombreProvincia, 60), orden: z => (z.esResto ? 99 : (z.provincias || []).length) },
   ],
   retrocesiones: [
     { key: 'comercializadora', label: 'Comercializadora', icono: 'fas fa-building', ancho: '19%', filtro: 'select',
@@ -2080,10 +2386,16 @@ export default {
       politicasRetrocesion: [],
       cargandoRetrocesiones: false,
       errorRetrocesiones: false,
+      condicionesCobro: [],
+      cargandoCobros: false,
+      errorCobros: false,
+      zonas: [],
+      cargandoZonas: false,
+      errorZonas: false,
       reglasRequestId: 0,
       // Tabla
       filtros: filtrosIniciales(),
-      orden: { conjuntos: {}, reglas: {}, productos: {}, retrocesiones: {} },
+      orden: { conjuntos: {}, reglas: {}, productos: {}, cobros: {}, zonas: {}, retrocesiones: {} },
       currentPage: 1,
       recordsPerPage: 10,
       // Modales
@@ -2097,6 +2409,10 @@ export default {
       modalSimulacion: false,
       simulacion: { referencia: '', cargando: false, resultado: null },
       modalRetrocesion: false,
+      modalCobro: false,
+      formCobro: {},   // se rellena al abrir el modal (abrirModalCobro)
+      modalZona: false,
+      formZona: {},    // se rellena al abrir el modal (abrirModalZona)
       formRetrocesion: politicaAFormulario(null),
       soloLecturaRetrocesion: false,
       soloLecturaRegla: false,
@@ -2284,10 +2600,56 @@ export default {
     flagsVista() {
       return FLAGS.map(f => {
         const flag = this.featureFlags.find(x => x.codigo === f.codigo)
-        const descripcion = flag?.descripcion || f.descripcion
+        // La descripción guardada del de retrocesión es de cuando no hacía nada: manda la de aquí
+        const descripcion = f.textoPropio ? f.descripcion : (flag?.descripcion || f.descripcion)
         const disponible = !!flag || (f.sinFilaEsApagado === true && !this.flagsError)
         return { ...f, descripcion, ayuda: descripcion, activo: !!flag?.activo, disponible }
       })
+    },
+    opcionesComercializadoraCobros() {
+      const ids = [...new Set(this.condicionesCobro.map(c => c.idComercializadora).filter(id => id != null))]
+      return ids
+        .map(id => ({ value: String(id), label: this.nombreComercializadora(id) }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'es'))
+    },
+    ejemploFormCobro() {
+      return ejemploCobro(this.formCobro)
+    },
+    opcionesComercializadoraZonas() {
+      const ids = [...new Set(this.zonas.map(z => z.idComercializadora).filter(id => id != null))]
+      return ids
+        .map(id => ({ value: String(id), label: this.nombreComercializadora(id) }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'es'))
+    },
+    // Las 52 provincias para el formulario: marcada en esta zona u ocupada por otra de la misma comercializadora
+    provinciasFormZona() {
+      const marcadas = new Set(this.formZona.provincias || [])
+      const ocupadas = provinciasOcupadas(this.formZona, this.zonas)
+      return PROVINCIAS.map(p => ({ ...p, marcada: marcadas.has(p.codigo), ocupadaPor: ocupadas[p.codigo] || null }))
+    },
+    resumenFormZona() {
+      const n = (this.formZona.provincias || []).length
+      if (!n) return 'Ninguna provincia marcada.'
+      return `${n === 1 ? '1 provincia marcada' : n + ' provincias marcadas'}: ${textoProvinciasZona(this.formZona, nombreProvincia, 60)}.`
+    },
+    // Con zonas pero sin la del resto, un punto de otra provincia se queda sin zona y su contrato sin calcular
+    avisoZonasSinResto() {
+      const nombres = comercializadorasSinResto(this.zonas).map(id => this.nombreComercializadora(id))
+      if (!nombres.length) return ''
+      return `${nombres.join(', ')}: hay provincias sin zona. Marque «Son todas las demás provincias» en una de sus zonas, `
+        + 'o los contratos de esas provincias no se podrán calcular.'
+    },
+    // Zonas que se pueden elegir en una regla: las de la comercializadora de su tabla (o las del CUPS)
+    opcionesZonaRegla() {
+      const lista = zonasDeComercializadora(this.zonas, this.conjuntoParaReglas?.idComercializadora)
+      const actual = String(this.editorRegla?.condiciones?.zona_comision || '').trim()
+      return actual && !lista.includes(actual) ? [...lista, actual] : lista
+    },
+    diasCobro() {
+      return DIAS_COBRO
+    },
+    mesesCobro() {
+      return Array.from({ length: MESES_MAX + 1 }, (_, i) => i)
     },
     opcionesComercializadoraProductos() {
       const ids = [...new Set(this.productos.map(p => p.idComercializadora).filter(id => id != null))]
@@ -2310,19 +2672,23 @@ export default {
         case 'conjuntos': return this.conjuntosReglas
         case 'reglas': return this.conjuntoParaReglas ? this.reglasConjunto : []
         case 'retrocesiones': return this.politicasRetrocesion
+        case 'cobros': return this.condicionesCobro
+        case 'zonas': return this.zonas
         default: return this.productos
       }
     },
     cargandoTab() {
       return {
         conjuntos: this.cargandoConjuntos, reglas: this.cargandoReglas,
-        productos: this.cargandoProductos, retrocesiones: this.cargandoRetrocesiones,
+        productos: this.cargandoProductos, retrocesiones: this.cargandoRetrocesiones, cobros: this.cargandoCobros,
+        zonas: this.cargandoZonas,
       }[this.tabActivo]
     },
     errorTab() {
       return {
         conjuntos: this.errorConjuntos, reglas: this.errorReglas,
-        productos: this.errorProductos, retrocesiones: this.errorRetrocesiones,
+        productos: this.errorProductos, retrocesiones: this.errorRetrocesiones, cobros: this.errorCobros,
+        zonas: this.errorZonas,
       }[this.tabActivo]
     },
     filasFiltradas() {
@@ -2359,7 +2725,7 @@ export default {
     estadoVacio() {
       const nombres = {
         conjuntos: 'las tablas de comisiones', reglas: 'las reglas de la tabla', productos: 'los productos comerciales',
-        retrocesiones: 'las políticas de retrocesión',
+        retrocesiones: 'las políticas de retrocesión', cobros: 'las condiciones de cobro', zonas: 'las zonas de comisión',
       }
       const sinTablas = {
         icono: 'fas fa-layer-group', texto: 'Todavía no hay tablas de comisiones', crear: 'Crear la primera tabla', accion: 'tabla',
@@ -2381,15 +2747,25 @@ export default {
             + 'un % sobre el FEE, un importe por MWh, una tabla de importes... A cada contrato le debe corresponder una sola regla.'
             + (this.conjuntoEditable ? '' : ' Esta tabla ya no está en borrador: para añadirle reglas, cree una «Nueva versión».'),
         }
+        case 'cobros': return {
+          icono: 'fas fa-calendar-check', texto: 'Todavía no hay condiciones de cobro', crear: 'Crear las primeras',
+          detalle: 'Vale para todas las comercializadoras. Diga en cuántos pagos cobra cada una la comisión y cuándo llega el primero (por ejemplo, '
+            + 'el último día del mes de inicio del contrato). Mientras no tenga, se cobra en 1 pago el día de inicio.',
+        }
+        case 'zonas': return {
+          icono: 'fas fa-map-marked-alt', texto: 'Todavía no hay zonas de comisión', crear: 'Crear la primera zona',
+          detalle: 'Solo para Iberdrola. Cree la ZAR marcando sus provincias, y la ZBR con «Son todas las demás provincias».',
+        }
         case 'retrocesiones': return {
           icono: 'fas fa-undo-alt', texto: 'Todavía no hay políticas de retrocesión', crear: 'Crear la primera política',
           detalle: 'Una política de retrocesión dice qué parte de la comisión se devolvería si el contrato se da de baja pronto '
-            + '(por ejemplo, toda la comisión en los primeros 90 días). Es opcional e informativa: se enseña en cada propuesta y nunca se descuenta en el alta.',
+            + '(por ejemplo, toda la comisión en los primeros 90 días). Se enseña en cada propuesta y, con el interruptor «Retrocesión» encendido, '
+            + 'calcula la retrocesión que sale en Comisiones MCAS cuando hay una baja antes del año. En el alta nunca se descuenta nada.',
         }
         default: return {
           icono: 'fas fa-tags', texto: 'Todavía no hay productos', crear: 'Crear el primer producto',
           detalle: 'Los productos son las ofertas de cada comercializadora (por ejemplo, «Plan Personalizado»). Solo hacen falta si la comisión '
-            + 'depende del producto que se contrata: se eligen en la regla y en la pestaña «Comisión MCAS» del contrato.',
+            + 'depende del producto que se contrata: se eligen en la regla y en la pestaña «Contrato» del contrato.',
         }
       }
     },
@@ -2448,6 +2824,7 @@ export default {
         motivo: this.formRegla.motivoManual,
         numeroPagos: this.editorRegla.numeroPagos,
         nombreProducto: this.nombreProductoRegla,
+        porcentajeResultado: this.formRegla.porcentajeResultado,
       })
     },
     // ---- códigos internos que se generan solos ----
@@ -2494,10 +2871,12 @@ export default {
         ['Segmento', legible(SEGMENTOS, d.segmento)],
         ['¿Es renovación?', siNo(d.esRenovacion)], ['Tipo de renovación', legible(OPCIONES_CONDICION.tipo_renovacion, d.tipoRenovacion)],
         ['Alta nueva', siNo(d.altaNueva)],
-        ['Ámbito', legible(OPCIONES_CONDICION.ambito, d.ambito)], ['Zona de comisión', d.zonaComision], ['Producto comercial', producto],
+        ['Zona de comisión (por la provincia del punto)', d.zonaComision], ['Producto comercial', producto],
         ['Tarifa de acceso', d.tarifaAcceso], ['Consumo anual', conUnidad(d.consumoKwh, 'kWh')],
-        ['FEE del contrato', conUnidad(d.feeEurMwh, '€/MWh')], ['Potencia de cálculo', conUnidad(d.potenciaKw, 'kW')],
-        ['Nº de pagos del contrato', d.numeroPagos], ['Fecha de inicio', this.formatFechaCorta(d.fechaInicio)],
+        ['FEE del contrato', conUnidad(d.feeEurMwh, '€/MWh')], ['Potencia contratada (la mayor)', conUnidad(d.potenciaKw, 'kW')],
+        ['Nº de pagos de la comercializadora', d.numeroPagos], ['Fecha de inicio', this.formatFechaCorta(d.fechaInicio)],
+        ['Última relación con la comercializadora', d.ultimaRelacion
+          ? `${this.formatFechaCorta(d.ultimaRelacion)} (hace ${d.mesesUltimaRelacion} ${d.mesesUltimaRelacion === 1 ? 'mes' : 'meses'})` : null],
       ]
       return filas.map(([etiqueta, valor]) => ({ etiqueta, valor: esVacio(valor) ? 'Sin informar' : valor }))
     },
@@ -2514,6 +2893,8 @@ export default {
     },
     // Una vez mostrado un error, la validación se reevalúa en vivo al corregir.
     formProducto: { handler() { this.revalidar(this.modalProducto, this.validarProducto) }, deep: true },
+    formCobro: { handler() { this.revalidar(this.modalCobro, this.validarCobro) }, deep: true },
+    formZona: { handler() { this.revalidar(this.modalZona, this.validarZona) }, deep: true },
     formConjunto: { handler() { this.revalidar(this.modalConjunto, this.validarConjunto) }, deep: true },
     formRegla: { handler() { this.revalidar(this.modalRegla, this.validarRegla) }, deep: true },
     formRetrocesion: { handler() { this.revalidar(this.modalRetrocesion, this.validarRetrocesion) }, deep: true },
@@ -2530,6 +2911,8 @@ export default {
       this.cargarCatalogos(),
       this.cargarConjuntos({ silencioso: true }),
       this.cargarProductos({ silencioso: true }),
+      this.cargarCobros({ silencioso: true }),
+      this.cargarZonas({ silencioso: true }),
       this.cargarFeatureFlags(),
       // Su fallo se ve en «Estado del módulo» y en la pestaña, sin bloquear el resto.
       this.cargarRetrocesiones({ silencioso: true }),
@@ -2655,6 +3038,8 @@ export default {
         case 'conjuntos': return this.cargarConjuntos({ forzarPanel: true })
         case 'reglas': return Promise.all([this.cargarConjuntos({ forzarPanel: true }), this.cargarReglas()])
         case 'retrocesiones': return this.cargarRetrocesiones()
+        case 'cobros': return this.cargarCobros()
+        case 'zonas': return this.cargarZonas()
         default: return this.cargarProductos()
       }
     },
@@ -2740,6 +3125,8 @@ export default {
         case 'conjuntos': return this.conjuntosReglas.length
         case 'reglas': return this.conjuntoParaReglas ? this.reglasConjunto.length : null
         case 'retrocesiones': return this.politicasRetrocesion.length
+        case 'cobros': return this.condicionesCobro.length
+        case 'zonas': return this.zonas.length
         default: return this.productos.length
       }
     },
@@ -2750,6 +3137,8 @@ export default {
         case 'conjuntos': return this.abrirModalConjunto()
         case 'reglas': return this.abrirModalRegla()
         case 'retrocesiones': return this.abrirModalRetrocesion()
+        case 'cobros': return this.abrirModalCobro()
+        case 'zonas': return this.abrirModalZona()
         default: return this.abrirModalProducto()
       }
     },
@@ -2768,6 +3157,8 @@ export default {
       this.modalRegla = false
       this.modalSimulacion = false
       this.modalRetrocesion = false
+      this.modalCobro = false
+      this.modalZona = false
       this.modalNuevaVersion = false
       this.modalActivacion = false
       this.erroresForm = {}
@@ -2784,7 +3175,7 @@ export default {
       // La rejilla atiende su propio Escape (pregunta antes de perder cambios).
       if (this.modalMatriz) return
       if (this.modalProducto || this.modalConjunto || this.modalRegla || this.modalSimulacion
-        || this.modalRetrocesion || this.modalNuevaVersion || this.modalActivacion) {
+        || this.modalRetrocesion || this.modalCobro || this.modalZona || this.modalNuevaVersion || this.modalActivacion) {
         e.preventDefault()
         this.cerrarModales()
       }
@@ -2809,6 +3200,174 @@ export default {
       if (!campos.length) return true
       this.$nextTick(() => this.$refs.raiz?.querySelector('.mcas-modal .input-error')?.focus())
       return false
+    },
+
+    // -----------------------------------------------
+    // Condiciones de cobro (pestaña «Cobros y cuotas»)
+    // -----------------------------------------------
+    async cargarCobros({ silencioso = false } = {}) {
+      this.cargandoCobros = true
+      try {
+        const { data } = await axios.get('/mcas/condiciones-cobro')
+        this.condicionesCobro = Array.isArray(data) ? data : []
+        this.errorCobros = false
+      } catch (e) {
+        console.error('Error al cargar las condiciones de cobro MCAS:', e)
+        this.errorCobros = true
+        if (!silencioso) mostrarError(this.$swal, 'Error', textoError(e, 'No se pudieron cargar las condiciones de cobro.'))
+      } finally {
+        this.cargandoCobros = false
+      }
+    },
+    abrirModalCobro(c = null) {
+      this.formCobro = c ? { ...condicionCobroVacia(), ...c, numeroPagos: c.numeroPagos || 1, observaciones: c.observaciones || '' } : condicionCobroVacia()
+      this.abrirModal('modalCobro')
+    },
+    validarCobro() {
+      return validarCondicionCobro(this.formCobro, this.condicionesCobro)
+    },
+    async guardarCobro() {
+      if (this.mutacionEnCurso || !this.aplicarValidacion(this.validarCobro)) return
+      const f = this.formCobro
+      const payload = {
+        idComercializadora: Number(f.idComercializadora),
+        idGestora: f.idGestora === null || f.idGestora === '' ? null : Number(f.idGestora),
+        numeroPagos: f.numeroPagos === null || f.numeroPagos === '' ? null : Number(f.numeroPagos),
+        mesesHastaPrimerCobro: Number(f.mesesHastaPrimerCobro) || 0,
+        diaPrimerCobro: f.diaPrimerCobro || 'MISMO_DIA',
+        observaciones: String(f.observaciones ?? '').trim() || null,
+      }
+      this.mutacionEnCurso = true
+      try {
+        const { data } = f.id
+          ? await axios.put(`/mcas/condiciones-cobro/${f.id}`, payload)
+          : await axios.post('/mcas/condiciones-cobro', payload)
+        this.cerrarModales()
+        await this.cargarCobros()
+        this.avisarCobroGuardado('Condiciones guardadas',
+          `Las comisiones de ${this.nombreComercializadora(payload.idComercializadora)} se cobrarán así a partir de ahora.`, data?.pendientes)
+      } catch (e) {
+        mostrarError(this.$swal, 'Error al guardar', textoError(e, 'No se pudieron guardar las condiciones de cobro.'))
+      } finally {
+        this.mutacionEnCurso = false
+      }
+    },
+    async eliminarCobro(c) {
+      if (this.mutacionEnCurso) return
+      const gestora = c.idGestora ? ` con la gestora ${this.nombreGestora(c.idGestora)}` : ''
+      const confirmado = await confirmar(this.$swal, {
+        titulo: '¿Eliminar las condiciones de cobro?',
+        texto: `Las comisiones de ${this.nombreComercializadora(c.idComercializadora)}${gestora} se cobrarán `
+          + (c.idGestora ? 'con las condiciones generales de la comercializadora.' : 'en 1 pago (o los de la regla) el día de inicio del contrato.')
+          + ' Las comisiones ya aprobadas no cambian.',
+        textoConfirmar: 'Sí, eliminar',
+        peligroso: true,
+      })
+      if (!confirmado) return
+      this.mutacionEnCurso = true
+      try {
+        const { data } = await axios.delete(`/mcas/condiciones-cobro/${c.id}`)
+        await this.cargarCobros()
+        this.avisarCobroGuardado('Condiciones eliminadas', 'Las condiciones de cobro se han eliminado.', data?.pendientes)
+      } catch (e) {
+        mostrarError(this.$swal, 'Error al eliminar', textoError(e, 'No se pudieron eliminar las condiciones de cobro.'))
+      } finally {
+        this.mutacionEnCurso = false
+      }
+    },
+    // Las comisiones pendientes calculadas antes no cambian solas (como con una nueva versión de tabla)
+    avisarCobroGuardado(titulo, texto, pendientes) {
+      const n = Number(pendientes) || 0
+      if (!n) return mostrarExito(this.$swal, titulo, texto)
+      return mostrarAviso(this.$swal, titulo, `${texto} Hay ${n === 1 ? '1 comisión pendiente de aprobar calculada'
+        : `${n} comisiones pendientes de aprobar calculadas`} antes del cambio: recalcúle${n === 1 ? 'la' : 'las'} en Comisiones MCAS para aplicarle${n === 1 ? '' : 's'} los pagos nuevos.`)
+    },
+    textoPagosCobro(n) { return textoPagosCobro(n) },
+    textoPrimerCobro(c) { return textoPrimerCobro(c) },
+
+    // -----------------------------------------------
+    // Zonas de comisión (pestaña «Zonas»)
+    // -----------------------------------------------
+    async cargarZonas({ silencioso = false } = {}) {
+      this.cargandoZonas = true
+      try {
+        const { data } = await axios.get('/mcas/zonas')
+        this.zonas = Array.isArray(data) ? data : []
+        this.errorZonas = false
+      } catch (e) {
+        console.error('Error al cargar las zonas de comisión MCAS:', e)
+        this.errorZonas = true
+        if (!silencioso) mostrarError(this.$swal, 'Error', textoError(e, 'No se pudieron cargar las zonas de comisión.'))
+      } finally {
+        this.cargandoZonas = false
+      }
+    },
+    abrirModalZona(z = null) {
+      this.formZona = z ? { ...zonaVacia(), ...z, esResto: !!z.esResto, provincias: [...(z.provincias || [])] } : zonaVacia()
+      this.abrirModal('modalZona')
+    },
+    validarZona() {
+      return validarZona(this.formZona, this.zonas)
+    },
+    alternarProvinciaZona(codigo) {
+      const marcadas = new Set(this.formZona.provincias || [])
+      if (marcadas.has(codigo)) marcadas.delete(codigo)
+      else marcadas.add(codigo)
+      this.formZona.provincias = [...marcadas].sort()
+    },
+    textoProvinciasZona(z, maximo = 6) {
+      return textoProvinciasZona(z, nombreProvincia, maximo)
+    },
+    async guardarZona() {
+      if (this.mutacionEnCurso || !this.aplicarValidacion(this.validarZona)) return
+      const f = this.formZona
+      const payload = zonaAPayload(f)
+      this.mutacionEnCurso = true
+      try {
+        const { data } = f.id
+          ? await axios.put(`/mcas/zonas/${f.id}`, payload)
+          : await axios.post('/mcas/zonas', payload)
+        this.cerrarModales()
+        await this.cargarZonas()
+        this.avisarZonaGuardada('Zona guardada',
+          `Los contratos de ${this.nombreComercializadora(payload.idComercializadora)} usarán la zona ${payload.zona} `
+          + (payload.esResto ? 'en las demás provincias.' : 'en sus provincias.'), data?.pendientes)
+      } catch (e) {
+        mostrarError(this.$swal, 'Error al guardar', textoError(e, 'No se pudo guardar la zona.'))
+      } finally {
+        this.mutacionEnCurso = false
+      }
+    },
+    async eliminarZona(z) {
+      if (this.mutacionEnCurso) return
+      const ultima = this.zonas.filter(o => String(o.idComercializadora) === String(z.idComercializadora)).length === 1
+      const confirmado = await confirmar(this.$swal, {
+        titulo: `¿Eliminar la zona ${z.zona}?`,
+        texto: `Se quita la zona ${z.zona} de ${this.nombreComercializadora(z.idComercializadora)}. `
+          + (ultima ? 'Era su única zona: la zona de sus contratos volverá a salir del CUPS, como antes de crear las zonas.'
+            : 'Los contratos de sus provincias pasarán a la zona de las demás provincias, si la hay; si no, se quedarán sin zona.')
+          + ' Las comisiones ya aprobadas no cambian.',
+        textoConfirmar: 'Sí, eliminar',
+        peligroso: true,
+      })
+      if (!confirmado) return
+      this.mutacionEnCurso = true
+      try {
+        const { data } = await axios.delete(`/mcas/zonas/${z.id}`)
+        await this.cargarZonas()
+        this.avisarZonaGuardada('Zona eliminada', 'La zona de comisión se ha eliminado.', data?.pendientes)
+      } catch (e) {
+        mostrarError(this.$swal, 'Error al eliminar', textoError(e, 'No se pudo eliminar la zona.'))
+      } finally {
+        this.mutacionEnCurso = false
+      }
+    },
+    // Las comisiones pendientes calculadas antes no cambian solas (como con una nueva versión de tabla)
+    avisarZonaGuardada(titulo, texto, pendientes) {
+      const n = Number(pendientes) || 0
+      if (!n) return mostrarExito(this.$swal, titulo, texto)
+      return mostrarAviso(this.$swal, titulo, `${texto} Hay ${n === 1 ? '1 comisión pendiente de aprobar calculada'
+        : `${n} comisiones pendientes de aprobar calculadas`} antes del cambio: recalcúle${n === 1 ? 'la' : 'las'} en Comisiones MCAS si le${n === 1 ? '' : 's'} afecta la zona.`)
     },
 
     // -----------------------------------------------
@@ -3043,7 +3602,7 @@ export default {
       this.formRegla = r
         ? { nombre: '', descripcion: '', ...r }
         // Una regla nueva va al final de la lista (la prioridad solo ordena).
-        : { nombre: '', descripcion: '', codigo: '', prioridad: this.siguientePrioridad(), activo: true, metodoCalculo: 'FIXED_AMOUNT' }
+        : { nombre: '', descripcion: '', codigo: '', prioridad: this.siguientePrioridad(), activo: true, metodoCalculo: 'FIXED_AMOUNT', porcentajeResultado: null }
       this.cargarEditorDesdeJson()
       this.abrirModal('modalRegla')
     },
@@ -3097,6 +3656,10 @@ export default {
       if (esVacio(f.nombre)) errores.nombre = 'Indique un nombre para la regla'
       if (esVacio(f.metodoCalculo)) errores.metodoCalculo = 'Seleccione un método de cálculo'
       if (METODOS_CON_MOTIVO.includes(f.metodoCalculo) && esVacio(f.motivoManual)) errores.motivoManual = 'Indique el mensaje que verá el usuario'
+      const porcentaje = esVacio(f.porcentajeResultado) ? null : Number(f.porcentajeResultado)
+      if (!METODOS_CON_MOTIVO.includes(f.metodoCalculo) && porcentaje !== null && !(porcentaje > 0 && porcentaje <= 200)) {
+        errores.porcentajeResultado = 'Entre 1 y 200 (vacío: todo lo calculado)'
+      }
       if (this.editorRegla.ilegible) {
         errores.ilegible = 'La regla no se puede guardar desde el formulario'
       } else {
@@ -3116,6 +3679,8 @@ export default {
         descripcion: String(f.descripcion ?? '').trim() || null,
         // Vacío al crear: el servidor genera el código interno.
         codigo: String(f.codigo ?? '').trim() || null,
+        // Las reglas manuales o no comisionables no calculan nada que rebajar
+        porcentajeResultado: this.requiereMotivo || esVacio(f.porcentajeResultado) ? null : Number(f.porcentajeResultado),
       }
       this.mutacionEnCurso = true
       try {

@@ -28,14 +28,11 @@ export const OPCIONES_CONDICION = {
     { value: 'true', label: 'Sí (primera alta en la comercializadora)' },
     { value: 'false', label: 'No' },
   ],
-  ambito: [
-    { value: 'DENTRO', label: 'Dentro de ámbito' },
-    { value: 'FUERA', label: 'Fuera de ámbito' },
-    { value: 'NA', label: 'N/A' },
-  ],
 }
 
-const CONDICIONES_TEXTO = ['tipo_suministro', 'segmento', 'tipo_renovacion', 'ambito', 'codigo_producto', 'tarifa_acceso', 'zona_comision']
+// El «ámbito» (dentro/fuera) era lo mismo que la zona de comisión y ya no existe: una regla
+// antigua que lo tuviera lo pierde al guardarse.
+const CONDICIONES_TEXTO = ['tipo_suministro', 'segmento', 'tipo_renovacion', 'codigo_producto', 'tarifa_acceso', 'zona_comision']
 const CONDICIONES_BOOLEANAS = ['es_renovacion', 'alta_nueva']
 
 // Claves JSON de cada rango; los límites por defecto del motor son "mínimo
@@ -44,6 +41,8 @@ export const RANGOS_CONDICION = {
   consumo_kwh: { min: 'consumo_min_kwh', max: 'consumo_max_kwh', minInc: 'consumo_min_inclusivo', maxInc: 'consumo_max_inclusivo' },
   consumo_mwh: { min: 'consumo_min_mwh', max: 'consumo_max_mwh', minInc: 'consumo_min_mwh_inc', maxInc: 'consumo_max_mwh_inc' },
   potencia_kw: { min: 'potencia_min_kw', max: 'potencia_max_kw', minInc: 'potencia_min_inc', maxInc: 'potencia_max_inc' },
+  // Meses desde que el punto dejó la comercializadora (duda 22): una regla con esto es una excepción
+  meses_relacion: { min: 'meses_ultima_relacion_min', max: 'meses_ultima_relacion_max', minInc: 'meses_ultima_relacion_min_inc', maxInc: 'meses_ultima_relacion_max_inc' },
 }
 
 // Métodos de cálculo y líneas de una suma compuesta
@@ -59,6 +58,8 @@ export const NOMBRES_METODO = {
   PERCENTAGE_OF_PREVIOUS: '% de lo anterior',
   MANUAL: 'A mano',
   NOT_COMMISSIONABLE: 'No comisionable',
+  // Línea de ajuste de las reglas que cobran solo una parte (renovaciones tácitas al 80 %)
+  PORCENTAJE_RESULTADO: '% de lo calculado',
 }
 export const METODOS_TABLA = ['RANGE_LOOKUP', 'MATRIX_LOOKUP', 'MULTI_DIMENSION_LOOKUP']
 export const METODOS_CON_MOTIVO = ['MANUAL', 'NOT_COMMISSIONABLE']
@@ -113,10 +114,11 @@ function aJson(obj) {
 // ---------------------------------------------------------------------------
 export function condicionesVacias() {
   return {
-    tipo_suministro: '', segmento: '', es_renovacion: '', tipo_renovacion: '', alta_nueva: '', ambito: '',
+    tipo_suministro: '', segmento: '', es_renovacion: '', tipo_renovacion: '', alta_nueva: '',
     codigo_producto: '', tarifa_acceso: '', zona_comision: '',
     consumoUnidad: 'kwh', consumoMin: '', consumoMax: '', consumoMinInc: true, consumoMaxInc: false,
     potenciaMin: '', potenciaMax: '', potenciaMinInc: true, potenciaMaxInc: false,
+    mesesRelacionMin: '', mesesRelacionMax: '', mesesRelacionMinInc: true, mesesRelacionMaxInc: false,
   }
 }
 
@@ -169,6 +171,11 @@ export function leerCondiciones(json) {
     form.potenciaMin = potencia.min; form.potenciaMax = potencia.max
     form.potenciaMinInc = potencia.minInc; form.potenciaMaxInc = potencia.maxInc
   }
+  const meses = leerRango(extras, RANGOS_CONDICION.meses_relacion)
+  if (meses) {
+    form.mesesRelacionMin = meses.min; form.mesesRelacionMax = meses.max
+    form.mesesRelacionMinInc = meses.minInc; form.mesesRelacionMaxInc = meses.maxInc
+  }
   return { form, extras, error: null }
 }
 
@@ -198,6 +205,8 @@ export function escribirCondiciones(form, extras = {}) {
   const consumo = form.consumoUnidad === 'mwh' ? RANGOS_CONDICION.consumo_mwh : RANGOS_CONDICION.consumo_kwh
   escribirRango(obj, consumo, form.consumoMin, form.consumoMax, form.consumoMinInc, form.consumoMaxInc)
   escribirRango(obj, RANGOS_CONDICION.potencia_kw, form.potenciaMin, form.potenciaMax, form.potenciaMinInc, form.potenciaMaxInc)
+  escribirRango(obj, RANGOS_CONDICION.meses_relacion, form.mesesRelacionMin, form.mesesRelacionMax,
+    form.mesesRelacionMinInc, form.mesesRelacionMaxInc)
   for (const [k, v] of Object.entries(extras || {})) if (!(k in obj)) obj[k] = v
   return aJson(obj)
 }
@@ -218,6 +227,7 @@ export function validarCondiciones(form) {
   const rangos = [
     ['consumoMax', form.consumoMin, form.consumoMax],
     ['potenciaMax', form.potenciaMin, form.potenciaMax],
+    ['mesesRelacionMax', form.mesesRelacionMin, form.mesesRelacionMax],
   ]
   for (const [campo, min, max] of rangos) {
     const nMin = numero(min)
@@ -377,15 +387,17 @@ export function describirCondiciones(form, nombreProducto = null) {
   if (form.es_renovacion) partes.push(etiqueta('es_renovacion', form.es_renovacion))
   if (form.tipo_renovacion) partes.push(`Renovación ${etiqueta('tipo_renovacion', form.tipo_renovacion).toLowerCase()}`)
   if (form.alta_nueva) partes.push(form.alta_nueva === 'true' ? 'Primera alta en la comercializadora' : 'Sin ser primera alta')
-  if (form.ambito) partes.push(etiqueta('ambito', form.ambito))
   if (texto(form.codigo_producto)) partes.push(`Producto ${nombreProducto ? `«${nombreProducto}» (${texto(form.codigo_producto)})` : texto(form.codigo_producto)}`)
   if (texto(form.tarifa_acceso)) partes.push(`Tarifa ${texto(form.tarifa_acceso)}`)
   if (texto(form.zona_comision)) partes.push(`Zona ${texto(form.zona_comision)}`)
   const consumo = textoRango('Consumo anual', form.consumoUnidad === 'mwh' ? 'MWh' : 'kWh',
     form.consumoMin, form.consumoMax, form.consumoMinInc, form.consumoMaxInc)
   if (consumo) partes.push(consumo)
-  const potencia = textoRango('Potencia de cálculo', 'kW', form.potenciaMin, form.potenciaMax, form.potenciaMinInc, form.potenciaMaxInc)
+  const potencia = textoRango('Potencia contratada', 'kW', form.potenciaMin, form.potenciaMax, form.potenciaMinInc, form.potenciaMaxInc)
   if (potencia) partes.push(potencia)
+  const meses = textoRango('Meses desde que dejó la comercializadora', 'meses', form.mesesRelacionMin, form.mesesRelacionMax,
+    form.mesesRelacionMinInc, form.mesesRelacionMaxInc)
+  if (meses) partes.push(meses)
   return partes
 }
 
@@ -426,7 +438,7 @@ function importeEjemploLineas(lineas, fee) {
  * Resumen de lo que hará la regla: a qué contratos se aplica, cómo calcula, un
  * ejemplo orientativo y el número de pagos sugerido.
  */
-export function resumenRegla({ metodo, condiciones, calculo, motivo, numeroPagos, nombreProducto }) {
+export function resumenRegla({ metodo, condiciones, calculo, motivo, numeroPagos, nombreProducto, porcentajeResultado = null }) {
   const partes = describirCondiciones(condiciones || condicionesVacias(), nombreProducto)
   const aplica = partes.length ? partes : ['Todos los contratos de la tabla']
   const c = calculo || calculoVacio()
@@ -473,11 +485,16 @@ export function resumenRegla({ metodo, condiciones, calculo, motivo, numeroPagos
     default:
       calcula = 'Elija un método de cálculo.'
   }
+  // Regla que cobra solo una parte de lo calculado (renovaciones tácitas al 80 %)
+  const pct = numero(porcentajeResultado)
+  if (!METODOS_CON_MOTIVO.includes(metodo) && pct !== null && pct !== 100) {
+    calcula = `${calcula} Se cobra el ${dec(pct)} % de lo calculado.`.trim()
+  }
   const n = numero(numeroPagos)
   const pago = METODOS_CON_MOTIVO.includes(metodo) ? null
     : n !== null
-      ? `${n === 1 ? 'Un pago' : `${n} pagos`}, salvo que el contrato indique otro número de pagos.`
-      : 'Un pago, salvo que el contrato indique otro número de pagos.'
+      ? `${n === 1 ? 'Un pago' : `${n} pagos`}, solo en esta regla (en vez de los de la comercializadora).`
+      : 'Los de la comercializadora (pestaña Cobros y cuotas).'
   return { aplica, calcula, ejemplo, pago }
 }
 
@@ -502,6 +519,7 @@ export function resumenDeRegla(regla, { nombreProducto = null } = {}) {
     motivo: r.motivoManual,
     numeroPagos: pago.numeroPagos,
     nombreProducto,
+    porcentajeResultado: r.porcentajeResultado,
   })
   if (cond.error) return { ...resumen, aplica: ['Las condiciones no se pueden leer: revíselas con «Editar como JSON»'] }
   const extras = Object.keys(cond.extras).length

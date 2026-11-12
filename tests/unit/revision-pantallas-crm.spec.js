@@ -174,7 +174,7 @@ test('Clientes: el filtro de columna encuentra el 0', () => {
 test('ficha de cliente: quien no puede elegir el usuario asignado puede guardar sin él', () => {
   const c = cargarComponente(FICHA_CLIENTE, {});
   const cliente = {
-    id: 9, nombre: 'ACME', grupoEmpresarial: 'G', cif: 'B1', direccion: 'C', poblacion: 'P', provincia: 'V',
+    id: 9, nombre: 'ACME', grupoEmpresarial: 'G', cif: 'B1', direccion: 'C', poblacion: 'P', provincia: 'Valencia',
     codigoPostal: '1', iban: 'ES', codigoSector: 1, codigoSubtipologia: 1, idUsuario: '',
   };
   const normal = crearContexto(c, { clienteLocal: { ...cliente } });

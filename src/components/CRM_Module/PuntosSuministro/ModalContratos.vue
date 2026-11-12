@@ -521,7 +521,7 @@
                 </div>
               </div>
 
-              <!-- 2 · Comisión MCAS -->
+              <!-- 2 · Otros datos (comisión MCAS) -->
               <div v-show="pestanaContrato === 'mcas'" class="pestana-mcas" role="tabpanel">
                 <!-- Al modificar un contrato guardado: lo que hay hoy de su comisión -->
                 <div v-if="modoEdicion && textoComisionActual" class="mcas-actual" role="note">
@@ -541,7 +541,8 @@
                     </div>
                     <ul v-if="cabeceraMcas.faltan.length" class="mcas-faltan">
                       <li v-for="f in cabeceraMcas.faltan" :key="f.campo">
-                        <button type="button" class="mcas-enlace" @click="irACampoMcas(f.campo)">{{ f.etiqueta }}</button>
+                        <span v-if="f.calculado">{{ f.etiqueta }}</span>
+                        <button v-else type="button" class="mcas-enlace" @click="irACampoMcas(f.campo)">{{ f.etiqueta }}</button>
                       </li>
                     </ul>
                     <ul v-if="cabeceraMcas.avisos.length" class="mcas-avisos">
@@ -565,17 +566,18 @@
                          :class="{ 'mcas-solo-lectura__fila--falta': fila.falta }">
                       <span class="mcas-solo-lectura__etiqueta">{{ fila.etiqueta }}</span>
                       <span class="mcas-solo-lectura__valor">{{ fila.valor }}</span>
-                      <button type="button" class="mcas-enlace" @click="irACampoMcas(fila.campo)">
+                      <span v-if="fila.calculado" class="mcas-solo-lectura__nota">Sale de la provincia del punto de suministro</span>
+                      <button v-else type="button" class="mcas-enlace" @click="irACampoMcas(fila.campo)">
                         Cambiar en pestaña «Contrato»
                       </button>
                     </div>
                   </div>
 
-                  <!-- Cada campo se dibuja una vez: a la vista o plegado en «Otros datos» (nunca se borra su valor) -->
+                  <!-- Cada campo se dibuja una vez: a la vista o plegado en «Más datos» (nunca se borra su valor) -->
                   <template v-for="grupo in gruposCamposMcas" :key="grupo.id">
                     <component :is="grupo.plegado ? 'details' : 'div'" :class="grupo.plegado ? 'mcas-otros' : 'mcas-grupo'">
                       <summary v-if="grupo.plegado" class="mcas-otros__titulo">
-                        Otros datos ({{ camposMcas.otrosConValor }} con valor)
+                        Más datos ({{ camposMcas.otrosConValor }} con valor)
                       </summary>
                       <p v-if="grupo.plegado" class="mcas-otros__ayuda">
                         No intervienen en la comisión estimada de este contrato. Lo que ya tengan escrito se conserva.
@@ -622,19 +624,6 @@
                             <small class="mcas-campo-ayuda">Firmada si el cliente firmó la renovación; tácita si se renovó sola.</small>
                           </div>
 
-                          <div v-else-if="campo === 'mcasNumeroPagos'" class="form-group-modern" :class="claseCampoMcas(campo)">
-                            <label for="mcasNumeroPagos"><i class="fas fa-credit-card"></i> Nº de pagos</label>
-                            <div class="input-with-icon-modern">
-                              <i class="fas fa-credit-card icon-prefix"></i>
-                              <input id="mcasNumeroPagos" type="number" min="1" max="12" step="1"
-                                     v-model.number="nuevoContrato.mcasNumeroPagos"
-                                     class="form-control-modern" :class="{ 'input-error': errores.mcasNumeroPagos }"
-                                     @input="errores.mcasNumeroPagos = ''" placeholder="1"/>
-                            </div>
-                            <small v-if="errores.mcasNumeroPagos" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.mcasNumeroPagos }}</small>
-                            <small v-else class="mcas-campo-ayuda">En cuántos pagos se cobra la comisión (de 1 a 12).</small>
-                          </div>
-
                           <div v-else-if="campo === 'mcasSegmento'" class="form-group-modern" :class="claseCampoMcas(campo)">
                             <label for="mcasSegmento"><i class="fas fa-users"></i> Segmento</label>
                             <div class="select-container-modern">
@@ -657,28 +646,6 @@
                               </select>
                             </div>
                             <small class="mcas-campo-ayuda">Sí, si el cliente contrata por primera vez con esta comercializadora.</small>
-                          </div>
-
-                          <div v-else-if="campo === 'mcasAmbito'" class="form-group-modern" :class="claseCampoMcas(campo)">
-                            <label for="mcasAmbito"><i class="fas fa-map-marker-alt"></i> Ámbito</label>
-                            <div class="select-container-modern">
-                              <select id="mcasAmbito" v-model="nuevoContrato.mcasAmbito" class="form-select-modern">
-                                <option :value="null">Sin especificar</option>
-                                <option v-for="opcion in opcionesAmbitoMcas" :key="opcion.valor" :value="opcion.valor">{{ opcion.etiqueta }}</option>
-                              </select>
-                            </div>
-                            <small class="mcas-campo-ayuda">Dentro o fuera de ámbito, según indique la comercializadora.</small>
-                          </div>
-
-                          <div v-else-if="campo === 'mcasZonaComision'" class="form-group-modern" :class="claseCampoMcas(campo)">
-                            <label for="mcasZonaComision"><i class="fas fa-map"></i> Zona de comisión</label>
-                            <div class="select-container-modern">
-                              <select id="mcasZonaComision" v-model="nuevoContrato.mcasZonaComision" class="form-select-modern">
-                                <option :value="null">Sin especificar</option>
-                                <option v-for="zona in opcionesZonaMcas" :key="zona" :value="zona">{{ zona }}</option>
-                              </select>
-                            </div>
-                            <small class="mcas-campo-ayuda">ZAR si el CUPS de luz empieza por ES0021; ZBR en el resto.</small>
                           </div>
 
                           <div v-else-if="campo === 'mcasIdGestora'" class="form-group-modern" :class="claseCampoMcas(campo)">
@@ -905,7 +872,7 @@ import { cupsRecortado } from "@/utils/cups";
 import { leerDecimal } from "@/utils/numeros";
 import { nombreComercializadora } from "@/utils/maestros";
 import { escaparHtml } from "@/utils/html";
-import { cabeceraVistaPrevia, campoRelevante, faltantesVistaPrevia, opcionesCampoMcas, organizarCamposMcas, textoResumenMcas } from './mcasCamposContrato';
+import { CAMPO_ZONA, cabeceraVistaPrevia, faltantesVistaPrevia, organizarCamposMcas, textoResumenMcas } from './mcasCamposContrato';
 
 // Pestañas del formulario y campos validados en cada una
 // Miles siempre con punto (es-ES no los pone en números de cuatro cifras)
@@ -913,7 +880,7 @@ const FORMATO_CONSUMO = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 
 
 const PESTANAS_CONTRATO = [
   { id: 'contrato', label: 'Contrato', campos: ['fechaEnvio', 'fechaInicio', 'fechaFin', 'idComercializadoraActual', 'contrato'] },
-  { id: 'mcas', label: 'Comisión MCAS', campos: ['mcasTipoSuministro', 'mcasFeeEurMwh', 'mcasNumeroPagos'] },
+  { id: 'mcas', label: 'Otros datos', campos: ['mcasTipoSuministro', 'mcasFeeEurMwh'] },
 ];
 
 // Vista previa de la comisión: espera tras el último cambio antes de pedirla.
@@ -925,7 +892,6 @@ const CAMPOS_EN_PESTANA_CONTRATO = ['contrato', 'fechaInicio', 'idComercializado
   'mcasTipoPrecio', 'mcasIdProductoComercial', 'potenciaContratada'];
 const ID_CAMPO_FORMULARIO = { fechaInicio: 'fechaInicioContrato', idComercializadoraActual: 'comercializadoraActual', idTarifaLuz: 'tarifaLuz', idTarifaGas: 'tarifaGas',
   potenciaContratada: 'pot1' };
-const ETIQUETA_AMBITO = { NA: 'N/A' };
 
 export default {
   name: "ModalContratos",
@@ -1201,11 +1167,6 @@ export default {
           this.errores.mcasFeeEurMwh = 'El FEE debe ser un número no negativo';
           valido = false;
         }
-        const pagos = this.nuevoContrato.mcasNumeroPagos;
-        if (informado(pagos) && (!Number.isInteger(Number(pagos)) || Number(pagos) < 1 || Number(pagos) > 12)) {
-          this.errores.mcasNumeroPagos = 'El número de pagos debe estar entre 1 y 12';
-          valido = false;
-        }
       }
       return valido;
     },
@@ -1227,6 +1188,8 @@ export default {
     payloadContrato(contrato = this.nuevoContrato) {
       contrato.mcasFeeEurMwh = this.normalizarDecimalMcas(contrato.mcasFeeEurMwh);
       contrato.mcasPotenciaCalculo = null;
+      // Los pagos y el primer cobro son de la comercializadora (Configuración MCAS > Cobros y cuotas)
+      contrato.mcasNumeroPagos = null;
       contrato.mcasFechaPrimeraAplicacion = null;
       contrato.mcasFechaUltimaRelacionComercializadora = null;
       if (contrato.mcasFeeEurMwh !== null) contrato.mcasFeeUnidad = 'EUR_MWH';
@@ -1275,7 +1238,6 @@ export default {
         if (solicitud !== this.solicitudVistaPrevia) return;
         this.vistaPrevia = data && typeof data === 'object' && typeof data.estado === 'string' ? data : null;
         this.errorVistaPrevia = !this.vistaPrevia;
-        this.sugerirZonaMcas();
       } catch (error) {
         if (solicitud !== this.solicitudVistaPrevia) return;
         console.warn('No se pudo calcular la comisión estimada:', error);
@@ -1286,7 +1248,7 @@ export default {
       }
     },
 
-    // Lleva a la pestaña del campo y le da el foco (desplegando «Otros datos» si hace falta).
+    // Lleva a la pestaña del campo y le da el foco (desplegando «Más datos» si hace falta).
     async irACampoMcas(campo) {
       this.pestanaContrato = CAMPOS_EN_PESTANA_CONTRATO.includes(campo) ? 'contrato' : 'mcas';
       await this.$nextTick();
@@ -1333,11 +1295,22 @@ export default {
       if (!this.vistaPreviaMcasValida || this.vistaPrevia.estado !== 'REQUIERE_DATOS') return true;
       const faltan = faltantesVistaPrevia(this.vistaPrevia, this.nuevoContrato);
       if (!faltan.length) return true;
-      await this.irACampoMcas(faltan[0].campo);
+      // Lo que se rellena aquí lleva a su campo; la zona de comisión no se escribe en el
+      // contrato (sale de la provincia del punto): se dice el motivo que da el servidor
+      const editables = faltan.filter(f => !f.calculado);
+      if (editables.length) await this.irACampoMcas(editables[0].campo);
+      else this.pestanaContrato = 'mcas';
+      const motivoZona = faltan.some(f => f.calculado)
+        ? `<p>${escaparHtml(editables.length || !this.vistaPrevia.mensaje
+          ? 'La zona de comisión sale de la provincia del punto de suministro: revise que el punto la tenga elegida de la lista.'
+          : this.vistaPrevia.mensaje)}</p>`
+        : '';
       this.$swal.fire({
         icon: 'warning',
         title: 'Faltan datos de la comisión',
-        html: `<p>Complete estos datos antes de guardar el contrato:</p><p><strong>${faltan.map(f => escaparHtml(f.etiqueta)).join(', ')}</strong></p>`,
+        html: (editables.length
+          ? `<p>Complete estos datos antes de guardar el contrato:</p><p><strong>${editables.map(f => escaparHtml(f.etiqueta)).join(', ')}</strong></p>`
+          : '') + motivoZona,
         confirmButtonColor: '#fcd700',
         confirmButtonText: 'Entendido'
       });
@@ -2081,7 +2054,7 @@ export default {
         mcasFeeEurMwh: null,
         mcasFeeUnidad: 'EUR_MWH',
         mcasPotenciaCalculo: null,
-        mcasNumeroPagos: 1,
+        mcasNumeroPagos: null,
         mcasFechaPrimeraAplicacion: null,
         mcasAltaNueva: null,
         mcasFechaUltimaRelacionComercializadora: null,
@@ -2114,18 +2087,6 @@ export default {
       this.contratoDetalle = null;
       this.clienteDetalle = null;
       this.cargandoDatos = false;
-    },
-
-    // Propone la zona de comisión por el CUPS cuando la tabla de comisiones la usa (según
-    // la vista previa), solo si el usuario no ha elegido ninguna. En un contrato ya guardado
-    // no se rellena: cambiaría sus datos MCAS y dejaría desactualizada su propuesta
-    // pendiente sin que el usuario lo haya decidido.
-    sugerirZonaMcas() {
-      const contrato = this.nuevoContrato;
-      if (!contrato || this.modoEdicion || !this.zonaSugeridaMcas) return;
-      const zona = contrato.mcasZonaComision;
-      if (zona !== null && zona !== undefined && String(zona).trim() !== '') return;
-      contrato.mcasZonaComision = this.zonaSugeridaMcas;
     },
 
     // Completa (sin pisar) los datos MCAS mínimos para que el contrato genere su propuesta
@@ -2203,8 +2164,10 @@ export default {
     async eliminarContrato(contrato) {
       try {
         const result = await this.$swal.fire({
-          title: '¿Estás seguro?',
-          text: `¿Deseas eliminar el contrato #${contrato.contrato}?`,
+          title: '¿Eliminar el contrato?',
+          // Borrarlo es que no llegó a hacerse: el servidor borra también su comisión MCAS
+          text: `Se eliminará el contrato #${contrato.contrato}. Si tiene comisión MCAS, también se eliminan su propuesta `
+            + 'y su servicio de comisión. No se puede deshacer.',
           icon: 'warning',
           showCancelButton: true,
           confirmButtonColor: '#d33',
@@ -2388,26 +2351,6 @@ export default {
         : '';
     },
 
-    // Zona de comisión por el CUPS de luz (ZAR si es ES0021, ZBR el resto), solo si la
-    // tabla de comisiones de la comercializadora usa la zona y la admite.
-    zonaSugeridaMcas() {
-      if (!campoRelevante(this.vistaPrevia, 'ZONA_COMISION') || this.nuevoContrato?.mcasTipoSuministro === 'GAS') return null;
-      const cups = String(this.puntoSuministroData?.CUPSluz || this.puntoSuministroData?.cupsluz || '').trim().toUpperCase();
-      if (!cups) return null;
-      const zona = cups.startsWith('ES0021') ? 'ZAR' : 'ZBR';
-      return opcionesCampoMcas(this.vistaPrevia, 'ZONA_COMISION', [zona]).includes(zona) ? zona : null;
-    },
-
-    // Zonas y ámbitos: los que trae la vista previa o los de siempre (conservando el valor guardado).
-    opcionesZonaMcas() {
-      return opcionesCampoMcas(this.vistaPrevia, 'ZONA_COMISION', ['ZBR', 'ZAR'], this.nuevoContrato?.mcasZonaComision);
-    },
-
-    opcionesAmbitoMcas() {
-      return opcionesCampoMcas(this.vistaPrevia, 'AMBITO', ['DENTRO', 'FUERA', 'NA'], this.nuevoContrato?.mcasAmbito)
-        .map(valor => ({ valor, etiqueta: ETIQUETA_AMBITO[valor] || valor }));
-    },
-
     // Cambia cuando cambia algo que influye en la comisión; null si no hay que pedir vista previa.
     firmaVistaPrevia() {
       if (!this.visible || !this.mostrandoFormulario || !this.nuevoContrato?.mcasTipoPrecio) return null;
@@ -2420,7 +2363,7 @@ export default {
       });
     },
 
-    // Campos a la vista y, si los hay, los plegados en «Otros datos».
+    // Campos a la vista y, si los hay, los plegados en «Más datos».
     gruposCamposMcas() {
       const { principales, otros } = this.camposMcas;
       const grupos = [{ id: 'principal', plegado: false, campos: principales }];
@@ -2434,12 +2377,15 @@ export default {
         : this.mcasFaltanCampos.map(f => f.campo);
     },
 
-    // Consumo y tarifa: se cambian en la pestaña Contrato; aquí se enseña su valor.
+    // Consumo y tarifa: se cambian en la pestaña Contrato; aquí se enseña su valor. La zona
+    // de comisión la calcula el servidor por la provincia del punto de suministro.
     filasSoloLecturaMcas() {
       const c = this.nuevoContrato || {};
       return this.camposMcas.soloLectura.map((fila) => {
         let valor;
-        if (fila.campo === 'consumoAnual') {
+        if (fila.campo === CAMPO_ZONA) {
+          valor = String(this.vistaPrevia?.zonaComision || '').trim() || 'Sin determinar';
+        } else if (fila.campo === 'consumoAnual') {
           const consumo = this.normalizarDecimalMcas(c.consumoAnual);
           valor = consumo ? `${consumo.toLocaleString('es-ES', { maximumFractionDigits: 4 })} kWh` : 'Sin indicar';
         } else if (fila.campo === 'mcasTipoPrecio') {
@@ -2623,7 +2569,7 @@ export default {
     }
   },
   watch: {
-    // Las dos pestañas comparten el contenedor que se desplaza: sin esto, «Comisión MCAS»
+    // Las dos pestañas comparten el contenedor que se desplaza: sin esto, «Otros datos»
     // se abría a media altura y tapaba la comisión actual y lo que falta para calcularla
     pestanaContrato() {
       this.$nextTick(() => {

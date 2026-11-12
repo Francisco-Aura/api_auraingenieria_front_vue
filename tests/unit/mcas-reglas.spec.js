@@ -138,7 +138,11 @@ test('el resumen explica a quién se aplica la regla y da un ejemplo del importe
   assert.match(r.calcula, /consumo anual \(MWh\) × FEE del contrato \(€\/MWh\) × 44 %/);
   assert.match(r.calcula, /inferior a 5 €\/MWh/);
   assert.match(r.ejemplo, /100 MWh .* FEE de 10 €\/MWh → 440,00 €/);
-  assert.match(r.pago, /Un pago/);
+  // Sin pagos en la regla, los de la comercializadora (respuestas del cliente del 05/11/2026)
+  assert.match(r.pago, /^Los de la comercializadora \(pestaña Cobros y cuotas\)\.$/);
+  const tacita = resumenRegla({ metodo: 'FIXED_AMOUNT', calculo: { ...calculoVacio(), importe: 100 }, numeroPagos: 3, porcentajeResultado: 80 });
+  assert.match(tacita.calcula, /Se cobra el 80 % de lo calculado\./);
+  assert.match(tacita.pago, /^3 pagos, solo en esta regla \(en vez de los de la comercializadora\)\.$/);
 
   const todos = resumenRegla({ metodo: 'MANUAL', motivo: 'Revisar a mano' });
   assert.deepEqual(todos.aplica, ['Todos los contratos de la tabla']);
@@ -158,7 +162,7 @@ test('una regla guardada se resume en lenguaje llano, sin claves JSON', async ()
     condicionesJson: '{"tipo_suministro":"LUZ","segmento":"RESIDENCIAL","es_renovacion":false,"potencia_min_kw":10,"potencia_min_inc":true}',
     calculoJson: '{"importe":120}', politicaPagoJson: '{"numero_pagos_sugerido":1}',
   });
-  assert.deepEqual(r.aplica, ['Luz', 'Residencial', 'Solo contratos nuevos', 'Potencia de cálculo ≥ 10 kW']);
+  assert.deepEqual(r.aplica, ['Luz', 'Residencial', 'Solo contratos nuevos', 'Potencia contratada ≥ 10 kW']);
   assert.equal(r.calcula, 'Comisión fija de 120,00 €.');
 
   const avanzada = resumenDeRegla({ metodoCalculo: 'MANUAL', motivoManual: 'A mano', condicionesJson: '{"segmento":"PYME","gestora":"X"}' });

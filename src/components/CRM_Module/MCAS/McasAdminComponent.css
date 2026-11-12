@@ -1004,3 +1004,102 @@
   line-height: 1.5;
   color: var(--text-primary);
 }
+
+/* Aviso dentro de la barra de contexto (zonas sin zona del resto) */
+.context-meta--aviso {
+  color: #8a5a00;
+}
+
+.context-meta--aviso i {
+  color: #d68000;
+}
+
+/* ---------- Zonas de comisión: formulario ---------- */
+.mcas-input--mayusculas {
+  text-transform: uppercase;
+}
+
+.mcas-input--mayusculas::placeholder {
+  text-transform: none;
+}
+
+/* «Son todas las demás provincias» */
+.zona-resto {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.zona-resto input {
+  margin-top: 2px !important;
+}
+
+.zona-resto small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+/* Las 52 provincias en columnas */
+.zona-provincias {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px 12px;
+  margin-bottom: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  background: var(--aura-superficie, #fff);
+}
+
+.zona-provincias--error {
+  border-color: #dc3545;
+}
+
+.zona-provincia {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.zona-provincia span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zona-provincia small {
+  color: var(--text-secondary);
+}
+
+.zona-provincia--ocupada {
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .zona-provincias {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .zona-provincias {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

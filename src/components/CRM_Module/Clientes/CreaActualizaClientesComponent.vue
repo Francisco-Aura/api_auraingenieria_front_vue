@@ -110,7 +110,11 @@
                   </div>
                   <div class="form-group-compact">
                     <label for="provincia">Provincia <span class="required">*</span></label>
-                    <input type="text" id="provincia" v-model="clienteLocal.provincia" class="form-control-compact" :class="{ 'input-error': errores.provincia }" @input="errores.provincia = ''" maxlength="100" required />
+                    <!-- La misma lista de provincias que en los puntos de suministro -->
+                    <select id="provincia" v-model="clienteLocal.provincia" class="form-select-compact" :class="{ 'input-error': errores.provincia }" @change="errores.provincia = ''" required>
+                      <option value="">Seleccionar...</option>
+                      <option v-for="p in opcionesProvincia" :key="p.valor" :value="p.valor">{{ p.etiqueta }}</option>
+                    </select>
                     <small v-if="errores.provincia" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.provincia }}</small>
                   </div>
                   <div class="form-group-compact">
@@ -1125,6 +1129,7 @@
 import { descargarRespuesta } from '@/utils/descargas';
 import { textoError } from '@/utils/errores';
 import { escaparHtml } from '@/utils/html';
+import { opcionesProvincia, provinciaDeLista } from '@/utils/provincias';
 import { fechaCortaES, fechaES, fechaHoraES } from '@/utils/fechas';
 import { campoFechaEnDialogo } from '@/components/comun/campoFechaEnDialogo';
 import { iconoEstadoTarea, nombreEstado, textoPrioridad } from '@/utils/tareas';
@@ -1249,6 +1254,10 @@ export default {
     };
   },
   computed: {
+    // Las 52 provincias y, si lo guardado no se reconoce, también ese texto hasta que se elija una
+    opcionesProvincia() {
+      return opcionesProvincia(this.clienteLocal?.provincia);
+    },
     isAdvancedUser() {
       const usuario = JSON.parse(localStorage.getItem('usuario'));
       return usuario && usuario.nivelAcceso === 1;
@@ -1334,7 +1343,7 @@ export default {
     formularioVisible(newVal) {
       if (newVal) {
         this.clienteLocal = this.modoActualizar && this.nuevoCliente
-          ? { ...this.nuevoCliente }
+          ? this.conProvinciaDeLista({ ...this.nuevoCliente })
           : this.crearClienteVacio();
         this.activeTab = 'principal';
         // Sin esto, los avisos de «obligatorio» de un alta cancelada seguían
@@ -1387,10 +1396,10 @@ export default {
       deep: true,
       handler(newVal) {
         if (newVal) {
-          this.clienteLocal = { 
+          this.clienteLocal = this.conProvinciaDeLista({
             ...newVal,
             grupoEmpresarial: newVal.nombreComercial || newVal.grupoEmpresarial || ''
-          };
+          });
           this.darDeBaja = !!newVal.fechaBaja;
         } else {
           this.clienteLocal = this.crearClienteVacio();
@@ -1461,6 +1470,11 @@ export default {
       return Object.entries(this.errores || {})
         .some(([campo, mensaje]) => !!mensaje && (pestana === 'contactos') === deContactos(campo));
     },
+    // Lo que se escribió a mano y se reconoce («MURCIA») ya sale con el nombre de la lista
+    conProvinciaDeLista(cliente) {
+      cliente.provincia = provinciaDeLista(cliente.provincia) || String(cliente.provincia || '').trim();
+      return cliente;
+    },
     validarFormulario() {
       this.errores = {};
       const campos = [
@@ -1490,6 +1504,11 @@ export default {
           this.errores[campo] = `${label} es obligatorio`;
           if (!primerTabError) primerTabError = tab;
         }
+      }
+      // Provincia escrita a mano hace tiempo y que no se reconoce: hay que elegirla de la lista
+      if (!this.errores.provincia && !provinciaDeLista(this.clienteLocal.provincia)) {
+        this.errores.provincia = 'Elija la provincia de la lista';
+        if (!primerTabError) primerTabError = 'principal';
       }
       if (!primerTabError && this.errores.idUsuario) {
         primerTabError = 'principal';

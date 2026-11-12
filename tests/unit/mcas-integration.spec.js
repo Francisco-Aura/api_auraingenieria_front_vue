@@ -93,9 +93,11 @@ test('los productos se dan de baja (no se eliminan) y los inactivos se pueden re
 
 test('las reglas se configuran solo con el formulario: sin JSON, sin código interno ni prioridad', () => {
   const source = read('src/components/CRM_Module/MCAS/McasAdminComponent.vue');
-  for (const campo of ['tipo_suministro', 'segmento', 'es_renovacion', 'alta_nueva', 'ambito', 'codigo_producto', 'tarifa_acceso', 'zona_comision']) {
+  for (const campo of ['tipo_suministro', 'segmento', 'es_renovacion', 'alta_nueva', 'codigo_producto', 'tarifa_acceso', 'zona_comision']) {
     assert.match(source, new RegExp(`v-model="editorRegla\\.condiciones\\.${campo}"`));
   }
+  // El ámbito era lo mismo que la zona de comisión: ya no se elige en ningún sitio
+  assert.doesNotMatch(source, /condiciones\.ambito|mcas-cond-ambito/);
   assert.match(source, /v-model="editorRegla\.calculo\.porcentaje"/);
   assert.match(source, /resumenReglaActual\.calcula/);
   assert.match(source, /class="metodo-opciones" role="radiogroup"/);

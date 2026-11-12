@@ -105,11 +105,14 @@ for (const ruta of [ADMIN, ACTIVACION, REGLAS, ESTADOS,
   });
 }
 
-test('el interruptor de retrocesión no se enseña: hoy no tiene efecto', () => {
+test('el interruptor de retrocesión se enseña con su texto de ahora, no con el antiguo de la base de datos', () => {
   const ctx = configuracion();
-  ctx.featureFlags = [{ codigo: 'MCAS_RETROCESSION_ENABLED', activo: false }];
-  assert.equal(ctx.flagsVista.find((x) => x.codigo === 'MCAS_RETROCESSION_ENABLED'), undefined);
-  assert.deepEqual(ctx.flagsVista.map((f) => f.label), ['Módulo', 'Precio fijo', 'Indexado', 'Aprobación automática']);
+  ctx.featureFlags = [{ codigo: 'MCAS_RETROCESSION_ENABLED', activo: false, descripcion: 'MCAS - Fase retrocesiones (NO activar hasta validar fijos)' }];
+  const retro = ctx.flagsVista.find((x) => x.codigo === 'MCAS_RETROCESSION_ENABLED');
+  assert.equal(retro.label, 'Retrocesión');
+  assert.equal(retro.activo, false);
+  assert.match(retro.ayuda, /antes de 365 días, sale en Comisiones MCAS una retrocesión por aprobar/);
+  assert.deepEqual(ctx.flagsVista.map((f) => f.label), ['Módulo', 'Precio fijo', 'Indexado', 'Aprobación automática', 'Retrocesión']);
 });
 
 test('«Aprobación automática» se puede encender aunque aún no exista en la base de datos', () => {
@@ -215,14 +218,15 @@ test('sin ninguna tabla se enseñan los primeros pasos con el botón para empeza
   await ctx.cargarConjuntos();
   assert.deepEqual(ctx.primerosPasos.map((p) => p.titulo), [
     'Compruebe la comercializadora', 'Cree sus productos (si hacen falta)', 'Cree la tabla', 'Añada las reglas',
-    'Pruébela con un contrato', 'Actívela', 'Encienda los interruptores',
+    'Indique cómo cobra', 'Pruébela con un contrato', 'Actívela', 'Encienda los interruptores',
   ]);
   for (const p of ctx.primerosPasos) assert.ok(p.texto.length > 20, p.titulo);
   assert.match(ctx.primerosPasos[0].texto, /Administración › Comercializadoras/);
   assert.match(ctx.primerosPasos[2].texto, /«Nueva tabla»/);
-  assert.match(ctx.primerosPasos[4].texto, /«Probar con un contrato»/);
-  assert.match(ctx.primerosPasos[5].texto, /«Activar»/);
-  assert.match(ctx.primerosPasos[6].texto, /«Módulo» y «Precio fijo»/);
+  assert.match(ctx.primerosPasos[4].texto, /Pestaña «Cobros y cuotas»[\s\S]*Si es Iberdrola[\s\S]*pestaña «Zonas»/);
+  assert.match(ctx.primerosPasos[5].texto, /«Probar con un contrato»/);
+  assert.match(ctx.primerosPasos[6].texto, /«Activar»/);
+  assert.match(ctx.primerosPasos[7].texto, /«Módulo» y «Precio fijo»/);
 
   assert.equal(ctx.mostrarPrimerosPasos, true);
   ctx.cargandoConjuntos = true;
@@ -286,10 +290,12 @@ test('los métodos de cálculo se llaman como los entiende el administrador', ()
     RANGE_LOOKUP: 'Tabla por tramos', MATRIX_LOOKUP: 'Tabla de dos datos', MULTI_DIMENSION_LOOKUP: 'Tabla de varios datos',
     COMPOSITE_SUM: 'Suma de varios cálculos', PERCENTAGE_OF_PREVIOUS: '% de lo anterior', MANUAL: 'A mano',
     NOT_COMMISSIONABLE: 'No comisionable',
+    // No es un método que se elija: la línea de ajuste de una regla que cobra solo una parte
+    PORCENTAJE_RESULTADO: '% de lo calculado',
   });
   const ctx = configuracion();
   for (const [metodo, nombre] of Object.entries(reglas.NOMBRES_METODO)) {
-    if (metodo !== 'PERCENTAGE_OF_PREVIOUS') assert.equal(ctx.etiquetaMetodo(metodo), nombre);
+    if (!['PERCENTAGE_OF_PREVIOUS', 'PORCENTAJE_RESULTADO'].includes(metodo)) assert.equal(ctx.etiquetaMetodo(metodo), nombre);
   }
   // En el formulario se elige con tarjetas «¿Cómo paga?»; las tres tablas van en una y debajo se dice de cuántos datos.
   const textos = [...ctx.opcionesMetodo, ...ctx.opcionesTabla].map((m) => `${m.titulo} ${m.texto}`);
@@ -364,7 +370,7 @@ test('«Probar con un contrato» enseña el nombre de la regla, no su código, y
   assert.match(html, /<span class="resumen-label">Regla aplicada<\/span>\s*<span class="resumen-valor"[^>]*>\{\{ nombreReglaSimulacion \}\}<\/span>/);
   const ctx = configuracion();
   ctx.reglasConjunto = [{ id: 3, codigo: 'IRIS_PYMES', nombre: 'Iris · pymes luz' }];
-  ctx.simulacion.resultado = { resultado: 'CALCULADO', reglaAplicada: 'IRIS_PYMES', datosContrato: { tipoPrecio: 'FIJO', tipoSuministro: 'LUZ', segmento: 'PYME', ambito: 'FUERA' } };
+  ctx.simulacion.resultado = { resultado: 'CALCULADO', reglaAplicada: 'IRIS_PYMES', datosContrato: { tipoPrecio: 'FIJO', tipoSuministro: 'LUZ', segmento: 'PYME', ambito: 'FUERA', zonaComision: 'ZAR' } };
   assert.equal(ctx.nombreReglaSimulacion, 'Iris · pymes luz');
   ctx.simulacion.resultado = { ...ctx.simulacion.resultado, nombreRegla: 'Nombre del servidor' };
   assert.equal(ctx.nombreReglaSimulacion, 'Nombre del servidor');
@@ -372,7 +378,9 @@ test('«Probar con un contrato» enseña el nombre de la regla, no su código, y
   assert.equal(datos['Tipo de precio'], 'Fijo');
   assert.equal(datos['Tipo de suministro'], 'Luz');
   assert.equal(datos.Segmento, 'PYME');
-  assert.equal(datos['Ámbito'], 'Fuera de ámbito');
+  // La zona se enseña como sale del punto; el ámbito ya no existe (era lo mismo)
+  assert.equal(datos['Zona de comisión (por la provincia del punto)'], 'ZAR');
+  assert.ok(!('Ámbito' in datos));
 });
 
 // ---------------------------------------------------------------------------
@@ -440,7 +448,7 @@ test('Comisiones MCAS sin ninguna propuesta explica cuándo aparecerán', () => 
   const vacio = html.match(/<template v-else-if="!propuestas\.length">([\s\S]*?)<\/template>/);
   assert.ok(vacio, 'falta el estado vacío sin propuestas');
   assert.match(vacio[1], /<p>Todavía no hay propuestas de comisión<\/p>/);
-  assert.match(vacio[1].replace(/\s+/g, ' '), /Aparecerán aquí al guardar un contrato con la pestaña «Comisión MCAS» rellena, cuando el interruptor «Módulo» esté encendido en Configuración MCAS\./);
+  assert.match(vacio[1].replace(/\s+/g, ' '), /Aparecerán aquí al guardar un contrato con la pestaña «Otros datos» rellena, cuando el interruptor «Módulo» esté encendido en Configuración MCAS\./);
   assert.match(vacio[1].replace(/\s+/g, ' '), /«Necesita atención» para completarla a mano/);
   // Sin ninguna propuesta manda este mensaje aunque haya un filtro puesto.
   assert.ok(html.indexOf('v-else-if="!propuestas.length"') < html.indexOf('v-else-if="hayFiltros"'));

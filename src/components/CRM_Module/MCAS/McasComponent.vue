@@ -29,7 +29,7 @@
     <ol class="mcas-guia" aria-label="Cómo funciona MCAS">
       <li class="mcas-guia-paso">
         <span class="mcas-guia-numero" aria-hidden="true">1</span>
-        <span><strong>Guarde el contrato</strong> con la pestaña «Comisión MCAS» completa. El tipo de precio y el suministro ya vienen rellenos.</span>
+        <span><strong>Guarde el contrato</strong> con la pestaña «Otros datos» completa. El tipo de precio y el suministro ya vienen rellenos.</span>
       </li>
       <li class="mcas-guia-paso">
         <span class="mcas-guia-numero" aria-hidden="true">2</span>
@@ -40,6 +40,16 @@
         <span><strong>Apruébela</strong> y se crea el servicio de comisión; puede marcar varias y aprobarlas a la vez. Si la rechaza, se abre la edición para corregir importe y pagos y crear el servicio; las que requieren revisión manual se completan igual. Si no corresponde comisión, use «No procede».</span>
       </li>
     </ol>
+
+    <!-- Aviso de retrocesiones por aprobar: el panel está debajo de la tabla de propuestas -->
+    <div v-if="retrocesionesPorAprobar.length" class="mcas-alert mcas-alert--warning retro-aviso" role="status">
+      <i class="fas fa-undo-alt"></i>
+      <div>
+        Hay {{ retrocesionesPorAprobar.length }} {{ retrocesionesPorAprobar.length === 1 ? 'retrocesión' : 'retrocesiones' }} por aprobar:
+        contratos que se han dado de baja o han cambiado de comercializadora antes de 365 días.
+        <a href="#mcas-retrocesiones" class="retro-aviso-enlace" @click.prevent="irARetrocesiones">Verlas</a>
+      </div>
+    </div>
 
     <!-- Tabla de propuestas -->
     <div class="card table-panel">
@@ -265,7 +275,7 @@
                       <i class="fas fa-inbox fa-3x"></i>
                       <p>Todavía no hay propuestas de comisión</p>
                       <p class="empty-state-detalle">
-                        Aparecerán aquí al guardar un contrato con la pestaña «Comisión MCAS» rellena, cuando el interruptor «Módulo»
+                        Aparecerán aquí al guardar un contrato con la pestaña «Otros datos» rellena, cuando el interruptor «Módulo»
                         esté encendido en Configuración MCAS. Si la comercializadora del contrato todavía no tiene una tabla de comisiones
                         activa, su propuesta llega a «Necesita atención» para completarla a mano.
                       </p>
@@ -315,6 +325,84 @@
             <i class="fas fa-angle-double-right"></i>
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Retrocesiones: contratos comisionados que se dan de baja o cambian de comercializadora
+         antes de 365 días. Salen solas; no se devuelve nada hasta que se aprueban. -->
+    <div v-if="retrocesiones.length" id="mcas-retrocesiones" ref="panelRetrocesiones" class="card table-panel retro-panel">
+      <div class="table-header">
+        <div class="retro-titulo">
+          <span class="retro-icono"><i class="fas fa-undo-alt"></i></span>
+          <div>
+            <h3>Retrocesiones por aprobar: {{ retrocesionesPorAprobar.length }}</h3>
+            <p>Contratos con la comisión aprobada que se han dado de baja o han cambiado de comercializadora antes de 365 días. No se devuelve nada hasta que la apruebe.</p>
+          </div>
+        </div>
+        <div class="table-actions-horizontal">
+          <button
+            type="button"
+            class="btn btn-toggle-baja"
+            :class="{ active: verRetrocesionesResueltas }"
+            :aria-pressed="verRetrocesionesResueltas ? 'true' : 'false'"
+            title="Ver también las retrocesiones ya aprobadas o cerradas"
+            @click="verRetrocesionesResueltas = !verRetrocesionesResueltas"
+          >
+            <i class="fas fa-history"></i>
+            <span>{{ verRetrocesionesResueltas ? 'Ocultar las resueltas' : 'Ver las resueltas' }}</span>
+          </button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table data-table--compacta">
+          <thead>
+            <tr>
+              <th>Cliente y contrato</th>
+              <th>Comercializadora</th>
+              <th>Motivo</th>
+              <th>Tiempo activo</th>
+              <th class="th-col-importe">Comisión</th>
+              <th class="th-col-importe">A devolver</th>
+              <th>Estado</th>
+              <th class="th-col-acciones">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in retrocesionesVisibles" :key="r.id">
+              <td>
+                <span class="celda-principal">{{ r.cliente }}</span>
+                <span class="celda-secundaria">{{ r.numeroContrato }}<template v-if="r.cups"> · {{ r.cups }}</template></span>
+              </td>
+              <td>{{ r.comercializadora }}</td>
+              <td>{{ motivoRetrocesion(r.motivo) }}</td>
+              <td>{{ tiempoActivoRetrocesion(r) }}</td>
+              <td>{{ formatImporte(r.importeComision) }}</td>
+              <td :title="r.detalle || null">
+                <strong v-if="importeRetrocesion(r) != null">{{ formatImporte(importeRetrocesion(r)) }}</strong>
+                <span v-else class="retro-sin-importe">A mano</span>
+                <span v-if="r.cuotasAnuladas" class="celda-secundaria">Anula cuotas: {{ r.cuotasAnuladas }}</span>
+              </td>
+              <td :title="r.motivoDescarte || r.detalle || null">
+                <span class="badge" :class="'badge--' + estadoRetrocesion(r.estado).tono">{{ estadoRetrocesion(r.estado).label }}</span>
+                <span v-if="r.motivoDescarte" class="celda-secundaria">{{ r.motivoDescarte }}</span>
+              </td>
+              <td>
+                <div v-if="r.estado === 'PENDIENTE'" class="action-buttons">
+                  <button class="btn-icon btn-approve" title="Aprobar la retrocesión" aria-label="Aprobar la retrocesión" :disabled="accionando" @click="aprobarRetrocesion(r)">
+                    <i class="fas fa-check"></i>
+                  </button>
+                  <button class="btn-icon btn-archive" title="No procede: cerrar sin devolver nada" aria-label="No procede: cerrar sin devolver nada" :disabled="accionando" @click="descartarRetrocesion(r)">
+                    <i class="fas fa-ban"></i>
+                  </button>
+                </div>
+                <span v-else class="celda-secundaria">{{ r.resueltoPor }}<template v-if="r.resueltoEn"> · {{ formatFecha(r.resueltoEn) }}</template></span>
+              </td>
+            </tr>
+            <tr v-if="!retrocesionesVisibles.length">
+              <td colspan="8" class="retro-vacio">No hay retrocesiones por aprobar.</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -398,7 +486,7 @@
               </div>
               <dl class="detalle-grid detalle-grid--4">
                 <div><dt>Consumo anual</dt><dd>{{ formatConsumo(propuestaDetalle.consumoAnualKwh) }}</dd></div>
-                <div><dt>Potencia de cálculo</dt><dd>{{ formatPotencia(propuestaDetalle) }}</dd></div>
+                <div><dt>Potencia contratada (la mayor)</dt><dd>{{ formatPotencia(propuestaDetalle) }}</dd></div>
                 <div><dt>FEE del contrato</dt><dd>{{ formatFee(propuestaDetalle.feeEurMwh) }}</dd></div>
                 <div><dt>Número de pagos</dt><dd>{{ propuestaDetalle.numeroPagos || '—' }}</dd></div>
               </dl>
@@ -721,6 +809,7 @@ import { avisarPropuestasCambiadas } from '@/services/mcasPendientes'
 import { fechaES, fechaHoraES } from '@/utils/fechas'
 import { leerDecimal } from '@/utils/numeros'
 import { escaparHtml } from '@/utils/html'
+import { estadoRetrocesion, filaRetrocesion, importeRetrocesion, leerImporteRetrocesion, motivoRetrocesion, retrocesionesPendientes, tiempoActivo } from './mcasRetrocesiones'
 
 // Catálogo de estados de propuesta (compartido con el formulario de contrato).
 const ESTADOS = ESTADOS_PROPUESTA
@@ -771,6 +860,7 @@ const ORIGEN_POTENCIA = { CONTRATO: 'del contrato', MAYOR_CONTRATADA: 'mayor pot
 const ETIQUETAS_LINEA = {
   COMISION_BASE: 'Comisión base', ENERGIA: 'Energía', POTENCIA: 'Potencia', COMPONENTE: 'Componente',
   SERVICIO_ADICIONAL: 'Servicio adicional', CIERRE: 'Cierre', AJUSTE: 'Ajuste manual',
+  AJUSTE_PORCENTAJE: 'Parte que no se cobra',
 }
 const ETIQUETAS_EVENTO = {
   PROPUESTA_CREADA: 'Propuesta creada', PROPUESTA_CALCULADA: 'Propuesta calculada',
@@ -780,6 +870,11 @@ const ETIQUETAS_EVENTO = {
   PROPUESTA_DESCARTADA: 'No procede: cerrada sin comisión',
   PROPUESTA_REABIERTA: 'Reabierta con Recalcular', PROPUESTA_SUPERADA: 'Sustituida por un cálculo nuevo',
   COMISION_SIN_SERVICIO: 'Su servicio ya no existe: el contrato se puede volver a comisionar',
+  COBROS_MOVIDOS_POR_FECHA_INICIO: 'Cambió la fecha de inicio: cuotas pendientes movidas',
+  CONTRATO_ELIMINADO: 'Contrato borrado: su comisión y su servicio también',
+  RETROCESION_DETECTADA: 'Baja o cambio de comercializadora antes del año: retrocesión por aprobar',
+  RETROCESION_APROBADA: 'Retrocesión aprobada: servicio en negativo creado',
+  RETROCESION_DESCARTADA: 'Retrocesión cerrada: no procede',
 }
 
 const AVISO_RECHAZO = 'Propuesta rechazada: corrija los valores y guarde para crear el servicio'
@@ -799,6 +894,9 @@ export default {
   data() {
     return {
       propuestas: [],
+      // Retrocesiones automáticas (bajas antes del año)
+      retrocesiones: [],
+      verRetrocesionesResueltas: false,
       cargando: false,
       errorCarga: false,
       opcionesEvento: OPCIONES_EVENTO,
@@ -828,6 +926,10 @@ export default {
     }
   },
   computed: {
+    retrocesionesPorAprobar() { return retrocesionesPendientes(this.retrocesiones) },
+    retrocesionesVisibles() {
+      return this.verRetrocesionesResueltas ? this.retrocesiones : this.retrocesionesPorAprobar
+    },
     /** Tarjetas de resumen: una por grupo de estado. */
     tarjetas() {
       return GRUPOS_ESTADO.map(g => ({ ...g, ...ASPECTO_GRUPO[g.id] }))
@@ -972,6 +1074,7 @@ export default {
   methods: {
     async cargar() {
       this.cargando = true
+      this.cargarRetrocesiones()
       try {
         const { data } = await axios.get('/mcas/propuestas')
         this.propuestas = Array.isArray(data) ? data : []
@@ -985,6 +1088,96 @@ export default {
         mostrarError(this.$swal, 'Error', textoError(e, 'No se pudieron cargar las propuestas de comisión.'))
       } finally {
         this.cargando = false
+      }
+    },
+
+    // ---- Retrocesiones automáticas ----
+
+    /** Un fallo aquí no tapa las propuestas: el panel simplemente no sale. */
+    async cargarRetrocesiones() {
+      try {
+        const { data } = await axios.get('/mcas/retrocesiones')
+        this.retrocesiones = (Array.isArray(data) ? data : []).map(filaRetrocesion)
+      } catch (e) {
+        console.error('Error al cargar las retrocesiones MCAS:', e)
+      }
+    },
+
+    motivoRetrocesion(motivo) { return motivoRetrocesion(motivo) },
+    estadoRetrocesion(estado) { return estadoRetrocesion(estado) },
+    importeRetrocesion(r) { return importeRetrocesion(r) },
+    tiempoActivoRetrocesion(r) { return tiempoActivo(r, this.formatFecha) },
+    irARetrocesiones() { this.$refs.panelRetrocesiones?.scrollIntoView({ behavior: 'smooth', block: 'start' }) },
+
+    async aprobarRetrocesion(r) {
+      if (this.accionando) return
+      const calculado = r.importeCalculado != null
+      const { isConfirmed, value } = await this.$swal.fire({
+        title: '¿Aprobar la retrocesión?',
+        html: `
+          <div class="swal-accion-contenedor">
+            <div class="swal-accion-caja swal-accion-caja--danger">
+              <div class="swal-accion-caja-header swal-accion-caja-header--danger">
+                <i class="fas fa-undo-alt"></i>
+                <span>${escaparHtml(r.cliente)} · ${escaparHtml(r.numeroContrato)}</span>
+              </div>
+              <p class="swal-accion-caja-texto">${escaparHtml(motivoRetrocesion(r.motivo))} a los ${escaparHtml(this.tiempoActivoRetrocesion(r))}.</p>
+              <p class="swal-accion-caja-texto">${escaparHtml(r.detalle || '')}</p>
+              <p class="swal-accion-caja-texto swal-accion-caja-texto--danger">Se creará un servicio en negativo con el importe que se devuelve. No se puede deshacer desde aquí.</p>
+            </div>
+          </div>
+        `,
+        icon: 'warning',
+        input: 'text',
+        inputLabel: calculado ? 'Importe a devolver (€). Déjelo como está o corríjalo' : 'Importe a devolver (€) *',
+        inputValue: calculado ? Number(r.importeCalculado).toFixed(2).replace('.', ',') : '',
+        inputPlaceholder: 'Por ejemplo: 120,50',
+        inputValidator: texto => leerImporteRetrocesion(texto, r).error,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-check"></i> Aprobar retrocesión',
+        cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+        confirmButtonColor: COLORES_DIALOGO.COLOR_PELIGRO,
+      })
+      if (!isConfirmed) return
+      this.accionando = true
+      try {
+        await axios.post(`/mcas/retrocesiones/${r.id}/aprobar`, { importe: leerImporteRetrocesion(value, r).importe })
+        this.notificarCambio()
+        await this.cargarRetrocesiones()
+        mostrarExito(this.$swal, 'Retrocesión aprobada', 'El importe devuelto queda como un servicio en negativo del cliente.')
+      } catch (e) {
+        mostrarError(this.$swal, 'Error al aprobar', textoError(e, 'No se pudo aprobar la retrocesión.'))
+      } finally {
+        this.accionando = false
+      }
+    },
+
+    async descartarRetrocesion(r) {
+      if (this.accionando) return
+      const { isConfirmed, value: motivo } = await this.$swal.fire({
+        title: '¿Cerrar la retrocesión sin devolver nada?',
+        text: `${r.cliente} · ${r.numeroContrato}. La comisión y sus cuotas se quedan como están.`,
+        icon: 'warning',
+        input: 'textarea',
+        inputLabel: 'Motivo *',
+        inputPlaceholder: 'Por ejemplo: la comercializadora no la reclama...',
+        inputValidator: valor => (!valor || !valor.trim() ? 'Indique el motivo por el que no procede' : undefined),
+        customClass: { input: 'swal-accion-textarea' },
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-ban"></i> No procede',
+        cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+        confirmButtonColor: COLORES_DIALOGO.COLOR_PELIGRO,
+      })
+      if (!isConfirmed) return
+      this.accionando = true
+      try {
+        await axios.post(`/mcas/retrocesiones/${r.id}/descartar`, { motivo: motivo.trim() })
+        this.notificarCambio()
+        await this.cargarRetrocesiones()
+      } catch (e) {
+        mostrarError(this.$swal, 'Error', textoError(e, 'No se pudo cerrar la retrocesión.'))
+      } finally {
+        this.accionando = false
       }
     },
 

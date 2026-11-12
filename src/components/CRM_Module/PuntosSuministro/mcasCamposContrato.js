@@ -1,10 +1,16 @@
-// Campos de la pestaña «Comisión MCAS» del formulario de contrato.
+// Campos de la pestaña «Otros datos» (comisión MCAS) del formulario de contrato.
 //
 // La vista previa del servidor (POST /mcas/vista-previa) dice qué datos usan las
 // tablas de comisiones de la comercializadora: `campos`, con las claves del enum
 // McasCampo. Este módulo traduce cada clave a su campo del formulario y decide qué
 // se enseña: lo básico siempre, además lo que pide la vista previa, y el resto
-// plegado en «Otros datos». Nunca borra valores: solo decide dónde se ven.
+// plegado en «Más datos». Nunca borra valores: solo decide dónde se ven.
+
+/**
+ * La zona de comisión no es un campo del formulario: el servidor la saca de la provincia del
+ * punto de suministro (Configuración MCAS, pestaña Zonas) y aquí solo se enseña.
+ */
+export const CAMPO_ZONA = 'zonaComision';
 
 /** McasCampo → campo del formulario. La tarifa de acceso depende del suministro (ver campoDeClave). */
 const CAMPO_POR_CLAVE = {
@@ -14,8 +20,7 @@ const CAMPO_POR_CLAVE = {
   ES_RENOVACION: 'mcasEsRenovacion',
   TIPO_RENOVACION: 'mcasTipoRenovacion',
   ALTA_NUEVA: 'mcasAltaNueva',
-  AMBITO: 'mcasAmbito',
-  ZONA_COMISION: 'mcasZonaComision',
+  ZONA_COMISION: CAMPO_ZONA,
   TARIFA_ACCESO: 'idTarifaLuz',
   PRODUCTO: 'mcasIdProductoComercial',
   CONSUMO: 'consumoAnual',
@@ -31,11 +36,9 @@ const ETIQUETA_CAMPO = {
   mcasTipoSuministro: 'Tipo de suministro',
   mcasEsRenovacion: '¿Es renovación?',
   mcasTipoRenovacion: 'Tipo de renovación',
-  mcasNumeroPagos: 'Nº de pagos',
   mcasSegmento: 'Segmento',
   mcasAltaNueva: 'Alta nueva',
-  mcasAmbito: 'Ámbito',
-  mcasZonaComision: 'Zona de comisión',
+  [CAMPO_ZONA]: 'Zona de comisión',
   mcasIdGestora: 'Gestora',
   mcasIdProductoComercial: 'Tarifa de precios (producto)',
   mcasFeeEurMwh: 'FEE del contrato',
@@ -48,18 +51,28 @@ const ETIQUETA_CAMPO = {
 /**
  * Campos editables de la pestaña, en el orden en que se dibujan. Desde la reunión del
  * 04/11/2026 el tipo de precio y el producto van en la pestaña Contrato, y la potencia
- * de cálculo, la primera aplicación y la última relación ya no se escriben a mano.
+ * de cálculo, la primera aplicación, la última relación, el ámbito y la zona de comisión
+ * ya no se escriben a mano.
  */
 const CAMPOS_PESTANA_MCAS = [
-  'mcasTipoSuministro', 'mcasEsRenovacion', 'mcasTipoRenovacion', 'mcasNumeroPagos',
-  'mcasSegmento', 'mcasAltaNueva', 'mcasAmbito', 'mcasZonaComision', 'mcasIdGestora', 'mcasFeeEurMwh',
+  'mcasTipoSuministro', 'mcasEsRenovacion', 'mcasTipoRenovacion',
+  'mcasSegmento', 'mcasAltaNueva', 'mcasIdGestora', 'mcasFeeEurMwh',
 ];
 
 /** A la vista pida lo que pida la vista previa (el tipo de renovación, solo en renovaciones). */
-const CAMPOS_SIEMPRE_VISIBLES = ['mcasTipoSuministro', 'mcasEsRenovacion', 'mcasTipoRenovacion', 'mcasNumeroPagos'];
+const CAMPOS_SIEMPRE_VISIBLES = ['mcasTipoSuministro', 'mcasEsRenovacion', 'mcasTipoRenovacion'];
 
 /** Se rellenan en la pestaña Contrato: en esta solo se enseñan. */
 const CAMPOS_DE_PESTANA_CONTRATO = ['consumoAnual', 'idTarifaLuz', 'idTarifaGas', 'mcasTipoPrecio', 'mcasIdProductoComercial', 'potenciaContratada'];
+
+/** No se escriben en el contrato: salen de otros datos y solo se enseñan. */
+const CAMPOS_CALCULADOS = [CAMPO_ZONA];
+
+/** ¿Es un dato que no se rellena en el formulario del contrato (la zona de comisión)? */
+export const esCampoCalculado = (campo) => CAMPOS_CALCULADOS.includes(campo);
+
+export const TEXTO_ZONA_SIN_SABER =
+  'La zona de comisión sale de la provincia del punto de suministro. Sin ella no se puede guardar el contrato.';
 
 export const TEXTO_SIN_REGLAS =
   'Esta comercializadora todavía no tiene tabla de comisiones: la comisión se completará a mano en Comisiones.';
@@ -108,7 +121,7 @@ function citaReglas(vistaPrevia, campos) {
  * Qué campos se enseñan y dónde.
  * - Sin vista previa válida (sin red, error o aún sin respuesta): todos, como siempre (`respaldo`).
  * - Con ella y alguna regla citada: lo básico y lo que usan esas reglas a la vista; los datos
- *   de la pestaña Contrato (consumo, tarifa) en solo lectura; el resto plegado en «Otros datos».
+ *   de la pestaña Contrato (consumo, tarifa) en solo lectura; el resto plegado en «Más datos».
  * - Si la vista previa no cita ninguna regla (sin tabla que encaje, módulo apagado...) o aún
  *   no hay comercializadora, no se sabe qué sobra: todos a la vista, como en el respaldo.
  * Un campo con error nunca se queda plegado.
@@ -126,8 +139,12 @@ export function organizarCamposMcas({ vistaPrevia, contrato = {}, esRenovacion =
   const soloLectura = [];
   for (const c of campos) {
     const campo = campoDeClave(c.clave, contrato);
-    if (!CAMPOS_DE_PESTANA_CONTRATO.includes(campo) || soloLectura.some((f) => f.campo === campo)) continue;
-    soloLectura.push({ clave: c.clave, campo, etiqueta: etiquetaDe(c, campo), falta: c.falta === true });
+    const calculado = esCampoCalculado(campo);
+    if ((!CAMPOS_DE_PESTANA_CONTRATO.includes(campo) && !calculado) || soloLectura.some((f) => f.campo === campo)) continue;
+    soloLectura.push({
+      clave: c.clave, campo, etiqueta: calculado ? ETIQUETA_CAMPO[campo] : etiquetaDe(c, campo), falta: c.falta === true,
+      ...(calculado ? { calculado: true } : {}),
+    });
   }
 
   return {
@@ -145,7 +162,7 @@ export function faltantesVistaPrevia(vistaPrevia, contrato = {}) {
   for (const c of camposDeVistaPrevia(vistaPrevia) || []) {
     const campo = campoDeClave(c.clave, contrato);
     if (c.falta !== true || faltan.some((f) => f.campo === campo)) continue;
-    faltan.push({ clave: c.clave, campo, etiqueta: etiquetaDe(c, campo) });
+    faltan.push({ clave: c.clave, campo, etiqueta: etiquetaDe(c, campo), ...(esCampoCalculado(campo) ? { calculado: true } : {}) });
   }
   return faltan;
 }
@@ -204,6 +221,13 @@ export function cabeceraVistaPrevia(vistaPrevia, contrato = {}, { verImporte = t
     case 'REQUIERE_DATOS':
       // Sin estos datos el contrato no se guarda (reunión del 04/11/2026)
       if (!faltan.length) return cabecera('aviso', mensaje || 'Faltan datos para calcular la comisión.');
+      // Lo único que falta no se escribe aquí (la zona sale de la provincia del punto): el
+      // servidor dice por qué no la sabe y dónde se corrige
+      if (faltan.every((f) => f.calculado))
+        return cabecera('aviso', mensaje || 'No se puede saber la zona de comisión de este contrato.', {
+          faltan: [],
+          detalle: TEXTO_ZONA_SIN_SABER,
+        });
       return verImporte
         ? cabecera('aviso', 'Para estimar la comisión falta:', {
           detalle: 'Sin estos datos no se puede guardar el contrato. Al completarlos, la estimación se actualizará sola.',

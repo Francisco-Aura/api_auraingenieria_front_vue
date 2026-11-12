@@ -223,7 +223,7 @@ test('C2 · cada regla se lee en lenguaje llano, sin claves JSON', () => {
   const resumen = ctx.resumenFilaRegla({ codigo: 'ENDESA_RESIDENCIAL_MENOS_10KW', metodoCalculo: 'FIXED_AMOUNT',
     condicionesJson: '{"tipo_suministro":"LUZ","segmento":"RESIDENCIAL","es_renovacion":false,"potencia_max_kw":10,"potencia_max_inc":false}',
     calculoJson: '{"importe":110}', politicaPagoJson: '{"numero_pagos_sugerido":1}' });
-  assert.equal(resumen.aplica, 'Luz · Residencial · Solo contratos nuevos · Potencia de cálculo < 10 kW');
+  assert.equal(resumen.aplica, 'Luz · Residencial · Solo contratos nuevos · Potencia contratada < 10 kW');
   assert.equal(resumen.calcula, 'Comisión fija de 110,00 €.');
 });
 
@@ -609,5 +609,5 @@ test('C6 · los formularios no enseñan campos técnicos que el cliente no usa',
   assert.deepEqual(ctx.columnasActivas.map((c) => c.key), ['regla', 'metodo'], 'sin columna de prioridad');
   ctx.tabActivo = 'conjuntos';
   assert.ok(!ctx.columnasActivas.some((c) => c.key === 'origen'), 'sin columna de documento');
-  assert.deepEqual(ctx.tabs.map((t) => t.id), ['conjuntos', 'reglas', 'productos', 'retrocesiones']);
+  assert.deepEqual(ctx.tabs.map((t) => t.id), ['conjuntos', 'reglas', 'productos', 'cobros', 'zonas', 'retrocesiones']);
 });

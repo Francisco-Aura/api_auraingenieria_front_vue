@@ -230,10 +230,14 @@ test('el formulario de política explica qué pasa si a un contrato le correspon
   assert.doesNotMatch(html, /en lugar de elegir una/);
 });
 
-test('el interruptor de retrocesión no se enseña porque hoy no tiene efecto', () => {
+test('el interruptor de retrocesión se enseña y se puede encender aunque no tenga fila', () => {
   const ctx = configuracion();
-  ctx.featureFlags = [{ codigo: 'MCAS_RETROCESSION_ENABLED', activo: false, descripcion: 'Aplicación de políticas de retrocesión' }];
-  assert.equal(ctx.flagsVista.find((f) => f.codigo === 'MCAS_RETROCESSION_ENABLED'), undefined);
+  ctx.featureFlags = [];
+  const sinFila = ctx.flagsVista.find((f) => f.codigo === 'MCAS_RETROCESSION_ENABLED');
+  assert.equal(sinFila.disponible, true);
+  assert.equal(sinFila.activo, false);
+  ctx.featureFlags = [{ codigo: 'MCAS_RETROCESSION_ENABLED', activo: true, descripcion: 'Aplicación de políticas de retrocesión' }];
+  assert.equal(ctx.flagsVista.find((f) => f.codigo === 'MCAS_RETROCESSION_ENABLED').activo, true);
 
   // El resto de interruptores no cambia.
   ctx.featureFlags = [{ codigo: 'MCAS_ENABLED', activo: true, descripcion: 'Cálculo automático' }];
@@ -316,17 +320,19 @@ test('el producto del contrato se rotula como la «tarifa de precios» del clien
   assert.doesNotMatch(html, /Producto comercial/);
 });
 
-test('la zona de comisión se elige en un desplegable: sin especificar, ZBR o ZAR', () => {
+test('la zona de comisión ya no se escribe en el contrato: se enseña la que sale de la provincia del punto', () => {
   const html = plantilla(CONTRATOS);
-  const zona = html.match(/<select id="mcasZonaComision" v-model="nuevoContrato\.mcasZonaComision"[\s\S]*?<\/select>/);
-  assert.ok(zona, 'la zona de comisión debe ser un <select>');
-  // Las opciones salen de la vista previa; sin ella, las de siempre (mcas-vista-previa.spec.js).
-  assert.match(zona[0], /<option :value="null">Sin especificar<\/option>\s*<option v-for="zona in opcionesZonaMcas"/);
-  assert.deepEqual(modalContratos().opcionesZonaMcas, ['ZBR', 'ZAR']);
-  assert.doesNotMatch(html, /<input[^>]*v-model="nuevoContrato\.mcasZonaComision"/);
-  // Ayuda en lenguaje llano, sin remitir al Excel de la comercializadora.
-  assert.match(html, /ZAR si el CUPS de luz empieza por ES0021; ZBR en el resto\./);
-  assert.doesNotMatch(html, /Excel Iberdrola/);
+  assert.doesNotMatch(html, /id="mcasZonaComision"|id="mcasAmbito"|v-model="nuevoContrato\.mcasZonaComision"|v-model="nuevoContrato\.mcasAmbito"/);
+  assert.match(html, /v-if="fila\.calculado" class="mcas-solo-lectura__nota">Sale de la provincia del punto de suministro</);
+  assert.doesNotMatch(html, /Excel Iberdrola|ZAR si el CUPS/);
+
+  // La zona la trae la vista previa (la calcula el servidor): aquí solo se enseña
+  const zona = { clave: 'ZONA_COMISION', etiqueta: 'Zona de comisión (provincia del punto de suministro)', falta: false, valores: ['ZAR', 'ZBR'] };
+  const ctx = modalContratos({ vistaPrevia: { estado: 'CALCULADO', zonaComision: 'ZAR', campos: [zona] } });
+  assert.deepEqual(ctx.filasSoloLecturaMcas,
+    [{ clave: 'ZONA_COMISION', campo: 'zonaComision', etiqueta: 'Zona de comisión', falta: false, calculado: true, valor: 'ZAR' }]);
+  const sinZona = modalContratos({ vistaPrevia: { estado: 'CALCULADO', zonaComision: null, campos: [zona] } });
+  assert.equal(sinZona.filasSoloLecturaMcas[0].valor, 'Sin determinar');
 });
 
 test('la potencia de cálculo ya no se escribe a mano: siempre la mayor contratada', () => {
@@ -362,49 +368,33 @@ test('el segmento se recomienda, pero no impide calcular ni consultar la comisi�
   assert.match(leer(CONTRATOS), /const consultaMcas = Boolean\(this\.nuevoContrato\.mcasTipoPrecio\);/);
 });
 
-test('la zona se propone por el CUPS de luz cuando la tabla de comisiones la usa, sin pisar lo que eligió el usuario', () => {
-  // Qué comercializadoras usan la zona lo dice la vista previa (antes: el nombre «IBERDROLA»).
-  const usaZona = { estado: 'REQUIERE_DATOS', campos: [{ clave: 'ZONA_COMISION', etiqueta: 'Zona de comisión', falta: true, valores: [] }] };
-  const iberdrola = [{ id: 5, nombre: 'IBERDROLA CLIENTES, S.A.U.' }];
+test('si no se puede saber la zona, se dice el motivo del servidor y el contrato no se guarda', async () => {
+  const motivo = 'No se reconoce la provincia del punto de suministro (Mursia): elíjala de la lista en el punto para saber su zona de comisión.';
+  const sinZona = {
+    estado: 'REQUIERE_DATOS', mensaje: motivo, zonaComision: null,
+    campos: [{ clave: 'ZONA_COMISION', etiqueta: 'Zona de comisión (provincia del punto de suministro)', falta: true, valores: ['ZAR', 'ZBR'] }],
+  };
+  const cabecera = camposContrato.cabeceraVistaPrevia(sinZona, {});
+  assert.equal(cabecera.tono, 'aviso');
+  assert.equal(cabecera.titulo, motivo);
+  assert.deepEqual(cabecera.faltan, [], 'no es un campo del formulario: no hay enlace a ningún campo');
+  assert.equal(cabecera.detalle, camposContrato.TEXTO_ZONA_SIN_SABER);
 
-  const zar = modalContratos({ puntoSuministro: { CUPSluz: 'ES0021000011111111AB0F' }, vistaPrevia: usaZona });
-  zar.sugerirZonaMcas();
-  assert.equal(zar.nuevoContrato.mcasZonaComision, 'ZAR');
+  // Con otro dato que sí se rellena aquí, la lista sale como siempre y la zona va sin enlace
+  const conFee = { ...sinZona, campos: [...sinZona.campos, { clave: 'FEE', etiqueta: 'FEE del contrato', falta: true }] };
+  assert.deepEqual(camposContrato.cabeceraVistaPrevia(conFee, {}).faltan.map((f) => [f.campo, !!f.calculado]),
+    [['zonaComision', true], ['mcasFeeEurMwh', false]]);
+  assert.match(plantilla(CONTRATOS), /<span v-if="f\.calculado">\{\{ f\.etiqueta \}\}<\/span>\s*<button v-else type="button" class="mcas-enlace" @click="irACampoMcas\(f\.campo\)"/);
 
-  const zbr = modalContratos({ puntoSuministro: { cupsluz: 'ES0031405555555555XY0F' }, vistaPrevia: usaZona });
-  zbr.sugerirZonaMcas();
-  assert.equal(zbr.nuevoContrato.mcasZonaComision, 'ZBR');
-
-  const elegida = modalContratos({
-    puntoSuministro: { CUPSluz: 'ES0021000011111111AB0F' }, vistaPrevia: usaZona, nuevoContrato: { mcasZonaComision: 'ZBR' },
-  });
-  elegida.sugerirZonaMcas();
-  assert.equal(elegida.nuevoContrato.mcasZonaComision, 'ZBR', 'no se pisa la zona elegida');
-
-  const noLaUsa = modalContratos({
-    comercializadoras: iberdrola, puntoSuministro: { CUPSluz: 'ES0021000011111111AB0F' }, vistaPrevia: { estado: 'CALCULADO', campos: [] },
-  });
-  noLaUsa.sugerirZonaMcas();
-  assert.equal(noLaUsa.nuevoContrato.mcasZonaComision, null, 'el nombre de la comercializadora ya no basta');
-
-  const sinVista = modalContratos({ comercializadoras: iberdrola, puntoSuministro: { CUPSluz: 'ES0021000011111111AB0F' } });
-  sinVista.sugerirZonaMcas();
-  assert.equal(sinVista.nuevoContrato.mcasZonaComision, null, 'sin vista previa no se sabe si la usa');
-
-  // Al modificar un contrato ya guardado no se rellena sola: cambiaría sus datos MCAS
-  // y dejaría desactualizada una propuesta pendiente sin que el usuario lo decidiera.
-  const guardado = modalContratos({
-    puntoSuministro: { CUPSluz: 'ES0021000011111111AB0F' }, vistaPrevia: usaZona, modoEdicion: true,
-  });
-  guardado.sugerirZonaMcas();
-  assert.equal(guardado.nuevoContrato.mcasZonaComision, null, 'no se toca un contrato ya guardado');
-
-  // La sugerencia se lanza al llegar la vista previa, no al cambiar la comercializadora
-  // (la vista previa anterior sería la de la comercializadora de antes).
-  const pedir = leer(CONTRATOS).match(/async pedirVistaPrevia\(\) \{[\s\S]*?\n {4}\},/);
-  assert.ok(pedir);
-  assert.match(pedir[0], /this\.sugerirZonaMcas\(\)/);
-  const watch = leer(CONTRATOS).match(/'nuevoContrato\.idComercializadoraActual'\(newVal, oldVal\) \{[\s\S]*?\n {4}\},/);
-  assert.ok(watch);
-  assert.doesNotMatch(watch[0], /sugerirZonaMcas/);
+  // Al guardar: no deja, y el aviso es el motivo (no una lista de campos que no existen)
+  const ctx = modalContratos({ vistaPrevia: sinZona });
+  ctx.pedirVistaPrevia = async () => {};
+  Object.defineProperty(ctx, 'sinComisionMcas', { get: () => false, configurable: true });
+  Object.defineProperty(ctx, 'vistaPreviaMcasValida', { get: () => true, configurable: true });
+  assert.equal(await ctx.datosMcasCompletos(), false);
+  assert.equal(ctx.pestanaContrato, 'mcas');
+  const aviso = ctx.avisos[ctx.avisos.length - 1];
+  assert.equal(aviso.title, 'Faltan datos de la comisión');
+  assert.match(aviso.html, /No se reconoce la provincia del punto de suministro \(Mursia\)/);
+  assert.doesNotMatch(aviso.html, /Complete estos datos/);
 });
