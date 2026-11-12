@@ -7,7 +7,8 @@
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: var(--backdrop-color);
+  backdrop-filter: var(--backdrop-blur);
   z-index: var(--z-overlay);
   display: flex;
   align-items: center;
@@ -59,47 +60,6 @@
   padding-right: 0.5rem;
 }
 
-/* Tareas/actividad button */
-.btn-tareas-actividad {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 1rem;
-  background: linear-gradient(135deg, var(--color-orange) 0%, #ea580c 100%);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
-  text-transform: uppercase;
-  white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.35);
-}
-
-.btn-tareas-actividad:hover {
-  background: linear-gradient(135deg, #fb923c 0%, var(--color-orange) 100%);
-  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.45);
-}
-
-.btn-tareas-actividad i {
-  font-size: 0.95rem;
-}
-
-.tareas-count-badge {
-  background: #fff;
-  color: #ea580c;
-  border-radius: 9999px;
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 0.05rem 0.45rem;
-  min-width: 20px;
-  text-align: center;
-  line-height: 1.5;
-}
-
 /* ═══════════════════════════════════════════════
    PANEL TAREAS / ACTIVIDAD  (clon de TareasComponent)
    ═══════════════════════════════════════════════ */
@@ -108,7 +68,8 @@
 .tareas-panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: var(--backdrop-color);
+  backdrop-filter: var(--backdrop-blur);
   z-index: var(--z-overlay-nested);
   display: flex;
   align-items: center;
@@ -160,29 +121,6 @@
   letter-spacing: 0.01em;
 }
 
-.tareas-panel-cliente-nombre {
-  font-weight: 400;
-  opacity: 0.9;
-  font-size: 0.9rem;
-}
-
-.tareas-panel-close {
-  background: rgba(255,255,255,0.18);
-  border: 1px solid rgba(255,255,255,0.3);
-  color: #fff;
-  border-radius: 6px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.15s;
-}
-
-.tareas-panel-close:hover { background: rgba(255,255,255,0.3); }
-
 /* Body */
 .tareas-panel-body {
   flex: 1;
@@ -213,7 +151,7 @@
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;
-  transition: all 0.15s ease;
+  transition: var(--aura-transicion);
 }
 
 .tp-tab-btn:hover {
@@ -288,7 +226,8 @@
 }
 
 .tp-tab-btn-incidencias.active {
-  background: #d97706;
+  /* Naranja oscuro: con el blanco encima se lee (el #d97706 se quedaba en 3:1) */
+  background: #b45309;
   box-shadow: 0 8px 18px rgba(217, 119, 6, 0.25);
 }
 
@@ -332,6 +271,14 @@
 
 .tp-tab-btn.active .tp-tab-count {
   background: rgba(255, 255, 255, 0.22);
+}
+
+/* Pestaña activa: el número en blanco (con el color de su pestaña, que es el del
+   fondo, no se leía). El :not(#aura-tp) le da peso para ganar a los colores de
+   cada pestaña, que van más abajo. */
+.tp-tab-btn.active .tp-tab-count:not(#aura-tp) {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
 }
 
 .tp-tab-btn-tareas .tp-tab-count {
@@ -679,7 +626,6 @@
 
 .tp-nota-fijada-item:hover {
   background: #fff3e4;
-  transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(234, 111, 56, 0.11);
 }
 
@@ -734,7 +680,6 @@
 }
 
 .tp-btn-create-note:hover:not(:disabled) {
-  transform: translateY(-1px);
   box-shadow: 0 8px 18px rgba(91, 33, 182, 0.3);
 }
 
@@ -751,44 +696,13 @@
   align-self: flex-end;
 }
 
-.tp-btn-pin-note {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1.5px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 6px 10px;
-  background: #f8fafc;
-  color: #64748b;
-  font-weight: 600;
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  min-height: 32px;
-}
-
-.tp-btn-pin-note:hover {
-  border-color: #f59e0b;
-  color: #f59e0b;
-}
-
-.tp-btn-pin-note.pinned {
-  border-color: #f59e0b;
-  background: #fffbeb;
-  color: #f59e0b;
-}
-
-.tp-btn-pin-note.pinned .fa-thumbtack {
-  transform: rotate(-45deg);
-}
-
 .tp-note-pin-comment {
   background: none;
   border: none;
   cursor: pointer;
   padding: 6px 8px;
   font-size: 1rem;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: var(--aura-transicion);
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
@@ -801,7 +715,6 @@
 .tp-note-pin-comment:hover {
   color: #f59e0b;
   opacity: 1;
-  transform: scale(1.15);
 }
 
 .tp-note-pin-comment.pinned {
@@ -998,7 +911,7 @@
   background: rgba(0, 0, 0, 0.04);
   padding: 4px 8px;
   border-radius: 6px;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   margin-top: 0;
   margin-left: auto;
   justify-content: flex-end;
@@ -1017,7 +930,7 @@
   cursor: pointer;
   padding: 6px 8px;
   font-size: 1rem;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: var(--aura-transicion);
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -1039,7 +952,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   z-index: -1;
 }
 
@@ -1055,7 +968,6 @@
 .tp-note-edit-comment:hover {
   color: #3182ce;
   opacity: 1;
-  transform: scale(1.15);
 }
 
 .tp-note-edit-comment:hover::before {
@@ -1074,7 +986,6 @@
 .tp-note-delete-comment:hover {
   color: #e53e3e;
   opacity: 1;
-  transform: scale(1.15);
 }
 
 .tp-note-delete-comment:hover::before {
@@ -1108,7 +1019,7 @@
   font-size: 0.76rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: var(--aura-transicion);
 }
 
 .tp-note-action-btn:disabled {
@@ -1132,23 +1043,14 @@
 }
 
 .tp-note-cancel {
-  background: #f8fafc;
-  color: #475569;
-  border-color: #e2e8f0;
+  background: var(--aura-btn-cancelar-fondo);
+  color: var(--aura-btn-cancelar-texto);
+  border-color: var(--aura-btn-cancelar-borde);
 }
 
 .tp-note-cancel:hover:not(:disabled) {
-  background: #f1f5f9;
-}
-
-.tp-doc-pendiente {
-  margin: 10px 12px 12px;
-  padding: 8px 10px;
-  background: #fff7ed;
-  border: 1px dashed #fb923c;
-  border-radius: 8px;
-  color: #9a3412;
-  font-size: 0.82rem;
+  background: var(--aura-btn-cancelar-hover);
+  border-color: var(--aura-btn-cancelar-borde-hover);
 }
 
 @media (max-width: 1250px) {
@@ -1293,10 +1195,17 @@
   white-space: nowrap;
 }
 
+/* En bloque (no flex) para que el título largo acabe en puntos suspensivos en
+   lugar de cortarse a media palabra */
 .tp-titulo-wrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-titulo-wrap .tp-pin-icon {
+  margin-right: 6px;
 }
 
 .tp-pin-icon {
@@ -1342,7 +1251,7 @@
   background: #8b0000;
   color: #fff;
   border-color: #5c0000;
-  animation: pulse-urgente 2s infinite;
+  animation: pulse-urgente 2s 3; /* tres pulsos y quieto */
 }
 .tp-prioridad-0::before { content: '\f071'; font-family: 'Font Awesome 5 Free'; font-weight: 900; }
 
@@ -1363,6 +1272,12 @@
 /* Categoría badge */
 .tp-categoria-badge {
   display: inline-block;
+  /* Puntos suspensivos dentro de la pastilla («Administración y fact» se cortaba) */
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
   padding: 4px 10px;
   background: #e7f1f8;
   color: #0c5460;
@@ -1371,9 +1286,21 @@
   font-weight: 500;
 }
 
+/* Prioridad «Normal»: sin estilo propio salía como texto suelto entre insignias */
+.tp-prioridad-4 {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
 /* CUPS badges */
 .tp-cups-badge {
   display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
   font-family: monospace;
   font-size: 0.82rem;
   font-weight: 600;
@@ -1483,7 +1410,7 @@
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   font-weight: 500;
   min-width: 40px;
   display: inline-flex;
@@ -1495,7 +1422,6 @@
   background: var(--color-brand-yellow-hex);
   color: #000;
   border-color: var(--color-brand-yellow-hex);
-  transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
@@ -1523,7 +1449,7 @@
   font-weight: 500;
   color: #666;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--aura-transicion);
   display: flex;
   align-items: center;
   gap: 0.3rem;
@@ -1542,8 +1468,13 @@
   color: #333;
 }
 
-.tab-text {
-  font-size: 1rem;
+/* El formulario ocupa el alto libre del modal (bajo cabecera y pestañas) para que
+   solo se desplace el contenido de la pestaña y el pie quede siempre visible */
+.modal-content > form {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Contenedor de pestañas optimizado */
@@ -1558,30 +1489,31 @@
 /* CORRECCIÓN: Asegurar que el contenido tenga scroll */
 .tab-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto !important;
-  padding: 0.5rem;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 140px);
+  gap: 0.75rem;
 }
 
 /* Grid optimizado */
 .form-grid-compact {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-  flex: 1;
+  gap: 0.75rem;
 }
 
 /* CORRECCIÓN: Reducir padding para optimizar espacio */
 .form-section-compact {
   background: #fff;
-  border-radius: 0.3rem;
-  border: 1px solid #e9ecef;
-  padding: 0.4rem !important;
+  border-radius: var(--radius-sm);
+  border: 1px solid #e3e8ee;
+  padding: 0.75rem !important;
   display: flex;
   flex-direction: column;
-  margin-bottom: 0.3rem;
+  gap: 0; /* todas las tarjetas con la misma separación interna */
+  margin-bottom: 0;
 }
 
 .form-section-compact.full-width {
@@ -1593,15 +1525,14 @@
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: 0.75rem;
 }
 
 .contact-card {
   background: #fff;
-  border-radius: 0.3rem;
-  border: 1px solid #e9ecef;
-  padding: 0.4rem !important;
+  border-radius: var(--radius-sm);
+  border: 1px solid #e3e8ee;
+  padding: 0.75rem !important;
   display: flex;
   flex-direction: column;
 }
@@ -1610,7 +1541,7 @@
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: 1fr 2fr;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .notes-section {
@@ -1621,10 +1552,10 @@
 .section-header-compact {
   display: flex;
   align-items: center;
-  margin-bottom: 0.2rem !important;
-  gap: 0.3rem;
-  padding-bottom: 0.2rem !important;
-  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 0.6rem !important;
+  gap: 0.5rem;
+  padding-bottom: 0.45rem !important;
+  border-bottom: 1px solid #edf0f3;
 }
 
 .section-header-compact--con-accion {
@@ -1634,44 +1565,58 @@
 .section-header-compact-titulo {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.5rem;
 }
 
+/* Ancho fijo y centrado: iconos anchos (tarjeta, usuario con check) no pisan el título */
 .section-header-compact i {
+  flex: 0 0 1.1rem;
+  width: 1.1rem;
+  text-align: center;
   font-size: 0.9rem;
-  color:black;
-  width: 0.9rem;
+  color: var(--color-text-dark);
 }
 
 .section-header-compact h3 {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-dark);
   margin: 0;
 }
 
 /* CORRECCIÓN: Reducir espacios entre elementos */
 .form-group-compact {
-  margin-bottom: 0.3rem !important;
+  margin-bottom: 0.6rem !important;
+}
+
+.form-group-compact {
+  min-width: 0;
 }
 
 .form-group-compact label {
   display: block;
-  margin-bottom: 0.1rem;
-  font-size: 1rem;
+  margin-top: 0;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
   font-weight: 500;
-  color: black;
+  color: var(--color-text-secondary);
 }
 
 .form-row-compact {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.6rem;
   margin-bottom: 0;
 }
 
 .form-row-compact .form-group-compact {
   flex: 1;
-  margin-bottom: 0.3rem !important;
+  margin-bottom: 0.6rem !important;
+}
+
+/* Sin margen bajo el último campo: el hueco inferior de la tarjeta es su relleno */
+:is(.form-section-compact, .contact-card) > .form-group-compact:last-child,
+:is(.form-section-compact, .contact-card) > .form-row-compact:last-child > .form-group-compact {
+  margin-bottom: 0 !important;
 }
 
 .required {
@@ -1687,51 +1632,55 @@
 
 .icon-prefix {
   position: absolute;
-  left: 0.5rem;
+  left: 0.6rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #aaa;
+  color: var(--color-text-muted);
   font-size: 0.8rem;
-  width: 0.8rem;
+  width: 0.9rem;
+  text-align: center;
+  pointer-events: none;
 }
 
 .input-with-icon-compact .form-control-compact {
-  padding-left: 1.8rem;
-}
-
-.icon-suffix {
-  position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #aaa;
-  padding: 0;
-  font-size: 0.8rem;
+  padding-left: 2rem;
 }
 
 /* CORRECCIÓN: Optimizar tamaños de controles */
+/* display:block evita el hueco de línea bajo el campo (descentraba los iconos) y
+   font-family: inherit usa la letra de la aplicación en lugar de la del navegador */
 .form-control-compact {
+  display: block;
   width: 100%;
-  padding: 0.3rem 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 0.25rem;
-  font-size: 1rem;
-  transition: all 0.2s;
-  color: #333;
+  margin: 0;
+  padding: 0 0.6rem;
+  border: 1px solid #cfd6de;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  color: var(--color-text-dark);
   background-color: #fff;
-  height: 26px !important;
+  height: 34px !important;
 }
 
 .form-control-compact:focus {
   border-color: var(--color-brand-yellow);
-  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1);
+  box-shadow: var(--focus-ring);
   outline: none;
 }
 
+/* Notas con la misma letra, borde y radio que el resto de campos del formulario */
+textarea#notas.notes-textarea {
+  width: 100%;
+  font-size: 0.875rem;
+  border: 1px solid #cfd6de;
+  border-radius: var(--radius-sm);
+}
+
 .notes-textarea {
+  padding: 0.45rem 0.6rem;
+  line-height: 1.45;
   height: 60px !important;
   resize: none;
   min-height: 50px;
@@ -1741,14 +1690,19 @@
 }
 
 .btn-expand-notes {
-  background: rgba(0,0,0,0.05);
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 2px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #fff;
+  border: 1px solid #cfd6de;
+  border-radius: var(--radius-sm);
+  padding: 0;
   cursor: pointer;
   color: #666;
   font-size: 0.8rem;
-  transition: all 0.2s;
+  transition: var(--aura-transicion);
 }
 
 .btn-expand-notes:hover {
@@ -1765,24 +1719,27 @@
 }
 
 .form-select-compact {
+  display: block;
   width: 100%;
-  padding: 0.3rem 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 0.25rem;
-  font-size: 1rem;
-  transition: all 0.2s;
-  color: #333;
+  margin: 0;
+  padding: 0 2rem 0 0.6rem;
+  border: 1px solid #cfd6de;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  color: var(--color-text-dark);
   background-color: #fff;
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
   cursor: pointer;
-  height: 26px !important;
+  height: 34px !important;
 }
 
 .form-select-compact:focus {
   border-color: var(--color-brand-yellow);
-  box-shadow: 0 0 0 3px rgba(255, 196, 12, 0.1);
+  box-shadow: var(--focus-ring);
   outline: none;
 }
 
@@ -1801,7 +1758,7 @@
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
-  transition: all 0.2s;
+  transition: var(--aura-transicion);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -1828,20 +1785,6 @@
   background: #e6c200;
   transform: translateY(-2px);
   box-shadow: 0 10px 15px -3px rgba(252, 215, 0, 0.45), 0 4px 6px -2px rgba(252, 215, 0, 0.25);
-}
-
-/* CORRECCIÓN: Botón cancelar flotante eliminado */
-
-/* CORRECCIÓN: Reducir espacios en footer */
-.modal-footer-compact {
-  padding: 0.3rem 0.8rem !important;
-  border-top: 1px solid #e0e0e0;
-  background: #f8f9fa;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-  margin-top: 0.2rem !important;
 }
 
 .required-legend {
@@ -1911,10 +1854,6 @@
     flex-direction: column;
     gap: 0.3rem;
   }
-  
-  .tab-text {
-    display: none;
-  }
 
   .tab-btn {
     padding: 0.4rem 0.6rem;
@@ -1924,11 +1863,7 @@
     grid-template-columns: 1fr;
   }
   
-  /* CORRECCIÓN: Asegurar scroll en vista móvil */
-  .tab-content {
-    overflow-y: auto !important;
-    max-height: calc(100vh - 150px);
-  }
+
 }
 
 @media (max-width: 600px) {
@@ -1978,27 +1913,37 @@
 }
 
 /* Sección de servicios */
+/* Misma tarjeta y título que el resto de secciones del formulario */
 .services-section {
-  margin: 0.4rem 0;
-  padding: 0.4rem;
-  background: #f8f9fa;
-  border-radius: 0.3rem;
-  border: 1px solid #e9ecef;
+  margin: 0;
+  padding: 0.75rem;
+  background: #fff;
+  border-radius: var(--radius-sm);
+  border: 1px solid #e3e8ee;
 }
 
 .services-header h3 {
-  color: #495057;
-  font-size: 1rem;
-  margin: 0 0 0.4rem 0;
+  color: var(--color-text-dark);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.6rem 0;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid #edf0f3;
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.5rem;
+}
+
+.services-header h3 i {
+  width: 1.1rem;
+  text-align: center;
+  font-size: 0.9rem;
 }
 
 .services-checkboxes {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.4rem;
+  gap: 0.6rem;
 }
 
 .service-checkbox {
@@ -2006,13 +1951,14 @@
   align-items: center;
   cursor: pointer;
   position: relative;
-  padding: 0.2rem;
-  border-radius: 0.25rem;
-  transition: background-color 0.3s ease;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #edf0f3;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.15s ease;
 }
 
 .service-checkbox:hover {
-  background-color: rgba(0, 123, 255, 0.05);
+  background-color: var(--hover-color);
 }
 
 .service-checkbox input[type="checkbox"] {
@@ -2020,14 +1966,15 @@
 }
 
 .checkmark {
-  height: 14px;
-  width: 14px;
+  flex: 0 0 16px;
+  height: 16px;
+  width: 16px;
   background-color: #fff;
   border: 2px solid #ddd;
   border-radius: 0.2rem;
   margin-right: 0.4rem;
   position: relative;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
 }
 
 .service-checkbox input[type="checkbox"]:checked + .checkmark {
@@ -2038,9 +1985,9 @@
 .service-checkbox input[type="checkbox"]:checked + .checkmark:after {
   content: "";
   position: absolute;
-  left: 3px;
-  top: 0px;
-  width: 3px;
+  left: 4px;
+  top: 1px;
+  width: 4px;
   height: 8px;
   border: solid white;
   border-width: 0 2px 2px 0;
@@ -2049,8 +1996,8 @@
 
 .service-label {
   font-weight: 600;
-  color: #495057;
-  font-size: 1rem;
+  color: var(--color-text-dark);
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -2255,27 +2202,6 @@
   background: #e0e7ff;
 }
 
-.tp-attach-select-link {
-  padding: 0 6px;
-  background: transparent;
-  border: none;
-  text-decoration: underline;
-}
-
-.tp-attach-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  color: #2d3748;
-  background: #f7fafc;
-  border: 1px solid var(--border-color, #e2e8f0);
-  padding: 4px 8px;
-  border-radius: 6px;
-  min-width: 0;
-  max-width: 100%;
-}
-
 .tp-attach-name {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2300,38 +2226,6 @@
 
 .tp-attach-remove:hover {
   color: #c53030;
-}
-
-.tp-attach-download {
-  color: var(--color-accent-indigo);
-}
-
-.tp-attach-download:hover {
-  color: #4c51bf;
-}
-
-.tp-attach-undo {
-  color: #38a169;
-}
-
-.tp-attach-undo:hover {
-  color: #276749;
-}
-
-.tp-attach-chip-existente {
-  background: #fffbeb;
-  border-color: #f6e05e;
-}
-
-.tp-attach-chip-eliminado {
-  background: #fff5f5;
-  border-color: #feb2b2;
-  color: #c53030;
-}
-
-.tp-attach-hint-inline {
-  font-size: 0.75rem;
-  color: #a0aec0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2408,4 +2302,60 @@
 
 .tp-note-actions-edit-bottom {
   margin-top: 6px;
+}
+
+/* Pie de cada pestaña: fijo abajo y siempre visible, aunque el contenido tenga scroll */
+.tab-container > .tab-content {
+  padding-bottom: 0;
+}
+
+.tab-content > .tab-navigation {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin: auto -0.75rem 0;
+  padding: 0.6rem 0.75rem;
+  background: #fff;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+  box-shadow: 0 -6px 12px -10px rgba(16, 24, 40, 0.35);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.tab-content > .tab-navigation .action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Notas con poca altura (1280x720 y 1366x768): las tarjetas de arriba no se encogen y el
+   histórico se quedaba en 45-110 px, con el editor de una nota inservible. Ahora todo
+   el panel se desplaza y el histórico conserva una altura útil. */
+@media (max-height: 900px) {
+  .tp-notas-layout {
+    overflow-y: auto;
+  }
+
+  .tp-notas-history {
+    flex: none;
+    min-height: 360px;
+  }
+
+  .tp-notas-list {
+    max-height: none;
+  }
+}
+
+/* «Usuario asignado» bloqueado para quien no es administrador: que se vea desactivado */
+.form-select-compact:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.form-select-compact:disabled + .select-icon {
+  opacity: 0.35;
 }

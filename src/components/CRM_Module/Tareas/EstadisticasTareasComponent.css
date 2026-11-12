@@ -27,7 +27,7 @@
   font-size: 1rem;
   font-weight: 600;
   color: #1f2937;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
 }
 
 .btn-toggle-estadisticas:hover {
@@ -47,18 +47,8 @@
 
 .estadisticas-contenido {
   padding: 20px;
-  animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  /* Mismo despliegue que el resto de la aplicación (styles/shared-motion.css) */
+  animation: auraDesplegar 0.18s var(--aura-curva);
 }
 
 .stats-header-integrated {
@@ -121,7 +111,9 @@
   background: white;
   color: #374151;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
+  /* Ancho según el contenido: a todo el ancho mandaba las fechas a otra línea */
+  width: auto;
   min-width: 100px;
 }
 
@@ -143,7 +135,7 @@
   background: white;
   color: #374151;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   width: 130px;
 }
 
@@ -157,6 +149,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Fechas del periodo personalizado (CampoFecha): como los filtros de al lado */
+.date-inputs-compact .campo-fecha {
+  --campo-fecha-ancho: 140px;
+  --campo-fecha-alto: 32px;
+  --campo-fecha-letra: 0.8rem;
+  --campo-fecha-borde: #d1d5db;
+  --campo-fecha-texto: #374151;
 }
 
 .date-separator {
@@ -184,15 +185,9 @@
   justify-content: space-between;
   align-items: center;
   border: 1px solid #f3f4f6;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   overflow: hidden;
   position: relative;
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  border-color: var(--color);
 }
 
 .stat-card--pendientes { --color: #FF9800; }
@@ -223,12 +218,7 @@
   font-size: 1.8rem;
   color: var(--color);
   opacity: 0.8;
-  transition: all 0.3s ease;
-}
-
-.stat-card:hover .stat-icon {
-  transform: scale(1.1);
-  opacity: 1;
+  transition: var(--aura-transicion);
 }
 
 .progreso-semanal {
@@ -291,9 +281,10 @@
   color: #6366f1;
 }
 
+/* Seis indicadores en dos filas de tres (antes 4 + 2, con hueco al final) */
 .metricas-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -302,13 +293,9 @@
   padding: 16px;
   border-radius: 8px;
   border: 1px solid #e9ecef;
-  transition: all 0.3s ease;
-}
-
-.metrica-item:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
-  border-color: #6366f1;
+  /* Misma franja izquierda en todas (neutra salvo en los avisos de color) */
+  border-left: 4px solid #e2e8f0;
+  transition: var(--aura-transicion);
 }
 
 .metrica-item--proximas-vencer { border-left: 4px solid #FF9800; }

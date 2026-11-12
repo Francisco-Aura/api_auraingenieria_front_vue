@@ -38,3 +38,123 @@
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
+
+/* ---------------------------------------------------------------------------
+ * Contenido de la barra: «Registros por página», texto de página y botones.
+ *
+ * Cada pantalla traía su copia scoped (con tamaños, bordes y hovers distintos:
+ * en unas los botones iban sin borde, en otras con texto blanco sobre amarillo)
+ * y styles.css añade a todo label un margen superior de 1rem y a todo select
+ * 0.5rem y un 98 % de ancho: la etiqueta quedaba más baja que el desplegable y
+ * que los botones, y en Administración se partía en dos líneas. :not(#aura-pag)
+ * da peso de id para que estas reglas manden sobre las scoped.
+ * ------------------------------------------------------------------------- */
+
+.pagination-controls {
+  gap: 16px;
+  /* En pantallas estrechas (1024 px) los botones pasan a otra línea, a la derecha, en
+     vez de salirse por el borde del panel */
+  flex-wrap: wrap;
+}
+
+.pagination-controls > .pagination-buttons {
+  margin-left: auto;
+}
+
+.pagination-controls .records-per-page:not(#aura-pag) {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+
+.pagination-controls .records-per-page:not(#aura-pag) label {
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap;
+}
+
+.pagination-controls .records-per-page:not(#aura-pag) select {
+  box-sizing: border-box !important;
+  width: auto !important;
+  min-width: 72px;
+  height: 36px !important;
+  min-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-sm) !important;
+  background-color: #fff !important;
+  color: var(--text-primary) !important;
+  font-family: inherit !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+  cursor: pointer;
+}
+
+.pagination-controls .records-per-page:not(#aura-pag) select:focus {
+  outline: none !important;
+  border-color: var(--color-brand-yellow-hex) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+.pagination-controls .pagination-info:not(#aura-pag) {
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.pagination-controls .page-info:not(#aura-pag) {
+  padding: 0 8px !important;
+  color: var(--text-primary) !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap;
+}
+
+.pagination-controls .pagination-buttons :is(.btn-outline, .btn-pagination):not(#aura-pag) {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-sm) !important;
+  background: #fff !important;
+  color: var(--text-primary) !important;
+  font-size: 0.85rem !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s ease !important;
+}
+
+.pagination-controls .pagination-buttons :is(.btn-outline, .btn-pagination):not(#aura-pag):hover:not(:disabled) {
+  background: var(--color-brand-yellow-hex) !important;
+  border-color: var(--color-brand-yellow-hex) !important;
+  color: var(--color-text-dark) !important;
+}
+
+.pagination-controls .pagination-buttons :is(.btn-outline, .btn-pagination):not(#aura-pag):focus-visible {
+  outline: none !important;
+  box-shadow: var(--focus-ring) !important;
+}
+
+.pagination-controls .pagination-buttons :is(.btn-outline, .btn-pagination):not(#aura-pag):disabled {
+  background: #f5f6f8 !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-muted) !important;
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}

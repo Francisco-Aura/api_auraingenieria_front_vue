@@ -35,7 +35,7 @@
       <div class="action-card">
         <button class="btn btn-primary" @click="abrirFormularioCrearCliente">
           <i class="fas fa-plus"></i>
-          <span>Crear Cliente</span>
+          <span>Crear cliente</span>
         </button>
       </div>
     </div>
@@ -63,13 +63,13 @@
           </button>
         </div>
       </div>
-      <div class="table-responsive">
-        <table class="data-table">
+      <div class="table-responsive" v-desborde-tabla>
+        <table class="data-table data-table--acciones-fijas data-table--compacta">
           <thead>
             <tr>
               <th class="sortable th-col-nombre">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('nombre')">
+                  <div class="column-title" @click="sortBy('nombre')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('nombre')" @keydown.space.prevent="sortBy('nombre')">
                     <i class="fas fa-user mr-2"></i>Nombre Cliente
                     <i :class="getSortIcon('nombre')"></i>
                   </div>
@@ -87,7 +87,7 @@
               </th>
               <th class="sortable th-col-cif">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('cif')">
+                  <div class="column-title" @click="sortBy('cif')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('cif')" @keydown.space.prevent="sortBy('cif')">
                     <i class="fas fa-id-card mr-2"></i>CIF
                     <i :class="getSortIcon('cif')"></i>
                   </div>
@@ -105,7 +105,7 @@
               </th>
               <th class="sortable th-col-grupo">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('nombreComercial')">
+                  <div class="column-title" @click="sortBy('nombreComercial')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('nombreComercial')" @keydown.space.prevent="sortBy('nombreComercial')">
                     <i class="fas fa-building mr-2"></i>Grupo Empresarial
                     <i :class="getSortIcon('nombreComercial')"></i>
                   </div>
@@ -123,7 +123,7 @@
               </th>
               <th class="sortable th-col-sector">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('nombreSector')">
+                  <div class="column-title" @click="sortBy('nombreSector')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('nombreSector')" @keydown.space.prevent="sortBy('nombreSector')">
                     <i class="fas fa-industry mr-2"></i>Sector
                     <i :class="getSortIcon('nombreSector')"></i>
                   </div>
@@ -134,9 +134,10 @@
                         @click.stop="showSectorDropdown = !showSectorDropdown"
                         :class="{ 'active': selectedSectores.length > 0 }"
                       >
-                        <span v-if="selectedSectores.length === 0">TODOS</span>
-                        <span v-else-if="selectedSectores.length === 1">{{ selectedSectores[0] }}</span>
-                        <span v-else>{{ selectedSectores.length }} sectores</span>
+                        <!-- Texto recortado con «…»: un sector largo ya no ensancha la columna -->
+                        <span v-if="selectedSectores.length === 0" class="dropdown-button-texto">TODOS</span>
+                        <span v-else-if="selectedSectores.length === 1" class="dropdown-button-texto" :title="selectedSectores[0]">{{ selectedSectores[0] }}</span>
+                        <span v-else class="dropdown-button-texto" :title="selectedSectores.join(', ')">{{ selectedSectores.length }} sectores</span>
                         <i class="fas fa-chevron-down"></i>
                       </button>
                       <div 
@@ -144,7 +145,7 @@
                         class="dropdown-menu"
                         @click.stop
                       >
-                        <div class="dropdown-item">
+                        <div class="dropdown-item dropdown-item--todos">
                           <label class="checkbox-label">
                             <input 
                               type="checkbox" 
@@ -159,6 +160,7 @@
                           v-for="sector in sectoresUnicos" 
                           :key="sector"
                           class="dropdown-item"
+                          :title="sector || 'Sin sector'"
                         >
                           <label class="checkbox-label">
                             <input 
@@ -177,7 +179,7 @@
               </th>
               <th class="sortable th-col-dirfiscal">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('direccionFiscal')">
+                  <div class="column-title" @click="sortBy('direccionFiscal')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('direccionFiscal')" @keydown.space.prevent="sortBy('direccionFiscal')">
                     <i class="fas fa-map-marker-alt mr-2"></i>Dirección Fiscal
                     <i :class="getSortIcon('direccionFiscal')"></i>
                   </div>
@@ -195,7 +197,7 @@
               </th>
               <th class="sortable th-col-ps">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('numeroPuntosSuministro')">
+                  <div class="column-title" @click="sortBy('numeroPuntosSuministro')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('numeroPuntosSuministro')" @keydown.space.prevent="sortBy('numeroPuntosSuministro')">
                     <i class="fas fa-bolt mr-2"></i>PS
                     <i :class="getSortIcon('numeroPuntosSuministro')"></i>
                   </div>
@@ -213,7 +215,7 @@
               </th>
               <th class="sortable th-col-usuario">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('usuarioAsignado')">
+                  <div class="column-title" @click="sortBy('usuarioAsignado')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('usuarioAsignado')" @keydown.space.prevent="sortBy('usuarioAsignado')">
                     <i class="fas fa-user-tie mr-2"></i>Usuario
                     <i :class="getSortIcon('usuarioAsignado')"></i>
                   </div>
@@ -231,7 +233,7 @@
               </th>
               <th class="th-col-acciones-cli">
                 <div class="column-header">
-                  <div class="column-title">
+                  <div class="column-title column-title--sin-orden">
                     <i class="fas fa-cogs mr-2"></i>Acciones
                   </div>
                 </div>
@@ -241,7 +243,7 @@
           <tbody>
             <template v-if="loading">
               <tr v-for="n in 8" :key="'skeleton-' + n" class="skeleton-row">
-                <td v-for="col in 7" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
+                <td v-for="col in 8" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
               </tr>
             </template>
             <tr v-for="cliente in paginatedClientes" v-show="!loading" :key="cliente.idCliente" 
@@ -269,23 +271,37 @@
               <td class="text-truncate" :title="cliente.usuarioAsignado">{{ cliente.usuarioAsignado }}</td>
               <td>
                 <div class="action-buttons">
-                  <button class="btn-icon btn-edit" @click="cargarDatosCliente(cliente.idCliente)" title="Consultar Cliente">
+                  <button class="btn-icon btn-edit" @click="cargarDatosCliente(cliente.idCliente)" title="Modificar cliente" aria-label="Modificar cliente">
                     <i class="fas fa-edit"></i>
                   </button>
                   <button class="btn-icon btn-add" 
                     @click="abrirFormularioNuevoPunto(cliente)" 
                     :disabled="estaClienteDadoDeBaja(cliente)"
-                    :title="estaClienteDadoDeBaja(cliente) ? 'No se pueden crear puntos de suministro en un cliente dado de baja' : 'Crear Punto de Suministro'">
+                    :title="estaClienteDadoDeBaja(cliente) ? 'No se pueden crear puntos de suministro en un cliente dado de baja' : 'Crear punto de suministro'"
+                    aria-label="Crear punto de suministro">
                     <i class="fas fa-plus-circle"></i>
                   </button>
                 </div>
               </td>
             </tr>
-            <tr v-if="!loading && paginatedClientes.length === 0">
-              <td colspan="7" class="text-center py-4">
-                <div class="empty-state">
+            <!-- Sin filas: se distingue un fallo de carga, una cartera vacía y unos filtros sin resultados -->
+            <tr v-if="!loading && paginatedClientes.length === 0" class="fila-estado-vacio">
+              <td colspan="8" class="text-center py-4">
+                <div v-if="errorCargaClientes" class="empty-state empty-state--error">
+                  <i class="fas fa-exclamation-triangle fa-3x"></i>
+                  <p class="mt-3">No se pudo cargar la cartera de clientes</p>
+                  <button type="button" class="btn btn-refresh btn-reintentar" @click="fetchClientes">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Reintentar</span>
+                  </button>
+                </div>
+                <div v-else-if="hayFiltrosActivos" class="empty-state">
                   <i class="fas fa-search fa-3x text-muted"></i>
                   <p class="mt-3">No se encontraron clientes que coincidan con la búsqueda</p>
+                </div>
+                <div v-else class="empty-state">
+                  <i class="fas fa-users fa-3x text-muted"></i>
+                  <p class="mt-3">{{ mostrarClientesDadosDeBaja ? 'No hay clientes dados de baja' : 'Todavía no hay clientes en la cartera' }}</p>
                 </div>
               </td>
             </tr>
@@ -295,7 +311,7 @@
       <div class="pagination-controls">
         <div class="records-per-page">
           <label for="recordsPerPage">Registros por página:</label>
-          <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
+          <select v-model.number="recordsPerPage" id="recordsPerPage" class="form-control">
             <option value="10">10</option>
             <option value="25">25</option>
             <option value="50">50</option>
@@ -303,7 +319,7 @@
           </select>
         </div>
         <div class="pagination-info">
-          Mostrando {{ paginationStart }} - {{ paginationEnd }} de {{ filteredClientes.length }} registros
+          Mostrando {{ filteredClientes.length ? paginationStart : 0 }} - {{ paginationEnd }} de {{ filteredClientes.length }} registros
         </div>
         <div class="pagination-buttons">
           <button 
@@ -322,10 +338,10 @@
           >
             <i class="fas fa-chevron-left"></i>
           </button>
-          <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
+          <span class="page-info">Página {{ currentPage }} de {{ totalPages || 1 }}</span>
           <button 
             class="btn btn-outline" 
-            :disabled="currentPage === totalPages"
+            :disabled="currentPage >= totalPages"
             @click="currentPage++"
             title="Página siguiente"
           >
@@ -333,7 +349,7 @@
           </button>
           <button 
             class="btn btn-outline" 
-            :disabled="currentPage === totalPages"
+            :disabled="currentPage >= totalPages"
             @click="currentPage = totalPages"
             title="Última página"
           >
@@ -348,6 +364,7 @@
       v-if="isModalPuntosOpen"
       :cliente="clienteSeleccionado"
       :puntosSuministro="puntosSuministro"
+      :cargando="loading"
       @cerrar-modal="cerrarModalPuntos"
     />
 
@@ -361,6 +378,7 @@
       :cargosContacto="cargosContacto"
       :appMonitorizacion="appMonitorizacion"
       :integracionSistemasFV="integracionSistemasFV"
+      :isSubmitting="guardandoCliente"
       @cancelar-formulario="cancelarFormulario"
       @crear-cliente="crearCliente"
       @actualizar-cliente="actualizarCliente"
@@ -372,6 +390,7 @@
       :modificarPunto="modificarPunto"
       :modoConsulta="modoConsulta"
       :isCreating="isCreating"
+      :isSubmitting="guardandoPunto"
       @cerrar-modal="cerrarFormularioNuevoPuntoSuministro"
       @actualizar-punto-suministro="handleUpdateOrCreate"
     />
@@ -379,14 +398,17 @@
 </template>
 
 <script>
+import { ordenTabla } from '@/mixins/ordenTabla';
+import { compararValores } from '@/utils/orden';
 import axios from "axios";
 import PuntosSuministroClienteComponent from "@/components/CRM_Module/Clientes/PuntosSuministroClienteComponent.vue";
 import CreaActualizaClienteComponent from "@/components/CRM_Module/Clientes/CreaActualizaClientesComponent.vue";
 import ModalActualizarPuntoSuministro from "@/components/CRM_Module/PuntosSuministro/ActualizarPuntoSuministro.vue";
-import ExcelJS from 'exceljs';
+import { cargarExcelJS, descargarLibroExcel } from '@/utils/excel';
 
 export default {
   name: "ClientesComponent",
+  mixins: [ordenTabla],
   components: {
     PuntosSuministroClienteComponent,
     CreaActualizaClienteComponent,
@@ -395,6 +417,9 @@ export default {
   data() {
     return {
       clientes: [], // Lista de clientes
+      errorCargaClientes: false, // Falló la última carga de la cartera (la tabla vacía no es «sin resultados»)
+      guardandoCliente: false, // Petición de alta/modificación en curso (evita el doble clic)
+      guardandoPunto: false, // Igual para el alta/modificación de un punto de suministro
       filter: "", // Texto del filtro
       columnFilters: {
         nombre: '',
@@ -420,7 +445,6 @@ export default {
       cargosContacto: [], // Opciones de cargos de contacto
       appMonitorizacion: [], // Opciones de aplicaciones de monitorización
       integracionSistemasFV: [], // Opciones de integración sistemas FV
-      isSubmitting: false, // Evita múltiples envíos del formulario
       showModalPS: false,           // Control de visibilidad para el modal de crear/actualizar Punto de Suministro
       modificarPunto: null,         // Datos del formulario para modificar/crear un punto de suministro
       currentPage: 1,
@@ -429,7 +453,6 @@ export default {
       sortOrder: null,
       modoConsulta: false,          // Flag para indicar si el ModalActualizarPuntoSuministro está en modo consulta
       isCreating: false,            // Flag para indicar si el ModalActualizarPuntoSuministro está en modo creación
-      mostrarModalContratos: false, // Control de visibilidad del modal de contratos
       mostrarClientesDadosDeBaja: false,
       // Contadores animados
       animatedClientes: 0,
@@ -441,29 +464,37 @@ export default {
   computed: {
     // Lista de clientes filtrados según el texto de búsqueda
     filteredClientes() {
-      return this.clientes.filter((cliente) => {
-        // Primero aplicamos el filtro de estado de baja
-        const estadoBajaFilter = this.mostrarClientesDadosDeBaja ? this.estaClienteDadoDeBaja(cliente) : !this.estaClienteDadoDeBaja(cliente);
-        
-        // Luego aplicamos el filtro general
-        const generalFilter = Object.values(cliente).some((value) =>
-          String(value).toLowerCase().includes(this.filter.toLowerCase())
-        );
+      // El término y los filtros de columna se preparan una vez, no por cada fila:
+      // con la caja de búsqueda vacía ni siquiera se recorren los campos del cliente
+      // (antes se convertía a texto cada campo de cada fila en cada pulsación).
+      const termino = this.filter.toLowerCase();
+      const filtrosColumna = Object.entries(this.columnFilters)
+        .filter(([clave, valor]) => valor && clave !== 'nombreSector')
+        .map(([clave, valor]) => [clave, valor.toLowerCase()]);
+      const sectores = this.selectedSectores;
 
-        // Luego aplicamos los filtros por columna (excepto sector que se maneja por separado)
-        const columnFilters = Object.entries(this.columnFilters).every(([key, value]) => {
-          if (!value || key === 'nombreSector') return true; // Excluir sector del filtro de texto
-          const fieldValue = String(cliente[key] || '').toLowerCase();
-          return fieldValue.includes(value.toLowerCase());
-        });
+      return this.clientes.filter((cliente) => {
+        const dadoDeBaja = this.estaClienteDadoDeBaja(cliente);
+        if (this.mostrarClientesDadosDeBaja ? !dadoDeBaja : dadoDeBaja) return false;
+
+        if (termino && !Object.values(cliente).some(
+          (valor) => String(valor).toLowerCase().includes(termino))) return false;
+
+        for (const [clave, valor] of filtrosColumna) {
+          if (!String(cliente[clave] ?? '').toLowerCase().includes(valor)) return false;
+        }
 
         // Filtro específico para sectores múltiples
-        const sectorFilter = this.selectedSectores.length === 0 || 
-          this.selectedSectores.includes(cliente.nombreSector) ||
-          (this.selectedSectores.includes('Sin sector') && !cliente.nombreSector);
-
-        return estadoBajaFilter && generalFilter && columnFilters && sectorFilter;
+        return sectores.length === 0
+          || sectores.includes(cliente.nombreSector)
+          || (sectores.includes('Sin sector') && !cliente.nombreSector);
       });
+    },
+    // Hay algún filtro puesto (texto, columnas o sectores): el aviso de tabla vacía habla de «búsqueda»
+    hayFiltrosActivos() {
+      return !!this.filter
+        || this.selectedSectores.length > 0
+        || Object.values(this.columnFilters).some((valor) => !!valor);
     },
     // Total de puntos de suministro de todos los clientes
     totalPuntosSuministro() {
@@ -474,21 +505,9 @@ export default {
     sortedClientes() {
       if (!this.sortKey || !this.sortOrder) return this.filteredClientes;
       
-      const sorted = [...this.filteredClientes].sort((a, b) => {
-        let aValue = a[this.sortKey];
-        let bValue = b[this.sortKey];
-        
-        aValue = aValue ?? '';
-        bValue = bValue ?? '';
-        
-        if (this.sortOrder === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
-        }
-      });
-      
-      return sorted;
+      const signo = this.sortOrder === 'asc' ? 1 : -1;
+      return [...this.filteredClientes]
+        .sort((a, b) => compararValores(a[this.sortKey], b[this.sortKey]) * signo);
     },
     
     paginatedClientes() {
@@ -521,14 +540,16 @@ export default {
         this.loading = true;
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/clientes/cartera`);
         this.clientes = response.data;
+        this.errorCargaClientes = false;
         // Eliminada la alerta de éxito, solo loading
       } catch (error) {
         console.error("Error al cargar clientes:", error);
+        this.errorCargaClientes = true;
         await this.$swal.fire({
           title: 'Error',
           text: `No se pudieron actualizar los clientes: ${error.message}`,
           icon: 'error',
-          confirmButtonColor: 'rgba(252, 215, 0)'
+          confirmButtonColor: '#fcd700'
         });
       } finally {
         this.loading = false;
@@ -536,18 +557,23 @@ export default {
     },
     // Carga los puntos de suministro asociados a un cliente
     async fetchPuntosSuministro(idCliente) {
+      // Al cerrar la ficha y abrir otra enseguida, la respuesta del primer cliente
+      // podía llegar después y mostrar sus puntos en la ficha del segundo
+      const peticion = this.peticionPuntosCliente = (this.peticionPuntosCliente || 0) + 1;
+      const vigente = () => peticion === this.peticionPuntosCliente;
       try {
         this.loading = true;
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/puntos-suministro/cliente/${idCliente}/cartera`);
-        this.puntosSuministro = response.data;
+        if (vigente() && this.isModalPuntosOpen) this.puntosSuministro = response.data;
       } catch (error) {
+        if (!vigente()) return;
         this.$swal.fire({
           icon: 'error',
           title: 'Error',
           text: 'No se pudieron cargar los puntos de suministro.'
         })
       } finally {
-        this.loading = false;
+        if (vigente()) this.loading = false;
       }
     },
     // Reinicia el formulario de cliente
@@ -671,6 +697,8 @@ export default {
         console.error("El cliente recibido no tiene un ID.");
         return;
       }
+      if (this.guardandoCliente) return;
+      this.guardandoCliente = true;
       try {
         await axios.put(`${process.env.VUE_APP_API_URL}/clientes/${clienteActualizado.id}`, clienteActualizado);
         this.$swal.fire({
@@ -688,8 +716,10 @@ export default {
           icon: 'error',
           title: 'Error al actualizar cliente',
           text: detalle ? `No se pudo actualizar el cliente: ${detalle}` : 'No se pudo actualizar el cliente. Por favor, inténtelo de nuevo.',
-          confirmButtonColor: 'rgba(252, 215, 0)'
+          confirmButtonColor: '#fcd700'
         });
+      } finally {
+        this.guardandoCliente = false;
       }
     },    
     // Handler para cuando se completa la reactivación de un cliente (y opcionalmente sus PS)
@@ -699,8 +729,10 @@ export default {
     },
     // Lógica para crear cliente
     async crearCliente(clienteRecibido) {
+      if (this.modoActualizar) return; // Evita llamadas erróneas en modo actualización
+      if (this.guardandoCliente) return; // Un doble clic no crea el cliente dos veces
+      this.guardandoCliente = true;
       try {
-        if (this.modoActualizar) return; // Evita llamadas erróneas en modo actualización
         await axios.post(`${process.env.VUE_APP_API_URL}/clientes`, clienteRecibido);
         this.$swal.fire({
           icon: 'success',
@@ -717,8 +749,10 @@ export default {
           icon: 'error',
           title: 'Error al crear cliente',
           text: detalle ? `No se pudo crear el cliente: ${detalle}` : 'No se pudo crear el cliente. Por favor, inténtelo de nuevo.',
-          confirmButtonColor: 'rgba(252, 215, 0)'
+          confirmButtonColor: '#fcd700'
         });
+      } finally {
+        this.guardandoCliente = false;
       }
     },
     // Muestra el modal para crear un punto de suministro (reutilizando ModalActualizarPuntoSuministro)
@@ -741,6 +775,8 @@ export default {
     },
     // Maneja la creación o actualización de un punto de suministro (ahora centralizado)
     async handleUpdateOrCreate(datosAdaptados) {
+      if (this.guardandoPunto) return; // Un doble clic no crea el punto dos veces
+      this.guardandoPunto = true;
       try {
         await axios.post(`${process.env.VUE_APP_API_URL}/puntos-suministro`, datosAdaptados);
         await this.$swal.fire({
@@ -761,32 +797,15 @@ export default {
           title: 'Error',
           text: 'Error al guardar el punto de suministro: ' + (error.response?.data?.mensaje || error.response?.data?.error || error.message)
         });
+      } finally {
+        this.guardandoPunto = false;
       }
-    },
-    sortBy(key) {
-      if (this.sortKey === key) {
-        // Ciclo: asc -> desc -> null
-        if (this.sortOrder === 'asc') {
-          this.sortOrder = 'desc';
-        } else if (this.sortOrder === 'desc') {
-          this.sortKey = null;
-          this.sortOrder = null;
-        }
-      } else {
-        this.sortKey = key;
-        this.sortOrder = 'asc';
-      }
-    },
-    
-    getSortIcon(key) {
-      if (this.sortKey !== key) return 'fas fa-sort';
-      if (!this.sortOrder) return 'fas fa-sort';
-      return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
     },
 
     async exportarExcel() {
       try {
-        const data = this.filteredClientes.map(cliente => ({
+        // En el orden en que se ven en pantalla
+        const data = this.sortedClientes.map(cliente => ({
           'Nombre Cliente': cliente.nombre,
           'CIF': cliente.cif,
           'Grupo Empresarial': cliente.nombreComercial,
@@ -796,6 +815,7 @@ export default {
           'Usuario Asignado': cliente.usuarioAsignado
         }));
 
+        const ExcelJS = await cargarExcelJS();
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Clientes');
 
@@ -821,18 +841,14 @@ export default {
           fgColor: { argb: 'FFE0E0E0' }
         };
 
-        // Generar buffer y descargar
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'Cartera_Clientes.xlsx';
-        link.click();
-        window.URL.revokeObjectURL(url);
+        await descargarLibroExcel(workbook, 'Cartera_Clientes.xlsx');
       } catch (error) {
         console.error('Error al exportar a Excel:', error);
-        this.$toast.error('Error al exportar a Excel');
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error al exportar',
+          text: 'No se pudo exportar la cartera de clientes a Excel. Por favor, inténtelo de nuevo.'
+        });
       }
     },
 
@@ -889,25 +905,31 @@ export default {
     document.addEventListener('click', this.handleClickOutside);
     
     try {
-      const [clientes, usuarios, sectores, subtipologias, cargosContacto, appMonitorizacion, integracionSistemasFV] = await Promise.all([
-        axios.get(`${process.env.VUE_APP_API_URL}/clientes/cartera`),
-        axios.get(`${process.env.VUE_APP_API_URL}/usuarios`),
-        axios.get(`${process.env.VUE_APP_API_URL}/sectores`),
-        axios.get(`${process.env.VUE_APP_API_URL}/subtipologias`),
-        axios.get(`${process.env.VUE_APP_API_URL}/cargos-contacto`),
-        axios.get(`${process.env.VUE_APP_API_URL}/app-monitorizacion`),
-        axios.get(`${process.env.VUE_APP_API_URL}/integracion-sistemas-fv`),
+      // Cada lista se asigna si llega: antes, si fallaba un solo desplegable, la tabla de
+      // clientes se quedaba vacía aunque la cartera hubiera cargado bien
+      const api = process.env.VUE_APP_API_URL;
+      const resultados = await Promise.allSettled([
+        axios.get(`${api}/clientes/cartera`),
+        axios.get(`${api}/usuarios`),
+        axios.get(`${api}/sectores`),
+        axios.get(`${api}/subtipologias`),
+        axios.get(`${api}/cargos-contacto`),
+        axios.get(`${api}/app-monitorizacion`),
+        axios.get(`${api}/integracion-sistemas-fv`),
       ]);
-      this.clientes = clientes.data;
-      this.usuarios = usuarios.data;
-      this.sectores = sectores.data;
-      this.subtipologias = subtipologias.data;
-      this.cargosContacto = cargosContacto.data;
-      this.appMonitorizacion = appMonitorizacion.data;
-      this.integracionSistemasFV = integracionSistemasFV.data;
+      const destinos = ['clientes', 'usuarios', 'sectores', 'subtipologias', 'cargosContacto', 'appMonitorizacion', 'integracionSistemasFV'];
+      resultados.forEach((resultado, i) => {
+        if (resultado.status === 'fulfilled') this[destinos[i]] = resultado.value.data;
+      });
+      // La cartera es la primera petición: si falla, la tabla lo dice en vez de «sin resultados»
+      this.errorCargaClientes = resultados[0].status === 'rejected';
+      const fallo = resultados.find((resultado) => resultado.status === 'rejected');
+      if (fallo) throw fallo.reason;
     } catch (error) {
       console.error("Error al cargar datos iniciales:", error);
-      await this.$swal.fire({
+      // Sin esperar al aviso: detrás ya se ve la tabla en su estado real (el error de la
+      // cartera o los datos que sí llegaron), no las filas de «cargando»
+      this.$swal.fire({
         title: 'Error de carga',
         text: 'No se pudieron cargar todos los datos iniciales. Algunas funcionalidades podrían no estar disponibles.',
         icon: 'warning',

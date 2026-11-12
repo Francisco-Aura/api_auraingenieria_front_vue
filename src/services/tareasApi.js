@@ -1,10 +1,16 @@
 import axios from 'axios'
+import { descargarBlob } from '@/utils/descargas'
 
 // Interceptor para reintentos automáticos en caso de timeout
 axios.interceptors.response.use(
   response => response,
   async error => {
-    const config = error.config
+    const config = error?.config
+
+    // Sin configuración (p. ej. petición cancelada) no hay nada que reintentar
+    if (!config) {
+      return Promise.reject(error)
+    }
 
     if (!config.__retryCount) {
       config.__retryCount = 0
@@ -33,27 +39,45 @@ axios.interceptors.response.use(
   }
 )
 
+// Id del usuario con la sesión abierta (o null)
+function usuarioActualId() {
+  try {
+    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+    return usuario.id ? parseInt(usuario.id) : null
+  } catch {
+    return null
+  }
+}
+
+// Estado del módulo de tareas: lo preguntan el panel (menú), la campana de
+// notificaciones y la pantalla de Tareas, casi a la vez al entrar. Todas comparten
+// la petición en curso y su respuesta durante unos segundos (antes eran 2-3 peticiones
+// idénticas por carga). Un fallo no se guarda: la siguiente llamada vuelve a preguntar.
+const VIGENCIA_MODULO_ACTIVO_MS = 10 * 1000
+let consultaModuloActivo = null // { promesa, caduca }
+
 export const tareasApi = {
   // Configuración de módulos
-  async verificarModuloActivo() {
-    try {
-      const response = await axios.get('/configuracion-modulos/GESTOR_TAREAS/activo')
-      return response.data.activo
-    } catch (error) {
-      console.error('Error verificando módulo activo:', error)
-      return false
+  verificarModuloActivo() {
+    const vigente = consultaModuloActivo
+    if (vigente && (vigente.caduca === null || Date.now() < vigente.caduca)) {
+      return vigente.promesa
     }
+    const consulta = { promesa: null, caduca: null }
+    consulta.promesa = axios.get('/configuracion-modulos/GESTOR_TAREAS/activo')
+      .then((response) => {
+        consulta.caduca = Date.now() + VIGENCIA_MODULO_ACTIVO_MS
+        return response.data.activo
+      })
+      .catch((error) => {
+        console.error('Error verificando módulo activo:', error)
+        if (consultaModuloActivo === consulta) consultaModuloActivo = null
+        return false
+      })
+    consultaModuloActivo = consulta
+    return consulta.promesa
   },
 
-  async activarModulo() {
-    const response = await axios.post('/configuracion-modulos/GESTOR_TAREAS/activar')
-    return response.data
-  },
-
-  async desactivarModulo() {
-    const response = await axios.post('/configuracion-modulos/GESTOR_TAREAS/desactivar')
-    return response.data
-  },
 
   // Tareas
   async obtenerTareasPorUsuario(usuarioId) {
@@ -103,18 +127,14 @@ export const tareasApi = {
   },
 
   async cambiarEstadoTarea(tareaId, estadoId, motivoBloqueo = null) {
-    if (motivoBloqueo) {
-      // Usar endpoint avanzado con motivo
-      const response = await axios.patch(`/tareas/${tareaId}/estado`, {
-        estadoId: estadoId,
-        motivoBloqueo: motivoBloqueo
-      })
-      return response.data
-    } else {
-      // Usar endpoint simple
-      const response = await axios.patch(`/tareas/${tareaId}/estado/${estadoId}`)
-      return response.data
-    }
+    // Se envía quién hace el cambio: queda en la auditoría y la persona asignada
+    // no recibe notificaciones de sus propios cambios
+    const response = await axios.patch(`/tareas/${tareaId}/estado`, {
+      estadoId: estadoId,
+      motivoBloqueo: motivoBloqueo,
+      usuarioAccionId: usuarioActualId()
+    })
+    return response.data
   },
 
   async eliminarTarea(id) {
@@ -125,20 +145,6 @@ export const tareasApi = {
     await axios.patch(`/tareas/${id}/fijada`, { fijada })
   },
 
-  async contarTareasActivasPorUsuario(usuarioId) {
-    const response = await axios.get(`/tareas/usuario/${usuarioId}/count`)
-    return response.data.count
-  },
-
-  async obtenerTareasVencidas() {
-    const response = await axios.get('/tareas/vencidas')
-    return response.data
-  },
-
-  async obtenerTareasPorVencer(dias = 7) {
-    const response = await axios.get(`/tareas/por-vencer?dias=${dias}`)
-    return response.data
-  },
 
   // Estados de tareas
   async obtenerEstados() {
@@ -146,10 +152,6 @@ export const tareasApi = {
     return response.data
   },
 
-  async obtenerEstadosNoFinales() {
-    const response = await axios.get('/tareas/estados/no-finales')
-    return response.data
-  },
 
   // Notificaciones
   async obtenerNotificacionesPorUsuario(usuarioId) {
@@ -221,15 +223,7 @@ export const tareasApi = {
       responseType: 'blob'
     })
     
-    // Crear un enlace temporal para descargar el archivo
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', nombreArchivo)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.URL.revokeObjectURL(url)
+    descargarBlob(response.data, nombreArchivo)
   },
 
   async eliminarAdjunto(adjuntoId) {
@@ -247,10 +241,6 @@ export const tareasApi = {
     return response.data
   },
 
-  async obtenerTareasPorCliente(clienteId) {
-    const response = await axios.get(`/tareas/cliente/${clienteId}`)
-    return response.data
-  },
 
   async obtenerActividadCliente(clienteId, nivelAcceso = 0) {
     const response = await axios.get(`/clientes/${clienteId}/timeline/actividad`, {
@@ -294,21 +284,10 @@ export const tareasApi = {
     return response.data
   },
 
-  async descargarArchivoNota(clienteId, notaId) {
-    const response = await axios.get(`/clientes/${clienteId}/timeline/notas/${notaId}/descargar`, {
-      responseType: 'blob'
-    });
-    return response;
-  },
-
   async eliminarNotaCliente(clienteId, notaId) {
     await axios.delete(`/clientes/${clienteId}/timeline/notas/${notaId}`)
   },
 
-  async eliminarArchivoNotaCliente(clienteId, notaId) {
-    const response = await axios.delete(`/clientes/${clienteId}/timeline/notas/${notaId}/archivo`)
-    return response.data
-  },
 
   async descargarAdjuntoNota(clienteId, notaId, adjuntoId) {
     const response = await axios.get(`/clientes/${clienteId}/timeline/notas/${notaId}/adjuntos/${adjuntoId}/descargar`, {
@@ -342,19 +321,6 @@ export const tareasApi = {
     return response.data
   },
 
-  async obtenerEstadisticasPorUsuario(usuarioId, nivelAcceso = null) {
-    try {
-      let url = `/tareas/usuario/${usuarioId}/estadisticas`
-      if (nivelAcceso !== null) {
-        url += `?nivelAcceso=${nivelAcceso}`
-      }
-      const response = await axios.get(url)
-      return response.data
-    } catch (error) {
-      console.error('Error en obtenerEstadisticasPorUsuario:', error)
-      throw error
-    }
-  },
 
   // Categorías y subcategorías
   async obtenerCategorias() {
@@ -362,20 +328,6 @@ export const tareasApi = {
     return response.data
   },
 
-  async obtenerCategoria(id) {
-    const response = await axios.get(`/tareas/categorias/${id}`)
-    return response.data
-  },
-
-  async obtenerSubcategoriasPorCategoria(categoriaId) {
-    const response = await axios.get(`/tareas/categorias/${categoriaId}/subcategorias`)
-    return response.data
-  },
-
-  async obtenerTodasSubcategorias() {
-    const response = await axios.get('/tareas/categorias/subcategorias')
-    return response.data
-  },
 
   // Auditoría e Historial
   async obtenerHistorialTarea(tareaId) {

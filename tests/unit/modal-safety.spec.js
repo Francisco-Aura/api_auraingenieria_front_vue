@@ -1,22 +1,11 @@
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const test = require('node:test');
-const { parse } = require('@vue/compiler-sfc');
+const { cargarComponente } = require('./helpers/sfc');
 
-const projectRoot = path.resolve(__dirname, '..', '..');
 
+// Mismo cargador que el resto de tests: lo que el componente importa de src/utils es real
 function loadComponent(relativePath, axios) {
-  const filename = path.join(projectRoot, relativePath);
-  const source = fs.readFileSync(filename, 'utf8');
-  const { descriptor, errors } = parse(source, { filename });
-  assert.deepEqual(errors, []);
-
-  const executable = descriptor.script.content
-    .replace(/^import\s+.*;\s*$/gm, '')
-    .replace('export default', 'return');
-
-  return Function('axios', 'Spinner', 'jsPDF', executable)(axios, {}, class {});
+  return cargarComponente(relativePath, { axios, Spinner: {}, jsPDF: class {} });
 }
 
 function deferred() {
@@ -131,6 +120,19 @@ test('guardarContrato ignora un segundo envio mientras el primero sigue pendient
   request.resolve({ data: { id: 1 } });
   await Promise.all([first, second]);
   assert.equal(context.guardando, false);
+});
+
+test('MCAS normaliza FEE con coma y rechaza valores negativos', () => {
+  const component = loadComponent(
+    'src/components/CRM_Module/PuntosSuministro/ModalContratos.vue',
+    {},
+  );
+  const context = createContext(component);
+
+  assert.equal(component.methods.normalizarDecimalMcas.call(context, '7,25'), 7.25);
+  assert.equal(component.methods.normalizarDecimalMcas.call(context, '1.234,56'), 1234.56);
+  assert.equal(component.methods.normalizarDecimalMcas.call(context, '-1'), null);
+  assert.equal(component.methods.normalizarDecimalMcas.call(context, 'abc'), null);
 });
 
 test('guardarServicio con pagos usa una sola mutacion atomica', async () => {

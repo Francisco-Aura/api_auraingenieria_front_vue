@@ -4,6 +4,7 @@ const path = require('node:path');
 const test = require('node:test');
 const postcss = require('postcss');
 const { parse } = require('@vue/compiler-sfc');
+const { cargarComponente } = require('./helpers/sfc');
 
 const projectRoot = path.resolve(__dirname, '..', '..');
 
@@ -22,14 +23,9 @@ function loadCss(relativePath) {
   return postcss.parse(read(relativePath), { from: relativePath });
 }
 
+// Mismo cargador que el resto de tests: lo que el componente importa de src/utils es real
 function loadComponent(relativePath) {
-  const filename = path.join(projectRoot, relativePath);
-  const { descriptor, errors } = parse(read(relativePath), { filename });
-  assert.deepEqual(errors, []);
-  const executable = descriptor.script.content
-    .replace(/^import\s+.*;\s*$/gm, '')
-    .replace('export default', 'return');
-  return Function('axios', 'Spinner', 'jsPDF', executable)({}, {}, class {});
+  return cargarComponente(relativePath, { axios: {}, Spinner: {}, jsPDF: class {} });
 }
 
 function createContext(component, overrides = {}) {
@@ -218,4 +214,13 @@ test('soltar sin dataTransfer no rompe los adjuntos de tareas', () => {
 
   assert.match(corporativo, /Array\.from\(event\?\.dataTransfer\?\.files \|\| \[\]\)/);
   assert.match(detalle, /Array\.from\(event\?\.dataTransfer\?\.files \|\| \[\]\)/);
+});
+
+test('los informes muestran fechas dd/mm/aaaa, cabeceras con tilde y el mismo título que su tarjeta', () => {
+  const source = read('src/components/CRM_Module/Informes/InformesComponent.vue');
+  assert.match(source, /return `\$\{dia\}\/\$\{mes\}\/\$\{anio\}`/);
+  assert.match(source, /direccion: 'Dirección'/);
+  assert.match(source, /codigoPostal: 'Código Postal'/);
+  assert.match(source, /'puntos-suministro-sin-contrato': 'Puntos de Suministro sin Contrato'/);
+  assert.match(source, /this\.tituloInforme = this\.tituloVisible\(tipo\)/);
 });

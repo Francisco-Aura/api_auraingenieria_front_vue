@@ -3,8 +3,12 @@
   <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tarea-modal-title" @mousedown="iniciarSeleccion" @mouseup="finalizarSeleccion">
     <div class="modal-content modal-tarea" @click.stop @input.stop @mousedown.stop @mouseup.stop @dragover.prevent @drop.prevent>
       <!-- Header del modal -->
-      <div class="modal-header">
-        <h2 id="tarea-modal-title" class="modal-title">{{ esEdicion ? 'Editar tarea' : 'Crear tarea' }}</h2>
+      <div class="modal-header aura-modal-header">
+        <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-tasks"></i></span>
+        <div class="aura-modal-header__titulos">
+          <h2 id="tarea-modal-title" class="modal-title">{{ esEdicion ? 'Editar tarea' : 'Crear tarea' }}</h2>
+          <span v-if="esEdicion && formulario.titulo" class="aura-modal-header__subtitulo">{{ formulario.titulo }}</span>
+        </div>
         <button type="button" class="close-button" @click="cerrar">
           <i class="fas fa-times"></i>
         </button>
@@ -50,7 +54,7 @@
                 <input 
                   type="text" 
                   v-model="busquedaCliente"
-                  @input="buscarClientes"
+                  @input="alEscribirCliente"
                   @focus="mostrarDropdownClientes = true"
                   class="form-control"
                   placeholder="Escribe el nombre del cliente..."
@@ -103,7 +107,7 @@
             <div class="form-group">
               <label><i class="fas fa-calendar-alt"></i> Fecha inicio</label>
               <div class="datetime-compact">
-                <input type="date" v-model="fechaInicio" class="form-control date-input" />
+                <CampoFecha v-model="fechaInicio" class="date-input" :borrable="false" />
                 <input type="time" v-model="horaInicio" class="form-control time-input" />
               </div>
             </div>
@@ -111,7 +115,8 @@
             <div class="form-group">
               <label><i class="fas fa-hourglass-end"></i> Fecha vencimiento</label>
               <div class="datetime-compact">
-                <input type="date" v-model="fechaVencimiento" class="form-control date-input" />
+                <CampoFecha v-model="fechaVencimiento" class="date-input" :borrable="false" :min="fechaInicio || ''"
+                            :atajos="atajosVencimiento" :marcas="marcasVencimiento" />
                 <input type="time" v-model="horaVencimiento" class="form-control time-input" />
               </div>
             </div>
@@ -289,10 +294,14 @@
 </template>
 
 <script>
+import { textoError } from '@/utils/errores';
 import tareasApi from '@/services/tareasApi'
+import { fechaLocalISO, atajoDentroDe } from '@/utils/fechas'
+import CampoFecha from '@/components/comun/CampoFecha.vue'
 
 export default {
   name: 'TareaModalCorporativo',
+  components: { CampoFecha },
   emits: ['guardar', 'cerrar', 'update:value'],
   props: {
     value: {
@@ -360,6 +369,13 @@ export default {
     }
   },
   computed: {
+    // Atajos del calendario del vencimiento (los pulsa la persona; nada se rellena solo)
+    atajosVencimiento() {
+      return [atajoDentroDe(1, 'Mañana'), atajoDentroDe(7, 'En una semana')]
+    },
+    marcasVencimiento() {
+      return this.fechaInicio ? [{ fecha: this.fechaInicio, texto: 'Inicio de la tarea' }] : []
+    },
     esEdicion() {
       return this.tarea && this.tarea.id != null
     },
@@ -393,9 +409,13 @@ export default {
   },
   beforeUnmount() {
     document.removeEventListener('click', this.handleClickOutside)
+    clearTimeout(this.temporizadorBusquedaCliente)
   },
   methods: {
     inicializarFormulario() {
+      // El modal no se desmonta entre aperturas: nada de la anterior (avisos en rojo,
+      // fechas, cliente) puede quedarse en esta
+      this.errores = {}
 
       if (this.tarea && this.tarea.id) {
 
@@ -423,16 +443,25 @@ export default {
         // Detectar si es cliente potencial al editar
         this.esPotencial = !this.tarea.clienteRelacionadoId && !!this.tarea.clientePotencialNombre
         
-        // Formatear fechas para los inputs
+        // Formatear fechas para los inputs (día y hora locales: la fecha del
+        // servidor no lleva zona horaria y no debe pasarse a UTC)
+        // Una tarea sin fechas se edita sin fechas (antes salían las de la tarea abierta
+        // antes y se guardaban en esta)
         if (this.tarea.fechaInicio) {
           const fechaIni = new Date(this.tarea.fechaInicio)
-          this.fechaInicio = fechaIni.toISOString().split('T')[0]
+          this.fechaInicio = fechaLocalISO(fechaIni)
           this.horaInicio = fechaIni.toTimeString().slice(0, 5)
+        } else {
+          this.fechaInicio = ''
+          this.horaInicio = '09:00'
         }
         if (this.tarea.fechaVencimiento) {
           const fecha = new Date(this.tarea.fechaVencimiento)
-          this.fechaVencimiento = fecha.toISOString().split('T')[0]
+          this.fechaVencimiento = fechaLocalISO(fecha)
           this.horaVencimiento = fecha.toTimeString().slice(0, 5)
+        } else {
+          this.fechaVencimiento = ''
+          this.horaVencimiento = '18:00'
         }
         
         // Cliente relacionado
@@ -446,6 +475,11 @@ export default {
         } else if (this.tarea.clientePotencialNombre) {
           this.busquedaCliente = ''
           this.esPotencial = true
+          this.puntosSuministroCliente = []
+        } else {
+          // Sin cliente: no se queda a la vista el de la tarea anterior
+          this.busquedaCliente = ''
+          this.clientesFiltrados = []
           this.puntosSuministroCliente = []
         }
 
@@ -481,10 +515,10 @@ export default {
           this.formulario.estadoId = estadoPendiente.id
         }
         
-        // Fechas por defecto
-        const hoy = new Date()
-        this.fechaInicio = hoy.toISOString().split('T')[0]
-        this.fechaVencimiento = hoy.toISOString().split('T')[0]
+        // Fechas por defecto: hoy, o el día elegido en el calendario («Nueva tarea»)
+        const diaPropuesto = fechaLocalISO(this.tarea?.fechaVencimiento || new Date()) || fechaLocalISO(new Date())
+        this.fechaInicio = diaPropuesto
+        this.fechaVencimiento = diaPropuesto
         this.horaInicio = '09:00'
         this.horaVencimiento = '18:00'
         
@@ -501,7 +535,30 @@ export default {
       
     },
 
+    // Se busca cuando se deja de teclear un momento (antes, una petición por tecla); quitar
+    // el cliente ligado o vaciar la lista es inmediato
+    alEscribirCliente() {
+      clearTimeout(this.temporizadorBusquedaCliente)
+      if (this.busquedaCliente.trim().length === 0) {
+        this.buscarClientes()
+        return
+      }
+      this.temporizadorBusquedaCliente = setTimeout(() => this.buscarClientes(), 250)
+    },
+
     async buscarClientes() {
+      // Se busca a cada tecla: solo vale la respuesta de la última búsqueda (una
+      // anterior que llegue tarde no puede sustituir a la lista buena)
+      this.peticionClientes = (this.peticionClientes || 0) + 1
+      const peticion = this.peticionClientes
+      // Al vaciar «Dirigido a», la tarea deja de estar ligada al cliente que tenía (antes se
+      // seguía guardando con él aunque no se viera). Escribir sin vaciarlo no lo quita, como
+      // siempre: una tecla de más y su borrado no pueden dejar la tarea sin cliente ni CUPS
+      if (this.formulario.clienteRelacionadoId && this.busquedaCliente.trim().length === 0) {
+        this.formulario.clienteRelacionadoId = null
+        this.formulario.cups = null
+        this.puntosSuministroCliente = []
+      }
       if (this.busquedaCliente.length === 0) {
         this.clientesFiltrados = []
         this.mostrarDropdownClientes = false
@@ -513,6 +570,7 @@ export default {
 
       try {
         const data = await tareasApi.buscarClientes({ q: this.busquedaCliente, page: 0, size: 10 })
+        if (peticion !== this.peticionClientes) return
         if (data) {
           this.clientesFiltrados = Array.isArray(data?.content) ? data.content : []
         } else {
@@ -520,6 +578,7 @@ export default {
         }
 
       } catch (error) {
+        if (peticion !== this.peticionClientes) return
         console.error('Error buscando clientes:', error)
         this.clientesFiltrados = []
       }
@@ -617,7 +676,6 @@ export default {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
         confirmButtonText: 'Eliminar',
         cancelButtonText: 'Cancelar'
       })
@@ -635,7 +693,7 @@ export default {
         this.$swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'No se pudo eliminar el adjunto'
+          text: textoError(error, 'No se pudo eliminar el adjunto')
         })
       } finally {
         this.eliminandoAdjuntoId = null
@@ -652,12 +710,16 @@ export default {
     },
 
     async cargarPuntosSuministroCliente(clienteId) {
+      // Si se cambia de cliente rápido, los CUPS del anterior no pueden llegar después
+      this.peticionCups = (this.peticionCups || 0) + 1
+      const peticion = this.peticionCups
       if (!clienteId) {
         this.puntosSuministroCliente = []
         return
       }
       try {
         const data = await tareasApi.obtenerCarteraCupsCliente(clienteId)
+        if (peticion !== this.peticionCups) return
         if (data) {
           // Construir lista con el CUPS luz y gas no vacíos
           const lista = []
@@ -670,6 +732,7 @@ export default {
           this.puntosSuministroCliente = []
         }
       } catch (e) {
+        if (peticion !== this.peticionCups) return
         console.error('Error cargando puntos de suministro del cliente:', e)
         this.puntosSuministroCliente = []
       }
@@ -686,10 +749,9 @@ export default {
       }
     },
 
-    formatDate(date) {
-      if (!date) return ''
-      const d = new Date(date)
-      return d.toLocaleDateString('es-ES')
+    usuarioActualId() {
+      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+      return usuario.id ? parseInt(usuario.id) : null
     },
 
     guardar() {
@@ -744,6 +806,8 @@ export default {
         estadoId: this.formulario.estadoId || null,
         usuarioAsignadoId: this.formulario.usuarioAsignadoId || null,
         usuarioCreadorId: this.formulario.usuarioCreadorId || null,
+        // Quién crea o edita (para no notificarle sus propios cambios)
+        usuarioAccionId: this.usuarioActualId(),
         clienteRelacionadoId: this.formulario.clienteRelacionadoId || null,
         clientePotencialNombre: this.esPotencial ? (this.formulario.clientePotencialNombre || null) : null,
         cups: (!this.esPotencial && this.formulario.clienteRelacionadoId && this.formulario.cups) ? this.formulario.cups : null,

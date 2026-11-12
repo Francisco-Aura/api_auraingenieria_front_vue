@@ -1,0 +1,284 @@
+/*
+ * Campo de fecha (CampoFecha.vue) sobre @vuepic/vue-datepicker.
+ * Sin «scoped»: el calendario se abre en <body> (para que el modal no lo recorte) y
+ * estas reglas tienen que alcanzarlo. Todo va bajo .campo-fecha / .campo-fecha-menu.
+ *
+ * Cada pantalla lo iguala a sus campos con estas variables sobre .campo-fecha (los estilos
+ * «scoped» de la pantalla sí llegan a ese elemento, no al <input> de dentro):
+ *   --campo-fecha-alto (28px)        --campo-fecha-letra (0.85rem)
+ *   --campo-fecha-borde (#ddd)       --campo-fecha-borde-ancho (1px)
+ *   --campo-fecha-radio (6px)        --campo-fecha-fondo (#fff)
+ *   --campo-fecha-texto (texto)      --campo-fecha-ancho (100%)
+ *   --campo-fecha-hueco-icono (1.9rem: sitio del icono a la izquierda)
+ */
+
+/* ---- Campo cerrado: por defecto igual que .form-control-modern ---- */
+.campo-fecha {
+  position: relative;
+  width: var(--campo-fecha-ancho, 100%);
+}
+
+.campo-fecha .dp--main {
+  --dp-font-family: inherit;
+  --dp-font-size: var(--campo-fecha-letra, 0.85rem);
+  --dp-border-radius: var(--campo-fecha-radio, var(--radius-sm));
+  --dp-border-color: var(--campo-fecha-borde, #ddd);
+  --dp-border-color-hover: #b9c1ca;
+  --dp-border-color-focus: var(--primary-color);
+  --dp-background-color: var(--campo-fecha-fondo, #fff);
+  --dp-text-color: var(--campo-fecha-texto, var(--text-primary));
+  --dp-icon-color: var(--color-secondary-gray);
+  --dp-hover-icon-color: var(--text-primary);
+  --dp-input-icon-padding: 1.9rem;
+  --dp-input-padding: 0 1.7rem 0 0.4rem;
+  --dp-danger-color: var(--color-danger-alt);
+}
+
+/* Selector largo a propósito: reglas globales sin ámbito como «.form-group input { padding: 8px }»
+   (tareas) pesaban más que las de la librería y el icono tapaba el día */
+.campo-fecha .dp--input-wrap input.campo-fecha__input {
+  height: var(--campo-fecha-alto, 28px);
+  margin: 0;
+  padding: 0 1.7rem 0 var(--campo-fecha-hueco-icono, 1.9rem);
+  font-size: var(--campo-fecha-letra, 0.85rem);
+  border-width: var(--campo-fecha-borde-ancho, 1px);
+  transition: var(--aura-transicion);
+}
+
+.campo-fecha .dp--input-wrap input.campo-fecha__input.dp--input-not-clearable {
+  padding-right: 0.5rem;
+}
+
+.campo-fecha .campo-fecha__input:hover:not(:disabled):not([readonly]) {
+  border-color: var(--dp-border-color-hover);
+}
+
+.campo-fecha .campo-fecha__input:focus,
+.campo-fecha .campo-fecha__input.dp--input-focus {
+  border-color: var(--primary-color);
+  box-shadow: var(--focus-ring);
+}
+
+.campo-fecha .campo-fecha__input::placeholder {
+  color: #9aa4ad;
+}
+
+/* Desactivado: gris, como el resto de campos bloqueados */
+.campo-fecha .campo-fecha__input:disabled {
+  background-color: #f1f3f5;
+  color: var(--color-secondary-gray);
+  cursor: not-allowed;
+}
+
+/* Solo lectura (fichas en modo consulta): sin foco amarillo ni calendario */
+.campo-fecha .campo-fecha__input[readonly] {
+  background-color: var(--campo-fecha-fondo-lectura, #f8fafc);
+  cursor: default;
+  box-shadow: none;
+}
+
+.campo-fecha .dp--input-icon {
+  inset-inline-start: 0.55rem;
+  line-height: 1;
+}
+
+.campo-fecha .campo-fecha__icono {
+  color: var(--color-secondary-gray);
+  font-size: 0.8rem;
+  width: 16px;
+  text-align: center;
+}
+
+.campo-fecha .dp--clear-btn {
+  inset-inline-end: 0.35rem;
+  height: 20px;
+  width: 20px;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.campo-fecha .dp--clear-btn:hover {
+  background: #f1f3f5;
+}
+
+.campo-fecha .dp--clear-btn .dp--input-icons,
+.campo-fecha .dp--clear-btn svg {
+  width: 0.7rem;
+  height: 0.7rem;
+  padding: 0;
+}
+
+/* Error (dato obligatorio sin poner, fecha que no se entiende…): como .input-error.
+   Selector largo a propósito: en los formularios con pestañas una regla general
+   (shared-secciones-formulario.css, especificidad 0,4,1) pone el borde gris a todos los campos. */
+.campo-fecha.campo-fecha--error .dp--input-wrap input.campo-fecha__input.dp--input {
+  border-color: var(--color-danger-alt);
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15);
+}
+
+.campo-fecha__aviso {
+  display: block;
+  color: var(--color-danger-alt);
+  font-size: 0.72rem;
+  margin-top: 2px;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+/* Variante compacta en rojo (fecha de gestión de la denuncia) */
+.campo-fecha--compacto .campo-fecha__input {
+  font-size: 0.8rem;
+  border-color: #dc2626;
+  color: #991b1b;
+}
+
+.campo-fecha--compacto .campo-fecha__input:focus,
+.campo-fecha--compacto .campo-fecha__input.dp--input-focus {
+  border-color: #b91c1c;
+  box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.1);
+}
+
+.campo-fecha--compacto .campo-fecha__icono {
+  color: #b91c1c;
+}
+
+/* Dentro de un SweetAlert (campoFechaEnDialogo.js): como sus .swal2-input (swal-dialogs.css) */
+.campo-fecha-dialogo {
+  margin: 0;
+  text-align: left;
+}
+
+.campo-fecha-dialogo .campo-fecha {
+  --campo-fecha-alto: 2.625em;
+  --campo-fecha-letra: 1rem;
+  --campo-fecha-borde: var(--border-color, #e0e0e0);
+  --campo-fecha-radio: 8px;
+  --campo-fecha-texto: var(--color-text-dark);
+}
+
+/* ---- Calendario ---- */
+.dp--menu.campo-fecha-menu {
+  --dp-font-family: inherit;
+  --dp-font-size: 0.85rem;
+  --dp-border-radius: var(--radius-sm);
+  --dp-cell-border-radius: 6px;
+  --dp-cell-size: 32px;
+  --dp-cell-padding: 4px;
+  --dp-menu-padding: 6px 8px 4px;
+  --dp-menu-border-color: #e3e6ea;
+  --dp-primary-color: var(--color-brand-yellow-hex);
+  --dp-primary-disabled-color: #fff3b0;
+  --dp-primary-text-color: var(--color-text-dark);
+  --dp-text-color: var(--color-text-dark);
+  --dp-hover-color: #fff7cc;
+  --dp-hover-text-color: var(--color-text-dark);
+  --dp-icon-color: var(--color-secondary-gray);
+  --dp-secondary-color: #b8c0c8;
+  --dp-highlight-color: rgba(252, 215, 0, 0.18);
+  --dp-marker-color: #8a6d00;
+  --dp-tooltip-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(44, 62, 80, 0.16), 0 2px 6px rgba(44, 62, 80, 0.08);
+}
+
+/* Botones del calendario sin los estilos globales de <button> de la aplicación */
+.campo-fecha-menu button {
+  font-family: inherit;
+  transform: none;
+}
+
+.campo-fecha-menu .dp--month-year-select-base {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.campo-fecha-menu .dp--calendar-header-item {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-secondary-gray);
+  text-transform: uppercase;
+}
+
+/* Hoy: recuadro amarillo oscuro (el amarillo de la marca casi no se ve sobre blanco) */
+.campo-fecha-menu .dp--today {
+  border-color: #d4b100;
+  font-weight: 600;
+}
+
+.campo-fecha-menu .dp--active-date,
+.campo-fecha-menu .dp--overlay-cell-active {
+  font-weight: 700;
+}
+
+/* Días señalados (p. ej. el inicio del contrato): punto oscuro y explicación al pasar */
+.campo-fecha-menu .dp--marker-dot {
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+}
+
+.campo-fecha-menu .dp--marker-tooltip {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.12);
+}
+
+/* ---- Atajos al pie del calendario ---- */
+.campo-fecha-menu .dp--action-extra {
+  padding: 0;
+}
+
+.campo-fecha-atajos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 8px 6px;
+  margin-top: 2px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.campo-fecha-menu .campo-fecha-atajo {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid #dfe3e7;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--color-text-dark);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.15;
+  cursor: pointer;
+}
+
+.campo-fecha-menu .campo-fecha-atajo:hover:not(:disabled),
+.campo-fecha-menu .campo-fecha-atajo:focus-visible {
+  border-color: var(--color-brand-yellow-hex);
+  background: #fff7cc;
+  outline: none;
+}
+
+.campo-fecha-menu .campo-fecha-atajo--elegido {
+  border-color: var(--color-brand-yellow-hex);
+  background: var(--color-brand-yellow-hex);
+  font-weight: 600;
+}
+
+.campo-fecha-menu .campo-fecha-atajo:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.campo-fecha-atajo__detalle {
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.campo-fecha-atajo--elegido .campo-fecha-atajo__detalle {
+  color: var(--color-text-dark);
+}

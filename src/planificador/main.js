@@ -38,6 +38,9 @@ axios.defaults.baseURL = '/api'
 
 // Igual que la intranet: el usuario viaja en cabeceras en todas las peticiones (no se verifica)
 axios.interceptors.request.use(config => {
+  // El backend de la intranet rechaza sin esta cabecera cualquier petición que modifique datos (protección CSRF):
+  // la envían todas las pantallas de la intranet y el Planificador también la necesita para guardar
+  config.headers['X-Requested-With'] = 'XMLHttpRequest'
   Object.assign(config.headers, cabecerasUsuario())
   return config
 })

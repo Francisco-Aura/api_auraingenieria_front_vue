@@ -57,7 +57,7 @@
   cursor: pointer;
   font-weight: 500;
   font-size: 0.85rem;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
 }
 
 .btn-view-toggle:hover {
@@ -85,7 +85,7 @@
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   border: none;
   cursor: pointer;
 }
@@ -100,7 +100,7 @@
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: var(--aura-transicion);
   border: none;
   cursor: pointer;
   letter-spacing: 0.3px;
@@ -158,7 +158,7 @@
   font-weight: 600;
   padding: 10px 20px;
   border-radius: 8px;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
 }
 
 .btn-toggle-completed:hover {
@@ -168,17 +168,19 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* Estado Activo (Rojo) para Toggle Completed */
-.btn-toggle-completed.active {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  border-color: transparent;
-  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1);
+/* Activo (viendo las completadas): tono neutro marcado. El rojo de antes se leía
+   como un aviso o un error. Los botones comunes (shared-buttons.css) pintan este
+   estado con el tono de peligro y peso de id: aquí hace falta un id más para ganar. */
+.btn.btn-toggle-completed.active:not(#aura-boton):not(#tareas-completadas) {
+  background: #e2e8f0 !important;
+  color: #1f2937 !important;
+  border-color: #64748b !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
-.btn-toggle-completed.active:hover {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-  box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15);
+.btn.btn-toggle-completed.active:not(#aura-boton):not(#tareas-completadas):hover:not(:disabled) {
+  background: #cbd5e1 !important;
+  border-color: #475569 !important;
 }
 
 /* Botón Create (Crear Tarea) */
@@ -213,7 +215,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   padding: 0;
   margin: 0;
 }
@@ -226,33 +228,7 @@
   height: 100%;
 }
 
-.btn-icon.btn-edit {
-  color: var(--color-action-view);
-}
-.btn-icon.btn-edit:hover {
-  background-color: rgba(33,150,243,0.1);
-}
-
-.btn-icon.btn-view {
-  color: var(--color-action-edit);
-}
-.btn-icon.btn-view:hover {
-  background-color: rgba(67,160,71,0.1);
-}
-
-.btn-icon.btn-complete {
-  color: var(--color-success);
-}
-.btn-icon.btn-complete:hover {
-  background-color: rgba(40,167,69,0.1);
-}
-
-.btn-icon.btn-delete {
-  color: var(--color-danger);
-}
-.btn-icon.btn-delete:hover {
-  background-color: rgba(220,53,69,0.1);
-}
+/* Colores de los botones de acción (ver/editar/eliminar): shared-buttons.css */
 
 .records-per-page {
   display: flex;
@@ -281,9 +257,7 @@
   user-select: none;
 }
 
-.sortable:hover {
-  background-color: var(--hover-color);
-}
+/* El efecto del ratón en las cabeceras es común a todas las tablas: shared-ui.css */
 
 .page-info {
   color: var(--text-primary);
@@ -298,7 +272,7 @@
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   font-weight: 500;
   min-width: 40px;
 }
@@ -338,13 +312,15 @@
   vertical-align: top;
 }
 
-.th-col-titulo { width: 22%; }
-.th-col-cliente { width: 24%; }
-.th-col-asignado { width: 5%; }
-.th-col-estado { width: 12%; }
-.th-col-prioridad { width: 10%; }
-.th-col-categoria { width: 12%; }
-.th-col-fecha { width: 12%; }
+/* El título es lo que identifica la tarea: se le reserva un mínimo para que no
+   quede en dos palabras cortadas cuando el nombre del cliente es largo. */
+.th-col-titulo { width: 22%; min-width: 155px; }
+.th-col-cliente { width: 19%; }
+.th-col-asignado { width: 12%; }
+.th-col-estado { width: 10%; }
+.th-col-prioridad { width: 9%; }
+.th-col-categoria { width: 11%; }
+.th-col-fecha { width: 9%; }
 .th-col-acciones { width: 8%; }
 
 .data-table td {
@@ -376,7 +352,9 @@
 .action-buttons {
   display: flex;
   gap: 8px;
-  justify-content: center;
+  /* A la izquierda: en las filas con solo «Ver» el ojo queda alineado con los de
+     las demás filas (centrado se desplazaba) */
+  justify-content: flex-start;
   min-width: 120px;
 }
 
@@ -395,19 +373,6 @@
   transition: background-color 0.2s ease;
 }
 
-.column-title:hover {
-  background-color: var(--hover-color);
-}
-
-.sortable .column-title {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.sortable .column-title:hover {
-  color: var(--primary-color);
-}
-
 .column-filter-container {
   position: relative;
 }
@@ -419,7 +384,7 @@
   border-radius: 6px;
   font-size: 0.9rem;
   background-color: white;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
@@ -460,10 +425,11 @@
   opacity: 0.85;
 }
 
+/* Bloque con puntos suspensivos: en la columna estrecha el CUPS se cortaba a
+   media cifra, sin indicar que seguía (el completo sigue en el title) */
 .cups-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
+  display: block;
+  box-sizing: border-box;
   font-size: 0.72rem;
   font-weight: 600;
   color: #0369a1;
@@ -472,10 +438,19 @@
   padding: 1px 6px;
   white-space: nowrap;
   width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .categoria-badge {
   display: inline-block;
+  /* Puntos suspensivos dentro de la pastilla (antes «Administración y fa» cortado a secas) */
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
   padding: 4px 10px;
   background: #e7f1f8;
   color: #0c5460;
@@ -513,14 +488,17 @@
   font-weight: 700;
   white-space: nowrap;
   letter-spacing: 0.3px;
-  border: 2px solid transparent;
+  border: 2px solid #dee2e6;
+  /* «Normal» (sin prioridad 0-3): pastilla neutra en lugar de texto suelto */
+  background: #f1f3f5;
+  color: var(--color-text-secondary);
 }
 
 .prioridad-0 { 
   background: #8b0000; 
   color: white;
   border-color: #5c0000;
-  animation: pulse-urgente 2s infinite;
+  animation: pulse-urgente 2s 3; /* tres pulsos y quieto */
 }
 
 .prioridad-0::before {
@@ -575,10 +553,22 @@
   font-weight: 600;
 }
 
+/* min-width:0 para que el texto de dentro pueda recortarse: si no, el <td>
+   con text-truncate corta el título a medias y sin puntos suspensivos. */
 .titulo-container {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.titulo-texto {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .btn-pin {
@@ -588,7 +578,7 @@
   padding: 4px 6px;
   border-radius: 4px;
   color: var(--color-secondary-gray);
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -645,7 +635,7 @@
 
 /* Fade-in animation */
 .fade-in {
-  animation: fadeIn 0.3s ease-in;
+  animation: fadeIn 0.18s ease-out;
 }
 
 @keyframes fadeIn {
@@ -666,8 +656,8 @@
   align-items: center;
   gap: 12px;
   z-index: var(--z-snackbar);
-  animation: slideInUp 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  /* Entrada común: styles/shared-motion.css */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   min-width: 300px;
 }
 
@@ -678,17 +668,18 @@
   flex: 1;
 }
 
+/* Los mismos tonos que los avisos de Notificaciones: con el verde claro de antes el
+   texto blanco no llegaba a 3:1 */
 .snackbar.success {
-  background: var(--color-success);
+  background: linear-gradient(135deg, #2e7d32 0%, #276b2b 100%);
 }
 
 .snackbar.error {
-  background: var(--color-danger);
+  background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
 }
 
 .snackbar.warning {
-  background: #ffc107;
-  color: #212529;
+  background: linear-gradient(135deg, #b45309 0%, #9a4508 100%);
 }
 
 .snackbar-close {
@@ -704,17 +695,6 @@
 
 .snackbar-close:hover {
   opacity: 1;
-}
-
-@keyframes slideInUp {
-  from {
-    transform: translateY(100px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
 }
 
 /* Responsive */
@@ -811,7 +791,7 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 0.9rem;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   background: white;
 }
 
