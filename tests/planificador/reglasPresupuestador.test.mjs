@@ -763,3 +763,29 @@ test('strings fijados: se reparte el resto al momento solo si queda para los dem
   assert.equal(fixedCount(parejo), 0)
   assert.equal(Math.max(...parejo.map((s) => s.panels)) - Math.min(...parejo.map((s) => s.panels)), 1)
 })
+
+test('cubierta: los tipos nuevos aceptan los productos que les corresponden y avisan con los que no', () => {
+  const con = (roof, cubierta) => revisar([extra(estructura({ cubierta }))], { opciones: { survey: { roof } } })
+  // Las dos chapas aceptan «Chapa» a secas (productos de antes) y su propio valor, pero no el de la otra
+  assert.equal(tiene(con('chapa_minionda', 'Chapa'), 'error', 'cubierta'), false)
+  assert.equal(tiene(con('chapa_minionda', 'Chapa minionda'), 'error', 'cubierta'), false)
+  assert.ok(tiene(con('chapa_minionda', 'Chapa grecada'), 'error', 'cubierta'))
+  assert.equal(tiene(con('chapa_grecada', 'Chapa grecada'), 'error', 'cubierta'), false)
+  // Un parking admite las estructuras de suelo; flotante, pérgola y panel sándwich solo las suyas (y las «Todas»)
+  assert.equal(tiene(con('parking', 'Suelo'), 'error', 'cubierta'), false)
+  assert.equal(tiene(con('parking', 'Parking'), 'error', 'cubierta'), false)
+  assert.ok(tiene(con('flotante', 'Suelo'), 'error', 'cubierta'))
+  assert.equal(tiene(con('flotante', 'Todas'), 'error', 'cubierta'), false)
+  assert.equal(tiene(con('pergola', 'Pérgola'), 'error', 'cubierta'), false)
+  assert.equal(tiene(con('sandwich', 'Panel sándwich'), 'error', 'cubierta'), false)
+  assert.ok(tiene(con('sandwich', 'Teja'), 'error', 'cubierta'))
+  // Un presupuesto antiguo con «chapa» sigue valiendo para las dos chapas
+  assert.equal(tiene(con('chapa', 'Chapa grecada'), 'error', 'cubierta'), false)
+})
+
+test('cubierta: se guardan y se leen todos los tipos, y uno desconocido vuelve a teja', () => {
+  for (const roof of ['teja', 'chapa_minionda', 'chapa_grecada', 'plana', 'suelo', 'parking', 'flotante', 'pergola', 'sandwich', 'chapa']) {
+    assert.equal(parseCosts({ survey: { roof } }).survey.roof, roof)
+  }
+  assert.equal(parseCosts({ survey: { roof: 'volcan' } }).survey.roof, 'teja')
+})

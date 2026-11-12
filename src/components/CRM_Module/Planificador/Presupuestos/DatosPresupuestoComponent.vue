@@ -68,7 +68,9 @@
         <div class="survey-row">
           <label class="survey-field">
             Tipo de cubierta
-            <select v-model="v.roof"><option value="teja">Teja</option><option value="chapa">Chapa</option><option value="plana">Plana</option><option value="suelo">Suelo</option></select>
+            <select v-model="v.roof">
+              <option v-for="k in tiposCubierta" :key="k" :value="k">{{ ROOF_LABEL[k] }}</option>
+            </select>
           </label>
           <label class="survey-field">
             Suministro eléctrico del cliente
@@ -108,7 +110,7 @@ import DisenadorStrings from './DisenadorStrings.vue'
 import CampoNumerico from './CampoNumerico.vue'
 import { planificadorApi } from '@/services/planificadorApi'
 import { prepararLogo } from '@/utils/planificador/logo'
-import { panelCount } from '@/utils/planificador/motor/pasosConfig'
+import { panelCount, ROOF_LABEL, ROOF_OPTIONS } from '@/utils/planificador/motor/pasosConfig'
 import { EMPTY_COSTS, EMPTY_SURVEY } from '@/utils/planificador/motor/costes'
 import { stringContext } from '@/utils/planificador/motor/compatibilidad'
 import { spreadPanels, spreadStrings } from '@/utils/planificador/motor/strings'
@@ -130,7 +132,7 @@ export default {
   data() {
     const inicio = this.base || { ...EMPTY_COSTS, survey: EMPTY_SURVEY }
     // nombresExistentes: los nombres de los presupuestos que ya hay (de este navegador y del servidor), para sugerir los proyectos del cliente
-    return { inicio, v: valoresDe(inicio), intentado: false, catalogo: null, nombresExistentes: [], errorLogo: '' }
+    return { inicio, v: valoresDe(inicio), intentado: false, catalogo: null, nombresExistentes: [], errorLogo: '', ROOF_LABEL }
   },
   computed: {
     proyectosSugeridos() { return proyectosDeCliente(this.v.customer && this.v.customer.name, this.nombresExistentes) },
@@ -148,6 +150,8 @@ export default {
         return i && i.category === 'inversores' && ['Microinversor', 'Optimizador'].includes(String(i.attrs.tipo ?? '').trim())
       })
     },
+    // «Chapa» a secas solo sale si el presupuesto ya la tenía (de antes de separar minionda y grecada)
+    tiposCubierta() { return this.v.roof && !ROOF_OPTIONS.includes(this.v.roof) ? [this.v.roof, ...ROOF_OPTIONS] : ROOF_OPTIONS },
     esPotencial() { return !!this.v.customer && this.v.customer.kind === 'potencial' },
     problemas() { return problemasDe(this.v, this.cuenta) }
   },

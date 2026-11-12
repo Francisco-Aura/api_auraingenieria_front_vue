@@ -251,13 +251,29 @@ export function batteryCompat(battery, inverter) {
 /** Qué cubiertas valen para cada tipo de cubierta elegido en el paso 1. */
 export const ROOF_ITEM_VALUES = {
     teja: ['Teja', 'Todas'],
-    chapa: ['Chapa', 'Todas'],
+    chapa_minionda: ['Chapa minionda', 'Chapa', 'Todas'],
+    chapa_grecada: ['Chapa grecada', 'Chapa', 'Todas'],
     plana: ['Plana', 'Todas'],
     suelo: ['Suelo', 'Todas'],
+    // En un parking valen también las estructuras de suelo (hincada, bloques de hormigón…)
+    parking: ['Parking', 'Suelo', 'Todas'],
+    flotante: ['Flotante', 'Todas'],
+    pergola: ['Pérgola', 'Todas'],
+    sandwich: ['Panel sándwich', 'Todas'],
+    // «Chapa» a secas es de los presupuestos anteriores a separar la minionda de la grecada: vale cualquiera de las dos
+    chapa: ['Chapa', 'Chapa minionda', 'Chapa grecada', 'Todas'],
 };
 export const ROOF_LABEL = {
     teja: 'Teja',
-    chapa: 'Chapa',
+    chapa_minionda: 'Chapa minionda',
+    chapa_grecada: 'Chapa grecada (trapezoidal)',
     plana: 'Plana',
     suelo: 'Suelo',
+    parking: 'Parking',
+    flotante: 'Flotante',
+    pergola: 'Pérgola',
+    sandwich: 'Panel sándwich',
+    chapa: 'Chapa',
 };
+/** Los tipos de cubierta que se ofrecen al crear un presupuesto, en este orden («chapa» solo lo conservan los presupuestos antiguos). */
+export const ROOF_OPTIONS = ['teja', 'chapa_minionda', 'chapa_grecada', 'plana', 'suelo', 'parking', 'flotante', 'pergola', 'sandwich'];

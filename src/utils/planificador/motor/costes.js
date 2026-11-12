@@ -1,3 +1,4 @@
+import { ROOF_LABEL } from './pasosConfig.js';
 import { clampTotals } from './strings.js';
 export const EMPTY_SURVEY = {
     roof: 'teja',
@@ -26,7 +27,7 @@ const OLD_STORAGE_KEY = 'planificador.costes.v4';
 function loadSurvey(raw) {
     const d = (raw && typeof raw === 'object' ? raw : {});
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 0);
-    const roofs = ['teja', 'chapa', 'plana', 'suelo'];
+    const roofs = Object.keys(ROOF_LABEL);
     return {
         roof: roofs.includes(d.roof) ? d.roof : EMPTY_SURVEY.roof,
         targetKwp: num(d.targetKwp),
