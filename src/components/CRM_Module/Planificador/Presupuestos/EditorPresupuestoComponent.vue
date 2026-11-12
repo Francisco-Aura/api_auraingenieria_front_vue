@@ -28,15 +28,15 @@
       <section class="save-bar" :class="remoto ? 'shared' : 'local'" aria-label="Dónde se guarda este presupuesto">
         <div class="save-where">
           <template v-if="remoto && bloqueado">
-            <strong>🔒 {{ ETIQUETA_BLOQUEO[remoto.status] }}</strong>
+            <strong><svg class="estado-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>{{ ETIQUETA_BLOQUEO[remoto.status] }}</strong>
             <span v-if="AYUDA_BLOQUEO[remoto.status]" class="muted"> · {{ AYUDA_BLOQUEO[remoto.status] }}</span>
           </template>
           <template v-else-if="remoto">
-            <strong>👥 Borrador compartido</strong>
+            <strong><svg class="estado-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3.2" /><path d="M3 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1" /><path d="M16 4.8a3.2 3.2 0 0 1 0 6M21 20v-1a5 5 0 0 0-3.5-4.7" /></svg>Borrador compartido</strong>
             <span class="muted"> · lo ven y lo pueden modificar todos · versión {{ remoto.version }}{{ remoto.owner ? ' · creado por ' + remoto.owner : '' }}{{ remoto.updatedAt ? ' · guardado ' + fechaHora(remoto.updatedAt) + (remoto.updatedBy ? ' por ' + remoto.updatedBy : '') : '' }}</span>
           </template>
           <template v-else>
-            <strong>💾 Local</strong><span class="muted"> · solo está en este navegador: nadie más lo ve</span>
+            <strong><svg class="estado-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" /><path d="M7 3v5h8V3M7 21v-7h10v7" /></svg>Local</strong><span class="muted"> · solo está en este navegador: nadie más lo ve</span>
           </template>
           <span v-if="sucio" class="tag issue warn" :title="editado ? 'Hay cambios en este navegador que todavía no están guardados en el servidor' : 'Los precios se han actualizado con los del inventario: guarda para fijarlos en el borrador'">
             {{ editado ? 'Cambios sin guardar' : 'Precios actualizados' }}

@@ -2076,3 +2076,11 @@ tr.group-row .group-toggle:hover { text-decoration: underline; }
 .product-edit:focus-visible {
   opacity: 1;
 }
+
+/* Iconos de la barra de estado del presupuesto (bloqueado, compartido, local): dibujados con el color del texto para que se vean en claro y en oscuro */
+.estado-icono {
+  width: 15px;
+  height: 15px;
+  margin-right: 6px;
+  vertical-align: -2px;
+}
