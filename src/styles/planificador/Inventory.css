@@ -846,8 +846,6 @@ html.tema-oscuro .prot-badge.tone-trafo { color: #c3b5fd; background: #2f2557; }
 }
 .brand-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .inv-card-top .brand-logo { margin-left: auto; }
-.inv-brand-logo { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-.inv-brand-logo .inv-logo-btn { margin-left: auto; cursor: pointer; }
 .brand-logo img { height: 100%; width: auto; max-width: 84px; }
 
 .lists-manager { margin: 0 0 16px; padding: 14px 16px; border: 1px solid var(--border, #e4e7ec); border-radius: var(--radius, 8px); }
@@ -860,3 +858,7 @@ html.tema-oscuro .prot-badge.tone-trafo { color: #c3b5fd; background: #2f2557; }
 .lists-add { display: flex; gap: 8px; margin: 0 0 10px; }
 .lists-add input { flex: 1; min-width: 0; }
 .lists-remove { color: #b91c1c; border-color: #b91c1c; padding: 2px 10px; font-size: 0.85rem; }
+.lists-name { display: flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: anywhere; }
+.lists-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.lists-logo-btn { cursor: pointer; white-space: nowrap; padding: 2px 10px; font-size: 0.85rem; display: inline-flex; align-items: center; }
+.lists-add .lists-logo-btn { padding: 0 12px; font-size: inherit; }

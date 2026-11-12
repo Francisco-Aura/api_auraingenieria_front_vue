@@ -68,7 +68,7 @@ export default {
       try { this.todos = await planificadorApi.presupuestos() } catch (e) { /* sin tira: no pasa nada */ }
     },
     async renombrar() {
-      const nombre = window.prompt('Nombre de esta variante (vacío = «Versión N»):', this.actual.variant_name)
+      const nombre = window.prompt('Nombre de esta versión (opcional; vacío = solo el número, v1, v2…):', this.actual.variant_name)
       if (nombre === null) return
       try {
         const actualizada = await planificadorApi.renombrarVariante(this.presupuestoId, nombre.trim())

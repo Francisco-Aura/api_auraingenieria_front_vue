@@ -10,6 +10,20 @@
         <input v-model="consulta" type="search" placeholder="Cliente, autor…">
       </label>
       <label>
+        Cliente
+        <select v-model="clienteSel">
+          <option value="">Todos</option>
+          <option v-for="c in opciones.clientes" :key="c.valor" :value="c.valor">{{ c.etiqueta }}</option>
+        </select>
+      </label>
+      <label>
+        Proyecto
+        <select v-model="proyectoSel">
+          <option value="">Todos</option>
+          <option v-for="p in opciones.proyectos" :key="p.valor" :value="p.valor">{{ p.etiqueta }}</option>
+        </select>
+      </label>
+      <label>
         Mostrar
         <select v-model="filtro">
           <option value="todos">Todos</option>
@@ -52,10 +66,10 @@
             <tr v-if="it.tipo === 'grupo'" class="group-row">
               <td colspan="7">
                 <button type="button" class="group-toggle" :aria-expanded="desplegadas.has(it.ofertaId)"
-                        :title="desplegadas.has(it.ofertaId) ? 'Ocultar las variantes' : 'Ver las variantes de esta oferta'" @click="alternar(it.ofertaId)">
+                        :title="desplegadas.has(it.ofertaId) ? 'Ocultar las versiones' : 'Ver las versiones de este proyecto'" @click="alternar(it.ofertaId)">
                   <span aria-hidden="true">{{ desplegadas.has(it.ofertaId) ? '▾' : '▸' }}</span> {{ it.name }}
                 </button>
-                <span class="tag state local" title="Variantes del mismo cliente: solo una se validará">Oferta · {{ it.count }} variantes</span>
+                <span class="tag state local" title="Mismo cliente y mismo proyecto: solo uno se validará">Proyecto · {{ it.count }} versiones</span>
               </td>
             </tr>
             <tr v-else :class="{ 'variant-row': it.hija }">
@@ -87,7 +101,7 @@
                 <div class="row-actions">
                   <button type="button" class="secondary" :disabled="ocupado === it.row.id" @click="abrir(it.row)">Abrir</button>
                   <button type="button" class="secondary" :disabled="ocupado === it.row.id"
-                          :title="esVariantable(it.row) ? 'Crea una variante nueva (borrador) de la misma oferta' : 'Crea una copia local con la que puedes trabajar sin tocar el original'"
+                          title="Copia el presupuesto entero: eliges si con el mismo cliente u otro"
                           @click="duplicar(it.row)">Duplicar</button>
                   <button v-if="it.row.kind === 'local' || it.row.mine || !it.row.owner || admin" type="button" class="icon-btn trash" title="Eliminar"
                           :aria-label="'Eliminar ' + it.row.name" :disabled="ocupado === it.row.id" @click="eliminar(it.row)">
@@ -112,7 +126,7 @@ import { eur } from '@/utils/planificador/formato'
 import { nextSort } from '@/utils/planificador/orden'
 import { getLocal, listLocal, removeLocal } from '@/utils/planificador/almacenPresupuestos'
 import {
-  NIVEL_ADMIN, etiquetaEstado, construirFilas, contarPendientes, filtrarFilas, armarTabla, esVariantable
+  NIVEL_ADMIN, etiquetaEstado, construirFilas, contarPendientes, filtrarFilas, armarTabla, esVariantable, opcionesFiltro
 } from '@/utils/planificador/listaPresupuestos'
 
 const COLUMNAS = [
@@ -128,13 +142,13 @@ const COLUMNAS = [
 // borradores compartidos (guardados en el servidor, visibles para todos los usuarios de la intranet).
 export default {
   name: 'Lista-Presupuestos-Component',
-  // abrir: un compartido (se ve su detalle) o un local (lo abre el asistente); duplicar-local: copia local para el asistente
+  // abrir: un compartido (se ve su detalle) o un local (lo abre el asistente); duplicar: lo hace el asistente
   props: { conVolver: { type: Boolean, default: false } },
-  emits: ['nuevo', 'abrir', 'abrir-local', 'duplicar-local', 'cerrar'],
+  emits: ['nuevo', 'abrir', 'abrir-local', 'duplicar', 'cerrar'],
   data() {
     return {
       COLUMNAS, remotos: null, errorServidor: null, version: 0, mensaje: null, ocupado: null, consulta: '', filtro: 'todos',
-      desplegadas: new Set(), orden: null
+      clienteSel: '', proyectoSel: '', desplegadas: new Set(), orden: null
     }
   },
   computed: {
@@ -147,8 +161,14 @@ export default {
       return construirFilas({ remotos: this.remotos, locales: listLocal(), copiaLocal: getLocal, usuario: this.usuario })
     },
     pendientes() { return contarPendientes(this.filas, this.validador) },
-    filtradas() { return filtrarFilas(this.filas, this.consulta, this.filtro) },
+    // Los clientes y los proyectos (los del cliente elegido) que se pueden filtrar
+    opciones() { return opcionesFiltro(this.filas, this.clienteSel) },
+    filtradas() { return filtrarFilas(this.filas, this.consulta, this.filtro, this.clienteSel, this.proyectoSel) },
     tabla() { return armarTabla(this.filtradas, this.orden, this.desplegadas) }
+  },
+  watch: {
+    // Al cambiar de cliente, el proyecto elegido solo vale si es de ese cliente
+    clienteSel() { if (!this.opciones.proyectos.some((p) => p.valor === this.proyectoSel)) this.proyectoSel = '' }
   },
   mounted() {
     this.cargar()
@@ -201,17 +221,14 @@ export default {
       if (fila.kind === 'local') this.$emit('abrir-local', fila.id)
       else this.$emit('abrir', fila.id)
     },
+    // El asistente pregunta cómo duplicar (mismo cliente u otro) y lo hace; después llama a refrescar()
     duplicar(fila) {
-      if (!esVariantable(fila)) { this.$emit('duplicar-local', { id: fila.id, compartido: fila.kind !== 'local' }); return }
-      this.ejecutar(fila.id, async () => {
-        try {
-          const nueva = await planificadorApi.variantePresupuesto(fila.id)
-          this.$emit('abrir', nueva.id)
-          return null
-        } catch (e) {
-          return mensajeError(e)
-        }
-      })
+      this.$emit('duplicar', { id: fila.id, compartido: fila.kind !== 'local', variante: esVariantable(fila), nombre: fila.name })
+    },
+    // Vuelve a leer los presupuestos locales y los del servidor (tras crear uno desde fuera de la lista)
+    refrescar() {
+      this.version += 1
+      this.cargar()
     },
     eliminar(fila) {
       const compartido = fila.kind !== 'local'

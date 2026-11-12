@@ -10,6 +10,10 @@ const CARPETAS_PLANIFICADOR = [
   'src/components/CRM_Module/Planificador',
   'src/styles/planificador',
   'src/utils/planificador',
+  // Registro horario (también de Francisco): sus descargas y estilos son suyos
+  'src/components/CRM_Module/RegistroHorario',
+  'src/utils/registroHorario',
+  'src/services/registroHorarioApi.js',
 ];
 
 /** Acepta rutas relativas a la raíz o absolutas, con la barra de Windows o la normal. */

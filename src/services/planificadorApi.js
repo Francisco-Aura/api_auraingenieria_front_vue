@@ -145,5 +145,9 @@ export const planificadorApi = {
   /** El contrato con los datos indicados, sin guardar nada: devuelve { blob, nombre }. */
   generarContrato: (datosContrato) => pdf(`${BASE}/contract/generate`, datosContrato, { format: 'pdf' }, 'Contrato.pdf'),
   /** PDF del presupuesto en curso: «interno» (costes y beneficio) o «cliente» (solo el precio de venta). Devuelve { blob, nombre }. */
-  pdfPresupuesto: (datosPresupuesto, modo) => pdf(`${BASE}/budget/pdf`, datosPresupuesto, { mode: modo }, 'Presupuesto.pdf')
+  pdfPresupuesto: (datosPresupuesto, modo) => pdf(`${BASE}/budget/pdf`, datosPresupuesto, { mode: modo }, 'Presupuesto.pdf'),
+  /** La presentación para el cliente (la propuesta) del presupuesto en curso, con el mismo cuerpo que al guardarlo; no guarda nada. Devuelve { blob, nombre }. */
+  propuestaDelBorrador: (cuerpo) => pdf(`${BASE}/budget/proposal-html`, cuerpo, undefined, 'Propuesta.html'),
+  /** La misma propuesta en PDF, hecha en el servidor con Chrome; si el servidor no lo tiene responde 501. Devuelve { blob, nombre }. */
+  propuestaPdfDelBorrador: (cuerpo) => pdf(`${BASE}/budget/proposal-pdf`, cuerpo, undefined, 'Propuesta.pdf')
 }

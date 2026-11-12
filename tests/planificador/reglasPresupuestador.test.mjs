@@ -2,8 +2,9 @@
 // (la especificación): cada regla de compatibilidad, qué reglas ocultan el producto («hard»), las constantes y tablas
 // de intensidad, los criterios de «Sugeridos» y la regla de strings iguales.
 import test from 'node:test'
+import { splitMissing } from '../../src/utils/planificador/motor/strings.js'
 import assert from 'node:assert/strict'
-import { checkCompatibility, hardConflicts, issuesByLine, fitReasons, suggestions } from '../../src/utils/planificador/motor/compatibilidad.js'
+import { checkCompatibility, hardConflicts, issuesByLine, fitReasons, suggestions, sizeInverters } from '../../src/utils/planificador/motor/compatibilidad.js'
 import { stringPlan, stringLimits, COLD_VOC, HOT_VMP, MIN_STRING_PANELS, MAX_STRING_PANELS } from '../../src/utils/planificador/motor/pasosConfig.js'
 
 // ------------------------------------------------------------------------------------------------ ayudas
@@ -143,6 +144,19 @@ test('estructura-modulos: partida «por módulo» con unidades distintas del nº
   assert.equal(tiene(revisar([extra(porModulo, 0, { auto: true })]), 'warn', 'estructura-modulos'), false)
 })
 
+test('estructura-modulos: varias filas por módulo que se reparten los paneles y suman el total no avisan (247 + 24 = 271)', () => {
+  const coplanar = estructura({}, { unit: 'módulo' })
+  const inclinada = estructura({}, { id: 'e2', model: 'Inclinada', unit: 'módulo' })
+  // El presupuesto de las pruebas lleva 12 paneles: 10 + 2 = 12
+  assert.equal(tiene(revisar([extra(coplanar, 10), extra(inclinada, 2)]), 'warn', 'estructura-modulos'), false)
+  // Dos repartos completos (12 + 12) tampoco; si no suman un total exacto, sigue avisando
+  assert.equal(tiene(revisar([extra(coplanar, 10), extra(inclinada, 14)]), 'warn', 'estructura-modulos'), false)
+  assert.ok(tiene(revisar([extra(coplanar, 10), extra(inclinada, 3)]), 'warn', 'estructura-modulos'), '10 + 3 = 13: no suman 12')
+  assert.ok(tiene(revisar([extra(coplanar, 10)]), 'warn', 'estructura-modulos'), 'una sola fila que no llega sigue avisando')
+  // Una fila que ya lleva todos los paneles no se mezcla con el reparto de otras
+  assert.equal(tiene(revisar([extra(coplanar, 12), extra(inclinada, 12)]), 'warn', 'estructura-modulos'), false)
+})
+
 test('estructura-uds: faltan unidades por panel (< ceil(nº de paneles × unidades por panel))', () => {
   const grapas = estructura({ uds_por_panel: 2 })
   assert.ok(tiene(revisar([extra(grapas, 23)]), 'warn', 'estructura-uds'))
@@ -203,6 +217,30 @@ test('strings (más strings de los que admite el inversor y cortocircuito por en
   const mezcla = checkCompatibility(estado(lineas, { n: 18, strings: [{ id: 'a', panels: 12, input: 1 }, { id: 'b', panels: 6, input: 1 }, { id: 'c', panels: 0, input: 9 }] }), cat)
   assert.ok(mezcla.some((i) => /mezcla strings de 12 y 6/.test(i.message)))
   assert.ok(mezcla.some((i) => /van a entradas que no existen/.test(i.message)))
+})
+
+test('con inversores de sobra, los strings que siguen en las entradas de cuando había menos se reasignan solos (una por entrada)', () => {
+  // HUAWEI SUN2000-100KTL-M2 (10 MPPT, 30 A por entrada) y JA SOLAR 670 W (Imp 15,98 A): dos strings en una entrada dan 32 A, no valen
+  const ja = producto('ja', 'modulos', { voc_v: 50.41, vmp_v: 41.93, isc_a: 16.78, imp_a: 15.98, grosor_mm: 30 }, { brand: 'JA SOLAR', model: 'JAM66D50-670/GB' })
+  const huawei = producto('hw', 'inversores', {
+    tipo: 'String', potencia_kw: 100, mppt_min_v: 200, mppt_max_v: 1000, vmax_v: 1100, imax_mppt_a: 30, n_mppt: 10, 'x:Corriente de cortocircuito máx. (A)': 40
+  }, { brand: 'HUAWEI', model: 'SUN2000-100KTL-M2' })
+  // 271 paneles en 15 strings (uno de 19 y 14 de 18; con este panel un string admite 19 como mucho), repartidos como cuando solo había
+  // un inversor: 10 entradas y vuelta a empezar, así que las 5 primeras llevan dos strings
+  const strings = Array.from({ length: 15 }, (_, i) => ({ id: 's' + i, panels: i === 0 ? 19 : 18, input: (i % 10) + 1 }))
+  const state = estado([linea(ja, 271, { auto: true }), linea(huawei, 2)], { n: 271, wp: 670, strings })
+  const cat = catalogo([ja, huawei])
+  const antes = checkCompatibility(state, cat).filter((i) => codigo(i) === 'strings-diseno')
+  assert.equal(antes.filter((i) => /reciben 2 strings/.test(i.message)).length, 1, 'los avisos de entradas iguales salen en uno solo')
+  assert.ok(antes.some((i) => /Las entradas 1 a 5 reciben 2 strings en paralelo: 32 A y admiten 30 A/.test(i.message)))
+  const ajustado = sizeInverters(state, cat)
+  assert.ok(ajustado, 'se reasignan las entradas')
+  assert.equal(new Set(ajustado.strings.map((s) => s.input)).size, 15, 'cada string en su propia entrada')
+  assert.ok(ajustado.strings.every((s) => s.input >= 1 && s.input <= 20))
+  assert.equal(ajustado.lines.find((l) => l.itemId === 'hw').qty, 2, 'las unidades no cambian')
+  assert.equal(checkCompatibility(ajustado, cat).some((i) => codigo(i) === 'strings-diseno'), false)
+  // Un diseño que ya vale no se toca
+  assert.equal(sizeInverters(ajustado, cat), null)
 })
 
 test('el diseño de strings: sin strings no hay nada que comprobar y los que no suman los paneles dan error', () => {
@@ -656,3 +694,12 @@ test('Sugeridos · protecciones CC y AC, cableado y tierra', () => {
   assert.ok(fitReasons(cable('AC', '', 4, 'f6'), ctx, cat).some((r) => /aguanta 27 A/.test(r)))
   assert.ok(fitReasons(producto('f7', 'tierra', { componente: 'Cable', seccion_mm2: 16 }), ctx, cat).some((r) => /suficiente para la estructura/.test(r)))
 })
+
+test('splitMissing reparte lo que falta en los menos strings posibles y lo más iguales', () => {
+    const limites = { min: 6, max: 19 };
+    assert.deepEqual(splitMissing(24, limites), [12, 12]);
+    assert.deepEqual(splitMissing(19, limites), [19]);
+    assert.deepEqual(splitMissing(25, limites), [13, 12]);
+    assert.equal(splitMissing(4, limites), null);
+    assert.equal(splitMissing(0, limites), null);
+});

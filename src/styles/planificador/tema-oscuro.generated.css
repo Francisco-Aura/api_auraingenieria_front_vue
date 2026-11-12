@@ -186,7 +186,8 @@ html.tema-oscuro .setup-problems {
 html.tema-oscuro .string-total.ok {
   color: #73e89f;
 }
-html.tema-oscuro .string-total.bad {
+html.tema-oscuro .string-total.bad,
+html.tema-oscuro .string-range.bad {
   color: #ec8282;
 }
 html.tema-oscuro .string-problems {

@@ -13,8 +13,8 @@
     </template>
     <template v-else-if="accion.tipo === 'enviar'">
       <button type="button" class="secondary" :disabled="guardando || !accion.habilitado" :title="!remoto ? 'Guárdalo y compártelo primero' : sinGuardar ? 'Guarda primero los cambios' : undefined"
-              @click="preguntar('Este presupuesto pasará a «Enviado» y ya no se podrá editar. Para cambiar algo, se duplicará como variante. ¿Marcarlo como enviado?', 'send')">
-        Marcar como enviado
+              @click="preguntar('Este presupuesto pasará a «Enviado» y ya no se podrá editar. Para cambiar algo, se duplicará como variante. ¿Marcarlo como entregado?', 'send')">
+        Marcar como entregado
       </button>
       <span class="muted">{{ !remoto ? 'Guárdalo y compártelo primero.' : sinGuardar ? 'Guarda primero los cambios.' : 'Cuando ya lo hayas revisado y mandado al cliente: desde ahí no se edita.' }}</span>
     </template>

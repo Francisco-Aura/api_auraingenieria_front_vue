@@ -6,6 +6,29 @@ export const newStringId = () => `s-${Date.now().toString(36)}-${(counter++).toS
 /** Entradas MPPT que hay en total: las de cada inversor por cuántos inversores hay. */
 export const inputsOf = (inverter, units) => Math.max(1, (num(inverter.attrs.n_mppt) ?? 1) * Math.max(1, units));
 /**
+ * Los inversores de strings del presupuesto: cada modelo con sus unidades, en el orden de las filas (con varios modelos distintos,
+ * las entradas se cuentan seguidas: primero las del primer modelo, luego las del siguiente…). Sin `groups` en el contexto, el único.
+ */
+export const inverterGroups = (ctx) => (ctx.groups && ctx.groups.length > 0 ? ctx.groups : [{ item: ctx.inverter, units: ctx.units }]);
+/** Entradas MPPT que hay entre todos los inversores del contexto. */
+export const totalInputs = (ctx) => inverterGroups(ctx).reduce((sum, g) => sum + inputsOf(g.item, g.units), 0);
+/** El modelo de inversor al que pertenece una entrada (1, 2…) y qué número de inversor es dentro del conjunto; null si no existe. */
+export function inputOwner(ctx, input) {
+    if (!(input >= 1))
+        return null;
+    let from = 0;
+    let unit = 0;
+    for (const g of inverterGroups(ctx)) {
+        const per = Math.max(1, num(g.item.attrs.n_mppt) ?? 1);
+        const total = inputsOf(g.item, g.units);
+        if (input <= from + total)
+            return { item: g.item, unit: unit + Math.ceil((input - from) / per) };
+        from += total;
+        unit += Math.max(1, g.units);
+    }
+    return null;
+}
+/**
  * El reparto automático: el menor número de strings que dejan todos dentro de los límites del inversor, iguales si se puede y,
  * si no, con una diferencia de un panel entre ellos. Los strings se reparten entre las entradas una a una.
  */
@@ -60,7 +83,7 @@ export function spreadStrings(design, ctx) {
     if (k === 0 || n <= 0)
         return design;
     const spread = design.map((s, i) => ({ ...s, panels: Math.floor(n / k) + (i < n % k ? 1 : 0) }));
-    const inputs = inputsOf(ctx.inverter, ctx.units);
+    const inputs = totalInputs(ctx);
     const mixed = spread.some((s) => s.input >= 1 && spread.some((o) => o.input === s.input && o.panels !== s.panels));
     const invalid = spread.some((s) => s.input < 1 || s.input > inputs);
     if (!mixed && !invalid)
@@ -97,7 +120,7 @@ export function assignInputs(spread, inputs) {
 }
 // ---- Con el inventario: qué inversores admiten unos strings ya diseñados ------------------------------------------------
 /** Si un diseño vale con este panel e inversor (analyzeStrings sin problemas), sin montar los mensajes: para probar muchos inversores deprisa. */
-function isValidDesign(design, ctx) {
+export function isValidDesign(design, ctx) {
     const limits = stringLimits(ctx.panel, ctx.inverter);
     if (!limits || design.length === 0)
         return false;
@@ -143,23 +166,36 @@ export function fitStrings(design, panel, inverter, moduleCount) {
     }
     return null;
 }
-/** Comprueba un diseño contra el panel y el inversor: tensiones, entradas, corrientes y que sumen los paneles del presupuesto. */
+/**
+ * Comprueba un diseño contra el panel y los inversores: tensiones, entradas, corrientes y que sumen los paneles del presupuesto.
+ * Cada string se comprueba contra el modelo de inversor al que pertenece su entrada (puede haber varios modelos distintos).
+ */
 export function analyzeStrings(design, ctx) {
     const p = ctx.panel.attrs;
-    const inv = ctx.inverter.attrs;
     const voc = num(p.voc_v);
     const vmp = num(p.vmp_v);
     const isc = num(p.isc_a);
     const imp = num(p.imp_a);
-    const mpptMin = num(inv.mppt_min_v);
-    const mpptMax = num(inv.mppt_max_v);
-    const vmax = num(inv.vmax_v);
-    const imax = num(inv.imax_mppt_a);
-    const iscMax = num(inv['x:Corriente de cortocircuito máx. (A)']);
     const limits = stringLimits(ctx.panel, ctx.inverter);
-    const inputsAvailable = inputsOf(ctx.inverter, ctx.units);
+    const limitsOf = new Map();
+    const limitsFor = (item) => {
+        if (!limitsOf.has(item.id))
+            limitsOf.set(item.id, stringLimits(ctx.panel, item));
+        return limitsOf.get(item.id);
+    };
+    const inputsAvailable = totalInputs(ctx);
+    const several = inverterGroups(ctx).length > 1;
     const strings = design.map((s) => {
         const problems = [];
+        // El inversor al que va este string: el de su entrada (si no tiene entrada o no existe, el primero)
+        const owner = inputOwner(ctx, s.input);
+        const item = owner ? owner.item : ctx.inverter;
+        const inv = item.attrs;
+        const lim = limitsFor(item);
+        const mpptMin = num(inv.mppt_min_v);
+        const mpptMax = num(inv.mppt_max_v);
+        const vmax = num(inv.vmax_v);
+        const who = several && owner ? ` (${[item.brand, item.model].filter(Boolean).join(' ')})` : '';
         const vocCold = voc !== null ? s.panels * voc * COLD_VOC : null;
         const vmpHot = vmp !== null ? s.panels * vmp * HOT_VMP : null;
         if (!(s.panels >= 1))
@@ -168,20 +204,22 @@ export function analyzeStrings(design, ctx) {
             problems.push(`Un string no puede llevar menos de ${MIN_STRING_PANELS} paneles y este lleva ${s.panels}.`);
         else if (s.panels > MAX_STRING_PANELS)
             problems.push(`Un string no puede llevar más de ${MAX_STRING_PANELS} paneles y este lleva ${s.panels}.`);
-        else if (limits) {
-            if (s.panels < limits.min) {
-                problems.push(`${s.panels} paneles dan unos ${fmt(vmpHot ?? 0)} V en el día más caluroso y el inversor arranca desde ${fmt(mpptMin ?? 0)} V: hacen falta al menos ${limits.min}.`);
+        else if (lim) {
+            if (s.panels < lim.min) {
+                problems.push(`${s.panels} paneles dan unos ${fmt(vmpHot ?? 0)} V en el día más caluroso y el inversor${who} arranca desde ${fmt(mpptMin ?? 0)} V: hacen falta al menos ${lim.min}.`);
             }
-            else if (s.panels > limits.max) {
+            else if (s.panels > lim.max) {
                 problems.push(vocCold !== null && vmax !== null && vocCold > vmax
-                    ? `En el día más frío llegaría a ${fmt(vocCold)} V y el inversor admite ${fmt(vmax)} V: como máximo ${limits.max} paneles.`
-                    : `Trabajaría a ${fmt(s.panels * (vmp ?? 0))} V y el rango MPPT acaba en ${fmt(mpptMax ?? 0)} V: como máximo ${limits.max} paneles.`);
+                    ? `En el día más frío llegaría a ${fmt(vocCold)} V y el inversor${who} admite ${fmt(vmax)} V: como máximo ${lim.max} paneles.`
+                    : `Trabajaría a ${fmt(s.panels * (vmp ?? 0))} V y el rango MPPT${who} acaba en ${fmt(mpptMax ?? 0)} V: como máximo ${lim.max} paneles.`);
             }
         }
         if (s.input < 1)
             problems.push('Sin entrada asignada.');
-        else if (s.input > inputsAvailable) {
-            problems.push(`La entrada ${s.input} no existe: el inversor tiene ${inputsAvailable}${ctx.units > 1 ? ` (${ctx.units} inversores)` : ''}.`);
+        else if (!owner) {
+            problems.push(several
+                ? `La entrada ${s.input} no existe: entre todos los inversores hay ${inputsAvailable} entradas.`
+                : `La entrada ${s.input} no existe: el inversor tiene ${inputsAvailable}${ctx.units > 1 ? ` (${ctx.units} inversores)` : ''}.`);
         }
         return { id: s.id, panels: s.panels, input: s.input, vocCold, vmpHot, problems };
     });
@@ -191,6 +229,9 @@ export function analyzeStrings(design, ctx) {
     for (const input of used) {
         const group = design.filter((s) => s.input === input);
         const problems = [];
+        const inv = (inputOwner(ctx, input)?.item ?? ctx.inverter).attrs;
+        const imax = num(inv.imax_mppt_a);
+        const iscMax = num(inv['x:Corriente de cortocircuito máx. (A)']);
         const sizes = [...new Set(group.map((s) => s.panels))];
         if (group.length > 1 && sizes.length > 1) {
             problems.push(`La entrada ${input} mezcla strings de ${sizes.join(' y ')} paneles: en paralelo tienen que ser iguales; ponlos en entradas distintas.`);
@@ -218,7 +259,7 @@ export function analyzeStrings(design, ctx) {
     return { strings, inputs, total, missing: target - total, inputsAvailable, limits, problems };
 }
 /** Los problemas de «esta entrada no existe» se juntan en uno solo (con 26 strings y un inversor eran decenas de líneas iguales). */
-export const isMissingInput = (message) => message.includes('no existe: el inversor');
+export const isMissingInput = (message) => message.includes('no existe:');
 /** Un único aviso para todos los strings que van a entradas que el inversor no tiene; null si no hay ninguno. */
 export function missingInputsProblem(report) {
     const lost = report.strings.flatMap((s, i) => (s.input > report.inputsAvailable ? [i + 1] : []));
@@ -227,14 +268,113 @@ export function missingInputsProblem(report) {
     const last = Math.max(...report.strings.map((s) => s.input));
     return `${lost.length} string${lost.length === 1 ? '' : 's'} (${lost.length > 6 ? `del ${lost[0]} al ${lost[lost.length - 1]}` : lost.join(', ')}) van a entradas que no existen: hay ${report.inputsAvailable} entrada${report.inputsAvailable === 1 ? '' : 's'} y usan hasta la ${last}. Faltan inversores.`;
 }
-/** Todos los problemas de un diseño, cada uno con el string o la entrada a la que se refiere. */
+/** «1», «1 y 2», «1 a 5», «1 a 5 y 7»: los números de string de un aviso, juntando los seguidos. */
+function stringNumbers(nums) {
+    const parts = [];
+    for (let i = 0; i < nums.length;) {
+        let j = i;
+        while (j + 1 < nums.length && nums[j + 1] === nums[j] + 1)
+            j++;
+        if (j - i >= 2)
+            parts.push(`${nums[i]} a ${nums[j]}`);
+        else
+            for (let k = i; k <= j; k++)
+                parts.push(String(nums[k]));
+        i = j + 1;
+    }
+    return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} y ${parts[parts.length - 1]}` : parts[0];
+}
+/**
+ * Junta los avisos iguales de varios strings en uno solo («Strings 1 a 5: no pueden llevar más de 20 paneles (llevan de 65 a 66)»):
+ * con muchos strings casi iguales salían decenas de líneas repetidas. `entries` son { n: número de string, text: aviso de analyzeStrings }.
+ */
+export function groupStringProblems(entries) {
+    const limit = /^Un string no puede llevar (más|menos) de (\d+) paneles y este lleva (\d+)\.$/;
+    const groups = new Map();
+    for (const { n, text } of entries) {
+        const m = limit.exec(text);
+        const key = m ? `${m[1]}-${m[2]}` : text;
+        const group = groups.get(key) ?? { nums: [], counts: [], m, text };
+        group.nums.push(n);
+        if (m)
+            group.counts.push(Number(m[3]));
+        groups.set(key, group);
+    }
+    return [...groups.values()].map(({ nums, counts, m, text }) => {
+        if (m) {
+            const lo = Math.min(...counts);
+            const hi = Math.max(...counts);
+            if (nums.length === 1)
+                return `String ${nums[0]}: no puede llevar ${m[1]} de ${m[2]} paneles (lleva ${lo}).`;
+            return `Strings ${stringNumbers(nums)}: no pueden llevar ${m[1]} de ${m[2]} paneles (llevan ${lo === hi ? lo : `de ${lo} a ${hi}`}).`;
+        }
+        return `${nums.length === 1 ? 'String' : 'Strings'} ${stringNumbers(nums)}: ${text}`;
+    });
+}
+/**
+ * Cuántos strings se pueden crear con los paneles del presupuesto: con `limits` (paneles mínimos y máximos por string con ese panel y
+ * ese inversor) o con los generales (4 a 20). null si con tan pocos paneles no hay ningún reparto posible.
+ */
+export function stringCountRange(moduleCount, limits) {
+    const total = Math.round(moduleCount);
+    const perMin = Math.max(MIN_STRING_PANELS, limits?.min ?? MIN_STRING_PANELS);
+    const perMax = Math.min(MAX_STRING_PANELS, limits?.max ?? MAX_STRING_PANELS);
+    if (!(total > 0) || perMin > perMax)
+        return null;
+    const min = Math.ceil(total / perMax);
+    const max = Math.floor(total / perMin);
+    return min >= 1 && min <= max ? { min, max, perMin, perMax, total } : null;
+}
+/**
+ * Cómo repartir los paneles que faltan en strings nuevos: los menos posibles y lo más iguales posible, dentro de los límites de
+ * paneles por string (24 con límite de 6 a 19 → [12, 12]). Devuelve los tamaños, de mayor a menor, o null si no se puede.
+ */
+export function splitMissing(missing, limits) {
+    const total = Math.round(missing);
+    const perMin = Math.max(MIN_STRING_PANELS, limits?.min ?? MIN_STRING_PANELS);
+    const perMax = Math.min(MAX_STRING_PANELS, limits?.max ?? MAX_STRING_PANELS);
+    if (!(total > 0) || perMin > perMax)
+        return null;
+    const count = Math.ceil(total / perMax);
+    if (Math.floor(total / count) < perMin)
+        return null;
+    return Array.from({ length: count }, (_, i) => Math.floor(total / count) + (i < total % count ? 1 : 0));
+}
+/**
+ * Junta los avisos iguales de varias entradas en uno solo: «Las entradas 1 a 4 reciben 2 strings en paralelo: 32 A y admiten 30 A.»
+ * en vez de uno por entrada. Recibe los textos tal como los da analyzeStrings («La entrada N …»); los que no empiezan así se dejan.
+ */
+export function groupInputProblems(messages) {
+    const plural = (t) => t.replace(/\brecibe\b/, 'reciben').replace(/\badmite\b/, 'admiten').replace(/^da\b/, 'dan').replace(/^mezcla\b/, 'mezclan');
+    const groups = new Map();
+    const out = [];
+    for (const text of messages) {
+        const m = /^La entrada (\d+) (.*)$/.exec(text);
+        if (!m) {
+            out.push(text);
+            continue;
+        }
+        if (!groups.has(m[2])) {
+            const g = { nums: [], rest: m[2] };
+            groups.set(m[2], g);
+            out.push(g);
+        }
+        groups.get(m[2]).nums.push(Number(m[1]));
+    }
+    return out.map((o) => {
+        if (typeof o === 'string')
+            return o;
+        return o.nums.length === 1 ? `La entrada ${o.nums[0]} ${o.rest}` : `Las entradas ${stringNumbers(o.nums)} ${plural(o.rest)}`;
+    });
+}
+/** Todos los problemas de un diseño, cada uno con el string o la entrada a la que se refiere (los iguales, juntos). */
 export function reportProblems(report) {
     const missing = missingInputsProblem(report);
     return [
         ...report.problems,
         ...(missing ? [missing] : []),
-        ...report.strings.flatMap((s, i) => s.problems.filter((m) => !isMissingInput(m)).map((m) => `String ${i + 1}: ${m}`)),
-        ...report.inputs.flatMap((i) => i.problems),
+        ...groupStringProblems(report.strings.flatMap((s, i) => s.problems.filter((m) => !isMissingInput(m)).map((m) => ({ n: i + 1, text: m })))),
+        ...groupInputProblems(report.inputs.flatMap((i) => i.problems)),
     ];
 }
 /**

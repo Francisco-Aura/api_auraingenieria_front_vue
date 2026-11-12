@@ -8,6 +8,7 @@
     "build:analyze": "vue-cli-service build --report",
     "test": "node --test tests/unit/*.spec.js",
     "test:planificador": "node --test tests/planificador/*.test.mjs",
+    "test:registro-horario": "node --test tests/registro-horario/*.test.mjs",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {

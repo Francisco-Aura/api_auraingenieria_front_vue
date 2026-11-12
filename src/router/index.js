@@ -14,7 +14,7 @@ const TareasComponent = () => import('@/components/CRM_Module/Tareas/TareasCompo
 const McasAdminComponent = () => import('@/components/CRM_Module/MCAS/McasAdminComponent.vue');
 const McasComponent = () => import('@/components/CRM_Module/MCAS/McasComponent.vue');
 const PlanificadorComponent = () => import('@/components/PlanificadorComponent.vue');
-const RegistroHorarioComponent = () => import('@/components/RegistroHorarioComponent.vue');
+const RegistroHorarioComponent = () => import('@/components/CRM_Module/RegistroHorario/RegistroHorarioComponent.vue');
 
 // Define las rutas
 const routes = [

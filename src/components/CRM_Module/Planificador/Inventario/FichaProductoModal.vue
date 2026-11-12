@@ -22,14 +22,6 @@
           <label>Precio por <input v-model="form.unit" list="inv-units"></label>
           <label>Stock (unidades en almacén) <input v-model="form.stock" inputmode="decimal"></label>
         </div>
-        <div v-if="form.brand && marcas.includes(form.brand)" class="inv-brand-logo">
-          <logo-marca :nombre="form.brand" :tiene-logo="marcasConLogo.includes(form.brand)" :version="versionLogos" :tamano="40" />
-          <span class="muted">Logo de {{ form.brand }}: se ve en todos sus productos.</span>
-          <label class="secondary inv-logo-btn">
-            {{ marcasConLogo.includes(form.brand) ? 'Cambiar logo' : 'Subir logo' }}
-            <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirLogo">
-          </label>
-        </div>
       </fieldset>
 
       <fieldset class="inv-offers">
@@ -164,8 +156,8 @@
     </form>
 
     <template #pie>
-      <button v-if="!creando" type="button" class="secondary" :disabled="bloqueado" title="Crea un producto nuevo con estos mismos datos para cambiar lo que haga falta" @click="duplicar">Duplicar</button>
-      <button v-if="!creando" type="button" class="secondary danger" :disabled="bloqueado" @click="quitar">Quitar del inventario</button>
+      <button v-if="!creando && !sencilla" type="button" class="secondary" :disabled="bloqueado" title="Crea un producto nuevo con estos mismos datos para cambiar lo que haga falta" @click="duplicar">Duplicar</button>
+      <button v-if="!creando && !sencilla" type="button" class="secondary danger" :disabled="bloqueado" @click="quitar">Quitar del inventario</button>
       <span v-if="problema && cambiado" class="plan-problem inv-problem">{{ problema }}</span>
       <span v-if="error" class="plan-problem inv-problem">{{ error }}</span>
       <button type="button" class="secondary" @click="cerrar">Cancelar</button>
@@ -177,10 +169,8 @@
 <script>
 import ModalComponent from './ModalComponent.vue'
 import CampoLista from './CampoLista.vue'
-import LogoMarca from './LogoMarca.vue'
 import HistorialPreciosPanel from './HistorialPreciosPanel.vue'
 import { planificadorApi, mensajeError } from '@/services/planificadorApi'
-import { prepararLogo } from '@/utils/planificador/logo'
 import { eur, fechaCorta, nombreProducto } from '@/utils/planificador/formato'
 import { GRUPOS, agruparFilas } from '@/utils/planificador/caracteristicas'
 import { UNIDADES, camposDe, aNumero, formularioDe, formularioVacio, principalDe, cuerpoDe, problemaDe } from '@/utils/planificador/formularioEquipo'
@@ -188,7 +178,7 @@ import { UNIDADES, camposDe, aNumero, formularioDe, formularioVacio, principalDe
 // Ventana de un producto del inventario: alta, edición, duplicado y borrado.
 export default {
   name: 'Ficha-Producto-Modal',
-  components: { ModalComponent, CampoLista, LogoMarca, HistorialPreciosPanel },
+  components: { ModalComponent, CampoLista, HistorialPreciosPanel },
   props: {
     catalogo: { type: Object, required: true },
     // Id del producto abierto, o null para uno nuevo
@@ -198,12 +188,12 @@ export default {
     // Datos de partida si es un duplicado: { producto, nombre }
     copia: { type: Object, default: null },
     marcas: { type: Array, default: () => [] },
-    marcasConLogo: { type: Array, default: () => [] },
     proveedores: { type: Array, default: () => [] },
-    versionLogos: { type: Number, default: 0 },
+    // Abierta desde el presupuestador: solo se edita (sin duplicar ni quitar del inventario)
+    sencilla: { type: Boolean, default: false },
     ocupado: { type: Boolean, default: false }
   },
-  emits: ['cerrar', 'guardado', 'borrado', 'revisar', 'duplicar', 'logos-cambiados', 'recargar'],
+  emits: ['cerrar', 'guardado', 'borrado', 'revisar', 'duplicar', 'recargar'],
   data() {
     return {
       UNIDADES, GRUPOS,
@@ -359,17 +349,6 @@ export default {
         this.$emit('recargar')
       } catch (e) {
         this.errorFicha = mensajeError(e)
-      }
-    },
-    async subirLogo(evento) {
-      const archivo = evento.target.files && evento.target.files[0]
-      evento.target.value = ''
-      if (!archivo) return
-      try {
-        await planificadorApi.guardarLogoMarca(this.form.brand, await prepararLogo(archivo))
-        this.$emit('logos-cambiados')
-      } catch (e) {
-        this.error = mensajeError(e) || 'No se pudo subir el logo'
       }
     }
   }

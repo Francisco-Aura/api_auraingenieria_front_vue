@@ -3,6 +3,7 @@
 
 import { budgetName, isDirty } from './almacenPresupuestos.js'
 import { variantLabels } from './variantes.js'
+import { claveCliente, claveGrupo, partesDeNombre } from './proyectos.js'
 import { sortRows } from './orden.js'
 
 /** Con nivel de acceso 1 en la intranet se puede eliminar cualquier presupuesto del listado, no solo los propios. */
@@ -75,24 +76,65 @@ export function construirFilas({ remotos, locales, copiaLocal, usuario }) {
         id: l.id, name: budgetName(l.state), kind: l.remote.status, offerId: '', owner: l.remote.owner, kwp: l.numbers.kwp,
         panels: l.numbers.panels, total: l.numbers.total, updatedAt: l.updatedAt, updatedBy: l.remote.updatedBy,
         mine: esMio(l.remote.owner, l.remote.ownerId, usuario), customer: (l.state.customer && l.state.customer.kind) || '',
-        dirty: isDirty(l), orphan: false
+        created: l.createdAt || l.updatedAt, dirty: isDirty(l), orphan: false
       })
       continue
     }
     filas.push({
       id: l.id, name: budgetName(l.state), kind: 'local', offerId: '', owner: usuario.nombre, kwp: l.numbers.kwp, panels: l.numbers.panels,
       total: l.numbers.total, updatedAt: l.updatedAt, updatedBy: '', mine: true, customer: (l.state.customer && l.state.customer.kind) || '',
-      dirty: false, orphan: huerfano
+      created: l.createdAt || l.updatedAt, dirty: false, orphan: huerfano
     })
   }
-  // Lo modificado más recientemente, primero; las variantes de una misma oferta juntas (donde está la primera de ellas)
+  asignarGrupos(filas)
+  // Lo modificado más recientemente, primero; las variantes de un mismo proyecto juntas (donde está la primera de ellas)
   filas.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   const primera = new Map()
-  filas.forEach((r, i) => { if (r.offerId && !primera.has(r.offerId)) primera.set(r.offerId, i) })
+  filas.forEach((r, i) => { if (r.grupo && !primera.has(r.grupo)) primera.set(r.grupo, i) })
   return filas
-    .map((r, i) => ({ r, at: r.offerId ? primera.get(r.offerId) : i, i }))
+    .map((r, i) => ({ r, at: r.grupo ? primera.get(r.grupo) : i, i }))
     .sort((a, b) => a.at - b.at || a.i - b.i)
     .map((x) => x.r)
+}
+
+/**
+ * A cada fila le pone su cliente y su proyecto (del nombre «Cliente · Proyecto») y su `grupo`: los presupuestos del mismo cliente y
+ * del mismo proyecto son variantes unos de otros, tengan o no la oferta del servidor (los locales no la tienen). Sin proyecto en el
+ * nombre, o si la fila está sola, el grupo es el de su oferta (o ninguno).
+ */
+function asignarGrupos(filas) {
+  const cuenta = new Map()
+  const ofertaDe = new Map()
+  for (const r of filas) {
+    const { cliente, proyecto } = partesDeNombre(r.name)
+    r.clienteNombre = cliente
+    r.proyectoNombre = proyecto
+    r.clienteClave = claveCliente(r.name, r.customer)
+    r.proyectoClave = claveGrupo(r.name, r.customer)
+    if (!r.proyectoClave) continue
+    cuenta.set(r.proyectoClave, (cuenta.get(r.proyectoClave) || 0) + 1)
+    if (r.offerId && !ofertaDe.has(r.proyectoClave)) ofertaDe.set(r.proyectoClave, r.offerId)
+  }
+  for (const r of filas) {
+    r.grupo = r.offerId || (r.proyectoClave && cuenta.get(r.proyectoClave) > 1 ? ofertaDe.get(r.proyectoClave) || 'proyecto:' + r.proyectoClave : '')
+  }
+}
+
+/**
+ * Las opciones de los filtros «Cliente» y «Proyecto» (los proyectos, solo los del cliente elegido): [{ valor, etiqueta }].
+ * Distintas escrituras del mismo cliente o proyecto cuentan como uno.
+ */
+export function opcionesFiltro(filas, clienteElegido = '') {
+  const clientes = new Map()
+  const proyectos = new Map()
+  for (const r of filas) {
+    if (r.clienteNombre && !clientes.has(r.clienteClave)) clientes.set(r.clienteClave, r.clienteNombre)
+    if (r.proyectoNombre && (!clienteElegido || r.clienteClave === clienteElegido) && !proyectos.has(r.proyectoClave)) {
+      proyectos.set(r.proyectoClave, clienteElegido ? r.proyectoNombre : r.clienteNombre + ' · ' + r.proyectoNombre)
+    }
+  }
+  const lista = (m) => [...m].map(([valor, etiqueta]) => ({ valor, etiqueta })).sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es'))
+  return { clientes: lista(clientes), proyectos: lista(proyectos) }
 }
 
 /** Lo que tiene pendiente quien valida: ofertas enviadas (una oferta con varias variantes cuenta una vez) y propuestas entregadas. */
@@ -102,11 +144,15 @@ export function contarPendientes(filas, esValidador) {
   return ofertas + filas.filter((r) => r.kind === 'validado' && r.proposal === 'enviada').length
 }
 
-/** Filtros del listado: búsqueda de texto y «Mostrar» (todos, borradores compartidos, locales, pendientes de validar). */
-export function filtrarFilas(filas, consulta, filtro) {
+/**
+ * Filtros del listado: búsqueda de texto, «Mostrar» (todos, borradores compartidos, locales, pendientes de validar) y, si se pasan,
+ * el cliente y el proyecto (por las claves de opcionesFiltro).
+ */
+export function filtrarFilas(filas, consulta, filtro, cliente = '', proyecto = '') {
   const q = consulta.trim().toLowerCase()
   return filas.filter((r) =>
     (!q || (r.name + ' ' + r.owner + ' ' + r.updatedBy).toLowerCase().includes(q)) &&
+    (!cliente || r.clienteClave === cliente) && (!proyecto || r.proyectoClave === proyecto) &&
     (filtro === 'todos' ||
       (filtro === 'porvalidar' ? r.kind === 'enviado' || (r.kind === 'validado' && r.proposal === 'enviada')
         : filtro === 'borradores' ? r.kind !== 'local' : r.kind === 'local')))
@@ -132,9 +178,12 @@ function valorColumna(r, clave) {
 export function armarTabla(filtradas, orden, desplegadas) {
   const grupos = new Map()
   const cabezas = []
+  // El grupo es el del proyecto (cliente + nombre) o el de la oferta; filas escritas a mano en pruebas pueden no traerlo
+  const grupoDe = (r) => (r.grupo !== undefined ? r.grupo : r.offerId)
   for (const r of filtradas) {
-    if (!r.offerId) cabezas.push(r)
-    else if (!grupos.has(r.offerId)) { grupos.set(r.offerId, [r]); cabezas.push(r) } else grupos.get(r.offerId).push(r)
+    const g = grupoDe(r)
+    if (!g) cabezas.push(r)
+    else if (!grupos.has(g)) { grupos.set(g, [r]); cabezas.push(r) } else grupos.get(g).push(r)
   }
   const mostradas = sortRows(cabezas, orden, valorColumna)
   const etiquetas = new Map()
@@ -143,10 +192,11 @@ export function armarTabla(filtradas, orden, desplegadas) {
       .forEach((etiqueta, id) => etiquetas.set(id, etiqueta))
   }
   const items = mostradas.flatMap((r) => {
-    const cuenta = r.offerId ? (grupos.get(r.offerId) || []).length : 1
-    if (!r.offerId || cuenta < 2) return [{ tipo: 'fila', row: r, hija: false }]
-    const cabecera = { tipo: 'grupo', ofertaId: r.offerId, name: r.name, count: cuenta }
-    return desplegadas.has(r.offerId) ? [cabecera, ...grupos.get(r.offerId).map((v) => ({ tipo: 'fila', row: v, hija: true }))] : [cabecera]
+    const g = grupoDe(r)
+    const cuenta = g ? (grupos.get(g) || []).length : 1
+    if (!g || cuenta < 2) return [{ tipo: 'fila', row: r, hija: false }]
+    const cabecera = { tipo: 'grupo', ofertaId: g, name: r.name, count: cuenta }
+    return desplegadas.has(g) ? [cabecera, ...grupos.get(g).map((v) => ({ tipo: 'fila', row: v, hija: true }))] : [cabecera]
   })
   return { items, etiquetas, principales: mostradas.length }
 }
