@@ -7,6 +7,7 @@
       <h1>Inventario</h1>
       <div class="title-actions">
         <button type="button" class="secondary" :aria-expanded="mostrarListas" @click="mostrarListas = !mostrarListas">Marcas y proveedores</button>
+        <button type="button" class="secondary" :disabled="exportando" title="Descarga todo el inventario en un Excel: una hoja con todo, una por categoría y los precios de cada proveedor" @click="exportarExcel">{{ exportando ? 'Generando…' : 'Exportar a Excel' }}</button>
         <button type="button" @click="abrir(null)">+ Nuevo producto</button>
       </div>
     </div>
@@ -109,7 +110,7 @@
               <span v-if="porRevisar(item) || item.datasheet" class="inv-card-flags">
                 <span v-if="porRevisar(item)" class="tag review"
                       :title="item.price_reviewed_at ? 'Precio revisado el ' + fechaCorta(item.price_reviewed_at) : 'El precio no se ha revisado nunca'">Por revisar</span>
-                <span v-if="item.datasheet" class="tag" title="Tiene la ficha técnica adjunta">📄 Ficha</span>
+                <span v-if="item.datasheet" class="tag ficha" title="Tiene la ficha técnica adjunta">📄 Ficha</span>
               </span>
               <strong class="inv-card-name">{{ nombreProducto(item) }}</strong>
               <insignia-proteccion :producto="item" />
@@ -147,6 +148,7 @@ import InsigniaProteccion from './InsigniaProteccion.vue'
 import ListasMarcasProveedores from './ListasMarcasProveedores.vue'
 import FichaProductoModal from './FichaProductoModal.vue'
 import { planificadorApi, mensajeError } from '@/services/planificadorApi'
+import { descargarArchivo } from '@/utils/planificador/documentos/descarga'
 import { eur, cantidad, valoresDistintos, fechaCorta, nombreProducto } from '@/utils/planificador/formato'
 import { esValorVacio } from '@/utils/planificador/caracteristicas'
 import { necesitaRevision, destacadas } from '@/utils/planificador/formularioEquipo'
@@ -173,7 +175,7 @@ export default {
       filtrosAtributo: {}, orden: 'categoria',
       marcas: [], marcasConLogo: [], proveedores: [], versionLogos: 0, mostrarListas: false,
       // Producto abierto: { id: string|null (null = nuevo), clave, copia }
-      ficha: null, contadorFichas: 0
+      ficha: null, contadorFichas: 0, exportando: false
     }
   },
   computed: {
@@ -239,6 +241,19 @@ export default {
     this.cargarRevision()
   },
   methods: {
+    // Baja el inventario completo en un Excel (lo que hay guardado, sin los filtros de la pantalla)
+    async exportarExcel() {
+      this.exportando = true
+      this.error = null
+      try {
+        const { blob, nombre } = await planificadorApi.exportarInventario()
+        descargarArchivo(blob, nombre)
+      } catch (e) {
+        this.error = mensajeError(e)
+      } finally {
+        this.exportando = false
+      }
+    },
     eur, cantidad, valoresDistintos, fechaCorta, nombreProducto,
     categoriaDe(clave) { return this.categorias.find((c) => c.key === clave) },
     porRevisar(item) { return necesitaRevision(item, this.revision ? this.revision.plazo : 15) },

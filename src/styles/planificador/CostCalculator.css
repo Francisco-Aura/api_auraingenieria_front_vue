@@ -297,6 +297,12 @@ th .sort-btn.on .sort-icon {
   color: var(--text);
 }
 
+/* «📄 Ficha»: el producto tiene la ficha técnica del fabricante adjunta */
+.tag.ficha {
+  background: color-mix(in srgb, #2563eb 12%, transparent);
+  color: #1d4ed8;
+}
+
 .tag.sample {
   margin-left: 8px;
   font-size: 11px;

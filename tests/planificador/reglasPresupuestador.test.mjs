@@ -416,11 +416,13 @@ test('cable-metros: metros menores que los previstos por polaridad en el paso 1 
   assert.equal(tiene(revisar([rojo, negro], { opciones: { survey: { cableMeters: 50 } } }), 'warn', 'cable-metros'), false)
 })
 
-test('cable-dc-seccion: la sección no aguanta 1,25 × Isc (error que oculta)', () => {
+test('cable-dc-seccion: la sección no aguanta 1,25 × Isc (recomendación: no oculta ni bloquea)', () => {
   const potente = panel({ isc_a: 25 }) // 31,25 A > 30 A (2,5 mm²)
-  const i = buscar(revisar([extra(cable('CC', 'Rojo', 2.5, 'cr'), 100), extra(cable('CC', 'Negro', 2.5, 'cn'), 100)], { panelo: potente }), 'error', 'cable-dc-seccion')
+  const i = buscar(revisar([extra(cable('CC', 'Rojo', 2.5, 'cr'), 100), extra(cable('CC', 'Negro', 2.5, 'cn'), 100)], { panelo: potente }), 'warn', 'cable-dc-seccion')
   assert.ok(i)
-  assert.equal(i.hard, true)
+  assert.equal(i.hard, false)
+  assert.match(i.message, /^Recomendación/)
+  assert.equal(tiene(revisar([extra(cable('CC', 'Rojo', 2.5, 'cr'), 100), extra(cable('CC', 'Negro', 2.5, 'cn'), 100)], { panelo: potente }), 'error', 'cable-dc-seccion'), false)
 })
 
 test('tabla de intensidad admisible del cable de continua: cada sección aguanta justo su intensidad', () => {
@@ -428,10 +430,10 @@ test('tabla de intensidad admisible del cable de continua: cada sección aguanta
   for (const [seccion, amperios] of tabla) {
     const justo = panel({ isc_a: amperios / 1.25 })
     const pasa = revisar([extra(cable('CC', 'Rojo', seccion, 'cr'), 10), extra(cable('CC', 'Negro', seccion, 'cn'), 10)], { panelo: justo })
-    assert.equal(tiene(pasa, 'error', 'cable-dc-seccion'), false, `${seccion} mm² debe aguantar ${amperios} A`)
+    assert.equal(tiene(pasa, 'warn', 'cable-dc-seccion'), false, `${seccion} mm² debe aguantar ${amperios} A`)
     const se_pasa = panel({ isc_a: amperios / 1.25 + 0.1 })
     const falla = revisar([extra(cable('CC', 'Rojo', seccion, 'cr'), 10), extra(cable('CC', 'Negro', seccion, 'cn'), 10)], { panelo: se_pasa })
-    assert.ok(tiene(falla, 'error', 'cable-dc-seccion'), `${seccion} mm² no debe aguantar más de ${amperios} A`)
+    assert.ok(tiene(falla, 'warn', 'cable-dc-seccion'), `${seccion} mm² no debe aguantar más de ${amperios} A`)
   }
 })
 
@@ -474,12 +476,28 @@ test('cable-ac-metros: metros de cable de alterna menores que los previstos (avi
   assert.equal(tiene(revisar([ac], { opciones: { survey: { acMeters: 20 } } }), 'warn', 'cable-ac-metros'), false)
 })
 
-test('cable-ac-seccion: la sección no aguanta 1,25 × la corriente del inversor (error que oculta)', () => {
+test('cable-ac-seccion: la sección no aguanta 1,25 × la corriente del inversor (recomendación: no oculta ni bloquea)', () => {
   // 10 kW trifásico: 10000 ÷ (√3 × 400) = 14,43 A; × 1,25 = 18,04 A > 15 A (1,5 mm²)
-  const i = buscar(revisar([extra(cable('AC', '', 1.5, 'ca'), 20)]), 'error', 'cable-ac-seccion')
+  const i = buscar(revisar([extra(cable('AC', '', 1.5, 'ca'), 20)]), 'warn', 'cable-ac-seccion')
   assert.ok(i)
-  assert.equal(i.hard, true)
-  assert.equal(tiene(revisar([extra(cable('AC', '', 2.5, 'ca'), 20)]), 'error', 'cable-ac-seccion'), false)
+  assert.equal(i.hard, false)
+  assert.match(i.message, /^Recomendación/)
+  assert.equal(tiene(revisar([extra(cable('AC', '', 1.5, 'ca'), 20)]), 'error', 'cable-ac-seccion'), false)
+  assert.equal(tiene(revisar([extra(cable('AC', '', 2.5, 'ca'), 20)]), 'warn', 'cable-ac-seccion'), false)
+})
+
+test('cable-ac-seccion: con varios inversores también avisa por cada inversor, no solo por el total', () => {
+  const salida = { 'x:Corriente máx. de salida (A)': 40 }
+  // 3 inversores de 40 A: 50 A con margen cada uno (> 36 A de 6 mm²) y 150 A en total
+  const issues = revisar([extra(cable('AC', '', 6, 'ca'), 20), extra(inversor(salida, { id: 'inv-2' }), 2)], { inv: inversor(salida) })
+  const avisos = issues.filter((i) => i.level === 'warn' && codigo(i) === 'cable-ac-seccion')
+  assert.ok(avisos.some((i) => /en total/.test(i.message)), 'por la instalación')
+  const porInversor = avisos.filter((i) => /cada /.test(i.message))
+  assert.ok(porInversor.length > 0, 'por inversor')
+  assert.ok(porInversor.every((i) => i.lineIds.length === 2), 'marca el cable y el inversor')
+  // Con un solo inversor no se repite el mismo aviso
+  const uno = revisar([extra(cable('AC', '', 6, 'ca'), 20)], { inv: inversor({ 'x:Corriente máx. de salida (A)': 40 }) })
+  assert.equal(uno.filter((i) => codigo(i) === 'cable-ac-seccion').length, 1)
 })
 
 test('tabla de intensidad admisible del cable de alterna: cada sección aguanta justo su intensidad', () => {
@@ -487,9 +505,9 @@ test('tabla de intensidad admisible del cable de alterna: cada sección aguanta 
   for (const [seccion, amperios] of tabla) {
     const salida = (a) => inversor({ 'x:Corriente máx. de salida (A)': a })
     const pasa = revisar([extra(cable('AC', '', seccion, 'ca'), 10)], { inv: salida(amperios / 1.25) })
-    assert.equal(tiene(pasa, 'error', 'cable-ac-seccion'), false, `${seccion} mm² debe aguantar ${amperios} A`)
+    assert.equal(tiene(pasa, 'warn', 'cable-ac-seccion'), false, `${seccion} mm² debe aguantar ${amperios} A`)
     const falla = revisar([extra(cable('AC', '', seccion, 'ca'), 10)], { inv: salida(amperios / 1.25 + 0.1) })
-    assert.ok(tiene(falla, 'error', 'cable-ac-seccion'), `${seccion} mm² no debe aguantar más de ${amperios} A`)
+    assert.ok(tiene(falla, 'warn', 'cable-ac-seccion'), `${seccion} mm² no debe aguantar más de ${amperios} A`)
   }
 })
 
@@ -552,10 +570,10 @@ test('Auxiliar, Trámites y Obra no tienen reglas de compatibilidad', () => {
 
 // ----------------------------------------------------------------------- cuáles ocultan (columna «¿Oculta?»)
 
-test('solo las 12 reglas de incompatibilidad de fondo ocultan el producto; el resto no, aunque sea error', () => {
+test('solo las 10 reglas de incompatibilidad de fondo ocultan el producto; el resto no, aunque sea error (los cables solo recomiendan)', () => {
   const OCULTAN = ['strings-imposible', 'optimizador-marca', 'medidor-fases', 'suministro', 'bateria', 'estructura-marco',
-    'prot-tension', 'prot-corriente', 'cable-dc-seccion', 'cable-ac-seccion', 'ac-calibre', 'ac-polos']
-  assert.equal(OCULTAN.length, 12, 'el documento dice que 12 reglas ocultan')
+    'prot-tension', 'prot-corriente', 'ac-calibre', 'ac-polos']
+  assert.equal(OCULTAN.length, 10, 'las reglas de fondo que ocultan son 10: los cables recomiendan, no ocultan')
   const potente = panel({ isc_a: 25 })
   const escenarios = [
     revisar([], { inv: inversor({ mppt_min_v: 600, vmax_v: 700 }) }),
@@ -566,8 +584,6 @@ test('solo las 12 reglas de incompatibilidad de fondo ocultan el producto; el re
     revisar([extra(estructura({ grosor_min_mm: 35 }))]),
     revisar([extra(protCC('Fusible', { tension_v: 600 }, 'pc1'))]),
     revisar([extra(protCC('Fusible', { corriente_a: 10 }, 'pc2'))]),
-    revisar([extra(cable('CC', 'Rojo', 2.5, 'cr'), 10)], { panelo: potente }),
-    revisar([extra(cable('AC', '', 1.5, 'ca'), 10)]),
     revisar([extra(protAC('Magnetotérmico', { corriente_a: 10 }, 'mg1'))]),
     revisar([extra(protAC('Magnetotérmico', { corriente_a: 20, polos: 2 }, 'mg2'))])
   ]

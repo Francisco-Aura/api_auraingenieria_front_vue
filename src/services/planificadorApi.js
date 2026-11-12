@@ -28,6 +28,19 @@ async function pdf(url, cuerpo, params, nombreDefecto) {
   }
 }
 
+async function descargaBlob(url, nombreDefecto) {
+  try {
+    const r = await axios.get(url, { responseType: 'blob' })
+    const m = /filename\*=UTF-8''([^;]+)/i.exec(r.headers['content-disposition'] || '')
+    return { blob: r.data, nombre: m ? decodeURIComponent(m[1]) : nombreDefecto }
+  } catch (e) {
+    if (e && e.response && e.response.data instanceof Blob) {
+      try { e.response.data = JSON.parse(await e.response.data.text()) } catch (_) { /* se queda el mensaje del propio error */ }
+    }
+    throw e
+  }
+}
+
 export const planificadorApi = {
   salud: () => datos(axios.get(`${BASE}/health`)),
   // Funciones encendidas del servidor (presupuestador, inventario, archivos locales)
@@ -148,6 +161,8 @@ export const planificadorApi = {
   pdfPresupuesto: (datosPresupuesto, modo) => pdf(`${BASE}/budget/pdf`, datosPresupuesto, { mode: modo }, 'Presupuesto.pdf'),
   /** La presentación para el cliente (la propuesta) del presupuesto en curso, con el mismo cuerpo que al guardarlo; no guarda nada. Devuelve { blob, nombre }. */
   propuestaDelBorrador: (cuerpo) => pdf(`${BASE}/budget/proposal-html`, cuerpo, undefined, 'Propuesta.html'),
+  /** Todo el inventario en un Excel (hoja con todo, una por categoría y los precios por proveedor). Devuelve { blob, nombre }. */
+  exportarInventario: () => descargaBlob(`${BASE}/equipment/export`, 'Inventario.xlsx'),
   /** La misma propuesta en PDF, hecha en el servidor con Chrome; si el servidor no lo tiene responde 501. Devuelve { blob, nombre }. */
   propuestaPdfDelBorrador: (cuerpo) => pdf(`${BASE}/budget/proposal-pdf`, cuerpo, undefined, 'Propuesta.pdf')
 }

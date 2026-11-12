@@ -5,7 +5,7 @@ import { batteryCompat, COLD_VOC, ROOF_ITEM_VALUES, ROOF_LABEL, stringPlan } fro
 /** Reglas cuyo error es una incompatibilidad de fondo (el resto depende de cantidades o de la potencia y solo avisa). */
 const HARD_RULES = new Set([
     'strings-imposible', 'optimizador-marca', 'medidor-fases', 'suministro', 'bateria', 'estructura-marco',
-    'prot-tension', 'prot-corriente', 'cable-dc-seccion', 'cable-ac-seccion', 'ac-calibre', 'ac-polos',
+    'prot-tension', 'prot-corriente', 'ac-calibre', 'ac-polos',
 ]);
 // ---- Ayudas ----------------------------------------------------------------------------------------------------------
 const num = (v) => {
@@ -386,7 +386,7 @@ export function checkCompatibility(state, catalog) {
             const section = num(e.item.attrs.seccion_mm2);
             const cap = section !== null ? ampacity(AMPACITY_DC, section) : null;
             if (cap !== null && isc * 1.25 > cap) {
-                add('error', 'cable-dc-seccion', 'cableado_cc', `${name(e)} (${fmt(section ?? 0)} mm²) aguanta unos ${cap} A y el string da ${fmt(isc * 1.25, 1)} A (1,25 × Isc).`, [e]);
+                add('warn', 'cable-dc-seccion', 'cableado_cc', `Recomendación: ${name(e)} (${fmt(section ?? 0)} mm²) aguanta unos ${cap} A (según el montaje: al aire, en bandeja, enterrado…) y el string da ${fmt(isc * 1.25, 1)} A (1,25 × Isc). Revisa la sección.`, [e]);
             }
         }
     }
@@ -418,12 +418,28 @@ export function checkCompatibility(state, catalog) {
         : acKw > 0 && phases !== null
             ? (acKw * 1000) / (phases === 3 ? Math.sqrt(3) * 400 : 230)
             : null;
+    // La intensidad que aguanta un cable depende del montaje (enterrado, sobre bandeja…): se recomienda revisarlo, no es una incompatibilidad.
+    // Se comprueba con la intensidad de toda la instalación y, si hay varios inversores, también con la de cada uno.
     if (iNom !== null) {
+        const unidades = central.reduce((s, e) => s + e.qty, 0);
         for (const e of cableAc) {
             const section = num(e.item.attrs.seccion_mm2);
             const cap = section !== null ? ampacity(AMPACITY_AC, section) : null;
-            if (cap !== null && iNom * 1.25 > cap) {
-                add('error', 'cable-ac-seccion', 'alterna', `${name(e)} (${fmt(section ?? 0)} mm²) aguanta unos ${cap} A y el inversor da ${fmt(iNom, 1)} A (hay que dejar un 25 % de margen).`, [e]);
+            if (cap === null)
+                continue;
+            if (iNom * 1.25 > cap) {
+                add('warn', 'cable-ac-seccion', 'alterna', `Recomendación: ${name(e)} (${fmt(section ?? 0)} mm²) aguanta unos ${cap} A (según el montaje: enterrado, sobre bandeja…) y ${unidades > 1 ? 'la instalación da en total' : 'el inversor da'} ${fmt(iNom, 1)} A (hay que dejar un 25 % de margen). Revisa la sección.`, [e]);
+            }
+            if (unidades > 1) {
+                for (const inv of central) {
+                    const salida = num(inv.item.attrs['x:Corriente máx. de salida (A)']);
+                    const kw = num(inv.item.attrs.potencia_kw);
+                    const fasesInv = phasesOf(inv.item) ?? phases;
+                    const porUnidad = salida !== null ? salida : kw !== null && fasesInv !== null ? (kw * 1000) / (fasesInv === 3 ? Math.sqrt(3) * 400 : 230) : null;
+                    if (porUnidad !== null && porUnidad * 1.25 > cap) {
+                        add('warn', `cable-ac-seccion|inv`, 'alterna', `Recomendación: ${name(e)} (${fmt(section ?? 0)} mm²) aguanta unos ${cap} A (según el montaje: enterrado, sobre bandeja…) y cada ${name(inv)} da ${fmt(porUnidad, 1)} A (hay que dejar un 25 % de margen). Revisa la sección.`, [e], [inv]);
+                    }
+                }
             }
         }
     }

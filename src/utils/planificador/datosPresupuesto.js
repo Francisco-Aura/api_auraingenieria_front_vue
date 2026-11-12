@@ -9,6 +9,8 @@ export function valoresDe(state) {
   return {
     customer: state.customer,
     reference: state.reference,
+    cif: state.cif || '',
+    clientLogo: state.clientLogo || '',
     targetKwp: s.targetKwp,
     moduleWp: state.moduleWp,
     moduleCount: state.moduleCount,
@@ -36,8 +38,11 @@ export function aplicarValores(base, v) {
   return {
     ...base,
     client: (v.customer && v.customer.name) || base.client,
-    customer: v.customer,
+    // El CIF también se anota en el cliente potencial que no lo tenga (se pide al validar)
+    customer: v.customer && v.customer.kind === 'potencial' && !v.customer.cif && v.cif.trim() ? { ...v.customer, cif: v.cif.trim() } : v.customer,
     reference: v.reference.trim(),
+    cif: v.cif.trim(),
+    clientLogo: v.clientLogo,
     moduleWp: v.moduleWp,
     moduleCount,
     saleRatio: v.saleRatio,
@@ -59,6 +64,8 @@ export function problemasDe(v, count) {
   const problemas = []
   if (!v.customer) problemas.push('Elige el cliente del presupuesto: uno existente o un cliente potencial nuevo.')
   if (!v.reference.trim()) problemas.push('Escribe el nombre del proyecto (por ejemplo «Nave 2»): con el cliente identifica a qué proyecto pertenece el presupuesto.')
+  if (!v.cif || v.cif.trim().length < 5) problemas.push('Escribe el CIF de la empresa del cliente: sale en la propuesta.')
+  if (!v.clientLogo) problemas.push('Sube el logo de la empresa del cliente: sale en la propuesta.')
   if (!(v.targetKwp > 0)) problemas.push('Indica la potencia que se quiere instalar (kWp).')
   if (!(v.moduleWp > 0)) problemas.push('Indica la potencia de cada panel (Wp).')
   if (!(count >= 1)) problemas.push('El presupuesto necesita al menos un panel.')

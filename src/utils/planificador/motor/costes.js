@@ -11,6 +11,8 @@ export const EMPTY_COSTS = {
     client: '',
     customer: null,
     reference: '',
+    cif: '',
+    clientLogo: '',
     strings: null,
     moduleWp: 615,
     moduleCount: 12,
@@ -62,6 +64,10 @@ function parseCustomer(raw) {
     return null;
 }
 /** Un presupuesto leído de donde sea (el navegador o el servidor): lo que falte o venga mal toma su valor por defecto. */
+/** El logo de la empresa del cliente: una imagen en data URI de hasta ~1,5 MB; cualquier otra cosa, vacío. */
+function validLogo(v) {
+    return typeof v === 'string' && v.length <= 2000000 && /^data:image\/(png|jpeg|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(v) ? v : '';
+}
 export function parseCosts(raw) {
     {
         const data = (raw && typeof raw === 'object' ? raw : {});
@@ -71,6 +77,8 @@ export function parseCosts(raw) {
             client: str(data.client),
             customer: parseCustomer(data.customer),
             reference: str(data.reference),
+            cif: str(data.cif).trim().slice(0, 30),
+            clientLogo: validLogo(data.clientLogo),
             strings: parseStrings(data.strings),
             moduleWp: num(data.moduleWp, EMPTY_COSTS.moduleWp),
             moduleCount: num(data.moduleCount, EMPTY_COSTS.moduleCount),

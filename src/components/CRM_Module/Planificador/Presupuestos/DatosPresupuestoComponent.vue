@@ -23,6 +23,26 @@
             {{ proyectosSugeridos.length > 0 ? 'elige uno de los que ya tiene para no escribirlo distinto.' : 'escríbelo igual en todos.' }}
           </span>
         </label>
+        <label class="survey-field wide">
+          CIF de la empresa
+          <input v-model="v.cif" :class="{ 'required-empty': intentado && (!v.cif || v.cif.trim().length < 5) }" placeholder="Ej.: B12345678" maxlength="30" autocomplete="off">
+          <span class="muted field-hint">Obligatorio: sale en la propuesta que se le entrega al cliente.</span>
+        </label>
+        <div class="survey-field wide">
+          Logo de la empresa
+          <div class="proposal-logo">
+            <button type="button" class="proposal-logo-box" :class="{ 'required-empty': intentado && !v.clientLogo }" title="Haz clic o arrastra una imagen para subir el logo" @click="$refs.logo.click()" @dragover.prevent @drop.prevent="soltarLogo">
+              <img v-if="v.clientLogo" :src="v.clientLogo" alt="Logo de la empresa del cliente">
+              <span v-else class="muted">+ Subir logo</span>
+            </button>
+            <div>
+              <span class="muted field-hint">Obligatorio: sale en la propuesta. PNG, JPG, WebP o SVG; haz clic en la caja o arrastra la imagen.</span>
+              <button v-if="v.clientLogo" type="button" class="link-btn" @click="v.clientLogo = ''">Quitar el logo</button>
+              <p v-if="errorLogo" class="error" role="alert">{{ errorLogo }}</p>
+            </div>
+            <input ref="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirLogo">
+          </div>
+        </div>
       </fieldset>
 
       <fieldset class="setup-card">
@@ -87,6 +107,7 @@ import SelectorCliente from './SelectorCliente.vue'
 import DisenadorStrings from './DisenadorStrings.vue'
 import CampoNumerico from './CampoNumerico.vue'
 import { planificadorApi } from '@/services/planificadorApi'
+import { prepararLogo } from '@/utils/planificador/logo'
 import { panelCount } from '@/utils/planificador/motor/pasosConfig'
 import { EMPTY_COSTS, EMPTY_SURVEY } from '@/utils/planificador/motor/costes'
 import { stringContext } from '@/utils/planificador/motor/compatibilidad'
@@ -109,7 +130,7 @@ export default {
   data() {
     const inicio = this.base || { ...EMPTY_COSTS, survey: EMPTY_SURVEY }
     // nombresExistentes: los nombres de los presupuestos que ya hay (de este navegador y del servidor), para sugerir los proyectos del cliente
-    return { inicio, v: valoresDe(inicio), intentado: false, catalogo: null, nombresExistentes: [] }
+    return { inicio, v: valoresDe(inicio), intentado: false, catalogo: null, nombresExistentes: [], errorLogo: '' }
   },
   computed: {
     proyectosSugeridos() { return proyectosDeCliente(this.v.customer && this.v.customer.name, this.nombresExistentes) },
@@ -130,6 +151,8 @@ export default {
     problemas() { return problemasDe(this.v, this.cuenta) }
   },
   watch: {
+    // Si el cliente elegido ya trae su CIF (los de la intranet), se rellena solo mientras no se haya escrito otro
+    'v.customer'(c) { if (c && c.cif && !this.v.cif) this.v.cif = c.cif },
     // Si cambian los paneles (potencia, panel o número) y ya hay strings repartidos, se reparten de nuevo entre los mismos strings
     cuenta(n) {
       const diseno = this.v.strings
@@ -145,6 +168,20 @@ export default {
   },
   methods: {
     kw(n) { return n.toLocaleString('es-ES', { maximumFractionDigits: 2 }) },
+    subirLogo(evento) {
+      const archivo = evento.target.files && evento.target.files[0]
+      evento.target.value = ''
+      if (archivo) this.guardarLogo(archivo)
+    },
+    soltarLogo(evento) {
+      const archivo = evento.dataTransfer.files && evento.dataTransfer.files[0]
+      if (archivo && archivo.type.startsWith('image/')) this.guardarLogo(archivo)
+    },
+    // El logo se reduce en el navegador (como el de la propuesta) y se guarda con el presupuesto
+    guardarLogo(archivo) {
+      this.errorLogo = ''
+      prepararLogo(archivo, 700).then((uri) => { this.v.clientLogo = uri }, (e) => { this.errorLogo = e.message })
+    },
     enviar() {
       this.intentado = true
       if (this.problemas.length > 0) return
