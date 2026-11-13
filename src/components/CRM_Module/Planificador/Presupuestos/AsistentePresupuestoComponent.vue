@@ -42,10 +42,13 @@ export default {
   mounted() {
     this.temporizador = null
     this.pendiente = null
+    this.guardarTras = null // espera para guardar en el servidor los parámetros recién cambiados
+    this.guardarTrasId = null // el presupuesto al que pertenecen
     window.addEventListener('pagehide', this.volcar)
   },
   beforeUnmount() {
     window.removeEventListener('pagehide', this.volcar)
+    window.clearTimeout(this.guardarTras)
     this.volcar()
   },
   methods: {
@@ -61,6 +64,7 @@ export default {
     },
     volverALista() {
       this.volcar()
+      this.cancelarGuardadoDeParametros()
       this.trabajo = null
       this.conflicto = null
       this.errorGuardar = null
@@ -68,6 +72,7 @@ export default {
     },
     entrar(b) {
       this.volcar()
+      this.cancelarGuardadoDeParametros()
       putLocal(b)
       this.trabajo = b
       this.errorGuardar = null
@@ -85,11 +90,34 @@ export default {
         this.trabajo = { ...w, numbers: n }
         this.programarVolcado()
       }
+      // Tras cambiar los parámetros, el editor recalcula (catálogo, inversores…) y va mandando los números: se guarda cuando se calma
+      if (this.guardarTrasId) this.programarGuardadoDeParametros(800)
     },
     crearLocal(estado) { this.entrar(newLocal(estado)) },
     cambiarParametros(estado) {
       this.actualizar(estado)
       this.vista = 'editar'
+      // En un borrador ya guardado en el servidor, «Guardar parámetros» ya lo guarda: no hay que confirmarlo otra vez con «Guardar cambios».
+      // (Un presupuesto solo local no se comparte sin que se pida, y el guardado de verdad lo hace «Guardar y compartir».)
+      const w = this.trabajo
+      if (w && w.remote && w.remote.status === 'borrador') {
+        this.guardarTrasId = w.id
+        this.programarGuardadoDeParametros(5000) // si el editor no llegase a mandar números, se guarda igualmente pasado este tiempo
+      }
+    },
+    // Espera a que el editor haya recalculado el resumen (potencia, paneles e importe que enseña la lista) antes de guardar
+    programarGuardadoDeParametros(espera) {
+      window.clearTimeout(this.guardarTras)
+      this.guardarTras = window.setTimeout(() => {
+        const w = this.trabajo
+        const id = this.guardarTrasId
+        this.guardarTrasId = null
+        if (w && w.id === id && isDirty(w) && !this.guardando) this.guardar()
+      }, espera)
+    },
+    cancelarGuardadoDeParametros() {
+      window.clearTimeout(this.guardarTras)
+      this.guardarTrasId = null
     },
 
     // ---- Abrir y copiar ----------------------------------------------------------------------------------------------

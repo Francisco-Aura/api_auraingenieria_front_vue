@@ -1,7 +1,8 @@
 const LADO_MAXIMO = 256
 
-// Una imagen guardada en el presupuesto no puede pasar de este tamaño (el servidor y el motor descartan lo que se pase de 2 millones)
-const ENCAJE_MAX_CARACTERES = 1500000
+// El presupuesto entero (con el logo, los strings y las filas) no puede pasar de 1,5 millones de caracteres al guardarlo en el servidor
+// (si no, responde «demasiado grande» y no se guarda nada), así que el encaje se queda en 600.000 y deja sitio de sobra al resto
+const ENCAJE_MAX_CARACTERES = 600000
 
 /**
  * El «encaje» (disposición de los paneles en el proyecto): una imagen más grande que un logo. Se reduce en el navegador a un máximo de
@@ -24,7 +25,7 @@ export function prepararEncaje(archivo) {
       new Promise((resolve, reject) => {
         const img = new Image()
         img.onload = () => {
-          for (const [lado, calidad] of [[1600, 0.88], [1400, 0.8], [1200, 0.72], [1000, 0.65]]) {
+          for (const [lado, calidad] of [[1600, 0.85], [1400, 0.78], [1200, 0.7], [1000, 0.65], [800, 0.6]]) {
             const escala = Math.min(1, lado / Math.max(img.width, img.height))
             const lienzo = document.createElement('canvas')
             lienzo.width = Math.max(1, Math.round(img.width * escala))
