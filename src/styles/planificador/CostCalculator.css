@@ -2057,6 +2057,7 @@ tr.group-row .group-toggle:hover { text-decoration: underline; }
 .proposal-logo p { margin: 2px 0 8px; }
 .proposal-logo-box { cursor: pointer; padding: 0; font: inherit; color: inherit; flex: none; width: 120px; height: 72px; display: grid; place-items: center; border: 1px dashed var(--border, #cfd0d3); border-radius: 8px; background: #fff; overflow: hidden; }
 .proposal-logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.proposal-encaje-box { width: 200px; height: 120px; }
 .proposal-doc .proposal-missing { flex-basis: 100%; margin: 0; }
 
 /* Diseño de strings plegable y sugerencias de inversores con sus unidades */

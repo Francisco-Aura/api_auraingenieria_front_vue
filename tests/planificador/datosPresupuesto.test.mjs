@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { valoresDe, cuantosPaneles, aplicarValores, problemasDe, cuerpoParaServidor, sincronizado } from '../../src/utils/planificador/datosPresupuesto.js'
-import { EMPTY_COSTS, EMPTY_SURVEY } from '../../src/utils/planificador/motor/costes.js'
+import { EMPTY_COSTS, EMPTY_SURVEY, parseCosts } from '../../src/utils/planificador/motor/costes.js'
 import { canonical } from '../../src/utils/planificador/almacenPresupuestos.js'
 
 const vacio = () => ({ ...EMPTY_COSTS, survey: { ...EMPTY_SURVEY } })
@@ -69,6 +69,21 @@ test('el CIF y el logo de la empresa van y vuelven con el presupuesto, y el CIF 
   assert.equal(s.customer.cif, 'B12345678')
   assert.equal(valoresDe(s).cif, 'B12345678')
   assert.equal(valoresDe(s).clientLogo, 'data:image/png;base64,AAAA')
+})
+
+test('el encaje de los paneles es opcional, va y vuelve con el presupuesto y el motor solo conserva una imagen válida', () => {
+  const base = vacio()
+  assert.equal(base.encaje, '')
+  assert.equal(valoresDe(base).encaje, '')
+  const v = { ...valoresDe(base), customer: potencial, reference: 'Nave', cif: 'B12345678', clientLogo: 'data:image/png;base64,AAAA', encaje: 'data:image/jpeg;base64,BBBB', targetKwp: 10, moduleWp: 500, manualPanels: false }
+  assert.deepEqual(problemasDe(valoresDe(base), 1).filter((p) => /encaje/i.test(p)), [], 'sin encaje no falta nada')
+  const s = aplicarValores(base, v)
+  assert.equal(s.encaje, 'data:image/jpeg;base64,BBBB')
+  assert.equal(valoresDe(s).encaje, 'data:image/jpeg;base64,BBBB')
+  // Al cargar el presupuesto (parseCosts) el encaje no se pierde, y lo que no es una imagen se descarta
+  assert.equal(parseCosts({ encaje: 'data:image/jpeg;base64,BBBB' }).encaje, 'data:image/jpeg;base64,BBBB')
+  assert.equal(parseCosts({ encaje: '<script>alert(1)</script>' }).encaje, '')
+  assert.equal(parseCosts({}).encaje, '')
 })
 
 test('el cuerpo para el servidor lleva el cliente y los números del listado; solo el existente manda su id', () => {

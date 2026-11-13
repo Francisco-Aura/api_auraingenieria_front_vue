@@ -12,6 +12,7 @@ export function valoresDe(state) {
     // El CIF de la empresa; en presupuestos anteriores solo estaba en el cliente potencial
     cif: state.cif || (state.customer && state.customer.cif) || '',
     clientLogo: state.clientLogo || '',
+    encaje: state.encaje || '',
     targetKwp: s.targetKwp,
     moduleWp: state.moduleWp,
     moduleCount: state.moduleCount,
@@ -44,6 +45,7 @@ export function aplicarValores(base, v) {
     reference: v.reference.trim(),
     cif: v.cif.trim(),
     clientLogo: v.clientLogo,
+    encaje: v.encaje || '',
     moduleWp: v.moduleWp,
     moduleCount,
     saleRatio: v.saleRatio,

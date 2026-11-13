@@ -14,6 +14,8 @@ export const EMPTY_COSTS = {
     reference: '',
     cif: '',
     clientLogo: '',
+    // «Encaje»: imagen con la disposición de los paneles en el proyecto; sale en la propuesta HTML (opcional)
+    encaje: '',
     strings: null,
     moduleWp: 615,
     moduleCount: 12,
@@ -80,6 +82,7 @@ export function parseCosts(raw) {
             reference: str(data.reference),
             cif: str(data.cif).trim().slice(0, 30),
             clientLogo: validLogo(data.clientLogo),
+            encaje: validLogo(data.encaje),
             strings: parseStrings(data.strings),
             moduleWp: num(data.moduleWp, EMPTY_COSTS.moduleWp),
             moduleCount: num(data.moduleCount, EMPTY_COSTS.moduleCount),

@@ -43,6 +43,21 @@
             <input ref="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirLogo">
           </div>
         </div>
+        <div class="survey-field wide">
+          Encaje de los paneles
+          <div class="proposal-logo">
+            <button type="button" class="proposal-logo-box proposal-encaje-box" title="Haz clic o arrastra una imagen para subir el encaje" @click="$refs.encaje.click()" @dragover.prevent @drop.prevent="soltarEncaje">
+              <img v-if="v.encaje" :src="v.encaje" alt="Encaje de los paneles en el proyecto">
+              <span v-else class="muted">+ Subir encaje</span>
+            </button>
+            <div>
+              <span class="muted field-hint">Opcional: la disposición en la que quedarán los paneles en el proyecto. Sale en la propuesta con un marco. PNG, JPG, WebP o SVG; haz clic en la caja o arrastra la imagen.</span>
+              <button v-if="v.encaje" type="button" class="link-btn" @click="v.encaje = ''">Quitar el encaje</button>
+              <p v-if="errorEncaje" class="error" role="alert">{{ errorEncaje }}</p>
+            </div>
+            <input ref="encaje" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirEncaje">
+          </div>
+        </div>
       </fieldset>
 
       <fieldset class="setup-card">
@@ -109,7 +124,7 @@ import SelectorCliente from './SelectorCliente.vue'
 import DisenadorStrings from './DisenadorStrings.vue'
 import CampoNumerico from './CampoNumerico.vue'
 import { planificadorApi } from '@/services/planificadorApi'
-import { prepararLogo } from '@/utils/planificador/logo'
+import { prepararLogo, prepararEncaje } from '@/utils/planificador/logo'
 import { panelCount, ROOF_LABEL, ROOF_OPTIONS } from '@/utils/planificador/motor/pasosConfig'
 import { EMPTY_COSTS, EMPTY_SURVEY } from '@/utils/planificador/motor/costes'
 import { stringContext } from '@/utils/planificador/motor/compatibilidad'
@@ -132,7 +147,7 @@ export default {
   data() {
     const inicio = this.base || { ...EMPTY_COSTS, survey: EMPTY_SURVEY }
     // nombresExistentes: los nombres de los presupuestos que ya hay (de este navegador y del servidor), para sugerir los proyectos del cliente
-    return { inicio, v: valoresDe(inicio), intentado: false, catalogo: null, nombresExistentes: [], errorLogo: '', ROOF_LABEL }
+    return { inicio, v: valoresDe(inicio), intentado: false, catalogo: null, nombresExistentes: [], errorLogo: '', errorEncaje: '', ROOF_LABEL }
   },
   computed: {
     proyectosSugeridos() { return proyectosDeCliente(this.v.customer && this.v.customer.name, this.nombresExistentes) },
@@ -191,6 +206,20 @@ export default {
     guardarLogo(archivo) {
       this.errorLogo = ''
       prepararLogo(archivo, 700).then((uri) => { this.v.clientLogo = uri }, (e) => { this.errorLogo = e.message })
+    },
+    subirEncaje(evento) {
+      const archivo = evento.target.files && evento.target.files[0]
+      evento.target.value = ''
+      if (archivo) this.guardarEncaje(archivo)
+    },
+    soltarEncaje(evento) {
+      const archivo = evento.dataTransfer.files && evento.dataTransfer.files[0]
+      if (archivo && archivo.type.startsWith('image/')) this.guardarEncaje(archivo)
+    },
+    // El encaje se reduce en el navegador y se guarda con el presupuesto; solo aparece en la propuesta HTML
+    guardarEncaje(archivo) {
+      this.errorEncaje = ''
+      prepararEncaje(archivo).then((uri) => { this.v.encaje = uri }, (e) => { this.errorEncaje = e.message })
     },
     enviar() {
       this.intentado = true
