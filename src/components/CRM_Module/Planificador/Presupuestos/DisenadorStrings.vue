@@ -19,14 +19,6 @@
       {{ variosModelos ? 'Los inversores tienen' : 'El inversor tiene' }} {{ informe.inputsAvailable }} entrada{{ informe.inputsAvailable === 1 ? '' : 's' }}{{ variosModelos ? ' en total (' + nombresModelos + ')' : unidades > 1 ? ' (' + unidades + ' inversores)' : '' }}:
       los strings de una misma entrada tienen que ser iguales.
     </p>
-    <p class="string-clamps" role="status">
-      <template v-if="grapas.rows > 0">
-        Grapas de la estructura: <strong>{{ fmt(grapas.finals) }} finales</strong> y <strong>{{ fmt(grapas.intermediates) }} intermedias</strong>
-        <span class="muted"> ({{ fmt(grapas.rows) }} fila{{ grapas.rows === 1 ? '' : 's' }} de paneles, con dos raíles por fila; un string partida son varias filas)</span>
-      </template>
-      <span v-else class="muted">Crea los strings para saber cuántas grapas hacen falta.</span>
-    </p>
-
     <label class="string-count">
       ¿Cuántos strings quieres crear?
       <campo-numerico :model-value="diseno.length" etiqueta="Número de strings" @update:model-value="fijarCantidad" />
@@ -124,6 +116,15 @@
         </details>
       </div>
     </footer>
+
+    <!-- Las grapas son consecuencia de los strings y de sus particiones: van abajo del todo, después de configurarlos -->
+    <p class="string-clamps" role="status">
+      <template v-if="grapas.rows > 0">
+        Grapas de la estructura: <strong>{{ fmt(grapas.finals) }} finales</strong> y <strong>{{ fmt(grapas.intermediates) }} intermedias</strong>
+        <span class="muted"> ({{ fmt(grapas.rows) }} fila{{ grapas.rows === 1 ? '' : 's' }} de paneles, con dos raíles por fila; un string partida son varias filas)</span>
+      </template>
+      <span v-else class="muted">Crea los strings para saber cuántas grapas hacen falta.</span>
+    </p>
 
     <p v-if="textoEntradas.length > 0" class="muted string-inputs">{{ textoEntradas.join(' · ') }}</p>
     <ul v-if="informe && informe.strings.some((s) => s.problems.some((m) => !isMissingInput(m)))" class="string-problems" role="alert">

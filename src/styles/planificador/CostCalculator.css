@@ -1455,10 +1455,23 @@ th .sort-btn.on .sort-icon {
   margin: 2px 0;
 }
 
+/* Anclada abajo (como la barra de pasos): guardar es lo importante y tiene que estar siempre a la vista */
 .setup-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  margin: 6px -4px 0;
+  padding: 10px 4px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: 0 -8px 14px -10px rgba(0, 0, 0, 0.25);
+}
+
+.setup-actions .setup-problems {
+  flex: 1 0 100%;
 }
 
 /* Dónde se guarda el presupuesto */
@@ -2051,7 +2064,7 @@ tr.group-row .group-toggle:hover { text-decoration: underline; }
 .costs-body.review .sale-bar { justify-content: start; column-gap: 56px; }
 
 .strings-table .split-note { display: block; font-size: 0.8rem; margin-top: 2px; }
-.string-clamps { margin: 0 0 10px; font-size: 0.9rem; }
+.string-clamps { margin: 10px 0 0; font-size: 0.9rem; }
 
 .proposal-logo { display: flex; align-items: center; gap: 16px; padding: 12px 14px; border: 1px solid var(--border, #e4e7ec); border-radius: var(--radius, 8px); }
 .proposal-logo p { margin: 2px 0 8px; }

@@ -110,8 +110,9 @@
         </div>
       </fieldset>
 
-      <div v-if="intentado && problemas.length > 0" class="setup-problems" role="alert"><p v-for="p in problemas" :key="p">{{ p }}</p></div>
+      <!-- Barra anclada abajo: el botón de guardar y los avisos de lo que falta se ven siempre, aunque el formulario sea largo -->
       <div class="setup-actions">
+        <div v-if="intentado && problemas.length > 0" class="setup-problems" role="alert"><p v-for="p in problemas" :key="p">{{ p }}</p></div>
         <button type="submit">{{ modo === 'nuevo' ? 'Crear presupuesto' : 'Guardar parámetros' }}</button>
         <button type="button" class="secondary" @click="$emit('cancelar')">Cancelar</button>
       </div>

@@ -145,6 +145,13 @@ html.tema-oscuro .tag.issue.warn {
   color: #f8b88e;
 }
 
+/* Etiquetas de valores en las tablas (cubierta, montaje, componente…): el naranja de la hoja clara sobre el oscuro se veía apagado y con poco
+   contraste; aquí un naranja más claro y suave. Solo las «attr»: las demás etiquetas (ficha, estado, avisos…) tienen sus propias reglas. */
+html.tema-oscuro .tag.attr {
+  background: rgba(251, 146, 60, 0.16);
+  color: #fdba74;
+}
+
 /* Logos de marca: la mayoría están hechos para fondo claro (texto negro sobre transparente), así que la pastilla sigue
    siendo blanca también en el modo oscuro (el generador del tema la oscurecía y varios logos desaparecían) */
 html.tema-oscuro .brand-logo {
