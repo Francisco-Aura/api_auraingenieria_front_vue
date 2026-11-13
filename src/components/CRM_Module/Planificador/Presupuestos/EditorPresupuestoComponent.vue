@@ -378,7 +378,8 @@ export default {
         return
       }
       try {
-        await imprimirHtml(await blob.text())
+        // El PDF se propone guardar con el mismo nombre que la propuesta HTML («Propuesta cliente · proyecto»)
+        await imprimirHtml(await blob.text(), nombre.replace(/\.html$/i, ''))
       } catch (e) {
         descargarArchivo(blob, nombre)
       }
