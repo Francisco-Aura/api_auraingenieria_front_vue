@@ -128,6 +128,47 @@ test('cubierta: cubierta del producto distinta de la elegida (error, no oculta)'
   assert.equal(tiene(revisar([extra(estructura({ cubierta: 'Chapa' }))], { opciones: { survey: { roof: 'chapa' } } }), 'error', 'cubierta'), false)
 })
 
+test('estructura-tipo: cada cubierta solo admite los tipos de estructura de la hoja de Ingeniería (error, no oculta)', () => {
+  // ¿Salta «estructura-tipo» con esta cubierta, este producto de esa cubierta y este montaje?
+  const salta = (roof, cubierta, montaje) =>
+    tiene(revisar([extra(estructura({ cubierta, montaje }))], { opciones: { survey: { roof } } }), 'error', 'estructura-tipo')
+  // Teja: coplanar
+  assert.equal(salta('teja', 'Teja', 'Coplanar teja'), false)
+  assert.equal(salta('teja', 'Teja', 'Inclinada 5º'), true)
+  // Chapa minionda: inclinada, micro rail y perfil corrido («Coplanar chapa» es el perfil corrido de la chapa)
+  assert.equal(salta('chapa_minionda', 'Chapa minionda', 'Coplanar chapa'), false)
+  assert.equal(salta('chapa_minionda', 'Chapa minionda', 'Micro rail'), false)
+  assert.equal(salta('chapa_minionda', 'Chapa minionda', 'Inclinada 15º'), false)
+  assert.equal(salta('chapa_minionda', 'Chapa minionda', 'Suelo (hormigón)'), true)
+  // Chapa grecada: micro rail y perfil corrido (sin inclinada)
+  assert.equal(salta('chapa_grecada', 'Chapa grecada', 'Micro rail'), false)
+  assert.equal(salta('chapa_grecada', 'Chapa grecada', 'Perfil corrido'), false)
+  assert.equal(salta('chapa_grecada', 'Chapa grecada', 'Inclinada 15º'), true)
+  // Plana: bloque de hormigón y también inclinada (kits vela, triángulos con lastre)
+  assert.equal(salta('plana', 'Plana', 'Bloques (cubierta plana)'), false)
+  assert.equal(salta('plana', 'Plana', 'Inclinada 5º'), false)
+  assert.equal(salta('plana', 'Plana', 'Coplanar teja'), true)
+  // Suelo: hormigón y estructura hincada
+  assert.equal(salta('suelo', 'Suelo', 'Suelo (hormigón)'), false)
+  assert.equal(salta('suelo', 'Suelo', 'Estructura hincada'), false)
+  assert.equal(salta('suelo', 'Suelo', 'Inclinada 15º'), true)
+  // Parking: hincada, hormigón y metálica (y valen las de suelo, como ya se admitía)
+  assert.equal(salta('parking', 'Parking', 'Estructura metálica'), false)
+  assert.equal(salta('parking', 'Suelo', 'Suelo (hormigón)'), false)
+  assert.equal(salta('parking', 'Parking', 'Inclinada 15º'), true)
+  // Panel sándwich: perfil corrido
+  assert.equal(salta('sandwich', 'Panel sándwich', 'Perfil corrido'), false)
+  assert.equal(salta('sandwich', 'Panel sándwich', 'Micro rail'), true)
+  // Flotante y pérgola no tienen regla todavía
+  assert.equal(salta('flotante', 'Flotante', 'Inclinada 15º'), false)
+  assert.equal(salta('pergola', 'Pérgola', 'Estructura hincada'), false)
+  // Lo genérico («Todas»: perfiles, grapas), lo sin montaje y lo de otra cubierta (ya avisa «cubierta») no se evalúa
+  assert.equal(salta('suelo', 'Todas', 'Coplanar'), false)
+  assert.equal(salta('suelo', 'Suelo', ''), false)
+  assert.equal(salta('suelo', 'Teja', 'Coplanar teja'), false)
+  assert.equal(buscar(revisar([extra(estructura({ cubierta: 'Teja', montaje: 'Inclinada 5º' }))]), 'error', 'estructura-tipo').hard, false)
+})
+
 test('estructura-kits: kits que cubren menos paneles de los que hay (error) y sobra un kit entero (aviso)', () => {
   const kit = estructura({ modulos_por_kit: 3 })
   const falta = revisar([extra(kit, 3)]) // cubre 9 paneles, hay 12

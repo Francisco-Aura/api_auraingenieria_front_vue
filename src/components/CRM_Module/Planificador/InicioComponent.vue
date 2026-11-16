@@ -38,6 +38,13 @@ const TARJETAS = [
     texto: 'Dar de alta los productos y completar sus características: lo que se guarda aquí es lo que se elige al presupuestar.',
     rectangulos: [],
     trazos: ['M3 8l9-5 9 5v8l-9 5-9-5V8z', 'M3 8l9 5 9-5M12 13v8']
+  },
+  {
+    area: 'studies',
+    titulo: 'Estudios',
+    texto: 'Estudios de autoconsumo fotovoltaico: consumo del cliente, instalación recomendada, rentabilidad e informe en PDF.',
+    rectangulos: [],
+    trazos: ['M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4', 'M12 8a4 4 0 100 8 4 4 0 000-8z']
   }
 ]
 

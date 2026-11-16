@@ -1,7 +1,7 @@
 import { effectiveQty, isPerModule, lineName, newLine } from './costes.js';
 import { fuseKind, fuseNeed, fuseReason } from './protecciones.js';
 import { analyzeStrings, assignInputs, autoStrings, clampTotals, effectiveStrings, fitStrings, isValidDesign, reportProblems, spreadPanels, spreadStrings, summarizeStrings, totalInputs } from './strings.js';
-import { batteryCompat, COLD_VOC, ROOF_ITEM_VALUES, ROOF_LABEL, stringPlan } from './pasosConfig.js';
+import { batteryCompat, COLD_VOC, ROOF_ITEM_VALUES, ROOF_LABEL, ROOF_STRUCTURE_TYPES, STRUCTURE_TYPE_LABEL, stringPlan } from './pasosConfig.js';
 /** Reglas cuyo error es una incompatibilidad de fondo (el resto depende de cantidades o de la potencia y solo avisa). */
 const HARD_RULES = new Set([
     'strings-imposible', 'optimizador-marca', 'medidor-fases', 'suministro', 'bateria', 'estructura-marco',
@@ -15,6 +15,28 @@ const num = (v) => {
 const txt = (v) => String(v ?? '').trim();
 const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const has = (v, fragment) => norm(txt(v)).includes(fragment);
+/**
+ * El tipo de estructura de un producto según su «Tipo de montaje» (coplanar, perfil corrido, micro rail, inclinada, hormigón, hincada o
+ * metálica), o null si no se reconoce. «Coplanar chapa» es el perfil corrido de la chapa; cualquier otro coplanar es el de teja.
+ */
+export function structureType(item) {
+    const m = norm(txt(item.attrs.montaje));
+    if (m.includes('hincad'))
+        return 'hincada';
+    if (m.includes('micro') && m.includes('rail'))
+        return 'micro rail';
+    if (m.includes('metal'))
+        return 'metálica';
+    if (m.includes('hormig') || m.includes('bloque'))
+        return 'hormigón';
+    if (m.includes('inclinad'))
+        return 'inclinada';
+    if (m.includes('perfil corrido'))
+        return 'perfil corrido';
+    if (m.includes('coplanar'))
+        return m.includes('chapa') ? 'perfil corrido' : 'coplanar';
+    return null;
+}
 const fmt = (n, digits = 1) => n.toLocaleString('es-ES', { maximumFractionDigits: digits });
 /** Fases de un inversor o medidor: 1 (monofásico), 3 (trifásico) o null si no se sabe. */
 function phasesOf(item) {
@@ -308,6 +330,20 @@ export function checkCompatibility(state, catalog) {
         const roofOf = txt(e.item.attrs.cubierta) || 'Todas';
         if (!roof.includes(roofOf)) {
             add('error', 'cubierta', 'estructura', `${name(e)} es para cubierta ${roofOf.toLowerCase()} y el presupuesto está en cubierta ${ROOF_LABEL[survey.roof].toLowerCase()}.`, [e]);
+        }
+    }
+    // Cada cubierta admite unos tipos de estructura (hoja de reglas de Ingeniería). Solo se mira lo que es de esa cubierta (si no, ya avisa
+    // «cubierta») y no lo genérico («Todas»: perfiles, grapas…) ni lo de un tipo que no se reconoce; flotante y pérgola no tienen regla.
+    const allowedTypes = ROOF_STRUCTURE_TYPES[survey.roof];
+    if (allowedTypes) {
+        for (const e of cat('estructura')) {
+            const roofOf = txt(e.item.attrs.cubierta) || 'Todas';
+            if (roofOf === 'Todas' || !roof.includes(roofOf))
+                continue;
+            const type = structureType(e.item);
+            if (type && !allowedTypes.includes(type)) {
+                add('error', 'estructura-tipo', 'estructura', `${name(e)} es una estructura ${STRUCTURE_TYPE_LABEL[type]} y en cubierta ${ROOF_LABEL[survey.roof].toLowerCase()} solo se admiten: ${allowedTypes.map((t) => STRUCTURE_TYPE_LABEL[t]).join(', ')}.`, [e]);
+            }
         }
     }
     // Varias filas «por módulo» de una misma categoría que se reparten los paneles (247 coplanares + 24 inclinados = 271) suman el

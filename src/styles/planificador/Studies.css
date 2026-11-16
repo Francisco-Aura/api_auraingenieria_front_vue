@@ -1,0 +1,65 @@
+/* Estudios fotovoltaicos: lista, editor y vista previa del informe. Solo variables del tema, para que el modo oscuro funcione solo. */
+.estudios,
+.estudio { max-width: 1100px; margin: 0 auto; padding: 0 16px 40px; }
+
+.estudio-nuevo { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin: 12px 0; }
+.estudio-nuevo .survey-field { flex: 1 1 280px; }
+
+.estudio-filtros { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 12px 0; }
+.estudio-filtros input[type='search'] { flex: 1 1 240px; min-width: 200px; }
+
+.estudio-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.estudio-fila {
+  width: 100%; text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 12px 14px;
+  background: var(--bg); color: var(--text); border: 1px solid var(--border); border-left: 4px solid var(--brand);
+  border-radius: var(--radius); box-shadow: var(--shadow-card); cursor: pointer; font: inherit;
+}
+.estudio-fila:hover { border-color: var(--brand); }
+.estudio-cabecera { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+.estudio-obs { font-size: 0.92em; color: var(--text); white-space: pre-line; max-height: 3.2em; overflow: hidden; }
+.estudio-meta, .estudio-fecha { font-size: 0.88em; }
+
+.estudio-estado {
+  display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.8em; font-weight: 600;
+  background: var(--bg-alt); color: var(--text); border: 1px solid var(--border);
+}
+.estudio-estado.en_estudio { background: rgba(var(--brand-rgb), 0.25); }
+.estudio-estado.pte_doc,
+.estudio-estado.pte_cliente { background: rgba(255, 152, 0, 0.18); }
+.estudio-estado.entregado { background: rgba(33, 150, 243, 0.18); }
+.estudio-estado.aceptado { background: rgba(46, 160, 67, 0.2); }
+.estudio-estado.rechazado { background: rgba(220, 53, 69, 0.18); }
+.estudio-estado.cancelado { background: var(--bg-alt); color: var(--muted); }
+
+.estudio .setup-card { margin-top: 14px; }
+.estudio textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); resize: vertical; }
+
+.estudio-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 8px; }
+.estudio-subida { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.estudio-subida p { margin: 4px 0 8px; }
+.estudio-curva { margin: 12px 0 6px; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--bg-alt); }
+.estudio-curva.ok { border-left: 4px solid rgb(46, 160, 67); }
+.estudio-curva.estimada { border-left: 4px solid var(--brand); }
+.estudio-suministro { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px 18px; margin: 10px 0; }
+.estudio-suministro dt { font-size: 0.8em; color: var(--muted); }
+.estudio-suministro dd { margin: 0; font-weight: 600; word-break: break-all; }
+.estudio-horario { margin-top: 10px; }
+.estudio-avanzado { margin-top: 12px; }
+.estudio-avanzado summary { cursor: pointer; color: var(--accent-text); font-weight: 600; }
+
+.estudio-aviso { margin: 10px 0; padding: 8px 12px; background: rgba(var(--brand-rgb), 0.2); border-left: 4px solid var(--brand); border-radius: var(--radius-sm); }
+.estudio-ok { color: rgb(46, 160, 67); font-weight: 600; }
+
+.estudio-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 6px 0 10px; }
+.estudio-kpis > div { background: var(--bg-alt); border-top: 3px solid var(--brand); border-radius: var(--radius-sm); padding: 10px 12px; }
+.estudio-kpis b { display: block; font-size: 1.35em; }
+.estudio-kpis span { font-size: 0.82em; color: var(--muted); }
+.estudio-tabla { overflow-x: auto; margin: 8px 0; }
+.estudio-tabla table { border-collapse: collapse; width: 100%; font-size: 0.92em; }
+.estudio-tabla th, .estudio-tabla td { padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+.estudio-tabla th:first-child, .estudio-tabla td:first-child { text-align: left; }
+.estudio-tabla thead th { background: var(--bg-alt); }
+.estudio-acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.estudio-pie { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+.estudio .peligro { color: var(--danger); border-color: var(--danger); }
+.estudio-informe { width: 100%; height: 72vh; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #fff; }

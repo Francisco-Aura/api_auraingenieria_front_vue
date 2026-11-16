@@ -277,3 +277,27 @@ export const ROOF_LABEL = {
 };
 /** Los tipos de cubierta que se ofrecen al crear un presupuesto, en este orden («chapa» solo lo conservan los presupuestos antiguos). */
 export const ROOF_OPTIONS = ['teja', 'chapa_minionda', 'chapa_grecada', 'plana', 'suelo', 'parking', 'flotante', 'pergola', 'sandwich'];
+/**
+ * Tipos de estructura que admite cada tipo de cubierta (hoja de reglas de Ingeniería del 13/11/2026). Una cubierta que no sale aquí
+ * (flotante, pérgola) no tiene regla todavía. «hormigón» agrupa el bloque de hormigón y la estructura de hormigón. En cubierta plana
+ * se admite también la inclinada (kits vela y triángulos con lastre), que es lo que se monta hoy.
+ */
+export const ROOF_STRUCTURE_TYPES = {
+    teja: ['coplanar'],
+    chapa_minionda: ['inclinada', 'micro rail', 'perfil corrido'],
+    chapa_grecada: ['micro rail', 'perfil corrido'],
+    plana: ['hormigón', 'inclinada'],
+    suelo: ['hormigón', 'hincada'],
+    parking: ['hincada', 'hormigón', 'metálica'],
+    sandwich: ['perfil corrido'],
+};
+/** Cómo se nombra cada tipo de estructura en los avisos. */
+export const STRUCTURE_TYPE_LABEL = {
+    coplanar: 'coplanar',
+    'perfil corrido': 'de perfil corrido',
+    'micro rail': 'de micro rail',
+    inclinada: 'inclinada',
+    hormigón: 'de hormigón (bloque o estructura)',
+    hincada: 'hincada',
+    metálica: 'metálica',
+};

@@ -28,6 +28,12 @@ async function pdf(url, cuerpo, params, nombreDefecto) {
   }
 }
 
+const subirArchivo = (url, archivo) => {
+  const cuerpo = new FormData()
+  cuerpo.append('file', archivo, archivo.name)
+  return datos(axios.post(url, cuerpo))
+}
+
 async function descargaBlob(url, nombreDefecto) {
   try {
     const r = await axios.get(url, { responseType: 'blob' })
@@ -164,5 +170,19 @@ export const planificadorApi = {
   /** Todo el inventario en un Excel (hoja con todo, una por categoría y los precios por proveedor). Devuelve { blob, nombre }. */
   exportarInventario: () => descargaBlob(`${BASE}/equipment/export`, 'Inventario.xlsx'),
   /** La misma propuesta en PDF, hecha en el servidor con Chrome; si el servidor no lo tiene responde 501. Devuelve { blob, nombre }. */
-  propuestaPdfDelBorrador: (cuerpo) => pdf(`${BASE}/budget/proposal-pdf`, cuerpo, undefined, 'Propuesta.pdf')
+  propuestaPdfDelBorrador: (cuerpo) => pdf(`${BASE}/budget/proposal-pdf`, cuerpo, undefined, 'Propuesta.pdf'),
+
+  // Estudios fotovoltaicos
+  estudios: () => datos(axios.get(`${BASE}/studies`)),
+  estudio: (id) => datos(axios.get(`${BASE}/studies/${id}`)),
+  crearEstudio: (cuerpo) => datos(axios.post(`${BASE}/studies`, cuerpo)),
+  guardarEstudio: (id, cuerpo) => datos(axios.put(`${BASE}/studies/${id}`, cuerpo)),
+  borrarEstudio: (id) => axios.delete(`${BASE}/studies/${id}`),
+  /** Sube el SIPS (Excel de la distribuidora): rellena el suministro y estima la curva si no hay una real. */
+  subirSips: (id, archivo) => subirArchivo(`${BASE}/studies/${id}/sips`, archivo),
+  /** Sube la curva horaria o cuartohoraria de la distribuidora (Excel o CSV). */
+  subirCurva: (id, archivo) => subirArchivo(`${BASE}/studies/${id}/curve`, archivo),
+  /** El informe del estudio: HTML (para verlo) o PDF (hecho con Chrome en el servidor; 501 si no lo hay). Devuelve { blob, nombre }. */
+  informeEstudioHtml: (id) => descargaBlob(`${BASE}/studies/${id}/report.html`, 'Estudio.html'),
+  informeEstudioPdf: (id) => descargaBlob(`${BASE}/studies/${id}/report.pdf`, 'Estudio.pdf')
 }

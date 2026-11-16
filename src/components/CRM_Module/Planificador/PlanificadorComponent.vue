@@ -7,6 +7,7 @@
       <main class="content">
         <inicio-component v-if="mostrarInicio" :disponibles="disponibles" :pendientes="{ costing: pendientesValidar }" @abrir="abrirArea" />
         <asistente-presupuesto-component v-else-if="foco === 'costing' && funciones.budgeter" :con-volver="true" :con-inventario="funciones.inventory" @cerrar="cerrarFoco" @abrir-inventario="abrirFoco('inventory')" />
+        <estudios-component v-else-if="foco === 'studies' && funciones.studies" etiqueta-volver="← Volver al inicio" @cerrar="cerrarFoco" />
         <inventario-component v-else :etiqueta-volver="desde === 'costing' ? '← Volver al presupuestador' : '← Volver al inicio'" @cerrar="desde === 'costing' ? volverAtras() : cerrarFoco()" />
       </main>
     </div>
@@ -19,6 +20,7 @@ import InicioComponent from './InicioComponent.vue'
 import InventarioComponent from './Inventario/InventarioComponent.vue'
 import AsistentePresupuestoComponent from './Presupuestos/AsistentePresupuestoComponent.vue'
 import ProyectosComponent from './Proyectos/ProyectosComponent.vue'
+import EstudiosComponent from './Estudios/EstudiosComponent.vue'
 import { planificadorApi } from '@/services/planificadorApi'
 import { esValidador } from '@/services/usuarioActual'
 
@@ -50,7 +52,7 @@ function leerGuardado() {
 // intranet llevando al inicio.
 export default {
   name: 'Planificador-Component',
-  components: { InicioComponent, InventarioComponent, AsistentePresupuestoComponent, ProyectosComponent },
+  components: { InicioComponent, InventarioComponent, AsistentePresupuestoComponent, ProyectosComponent, EstudiosComponent },
   data() {
     const guardado = leerGuardado()
     const enlace = leerEnlace()
@@ -58,9 +60,9 @@ export default {
       estado: 'cargando',
       cargadas: false,
       // Funciones del servidor: sin respuesta, todo apagado
-      funciones: { budgeter: false, inventory: false, local_files: false },
+      funciones: { budgeter: false, inventory: false, studies: false, local_files: false },
       entrado: enlace !== null || !!(guardado && guardado.entrado),
-      foco: guardado && (guardado.foco === 'costing' || guardado.foco === 'inventory') ? guardado.foco : null,
+      foco: guardado && ['costing', 'inventory', 'studies'].includes(guardado.foco) ? guardado.foco : null,
       desde: guardado && guardado.foco === 'inventory' ? guardado.desde || null : null,
       pendientesValidar: 0,
       enlace,
@@ -68,10 +70,10 @@ export default {
     }
   },
   computed: {
-    hayHerramientas() { return this.funciones.budgeter || this.funciones.inventory },
-    disponibles() { return ['projects', ...(this.funciones.budgeter ? ['costing'] : []), ...(this.funciones.inventory ? ['inventory'] : [])] },
+    hayHerramientas() { return this.funciones.budgeter || this.funciones.inventory || this.funciones.studies },
+    disponibles() { return ['projects', ...(this.funciones.budgeter ? ['costing'] : []), ...(this.funciones.inventory ? ['inventory'] : []), ...(this.funciones.studies ? ['studies'] : [])] },
     mostrarInicio() { return this.hayHerramientas && !this.entrado && !this.foco },
-    pantallaCompleta() { return this.mostrarInicio || (this.foco === 'costing' && this.funciones.budgeter) || (this.foco === 'inventory' && this.funciones.inventory) }
+    pantallaCompleta() { return this.mostrarInicio || (this.foco === 'costing' && this.funciones.budgeter) || (this.foco === 'inventory' && this.funciones.inventory) || (this.foco === 'studies' && this.funciones.studies) }
   },
   watch: {
     entrado() { this.guardar() },
@@ -92,7 +94,7 @@ export default {
     try {
       this.funciones = await planificadorApi.funciones()
     } catch (e) {
-      this.funciones = { budgeter: false, inventory: false, local_files: false }
+      this.funciones = { budgeter: false, inventory: false, studies: false, local_files: false }
     }
     this.cargadas = true
     // Un aviso de «toca revisar los precios» abre el inventario (?revisar=precios)
@@ -148,7 +150,7 @@ export default {
     // Al recargar en el presupuestador o el inventario se reconstruye el historial (una entrada por pantalla)
     reconstruirHistorial() {
       const g = this.guardadoAlArrancar
-      if (g && (g.foco === 'costing' || g.foco === 'inventory')) {
+      if (g && ['costing', 'inventory', 'studies'].includes(g.foco)) {
         window.history.replaceState(null, '')
         this.profundidad = 1
         window.history.pushState({ plannerFocus: g.foco, depth: 1, from: g.desde || null }, '')
