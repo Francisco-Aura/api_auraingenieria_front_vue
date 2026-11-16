@@ -1,12 +1,12 @@
 <template>
   <div>
-    <div v-if="pendiente" class="contract-pending" role="alert">
+    <div v-if="pendiente" class="contrato-pendiente" role="alert">
       <strong>⚠ Contrato pendiente de generar.</strong> Es obligatorio: al generarlo se guarda solo en la carpeta de contrato de Dropbox del proyecto.
       <button type="button" @click="abrir">Generar contrato</button>
     </div>
-    <p v-else class="muted contract-done">
+    <p v-else class="muted contrato-hecho">
       📄 Contrato generado el {{ cuando(proyecto.contract_generated_at) }}<template v-if="proyecto.contract_file"> · guardado en Dropbox: {{ nombreDe(proyecto.contract_file) }}</template>.
-      <a :href="urlPdf" target="_blank" rel="noreferrer">PDF</a> · <button type="button" class="link-btn" @click="abrir">Generar de nuevo</button>
+      <a :href="urlPdf" target="_blank" rel="noreferrer">PDF</a> · <button type="button" class="enlace-boton" @click="abrir">Generar de nuevo</button>
     </p>
 
     <modal-component v-if="abierto" :ancho="true" titulo="Contrato del proyecto" @cerrar="abierto = false">
@@ -17,8 +17,8 @@
       </div>
       <template v-else>
         <p class="hint">Se genera con el modelo de contrato, el presupuesto inicial y la forma de pago del proyecto. Los datos que escribas aquí quedan guardados.</p>
-        <div class="party-grid">
-          <label v-for="clave in claves" :key="clave" :class="clave === 'domicilio' || clave === 'instalacion' ? 'wide-field' : undefined">
+        <div class="party-rejilla">
+          <label v-for="clave in claves" :key="clave" :class="clave === 'domicilio' || clave === 'instalacion' ? 'wide-campo' : undefined">
             {{ ETIQUETAS_PARTE[clave] }}<input v-model="parte[clave]">
           </label>
           <label>Lugar de la firma <span class="muted">(la fecha es la de hoy)</span><input v-model="lugar"></label>

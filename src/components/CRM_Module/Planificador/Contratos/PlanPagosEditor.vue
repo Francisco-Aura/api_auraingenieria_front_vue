@@ -1,6 +1,6 @@
 <template>
-  <div class="payment-plan">
-    <div class="plan-mode" role="radiogroup" aria-label="Forma de pago">
+  <div class="pago-plan">
+    <div class="plan-modo" role="radiogroup" aria-label="Forma de pago">
       <label :class="{ on: !personalizada }">
         <input type="radio" name="modo-pago" :checked="!personalizada" @change="$emit('update:plan', { mode: 'standard', stages: STANDARD_STAGES })">
         <span><strong>Habitual</strong><small>30 % · 40 % · 20 % · 10 %</small></span>
@@ -11,7 +11,7 @@
       </label>
     </div>
 
-    <table class="plan-table">
+    <table class="plan-tabla">
       <thead><tr><th>Pago</th><th class="num">%</th><th class="num">Importe</th><th v-if="personalizada" aria-label="Quitar" /></tr></thead>
       <tbody>
         <tr v-for="(s, i) in plan.stages" :key="i">
@@ -32,10 +32,10 @@
       </tfoot>
     </table>
 
-    <div v-if="personalizada" class="plan-actions">
+    <div v-if="personalizada" class="plan-acciones">
       <button type="button" class="secondary" :disabled="plan.stages.length >= MAX_STAGES" @click="anadir">+ Añadir pago</button>
-      <span v-if="problema" class="plan-problem">{{ problema }}</span>
-      <span v-else class="muted plan-hint">Al cambiar un porcentaje, la diferencia pasa al pago anterior. El texto de cada pago es libre y es el que aparece en el contrato.</span>
+      <span v-if="problema" class="plan-problema">{{ problema }}</span>
+      <span v-else class="muted plan-pista">Al cambiar un porcentaje, la diferencia pasa al pago anterior. El texto de cada pago es libre y es el que aparece en el contrato.</span>
     </div>
   </div>
 </template>

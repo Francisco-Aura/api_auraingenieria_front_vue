@@ -1,10 +1,10 @@
 <template>
-  <div class="costs budget-list">
-    <div v-if="conVolver" class="back-row">
+  <div class="costes budget-list">
+    <div v-if="conVolver" class="back-fila">
       <button type="button" class="secondary" @click="$emit('cerrar')">← Volver al inicio</button>
     </div>
-    <div class="costs-title"><h1>Presupuestos</h1></div>
-    <div class="cost-filters" role="search">
+    <div class="costes-titulo"><h1>Presupuestos</h1></div>
+    <div class="coste-filtros" role="search">
       <label class="search">
         Buscar
         <input v-model="consulta" type="search" placeholder="Cliente, autor…">
@@ -35,27 +35,27 @@
       <button type="button" class="toolbar-end" @click="$emit('nuevo')">+ Nuevo presupuesto</button>
     </div>
 
-    <p v-if="errorServidor" class="step-note warn" role="alert">
+    <p v-if="errorServidor" class="paso-nota warn" role="alert">
       No se han podido leer los borradores del servidor ({{ errorServidor }}): se enseñan solo los de este navegador.
-      <button type="button" class="link-btn" @click="cargar">Reintentar</button>
+      <button type="button" class="enlace-boton" @click="cargar">Reintentar</button>
     </p>
-    <p v-if="mensaje" class="step-note warn" role="alert">{{ mensaje }}</p>
+    <p v-if="mensaje" class="paso-nota warn" role="alert">{{ mensaje }}</p>
     <p v-if="remotos === null && !errorServidor" class="muted">Cargando los borradores…</p>
 
     <p v-if="tabla.principales === 0" class="muted empty">
       {{ filas.length === 0 ? 'Todavía no hay presupuestos. Crea el primero con «Nuevo presupuesto».' : 'Ningún presupuesto cumple los filtros.' }}
     </p>
-    <div v-else class="budget-table-wrap">
-      <table class="budget-table">
+    <div v-else class="presupuesto-tabla-envoltorio">
+      <table class="presupuesto-tabla">
         <colgroup>
           <col><col style="width: 150px"><col style="width: 190px"><col style="width: 110px"><col style="width: 130px"><col style="width: 170px"><col style="width: 250px">
         </colgroup>
         <thead>
           <tr>
             <th v-for="c in COLUMNAS" :key="c.clave" :class="c.clase" :aria-sort="ariaOrden(c.clave)">
-              <button type="button" class="sort-btn" :class="{ on: orden && orden.key === c.clave }" title="Ordenar por esta columna" @click="orden = nextSort(orden, c.clave)">
+              <button type="button" class="orden-boton" :class="{ on: orden && orden.key === c.clave }" title="Ordenar por esta columna" @click="orden = nextSort(orden, c.clave)">
                 {{ c.etiqueta }}
-                <span class="sort-icon" aria-hidden="true">{{ iconoOrden(c.clave) }}</span>
+                <span class="orden-icon" aria-hidden="true">{{ iconoOrden(c.clave) }}</span>
               </button>
             </th>
             <th />
@@ -63,18 +63,18 @@
         </thead>
         <tbody>
           <template v-for="it in tabla.items" :key="it.tipo === 'grupo' ? 'oferta-' + it.ofertaId : it.row.id">
-            <tr v-if="it.tipo === 'grupo'" class="group-row">
+            <tr v-if="it.tipo === 'grupo'" class="grupo-fila">
               <td colspan="7">
-                <button type="button" class="group-toggle" :aria-expanded="desplegadas.has(it.ofertaId)"
+                <button type="button" class="grupo-alternar" :aria-expanded="desplegadas.has(it.ofertaId)"
                         :title="desplegadas.has(it.ofertaId) ? 'Ocultar las versiones' : 'Ver las versiones de este proyecto'" @click="alternar(it.ofertaId)">
                   <span aria-hidden="true">{{ desplegadas.has(it.ofertaId) ? '▾' : '▸' }}</span> {{ it.name }}
                 </button>
                 <span class="tag state local" title="Mismo cliente y mismo proyecto: solo uno se validará">Proyecto · {{ it.count }} versiones</span>
               </td>
             </tr>
-            <tr v-else :class="{ 'variant-row': it.hija }">
+            <tr v-else :class="{ 'variante-fila': it.hija }">
               <td>
-                <button type="button" class="product-link" @click="abrir(it.row)">{{ it.hija ? (tabla.etiquetas.get(it.row.id) || it.row.name) : it.row.name }}</button>
+                <button type="button" class="producto-enlace" @click="abrir(it.row)">{{ it.hija ? (tabla.etiquetas.get(it.row.id) || it.row.name) : it.row.name }}</button>
                 <span v-if="it.row.customer === 'potencial'" class="tag state local" title="El cliente aún no existe en la intranet: se dará de alta cuando se valide el presupuesto">Cliente potencial</span>
                 <span v-if="it.row.customer === ''" class="tag issue warn" title="Este presupuesto no tiene cliente vinculado: elígelo en «Editar parámetros»">Sin cliente</span>
                 <span v-if="it.row.dirty" class="tag issue warn" title="Tienes cambios en este navegador que no se han guardado en el servidor">Cambios sin guardar</span>
@@ -98,7 +98,7 @@
                 <div v-if="it.row.kind !== 'local' && it.row.updatedBy" class="muted small">por {{ it.row.updatedBy }}</div>
               </td>
               <td class="num">
-                <div class="row-actions">
+                <div class="fila-acciones">
                   <button type="button" class="secondary" :disabled="ocupado === it.row.id" @click="abrir(it.row)">Abrir</button>
                   <button type="button" class="secondary" :disabled="ocupado === it.row.id"
                           title="Copia el presupuesto entero: eliges si con el mismo cliente u otro"

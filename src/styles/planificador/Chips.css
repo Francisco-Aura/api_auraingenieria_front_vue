@@ -2,7 +2,7 @@
 
 .pill,
 .badge,
-.phase-chip {
+.fase-chip {
   --c: var(--accent);
   display: inline-block;
   padding: 1px 9px;
@@ -17,7 +17,7 @@
 }
 
 /* Retraso: más intenso cuanto mayor es el nivel */
-.delay-badge {
+.retraso-insignia {
   --c: #f59e0b;
   display: inline-block;
   padding: 1px 8px;
@@ -31,14 +31,14 @@
   border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
 }
 
-.delay-badge.level-3 {
+.retraso-insignia.level-3 {
   color: #fff;
   background: var(--c);
   border-color: var(--c);
 }
 
 /* Tarea con un cambio del contrato por revisar */
-.review-badge {
+.revision-insignia {
   display: inline-block;
   padding: 1px 8px;
   border-radius: 5px;
@@ -51,7 +51,7 @@
   border: 1px solid color-mix(in srgb, #0ea5e9 50%, transparent);
 }
 
-.review-mark {
+.revision-marca {
   color: #0ea5e9;
   font-weight: 700;
 }
@@ -70,7 +70,7 @@
   border-radius: 5px;
 }
 
-.badge-group {
+.insignia-grupo {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -78,11 +78,11 @@
   vertical-align: middle;
 }
 
-button.phase-chip {
+button.fase-chip {
   cursor: pointer;
 }
 
-button.phase-chip:hover {
+button.fase-chip:hover {
   background: color-mix(in srgb, var(--c) 26%, transparent);
 }
 

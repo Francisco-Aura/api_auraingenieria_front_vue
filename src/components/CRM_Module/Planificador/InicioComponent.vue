@@ -1,16 +1,16 @@
 <template>
-  <div class="home">
+  <div class="inicio">
     <h1>Planificador</h1>
-    <p class="muted home-lead">¿Con qué quieres trabajar?</p>
-    <div class="home-cards">
-      <button v-for="t in tarjetas" :key="t.area" type="button" class="home-card" @click="$emit('abrir', t.area)">
+    <p class="muted inicio-intro">¿Con qué quieres trabajar?</p>
+    <div class="inicio-tarjetas">
+      <button v-for="t in tarjetas" :key="t.area" type="button" class="inicio-tarjeta" @click="$emit('abrir', t.area)">
         <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path v-for="(d, i) in t.trazos" :key="i" :d="d" />
           <rect v-for="(r, i) in t.rectangulos" :key="'r' + i" :x="r.x" :y="r.y" :width="r.w" :height="r.h" :rx="r.rx" />
         </svg>
         <strong>{{ t.titulo }}</strong>
         <span>{{ t.texto }}</span>
-        <b v-if="(pendientes[t.area] || 0) > 0" class="home-badge" :title="pendientes[t.area] + ' pendientes (por validar o con la propuesta entregada al cliente)'" :aria-label="pendientes[t.area] + ' pendientes'">{{ pendientes[t.area] }}</b>
+        <b v-if="(pendientes[t.area] || 0) > 0" class="inicio-insignia" :title="pendientes[t.area] + ' pendientes (por validar o con la propuesta entregada al cliente)'" :aria-label="pendientes[t.area] + ' pendientes'">{{ pendientes[t.area] }}</b>
       </button>
     </div>
   </div>

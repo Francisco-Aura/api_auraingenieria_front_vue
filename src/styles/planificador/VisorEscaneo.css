@@ -1,4 +1,4 @@
-.scan {
+.escaneo {
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -9,7 +9,7 @@
   overflow: hidden;
 }
 
-.scan-head {
+.escaneo-cabecera {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -19,7 +19,7 @@
   background: var(--bg);
 }
 
-.scan-head strong {
+.escaneo-cabecera strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -27,7 +27,7 @@
   color: var(--text-h);
 }
 
-.scan-tools {
+.escaneo-herramientas {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -36,8 +36,8 @@
   color: var(--muted);
 }
 
-.scan-tools button,
-.scan-tools a {
+.escaneo-herramientas button,
+.escaneo-herramientas a {
   min-width: 28px;
   padding: 2px 8px;
   border: 1px solid var(--border);
@@ -50,13 +50,13 @@
   text-decoration: none;
 }
 
-.scan-body {
+.escaneo-cuerpo {
   flex: 1;
   min-height: 0;
   overflow: auto;
 }
 
-.scan-body iframe {
+.escaneo-cuerpo iframe {
   display: block;
   width: 100%;
   height: 100%;
@@ -65,7 +65,7 @@
 }
 
 /* Documento de Word con su aspecto original (docx-preview) */
-.docx-body {
+.docx-cuerpo {
   background: color-mix(in srgb, var(--text) 14%, var(--bg-alt));
 }
 
@@ -76,18 +76,18 @@
   color: var(--muted);
 }
 
-.docx-host .docx-wrapper {
+.docx-host .docx-envoltorio {
   padding: 12px;
   background: transparent;
 }
 
-.docx-host .docx-wrapper > section.docx {
+.docx-host .docx-envoltorio > section.docx {
   margin-bottom: 12px;
   box-shadow: 0 1px 6px rgb(0 0 0 / 0.35);
 }
 
 /* Documento de Word mostrado como texto */
-.txt-body {
+.txt-cuerpo {
   padding: 14px 18px;
   background: var(--bg);
   font-size: 13px;
@@ -95,18 +95,18 @@
   color: var(--text);
 }
 
-.txt-body p {
+.txt-cuerpo p {
   margin: 0 0 8px;
 }
 
-.txt-body h4 {
+.txt-cuerpo h4 {
   margin: 14px 0 6px;
   font-size: 13px;
   letter-spacing: 0.03em;
   color: var(--text-h);
 }
 
-.txt-row {
+.txt-fila {
   display: grid;
   gap: 10px;
   padding: 4px 8px;
@@ -119,7 +119,7 @@
   border-bottom: 1.5px dashed var(--muted);
 }
 
-.scan-body img {
+.escaneo-cuerpo img {
   display: block;
   max-width: none;
   height: auto;

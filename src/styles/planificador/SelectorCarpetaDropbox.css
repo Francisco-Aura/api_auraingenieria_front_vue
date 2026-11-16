@@ -20,7 +20,7 @@
   align-items: stretch;
 }
 
-.dbx-open {
+.dbx-abrir {
   flex: 1;
   text-align: left;
   padding: 7px 10px;
@@ -31,16 +31,16 @@
   cursor: pointer;
 }
 
-.dbx-open:hover {
+.dbx-abrir:hover {
   background: color-mix(in srgb, var(--accent) 10%, var(--bg));
 }
 
-.dbx-filter {
+.dbx-filtro {
   width: 100%;
   margin-top: 8px;
 }
 
-.dbx-choose {
+.dbx-escoger {
   margin: 8px 0;
 }
 

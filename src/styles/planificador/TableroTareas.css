@@ -1,4 +1,4 @@
-.board-filters {
+.tablero-filtros {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -6,7 +6,7 @@
   margin-bottom: 14px;
 }
 
-.board-filters label {
+.tablero-filtros label {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -14,12 +14,12 @@
   color: var(--muted);
 }
 
-.board-hint {
+.tablero-pista {
   margin-left: auto;
   font-size: 12.5px;
 }
 
-.board {
+.tablero {
   display: grid;
   grid-template-columns: repeat(5, minmax(215px, 1fr));
   gap: 12px;
@@ -28,7 +28,7 @@
   padding-bottom: 6px;
 }
 
-.card-blocked {
+.tarjeta-blocked {
   margin: -2px 0 8px;
   padding: 3px 8px;
   border-radius: 6px;
@@ -37,7 +37,7 @@
   background: color-mix(in srgb, #8b5cf6 14%, transparent);
 }
 
-.board-col {
+.tablero-col {
   --s: var(--muted);
   padding: 10px;
   border: 1px solid var(--border);
@@ -47,33 +47,33 @@
   transition: background 0.1s, border-color 0.1s;
 }
 
-.board-col.over {
+.tablero-col.over {
   border-color: var(--s);
   background: color-mix(in srgb, var(--s) 12%, var(--bg-alt));
 }
 
-.board-col-head {
+.tablero-col-cabecera {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 2px 4px 10px;
 }
 
-.board-col-head h3 {
+.tablero-col-cabecera h3 {
   margin: 0;
   font-size: 13.5px;
   font-weight: 600;
   color: var(--text-h);
 }
 
-.board-dot {
+.tablero-punto {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   background: var(--s);
 }
 
-.board-count {
+.tablero-total {
   margin-left: auto;
   padding: 0 8px;
   border-radius: 999px;
@@ -83,7 +83,7 @@
   color: var(--text-h);
 }
 
-.board-cards {
+.tablero-tarjetas {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -93,7 +93,7 @@
   padding-right: 2px;
 }
 
-.board-empty {
+.tablero-vacio {
   margin: 8px 0;
   text-align: center;
   font-size: 13px;
@@ -118,16 +118,16 @@
 }
 
 /* Retraso: la tarjeta toma el color de la alerta, más fuerte cuanto más grave */
-.card.late {
+.card.retraso {
   border-color: color-mix(in srgb, var(--alert) 55%, var(--border));
   background: color-mix(in srgb, var(--alert) 8%, var(--bg));
 }
 
-.card.late.level-2 {
+.card.retraso.level-2 {
   background: color-mix(in srgb, var(--alert) 13%, var(--bg));
 }
 
-.card.late.level-3 {
+.card.retraso.level-3 {
   background: color-mix(in srgb, var(--alert) 20%, var(--bg));
   box-shadow: 0 0 0 1px var(--alert), 0 2px 8px color-mix(in srgb, var(--alert) 30%, transparent);
 }
@@ -140,31 +140,31 @@
   opacity: 0.45;
 }
 
-.card.done .card-title {
+.card.done .tarjeta-titulo {
   color: var(--muted);
   text-decoration: line-through;
   text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent);
 }
 
-.card-chips {
+.tarjeta-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
   margin-bottom: 6px;
 }
 
-.card-title {
+.tarjeta-titulo {
   margin: 0 0 8px;
   font-size: 13.5px;
   line-height: 1.35;
   color: var(--text-h);
 }
 
-.card-milestone {
+.tarjeta-hito {
   color: var(--c);
 }
 
-.card-foot {
+.tarjeta-pie {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -173,7 +173,7 @@
   color: var(--muted);
 }
 
-.card-waiting {
+.tarjeta-waiting {
   margin: 8px 0 0;
   padding: 3px 8px;
   border-radius: 6px;

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!remoto || remoto.status !== 'descartado'" class="status-box">
+  <div v-if="!remoto || remoto.status !== 'descartado'" class="estado-caja">
     <template v-if="accion.tipo === 'validar'">
       <button type="button" @click="validar">Validar presupuesto</button>
       <span class="muted">Es el que elige el jefe: el resto de variantes de su oferta se descartan.</span>

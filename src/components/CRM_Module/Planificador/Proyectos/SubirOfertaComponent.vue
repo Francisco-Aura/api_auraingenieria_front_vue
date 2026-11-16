@@ -1,22 +1,22 @@
 <template>
-  <div class="contract-upload" :class="{ dragging: arrastrando }" @dragenter="entrarArrastre" @dragover="sobreArrastre" @dragleave="salirArrastre" @drop="soltar">
-    <div class="upload-row">
-      <label class="upload-btn" :class="{ disabled: ocupado }">
+  <div class="contrato-subida" :class="{ dragging: arrastrando }" @dragenter="entrarArrastre" @dragover="sobreArrastre" @dragleave="salirArrastre" @drop="soltar">
+    <div class="subida-fila">
+      <label class="subida-boton" :class="{ disabled: ocupado }">
         {{ ocupado ? 'Leyendo el presupuesto…' : 'Subir presupuesto' }}
         <input type="file" hidden :disabled="ocupado" accept=".pdf,application/pdf" @change="elegir">
       </label>
       <span class="muted">{{ arrastrando ? 'Suelta el PDF aquí para leerlo.' : 'o arrástralo hasta aquí. Presupuesto de la oferta en PDF: se rellenan los datos del proyecto y del contrato.' }}</span>
     </div>
 
-    <div v-if="ocupado" class="reading-box" role="status" aria-live="polite">
+    <div v-if="ocupado" class="lectura-caja" role="status" aria-live="polite">
       <span class="spinner" aria-hidden="true" />
       <div><strong>Leyendo el presupuesto…</strong><span class="muted"> Se están rellenando los datos del proyecto y del contrato. Puede tardar unos segundos.</span></div>
     </div>
 
     <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="ilegible" class="upload-result scan-note"><strong>{{ ilegible }}</strong> no tiene texto que se pueda leer (¿es un escaneo?). Teclea los datos mirando el presupuesto.</p>
+    <p v-if="ilegible" class="subida-resultado scan-note"><strong>{{ ilegible }}</strong> no tiene texto que se pueda leer (¿es un escaneo?). Teclea los datos mirando el presupuesto.</p>
 
-    <div v-if="resultado" class="upload-result">
+    <div v-if="resultado" class="subida-resultado">
       <p><strong>{{ resultado.filename }}</strong> leído. {{ encontrados.length + datosProyecto.length > 0 ? 'Se han rellenado los datos que aparecen abajo; revísalos antes de crear el proyecto.' : 'No se ha encontrado ningún dato de los que se piden.' }}</p>
       <ul v-if="datosProyecto.length > 0" class="found">
         <li v-for="[clave, f] in datosProyecto" :key="clave">
@@ -33,7 +33,7 @@
           <blockquote>{{ f.source }}</blockquote>
         </li>
       </ul>
-      <ul v-if="resultado.notes.length > 0" class="notes"><li v-for="n in resultado.notes" :key="n">{{ n }}</li></ul>
+      <ul v-if="resultado.notes.length > 0" class="notas"><li v-for="n in resultado.notes" :key="n">{{ n }}</li></ul>
       <p v-if="resultado.missing.length > 0" class="muted">No encontrado en el presupuesto: {{ resultado.missing.map(etiqueta).join(', ') }}. Complétalo a mano.</p>
     </div>
   </div>

@@ -7,7 +7,7 @@
     @duplicar="duplicarActual" @abrir-variante="abrirVariante" @variante-eliminada="varianteEliminada" @estado="cambiarEstado" @resolver="resolver"
   />
   <div v-else>
-    <p v-if="aviso" class="step-note warn" role="alert">{{ aviso }}</p>
+    <p v-if="aviso" class="paso-nota warn" role="alert">{{ aviso }}</p>
     <lista-presupuestos-component ref="lista" :con-volver="conVolver" @cerrar="$emit('cerrar')" @nuevo="vista = 'nuevo'" @abrir="(id) => abrir(id, true)" @abrir-local="(id) => abrir(id, false)" @duplicar="pedirDuplicado" />
   </div>
   <duplicar-presupuesto-modal v-if="duplicando" :nombre="duplicando.nombre" :variante="duplicando.variante" @cerrar="duplicando = null" @confirmar="duplicar" />

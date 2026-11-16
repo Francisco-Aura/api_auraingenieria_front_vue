@@ -1,5 +1,5 @@
 <template>
-  <span v-if="etiqueta" class="prot-badge" :class="'tone-' + tono" title="Tipo y elemento de la protección">
+  <span v-if="etiqueta" class="prot-insignia" :class="'tone-' + tono" title="Tipo y elemento de la protección">
     <svg v-if="trazos" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"
          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" v-html="trazos" />
     {{ etiqueta }}

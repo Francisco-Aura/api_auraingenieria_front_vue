@@ -1,51 +1,51 @@
 <template>
   <modal-component :ancho="true" :titulo="nombre" @cerrar="$emit('cerrar')">
-    <div class="product-sheet">
-      <div class="sheet-head">
+    <div class="producto-ficha">
+      <div class="ficha-cabecera">
         <span class="tag">{{ categoria ? categoria.label : producto.category }}</span>
         <span class="muted">{{ producto.supplier || 'Sin proveedor' }}</span>
-        <strong v-if="producto.unit_price > 0" class="sheet-price">{{ eur(producto.unit_price) }} <span class="muted">/ {{ producto.unit }}</span></strong>
-        <span v-else class="tag no-price sheet-price">⚠ Sin precio</span>
-        <button type="button" class="icon-btn product-edit" title="Editar el producto en el inventario (precio, características…)" :aria-label="'Editar ' + nombre" @click="$emit('editar')">
+        <strong v-if="producto.unit_price > 0" class="ficha-precio">{{ eur(producto.unit_price) }} <span class="muted">/ {{ producto.unit }}</span></strong>
+        <span v-else class="tag no-precio ficha-precio">⚠ Sin precio</span>
+        <button type="button" class="icon-btn producto-edicion" title="Editar el producto en el inventario (precio, características…)" :aria-label="'Editar ' + nombre" @click="$emit('editar')">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3" /></svg>
         </button>
       </div>
 
-      <dl v-if="propias.length > 0" class="sheet-data">
+      <dl v-if="propias.length > 0" class="ficha-datos">
         <div v-for="fila in propias" :key="fila.etiqueta"><dt>{{ fila.etiqueta }}</dt><dd>{{ fila.valor }}</dd></div>
       </dl>
       <template v-if="grupos.length > 0">
         <h3>Características adicionales</h3>
-        <div class="sheet-groups">
-          <details v-for="(g, i) in grupos" :key="g.grupo" class="sheet-group" :open="i === 0">
-            <summary>{{ g.grupo }} <span class="sheet-group-count">{{ g.filas.length }}</span></summary>
-            <dl class="sheet-data">
+        <div class="ficha-grupos">
+          <details v-for="(g, i) in grupos" :key="g.grupo" class="ficha-grupo" :open="i === 0">
+            <summary>{{ g.grupo }} <span class="ficha-grupo-total">{{ g.filas.length }}</span></summary>
+            <dl class="ficha-datos">
               <div v-for="f in g.filas" :key="f.nombre"><dt>{{ f.nombre }}</dt><dd>{{ f.valor }}</dd></div>
             </dl>
           </details>
         </div>
       </template>
       <p v-if="propias.length === 0 && extras.length === 0" class="muted">Este producto aún no tiene características.</p>
-      <p v-if="producto.notes" class="muted sheet-notes">{{ producto.notes }}</p>
+      <p v-if="producto.notes" class="muted ficha-notas">{{ producto.notes }}</p>
 
       <template v-if="ofertas.length > 0">
         <h3>Proveedores y precios</h3>
-        <p v-if="conPrecio.length > 1" class="muted sheet-offers-summary">
+        <p v-if="conPrecio.length > 1" class="muted ficha-ofertas-resumen">
           {{ conPrecio.length }} precios distintos{{ masBarato !== null && masCaro !== null && masCaro > masBarato ? ': de ' + eur(masBarato) + ' a ' + eur(masCaro) + ' (' + eur(masCaro - masBarato) + ' de diferencia)' : ': todos iguales' }}
         </p>
-        <ul class="sheet-offer-list">
-          <li v-for="o in ofertas" :key="o.supplier" class="sheet-offer" :class="{ main: o.supplier === producto.supplier }">
-            <div class="sheet-offer-name">
+        <ul class="ficha-oferta-lista">
+          <li v-for="o in ofertas" :key="o.supplier" class="ficha-oferta" :class="{ main: o.supplier === producto.supplier }">
+            <div class="ficha-oferta-nombre">
               <strong>{{ o.supplier }}</strong>
               <span v-if="o.supplier === producto.supplier" class="tag">★ precio del presupuestador</span>
               <span v-if="esMasBarato(o)" class="tag cheapest">más barato</span>
             </div>
-            <div class="sheet-offer-price">
+            <div class="ficha-oferta-precio">
               <template v-if="o.price > 0"><strong>{{ eur(o.price) }}</strong> <span class="muted">/ {{ producto.unit }}</span></template>
-              <span v-else class="tag no-price">sin precio</span>
+              <span v-else class="tag no-precio">sin precio</span>
             </div>
-            <div v-if="conPrecio.length > 1 && o.price > 0 && masCaro !== null && masBarato !== null" class="sheet-offer-compare">
-              <span class="sheet-offer-bar" aria-hidden="true"><span :class="{ cheap: esMasBarato(o) }" :style="{ width: Math.max(6, (o.price / masCaro) * 100) + '%' }" /></span>
+            <div v-if="conPrecio.length > 1 && o.price > 0 && masCaro !== null && masBarato !== null" class="ficha-oferta-comparar">
+              <span class="ficha-oferta-barra" aria-hidden="true"><span :class="{ cheap: esMasBarato(o) }" :style="{ width: Math.max(6, (o.price / masCaro) * 100) + '%' }" /></span>
               <span class="muted">{{ o.price === masBarato ? (masCaro === masBarato ? 'igual que los demás' : 'el más barato') : '+' + eur(o.price - masBarato) + ' sobre el más barato' }}</span>
             </div>
           </li>
@@ -55,13 +55,13 @@
 
       <h3>Ficha técnica</h3>
       <template v-if="producto.datasheet">
-        <p class="muted sheet-file">📄 {{ archivo }}</p>
-        <iframe class="sheet-pdf" :title="'Ficha técnica de ' + nombre" :src="urlFicha" />
+        <p class="muted ficha-fichero">📄 {{ archivo }}</p>
+        <iframe class="ficha-pdf" :title="'Ficha técnica de ' + nombre" :src="urlFicha" />
       </template>
       <p v-else class="muted">Este producto no tiene ficha técnica adjunta. Se adjunta desde el inventario.</p>
     </div>
     <template #pie>
-      <a v-if="producto.datasheet" class="sheet-open" :href="urlFicha" target="_blank" rel="noreferrer">Abrir la ficha en otra pestaña ↗</a>
+      <a v-if="producto.datasheet" class="ficha-abrir" :href="urlFicha" target="_blank" rel="noreferrer">Abrir la ficha en otra pestaña ↗</a>
       <button type="button" @click="$emit('cerrar')">Cerrar</button>
     </template>
   </modal-component>

@@ -1,5 +1,5 @@
 <template>
-  <div class="proposal-box">
+  <div class="propuesta-caja">
     <template v-if="lista === null">
       <p v-if="error" class="error">{{ error }}</p>
       <p v-else class="muted">Cargando la propuesta…</p>
@@ -7,49 +7,49 @@
     <template v-else>
       <template v-if="!actual">
         <p class="muted">Este presupuesto está validado. Crea la propuesta que se le mandará al cliente y anota aquí cómo avanza.</p>
-        <div class="proposal-actions">
+        <div class="propuesta-acciones">
           <button type="button" :disabled="ocupado" @click="ejecutar(() => crear())">Crear propuesta</button>
         </div>
       </template>
 
       <template v-else>
-        <div class="proposal-head">
+        <div class="propuesta-cabecera">
           <h3>Propuesta nº {{ actual.version }}</h3>
           <span class="tag state" :class="CLASE_PROPUESTA[actual.status]">{{ ETIQUETA[actual.status] }}</span>
         </div>
 
-        <section class="proposal-doc" aria-label="Documento">
+        <section class="propuesta-documento" aria-label="Documento">
           <div>
             <strong>Presentación de la propuesta</strong>
-            <p class="muted proposal-help">Se genera con los datos del presupuesto; lo que no tiene, como la dirección del cliente, queda en blanco. Es un archivo HTML: se abre en el navegador, y para sacar el PDF se imprime (Ctrl+P, «Guardar como PDF»).</p>
+            <p class="muted propuesta-ayuda">Se genera con los datos del presupuesto; lo que no tiene, como la dirección del cliente, queda en blanco. Es un archivo HTML: se abre en el navegador, y para sacar el PDF se imprime (Ctrl+P, «Guardar como PDF»).</p>
           </div>
           <button type="button" class="secondary" :disabled="ocupado" @click="ejecutar(() => descargar(actual.id))">Descargar presentación</button>
         </section>
 
-        <section class="proposal-logo" aria-label="Logo del cliente">
-          <button type="button" class="proposal-logo-box" :disabled="ocupado" title="Haz clic o arrastra una imagen para subir el logo" @click="$refs.logo.click()" @dragover.prevent @drop.prevent="soltarLogo">
+        <section class="propuesta-logo" aria-label="Logo del cliente">
+          <button type="button" class="propuesta-logo-caja" :disabled="ocupado" title="Haz clic o arrastra una imagen para subir el logo" @click="$refs.logo.click()" @dragover.prevent @drop.prevent="soltarLogo">
             <img v-if="actual.client_logo" :src="actual.client_logo" alt="Logo de la empresa del cliente">
             <span v-else class="muted">+ Subir logo</span>
           </button>
           <div>
             <strong>Logo de la empresa del cliente</strong>
-            <p class="muted proposal-help">Haz clic en la caja o arrastra la imagen: sustituye al logo anterior. Se inserta solo en la presentación («Te lo ponemos fácil»). PNG, JPG, WebP o SVG.</p>
+            <p class="muted propuesta-ayuda">Haz clic en la caja o arrastra la imagen: sustituye al logo anterior. Se inserta solo en la presentación («Te lo ponemos fácil»). PNG, JPG, WebP o SVG.</p>
           </div>
           <input ref="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirLogo">
         </section>
 
-        <ol class="proposal-steps">
+        <ol class="propuesta-pasos">
           <li class="done">
-            <span class="step-mark" aria-hidden="true">✓</span>
+            <span class="paso-marca" aria-hidden="true">✓</span>
             <div>
               <strong>Propuesta creada</strong>
               <p class="muted">{{ dia(actual.created_at) }}{{ actual.created_by ? ' · ' + actual.created_by : '' }}</p>
-              <button v-if="actual.status === 'borrador'" type="button" class="link-btn" :disabled="ocupado" @click="eliminarBorrador">Eliminar borrador</button>
+              <button v-if="actual.status === 'borrador'" type="button" class="enlace-boton" :disabled="ocupado" @click="eliminarBorrador">Eliminar borrador</button>
             </div>
           </li>
 
           <li :class="enviada ? 'done' : 'now'">
-            <span class="step-mark" aria-hidden="true">{{ enviada ? '✓' : '2' }}</span>
+            <span class="paso-marca" aria-hidden="true">{{ enviada ? '✓' : '2' }}</span>
             <div>
               <strong>Entregada al cliente</strong>
               <p v-if="enviada" class="muted">{{ dia(actual.sent_at) }}{{ actual.sent_by ? ' · ' + actual.sent_by : '' }}</p>
@@ -61,18 +61,18 @@
           </li>
 
           <li :class="decidida ? 'done' : enviada ? 'now' : 'todo'">
-            <span class="step-mark" aria-hidden="true">{{ decidida ? (actual.status === 'aprobada' ? '✓' : '✕') : '3' }}</span>
+            <span class="paso-marca" aria-hidden="true">{{ decidida ? (actual.status === 'aprobada' ? '✓' : '✕') : '3' }}</span>
             <div>
               <strong>Respuesta del cliente</strong>
               <template v-if="decidida">
                 <p class="muted">
                   {{ actual.status === 'aprobada' ? 'Aprobada' : 'Rechazada' }} el {{ dia(actual.decided_at) }}{{ actual.decided_by ? ' · anotado por ' + actual.decided_by : '' }}
                 </p>
-                <p v-if="actual.note" class="proposal-note">«{{ actual.note }}»</p>
+                <p v-if="actual.note" class="propuesta-nota">«{{ actual.note }}»</p>
               </template>
               <template v-else-if="enviada">
                 <p class="muted">¿Qué ha contestado el cliente?</p>
-                <div class="proposal-actions">
+                <div class="propuesta-acciones">
                   <button type="button" class="secondary" :disabled="ocupado" @click="responder('aprobar')">La aprueba</button>
                   <button type="button" class="secondary" :disabled="ocupado" @click="responder('rechazar')">La rechaza</button>
                 </div>
@@ -82,13 +82,13 @@
           </li>
         </ol>
 
-        <div v-if="actual.status === 'rechazada'" class="proposal-actions">
+        <div v-if="actual.status === 'rechazada'" class="propuesta-acciones">
           <button type="button" :disabled="ocupado" @click="ejecutar(() => crear())">Crear la propuesta nº {{ actual.version + 1 }}</button>
         </div>
-        <p v-if="actual.status === 'aprobada'" class="step-note ok">El cliente aprobó la propuesta.</p>
+        <p v-if="actual.status === 'aprobada'" class="paso-nota ok">El cliente aprobó la propuesta.</p>
       </template>
 
-      <details v-if="historial.length > 0" class="proposal-history">
+      <details v-if="historial.length > 0" class="propuesta-historial">
         <summary>Versiones anteriores ({{ historial.length }})</summary>
         <ul>
           <li v-for="p in historial" :key="p.id">

@@ -1,7 +1,7 @@
 <template>
   <modal-component :ancho="true" :titulo="titulo" @cerrar="cerrar">
-    <form id="inv-form" class="inv-form" @submit.prevent="guardar">
-      <p v-if="copiaDe" class="step-note info inv-copy-note" role="status">
+    <form id="inv-form" class="inv-formulario" @submit.prevent="guardar">
+      <p v-if="copiaDe" class="paso-nota info inv-copy-nota" role="status">
         Copia de <strong>«{{ copiaDe }}»</strong>: cambia lo que haga falta (el modelo, las características, los precios…) y pulsa
         «Crear producto». El stock empieza en 0.
       </p>
@@ -9,7 +9,7 @@
 
       <fieldset>
         <legend>Producto</legend>
-        <div class="inv-grid">
+        <div class="inv-rejilla">
           <label>
             Categoría
             <select v-model="form.category" :disabled="!creando" :title="creando ? undefined : 'La categoría no se cambia una vez creado el producto'"
@@ -26,37 +26,37 @@
 
       <fieldset class="inv-offers">
         <legend>Proveedores y precios</legend>
-        <p class="muted inv-hint">
+        <p class="muted inv-pista">
           Cada proveedor del producto con su precio (sin IVA, por {{ form.unit || 'ud' }}). El principal es el que usa el presupuestador.
         </p>
         <template v-if="form.offers.length > 0">
-          <p v-if="precios.length > 1" class="inv-offer-summary">
+          <p v-if="precios.length > 1" class="inv-oferta-resumen">
             <strong>{{ precios.length }} precios distintos</strong>
             <template v-if="minimo === maximo"> · todos los proveedores cobran lo mismo ({{ eur(minimo) }})</template>
             <template v-else> · de <strong>{{ eur(minimo) }}</strong> a <strong>{{ eur(maximo) }}</strong> · {{ eur(maximo - minimo) }} de diferencia</template>
           </p>
-          <ul class="inv-offer-list">
-            <li v-for="(oferta, i) in form.offers" :key="i" class="inv-offer-card" :class="{ main: esPrincipal(oferta) }">
-              <div class="inv-offer-top">
-                <button type="button" class="inv-offer-use" :class="{ on: esPrincipal(oferta) }" :disabled="!oferta.supplier"
+          <ul class="inv-oferta-lista">
+            <li v-for="(oferta, i) in form.offers" :key="i" class="inv-oferta-tarjeta" :class="{ main: esPrincipal(oferta) }">
+              <div class="inv-oferta-cabecera">
+                <button type="button" class="inv-oferta-usar" :class="{ on: esPrincipal(oferta) }" :disabled="!oferta.supplier"
                         :aria-pressed="esPrincipal(oferta)" title="El precio del proveedor principal es el que usa el presupuestador"
                         @click="form.principal = oferta.supplier">
                   {{ esPrincipal(oferta) ? '★ Precio del presupuestador' : 'Usar este precio' }}
                 </button>
                 <span v-if="esMasBarata(oferta)" class="tag cheapest">Más barato</span>
-                <button type="button" class="icon-btn inv-offer-remove" title="Quitar este proveedor"
+                <button type="button" class="icon-btn inv-oferta-quitar" title="Quitar este proveedor"
                         :aria-label="'Quitar ' + (oferta.supplier || 'el proveedor ' + (i + 1))" @click="form.offers.splice(i, 1)">×</button>
               </div>
-              <div class="inv-offer-fields">
+              <div class="inv-oferta-campos">
                 <campo-lista :model-value="oferta.supplier" :etiqueta="'Proveedor ' + (i + 1)" :opciones="proveedoresLibres(oferta)"
                              vacio="(elige proveedor)" @update:model-value="cambiarProveedor(oferta, $event)" />
-                <label class="inv-offer-price">
+                <label class="inv-oferta-precio">
                   Precio (€ / {{ form.unit || 'ud' }})
                   <input v-model="oferta.price" inputmode="decimal" placeholder="0,00">
                 </label>
               </div>
-              <div v-if="precios.length > 1 && aNumero(oferta.price) > 0" class="inv-offer-compare">
-                <span class="inv-offer-bar" aria-hidden="true">
+              <div v-if="precios.length > 1 && aNumero(oferta.price) > 0" class="inv-oferta-comparar">
+                <span class="inv-oferta-barra" aria-hidden="true">
                   <span :class="{ cheap: esMasBarata(oferta) }" :style="{ width: Math.max(6, (aNumero(oferta.price) / maximo) * 100) + '%' }" />
                 </span>
                 <span class="muted">{{ comparacion(oferta) }}</span>
@@ -64,12 +64,12 @@
             </li>
           </ul>
         </template>
-        <p v-else class="muted inv-hint">Este producto aún no tiene proveedores: el precio queda sin definir.</p>
-        <div class="inv-offer-actions">
+        <p v-else class="muted inv-pista">Este producto aún no tiene proveedores: el precio queda sin definir.</p>
+        <div class="inv-oferta-acciones">
           <button type="button" class="secondary" @click="form.offers.push({ supplier: '', price: '', ref: '' })">+ Añadir proveedor</button>
-          <span v-if="!creando" class="inv-reviewed">
+          <span v-if="!creando" class="inv-revisado">
             {{ producto && producto.price_reviewed_at ? 'Precios revisados el ' + fechaCorta(producto.price_reviewed_at) : 'Precios sin revisar nunca' }}
-            <button type="button" class="link-btn" :disabled="bloqueado" @click="$emit('revisar', [productoId])">Marcar como revisados hoy</button>
+            <button type="button" class="enlace-boton" :disabled="bloqueado" @click="$emit('revisar', [productoId])">Marcar como revisados hoy</button>
           </span>
         </div>
         <historial-precios-panel v-if="!creando" :id="productoId" :unidad="producto ? producto.unit : 'ud'"
@@ -78,7 +78,7 @@
 
       <fieldset v-if="campos.length > 0">
         <legend>Características de {{ categoria ? categoria.label.toLowerCase() : '' }}</legend>
-        <div class="inv-grid">
+        <div class="inv-rejilla">
           <label v-for="f in campos" :key="f.key">
             {{ f.label }}
             <!-- Lista cerrada: las reglas del presupuestador se apoyan en estos valores. Un valor antiguo fuera de la lista se sigue enseñando. -->
@@ -94,10 +94,10 @@
 
       <fieldset class="inv-extras">
         <legend>Características adicionales</legend>
-        <p class="muted inv-hint">Lo que no está arriba, agrupado: eficiencia, corrientes, comunicación, dimensiones, compatibilidades…</p>
-        <details v-for="g in gruposExtras" :key="g.grupo" class="inv-group" :open="gruposAbiertos.includes(g.grupo)"
+        <p class="muted inv-pista">Lo que no está arriba, agrupado: eficiencia, corrientes, comunicación, dimensiones, compatibilidades…</p>
+        <details v-for="g in gruposExtras" :key="g.grupo" class="inv-grupo" :open="gruposAbiertos.includes(g.grupo)"
                  @toggle="alternarGrupo(g.grupo, $event.target.open)">
-          <summary>{{ g.grupo }} <span class="inv-group-count">{{ g.filas.length }}</span></summary>
+          <summary>{{ g.grupo }} <span class="inv-grupo-total">{{ g.filas.length }}</span></summary>
           <div v-for="extra in g.filas" :key="extra.indice" class="inv-extra">
             <input v-model="form.extras[extra.indice].nombre" aria-label="Nombre de la característica" placeholder="Característica" :readonly="extra.clave !== null">
             <input v-model="form.extras[extra.indice].valor" :aria-label="'Valor de ' + (extra.nombre || 'la característica')" placeholder="Valor">
@@ -105,8 +105,8 @@
                     @click="form.extras.splice(extra.indice, 1)">×</button>
           </div>
         </details>
-        <p v-if="form.extras.length === 0" class="muted inv-hint">Este producto aún no tiene características adicionales.</p>
-        <div class="inv-add-extra">
+        <p v-if="form.extras.length === 0" class="muted inv-pista">Este producto aún no tiene características adicionales.</p>
+        <div class="inv-anadir-extra">
           <select v-model="borrador.grupo" aria-label="Grupo de la característica">
             <option v-for="g in GRUPOS" :key="g" :value="g">{{ g }}</option>
           </select>
@@ -118,22 +118,22 @@
 
       <fieldset class="inv-sheet">
         <legend>Ficha técnica</legend>
-        <p v-if="fichaActual" class="inv-sheet-file">
+        <p v-if="fichaActual" class="inv-ficha-fichero">
           📄 <a :href="urlFicha" target="_blank" rel="noreferrer">{{ fichaActual.split('/').pop() }}</a>
-          <button type="button" class="link-btn" :disabled="bloqueado" @click="quitarFicha">Quitar</button>
+          <button type="button" class="enlace-boton" :disabled="bloqueado" @click="quitarFicha">Quitar</button>
         </p>
-        <p v-if="copiaFicha" class="inv-sheet-file">
+        <p v-if="copiaFicha" class="inv-ficha-fichero">
           📄 {{ copiaFicha.split('/').pop() }} <span class="muted">· la misma ficha que «{{ copiaDe }}»</span>
-          <button type="button" class="link-btn" @click="sinFichaCopiada = true">No enlazarla</button>
+          <button type="button" class="enlace-boton" @click="sinFichaCopiada = true">No enlazarla</button>
         </p>
-        <p v-if="fichaPendiente" class="inv-sheet-file">
+        <p v-if="fichaPendiente" class="inv-ficha-fichero">
           📄 {{ fichaPendiente.name }} <span class="muted">· se subirá al crear el producto</span>
-          <button type="button" class="link-btn" @click="fichaPendiente = null">Quitar</button>
+          <button type="button" class="enlace-boton" @click="fichaPendiente = null">Quitar</button>
         </p>
-        <p v-if="estadoDropbox && !estadoDropbox.datasheets" class="muted inv-hint">Las fichas técnicas no están configuradas en este servidor (Dropbox): no se pueden adjuntar.</p>
+        <p v-if="estadoDropbox && !estadoDropbox.datasheets" class="muted inv-pista">Las fichas técnicas no están configuradas en este servidor (Dropbox): no se pueden adjuntar.</p>
         <template v-else-if="marcaDeFicha">
-          <div class="inv-sheet-actions">
-            <label class="inv-attach">
+          <div class="inv-ficha-acciones">
+            <label class="inv-adjuntar">
               <span class="secondary btn-like">{{ fichaActual || fichaPendiente ? 'Subir otra ficha (PDF)…' : 'Subir ficha técnica (PDF)…' }}</span>
               <input type="file" accept="application/pdf,.pdf" hidden :disabled="bloqueado" @change="adjuntarFicha">
             </label>
@@ -146,9 +146,9 @@
               <option v-for="f in archivosMarca" :key="f" :value="f">{{ f }}</option>
             </select>
           </label>
-          <p class="muted inv-hint">Las fichas están en Dropbox, en la carpeta de la marca ({{ marcaDeFicha }}), sin subcarpetas.<template v-if="!creando && form.brand !== marcaGuardada"> Guarda el cambio de marca antes de adjuntar.</template></p>
+          <p class="muted inv-pista">Las fichas están en Dropbox, en la carpeta de la marca ({{ marcaDeFicha }}), sin subcarpetas.<template v-if="!creando && form.brand !== marcaGuardada"> Guarda el cambio de marca antes de adjuntar.</template></p>
         </template>
-        <p v-else class="muted inv-hint">Elige y guarda la marca del producto: la ficha se guarda en la carpeta de su marca.</p>
+        <p v-else class="muted inv-pista">Elige y guarda la marca del producto: la ficha se guarda en la carpeta de su marca.</p>
         <p v-if="errorFicha" class="error">{{ errorFicha }}</p>
       </fieldset>
 
@@ -158,8 +158,8 @@
     <template #pie>
       <button v-if="!creando && !sencilla" type="button" class="secondary" :disabled="bloqueado" title="Crea un producto nuevo con estos mismos datos para cambiar lo que haga falta" @click="duplicar">Duplicar</button>
       <button v-if="!creando && !sencilla" type="button" class="secondary danger" :disabled="bloqueado" @click="quitar">Quitar del inventario</button>
-      <span v-if="problema && cambiado" class="plan-problem inv-problem">{{ problema }}</span>
-      <span v-if="error" class="plan-problem inv-problem">{{ error }}</span>
+      <span v-if="problema && cambiado" class="plan-problema inv-problema">{{ problema }}</span>
+      <span v-if="error" class="plan-problema inv-problema">{{ error }}</span>
       <button type="button" class="secondary" @click="cerrar">Cancelar</button>
       <button type="submit" form="inv-form" :disabled="bloqueado || !!problema || (!cambiado && !creando)">{{ creando ? 'Crear producto' : 'Guardar cambios' }}</button>
     </template>

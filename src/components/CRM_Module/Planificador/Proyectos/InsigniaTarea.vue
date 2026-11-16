@@ -3,14 +3,14 @@
     {{ meta.icon ? meta.icon + ' ' : '' }}{{ meta.label }}<span v-if="detalle" class="pill-detail"> · {{ detalle }}</span>
   </span>
 
-  <span v-else-if="tipo === 'retraso' && retraso" class="delay-badge" :class="'level-' + retraso.level" :style="{ '--c': retraso.color }"
+  <span v-else-if="tipo === 'retraso' && retraso" class="retraso-insignia" :class="'level-' + retraso.level" :style="{ '--c': retraso.color }"
         :title="retraso.label + ' (gravedad ' + levelName(retraso.level) + '). Plazo previsto: ' + retraso.planned">⚠ +{{ retraso.days }} d</span>
 
-  <span v-else-if="tipo === 'area' && partes.length > 0" class="badge-group">
+  <span v-else-if="tipo === 'area' && partes.length > 0" class="insignia-grupo">
     <span v-for="p in partes" :key="p" class="badge" :style="{ '--c': departmentColor(p) }" :title="p">{{ p }}</span>
   </span>
 
-  <component :is="alHacerClic ? 'button' : 'span'" v-else-if="tipo === 'fase'" class="phase-chip" :style="{ '--c': color }" :title="nombre" type="button" @click="$emit('clic')">{{ nombre.split('—')[0].trim() }}</component>
+  <component :is="alHacerClic ? 'button' : 'span'" v-else-if="tipo === 'fase'" class="fase-chip" :style="{ '--c': color }" :title="nombre" type="button" @click="$emit('clic')">{{ nombre.split('—')[0].trim() }}</component>
 
   <div v-else-if="tipo === 'progreso'" class="pbar" :style="color ? { '--c': color } : undefined" :aria-label="valor + '%'"><div class="pbar-fill" :style="{ width: valor + '%' }" /></div>
 </template>

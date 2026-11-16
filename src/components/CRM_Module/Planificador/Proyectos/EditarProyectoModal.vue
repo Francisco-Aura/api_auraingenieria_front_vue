@@ -2,7 +2,7 @@
   <modal-component :ancho="true" titulo="Editar datos del proyecto" @cerrar="$emit('cerrar')">
     <label class="field">Nombre <input v-model="nombre"></label>
     <label class="field">Descripción <textarea v-model="descripcion" rows="2" /></label>
-    <fieldset class="price-box">
+    <fieldset class="precio-caja">
       <legend>Contrato inicial de referencia</legend>
       <p class="hint">Es la base de los cambios registrados. Modificarlo recalcula los importes y datos vigentes.</p>
       <campos-contrato v-model:valores="valores" :campos="campos" />

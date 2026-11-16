@@ -1,10 +1,10 @@
-.dbx-field {
+.dbx-campo {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.dbx-field input {
+.dbx-campo input {
   width: 100%;
 }
 
@@ -17,13 +17,13 @@
 }
 
 /* El botón de elegir una carpeta que ya existe, separado de lo de encima */
-.dbx-pick {
+.dbx-elegir {
   margin-top: 6px;
   padding-top: 14px;
   border-top: 1px dashed var(--border);
 }
 
-.dbx-pick .hint {
+.dbx-elegir .hint {
   margin: 0 0 8px;
 }
 
@@ -42,7 +42,7 @@
   }
 }
 
-.dbx-note {
+.dbx-nota {
   margin: 0;
   padding: 8px 12px;
   border-radius: 6px;
@@ -54,23 +54,23 @@
   color: #1e7e34;
 }
 
-.dbx-same-day {
+.dbx-same-dia {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
 }
 
-.dbx-same-day .dbx-note {
+.dbx-same-dia .dbx-nota {
   flex-basis: 100%;
 }
 
-.dbx-line {
+.dbx-linea {
   margin: -8px 0 14px;
   font-size: 13px;
 }
 
-.dbx-line p {
+.dbx-linea p {
   margin: 0;
 }
 
@@ -79,7 +79,7 @@
   color: var(--text);
 }
 
-.dbx-create {
+.dbx-crear {
   display: flex;
   flex-direction: column;
   gap: 10px;

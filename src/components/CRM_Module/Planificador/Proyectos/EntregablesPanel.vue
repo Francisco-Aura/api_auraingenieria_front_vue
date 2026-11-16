@@ -1,37 +1,37 @@
 <template>
-  <div class="deliverables">
+  <div class="entregables">
     <p v-if="error" class="error">{{ error }}</p>
     <p v-if="acciones.subidaBloqueada" class="hint" role="status">📁 {{ acciones.subidaBloqueada }} Los enlaces y las notas sí se pueden añadir.</p>
     <p v-if="acciones.dropbox" class="hint">📁 Los archivos que subas se guardan en Dropbox, en <strong>{{ tarea.dropbox_folder || 'la carpeta del proyecto' }}</strong>. Quitarlos de aquí no los borra de Dropbox.</p>
     <p v-if="tarea.deliverables.length === 0" class="hint">Esta tarea no tiene elementos requeridos. Puedes añadir los que necesite abajo.</p>
 
-    <section v-for="d in tarea.deliverables" :key="d.key" class="deliv" :class="estadoDe(d)">
+    <section v-for="d in tarea.deliverables" :key="d.key" class="entreg" :class="estadoDe(d)">
       <header>
-        <span class="deliv-mark">{{ estadoDe(d) === 'ok' ? '✓' : estadoDe(d) === 'na' ? '∅' : '○' }}</span>
+        <span class="entreg-marca">{{ estadoDe(d) === 'ok' ? '✓' : estadoDe(d) === 'na' ? '∅' : '○' }}</span>
         <strong>{{ d.label }}</strong>
-        <span class="deliv-state">{{ estadoDe(d) === 'ok' ? 'Aportado' : estadoDe(d) === 'na' ? 'No aplica' : 'Pendiente' }}</span>
-        <span v-if="d.locked" class="deliv-lock" title="Requerido por la plantilla: solo puede marcarse como «No aplica»">🔒</span>
+        <span class="entreg-estado">{{ estadoDe(d) === 'ok' ? 'Aportado' : estadoDe(d) === 'na' ? 'No aplica' : 'Pendiente' }}</span>
+        <span v-if="d.locked" class="entreg-bloqueo" title="Requerido por la plantilla: solo puede marcarse como «No aplica»">🔒</span>
         <button v-else type="button" class="icon-btn" title="Quitar este elemento requerido" :disabled="ocupado" @click="ejecutar(() => acciones.cambiarEntregables(tarea.deliverables.filter((x) => x.key !== d.key)))">×</button>
       </header>
-      <p v-if="d.na" class="na-reason">No aplica: {{ d.na_reason }}
-        <button type="button" class="link-btn" @click="ejecutar(() => acciones.cambiarEntregables(tarea.deliverables.map((x) => (x.key === d.key ? { ...x, na: false, na_reason: '' } : x))))">Deshacer</button>
+      <p v-if="d.na" class="na-motivo">No aplica: {{ d.na_reason }}
+        <button type="button" class="enlace-boton" @click="ejecutar(() => acciones.cambiarEntregables(tarea.deliverables.map((x) => (x.key === d.key ? { ...x, na: false, na_reason: '' } : x))))">Deshacer</button>
       </p>
-      <ul v-if="de(d.key).length > 0" class="att-list"><li v-for="a in de(d.key)" :key="a.id" class="att">
+      <ul v-if="de(d.key).length > 0" class="att-lista"><li v-for="a in de(d.key)" :key="a.id" class="att">
         <span class="att-icon">{{ a.kind === 'file' ? '📎' : a.kind === 'link' ? '🔗' : '📝' }}</span>
         <span class="att-main">
           <a v-if="a.kind === 'file'" :href="urlArchivo(a)" target="_blank" rel="noreferrer">{{ a.name }}</a>
-          <a v-else-if="a.kind === 'link'" :href="a.url" target="_blank" rel="noreferrer">{{ a.name }}</a><span v-else class="att-note">{{ a.text }}</span>
+          <a v-else-if="a.kind === 'link'" :href="a.url" target="_blank" rel="noreferrer">{{ a.name }}</a><span v-else class="att-nota">{{ a.text }}</span>
           <span v-if="a.kind === 'file' && a.size" class="att-size"> · {{ tamano(a.size) }}</span><span v-if="a.storage === 'dropbox'" class="att-size" :title="a.path"> · en Dropbox</span>
         </span>
         <button type="button" class="icon-btn" :title="a.storage === 'dropbox' ? 'Quitar de la tarea (el archivo sigue en Dropbox)' : 'Quitar'" :disabled="ocupado" @click="ejecutar(() => acciones.quitar(a.id))">×</button>
       </li></ul>
-      <div v-if="!d.na" class="att-actions">
+      <div v-if="!d.na" class="att-acciones">
         <span v-if="acciones.subidaBloqueada" class="btn-ish disabled" :title="acciones.subidaBloqueada" aria-disabled="true">Subir archivo</span>
         <label v-else class="btn-ish" :class="{ disabled: ocupado }">Subir archivo<input type="file" hidden :disabled="ocupado" @change="elegirArchivo($event, d.key, d.label)"></label>
         <button type="button" class="btn-ish" @click="abrirFormulario(d.key, 'link')">Enlace</button>
         <button type="button" class="btn-ish" @click="abrirFormulario(d.key, 'note')">Nota</button>
-        <button v-if="de(d.key).length === 0" type="button" class="btn-ish muted-btn" @click="abrirFormulario(d.key, 'na')">No aplica</button>
-        <div v-if="formulario && formulario.requisito === d.key" class="att-form">
+        <button v-if="de(d.key).length === 0" type="button" class="btn-ish muted-boton" @click="abrirFormulario(d.key, 'na')">No aplica</button>
+        <div v-if="formulario && formulario.requisito === d.key" class="att-formulario">
           <input v-if="formulario.modo === 'link'" v-model="url" placeholder="https://… (Dropbox, Drive, correo…)">
           <textarea v-else v-model="texto" rows="2" :placeholder="formulario.modo === 'note' ? 'Escribe la nota o el dato aportado' : 'Explica por qué no aplica'" />
           <div class="row">
@@ -42,23 +42,23 @@
       </div>
     </section>
 
-    <section class="deliv extra">
-      <header><strong>Otra documentación</strong><span class="deliv-state">Opcional</span></header>
-      <ul v-if="otros.length > 0" class="att-list"><li v-for="a in otros" :key="a.id" class="att">
+    <section class="entreg extra">
+      <header><strong>Otra documentación</strong><span class="entreg-estado">Opcional</span></header>
+      <ul v-if="otros.length > 0" class="att-lista"><li v-for="a in otros" :key="a.id" class="att">
         <span class="att-icon">{{ a.kind === 'file' ? '📎' : a.kind === 'link' ? '🔗' : '📝' }}</span>
         <span class="att-main">
           <a v-if="a.kind === 'file'" :href="urlArchivo(a)" target="_blank" rel="noreferrer">{{ a.name }}</a>
-          <a v-else-if="a.kind === 'link'" :href="a.url" target="_blank" rel="noreferrer">{{ a.name }}</a><span v-else class="att-note">{{ a.text }}</span>
+          <a v-else-if="a.kind === 'link'" :href="a.url" target="_blank" rel="noreferrer">{{ a.name }}</a><span v-else class="att-nota">{{ a.text }}</span>
           <span v-if="a.kind === 'file' && a.size" class="att-size"> · {{ tamano(a.size) }}</span><span v-if="a.storage === 'dropbox'" class="att-size" :title="a.path"> · en Dropbox</span>
         </span>
         <button type="button" class="icon-btn" :title="a.storage === 'dropbox' ? 'Quitar de la tarea (el archivo sigue en Dropbox)' : 'Quitar'" :disabled="ocupado" @click="ejecutar(() => acciones.quitar(a.id))">×</button>
       </li></ul>
-      <div class="att-actions">
+      <div class="att-acciones">
         <span v-if="acciones.subidaBloqueada" class="btn-ish disabled" :title="acciones.subidaBloqueada" aria-disabled="true">Subir archivo</span>
         <label v-else class="btn-ish" :class="{ disabled: ocupado }">Subir archivo<input type="file" hidden :disabled="ocupado" @change="elegirArchivo($event, '', '')"></label>
         <button type="button" class="btn-ish" @click="abrirFormulario('', 'link')">Enlace</button>
         <button type="button" class="btn-ish" @click="abrirFormulario('', 'note')">Nota</button>
-        <div v-if="formulario && formulario.requisito === ''" class="att-form">
+        <div v-if="formulario && formulario.requisito === ''" class="att-formulario">
           <input v-if="formulario.modo === 'link'" v-model="url" placeholder="https://…">
           <textarea v-else v-model="texto" rows="2" placeholder="Escribe la nota o el dato aportado" />
           <div class="row">
@@ -69,7 +69,7 @@
       </div>
     </section>
 
-    <div v-if="pendiente" class="att-form pending-upload">
+    <div v-if="pendiente" class="att-formulario pending-upload">
       <label class="field">Nombre con el que se guarda en Dropbox
         <input v-model="pendiente.nombre" @keydown.enter.prevent="subirPendiente">
       </label>
@@ -80,7 +80,7 @@
       </div>
     </div>
 
-    <form class="add-req" @submit.prevent="anadirRequerido">
+    <form class="anadir-req" @submit.prevent="anadirRequerido">
       <input v-model="nuevaEtiqueta" placeholder="Añadir otro elemento requerido para esta tarea…">
       <button type="submit" class="secondary" :disabled="ocupado || !nuevaEtiqueta.trim()">Añadir</button>
     </form>
@@ -122,7 +122,7 @@ export default {
       if (await this.ejecutar(() => this.acciones.subirArchivo(archivo, p.requisito))) this.pendiente = null
     },
     de(clave) { return this.tarea.attachments.filter((a) => a.requirement === clave) },
-    estadoDe(d) { return d.na ? 'na' : this.de(d.key).length > 0 ? 'ok' : 'pending' },
+    estadoDe(d) { return d.na ? 'na' : this.de(d.key).length > 0 ? 'ok' : 'pendiente' },
     abrirFormulario(requisito, modo) { this.formulario = { requisito, modo } },
     cerrarFormulario() { this.formulario = null; this.texto = ''; this.url = '' },
     // Ejecuta la acción mostrando el error si falla; devuelve si salió bien

@@ -1,15 +1,15 @@
 <template>
   <div class="layout" :class="{ focus: creando }">
     <aside v-if="!creando" class="sidebar">
-      <button v-if="conVolver" type="button" class="link back-home" @click="$emit('volver')">← Volver a inicio</button>
+      <button v-if="conVolver" type="button" class="link back-inicio" @click="$emit('volver')">← Volver a inicio</button>
       <h1>Proyectos</h1>
-      <ul class="project-list">
+      <ul class="proyecto-lista">
         <li v-for="p in abiertos" :key="p.id" :class="{ active: p.id === seleccionadoId }">
-          <button type="button" class="link" @click="elegir(p.id)">{{ p.name }}<span v-if="!p.contract_generated_at && p.contract_generated_at !== undefined" class="pending-tag" title="Contrato pendiente de generar">contrato</span></button>
+          <button type="button" class="link" @click="elegir(p.id)">{{ p.name }}<span v-if="!p.contract_generated_at && p.contract_generated_at !== undefined" class="pendiente-etiqueta" title="Contrato pendiente de generar">contrato</span></button>
           <button type="button" class="icon-btn" title="Eliminar proyecto" @click="eliminando = p">×</button>
         </li>
-        <li v-for="d in borradores" :key="d.id" class="draft-entry">
-          <button type="button" class="link" :title="'Seguir con el borrador (' + (d.updated_by || 'alguien') + ', ' + horaBorrador(d.updated_at) + ')'" @click="abrirBorrador(d.id)">📝 {{ d.name || 'Proyecto sin nombre' }} <span class="draft-tag">borrador</span></button>
+        <li v-for="d in borradores" :key="d.id" class="borrador-entrada">
+          <button type="button" class="link" :title="'Seguir con el borrador (' + (d.updated_by || 'alguien') + ', ' + horaBorrador(d.updated_at) + ')'" @click="abrirBorrador(d.id)">📝 {{ d.name || 'Proyecto sin nombre' }} <span class="borrador-etiqueta">borrador</span></button>
           <button type="button" class="icon-btn" title="Descartar el borrador" @click="descartarBorrador(d)">×</button>
         </li>
         <li v-if="proyectos.length === 0 && borradores.length === 0" class="muted empty">Aún no hay proyectos.</li>
@@ -18,19 +18,19 @@
       <button type="button" class="wide" @click="borradorAbierto = null; creando = true">+ Nuevo proyecto</button>
 
       <template v-if="terminados.length > 0">
-        <button type="button" class="archived-toggle" :aria-expanded="verTerminados || terminadoAbierto" @click="verTerminados = !verTerminados">
+        <button type="button" class="archivado-alternar" :aria-expanded="verTerminados || terminadoAbierto" @click="verTerminados = !verTerminados">
           <span aria-hidden="true">{{ verTerminados || terminadoAbierto ? '▾' : '▸' }}</span> Finalizados ({{ terminados.length }})
         </button>
-        <ul v-if="verTerminados || terminadoAbierto" class="project-list archived-list">
+        <ul v-if="verTerminados || terminadoAbierto" class="proyecto-lista archivado-lista">
           <li v-for="p in terminados" :key="p.id" :class="{ active: p.id === seleccionadoId }">
-            <button type="button" class="link" @click="elegir(p.id)">{{ p.name }}<span v-if="!p.contract_generated_at && p.contract_generated_at !== undefined" class="pending-tag" title="Contrato pendiente de generar">contrato</span></button>
+            <button type="button" class="link" @click="elegir(p.id)">{{ p.name }}<span v-if="!p.contract_generated_at && p.contract_generated_at !== undefined" class="pendiente-etiqueta" title="Contrato pendiente de generar">contrato</span></button>
             <button type="button" class="icon-btn" title="Eliminar proyecto" @click="eliminando = p">×</button>
           </li>
         </ul>
       </template>
     </aside>
 
-    <main class="content" :class="{ 'drawer-open': seleccion && seleccionado && !creando }">
+    <main class="content" :class="{ 'drawer-abrir': seleccion && seleccionado && !creando }">
       <p v-if="error" class="error">Error: {{ error }}</p>
 
       <nuevo-proyecto-component v-if="creando" :key="borradorAbierto ? borradorAbierto.id : 'nuevo'" :plantillas="plantillas" :campos="camposContrato" :borrador="borradorAbierto"
@@ -38,29 +38,29 @@
       <p v-else-if="!seleccionado" class="muted">Selecciona un proyecto o crea uno nuevo.</p>
       <template v-else>
         <h1>{{ seleccionado.name }}</h1>
-        <p class="muted project-meta"><template v-if="seleccionado.start_date">Inicio: {{ seleccionado.start_date }}</template><template v-if="seleccionado.description"> · {{ seleccionado.description }}</template></p>
+        <p class="muted proyecto-meta"><template v-if="seleccionado.start_date">Inicio: {{ seleccionado.start_date }}</template><template v-if="seleccionado.description"> · {{ seleccionado.description }}</template></p>
 
         <carpeta-dropbox-component :key="'dbx-' + seleccionado.id" :proyecto="seleccionado" @cambiado="proyectoActualizado" />
         <contrato-proyecto-component :key="'ctr-' + seleccionado.id" :proyecto="seleccionado" :base="contrato ? contrato.baseline : {}" @actualizado="proyectoActualizado" />
 
-        <p v-if="terminadoAbierto" class="project-finished" role="status">✓ Proyecto finalizado: todas sus tareas están hechas, por eso está en «Finalizados». Si reabres alguna tarea, vuelve a la lista de proyectos.</p>
-        <div v-if="atraso.late > 0" class="project-alert" :class="'level-' + levelOf(Math.max(atraso.days, 1))" role="alert">
+        <p v-if="terminadoAbierto" class="proyecto-terminado" role="status">✓ Proyecto finalizado: todas sus tareas están hechas, por eso está en «Finalizados». Si reabres alguna tarea, vuelve a la lista de proyectos.</p>
+        <div v-if="atraso.late > 0" class="proyecto-alerta" :class="'level-' + levelOf(Math.max(atraso.days, 1))" role="alert">
           <strong>⚠ {{ atraso.late }} {{ atraso.late === 1 ? 'tarea con retraso' : 'tareas con retraso' }}</strong>
           <span v-if="atraso.days > 0"> · la entrega del proyecto se ha corrido {{ atraso.days }} {{ atraso.days === 1 ? 'día' : 'días' }}</span>
         </div>
 
-        <nav class="section-tabs" aria-label="Secciones del proyecto">
-          <button type="button" :class="{ active: seccion === 'tareas' }" @click="seccion = 'tareas'">Tareas<span v-if="tareas.length > 0" class="tab-count">{{ tareas.length }}</span></button>
-          <button type="button" :class="{ active: seccion === 'cambios' }" @click="seccion = 'cambios'">Cambios<span v-if="contrato && contrato.changes.length > 0" class="tab-count">{{ contrato.changes.length }}</span><span v-if="idsRevisar.size > 0" class="tab-dot" title="Tareas con cambios por revisar" /></button>
-          <div class="tab-aside-group">
-            <button type="button" class="tab-aside" :class="{ active: seccion === 'actividad' }" @click="seccion = 'actividad'">Actividad</button>
-            <button type="button" class="tab-aside" :class="{ active: seccion === 'docs' }" @click="seccion = 'docs'">Documentos</button>
+        <nav class="seccion-pestanas" aria-label="Secciones del proyecto">
+          <button type="button" :class="{ active: seccion === 'tareas' }" @click="seccion = 'tareas'">Tareas<span v-if="tareas.length > 0" class="pestana-total">{{ tareas.length }}</span></button>
+          <button type="button" :class="{ active: seccion === 'cambios' }" @click="seccion = 'cambios'">Cambios<span v-if="contrato && contrato.changes.length > 0" class="pestana-total">{{ contrato.changes.length }}</span><span v-if="idsRevisar.size > 0" class="pestana-punto" title="Tareas con cambios por revisar" /></button>
+          <div class="pestana-aside-grupo">
+            <button type="button" class="pestana-aside" :class="{ active: seccion === 'actividad' }" @click="seccion = 'actividad'">Actividad</button>
+            <button type="button" class="pestana-aside" :class="{ active: seccion === 'docs' }" @click="seccion = 'docs'">Documentos</button>
           </div>
         </nav>
 
-        <div v-if="seccion === 'tareas'" class="view-switch">
+        <div v-if="seccion === 'tareas'" class="vista-switch">
           <span class="muted">Ver como</span>
-          <div class="view-tabs">
+          <div class="vista-pestanas">
             <button type="button" :class="{ active: vista === 'cronograma' }" @click="vista = 'cronograma'">Cronograma</button>
             <button type="button" :class="{ active: vista === 'tablero' }" @click="vista = 'tablero'">Tablero</button>
             <button type="button" :class="{ active: vista === 'lista' }" @click="vista = 'lista'">Lista</button>
@@ -68,7 +68,7 @@
         </div>
 
         <template v-if="seccion === 'tareas'">
-          <div v-if="mostrarPlantilla" class="load-template">
+          <div v-if="mostrarPlantilla" class="load-plantilla">
             <h2>Este proyecto aún no tiene pasos</h2>
             <p v-if="!plantillas[0]" class="muted">No se han podido cargar los pasos de la plantilla.</p>
             <template v-else>
@@ -76,7 +76,7 @@
               <div class="row"><input v-model="inicioPlantilla" type="date"><button type="button" :disabled="ocupado" @click="aplicarPlantilla">Cargar los {{ plantillas[0].step_count }} pasos</button></div>
             </template>
           </div>
-          <form class="row task-form" @submit.prevent="anadirTarea">
+          <form class="row tarea-formulario" @submit.prevent="anadirTarea">
             <input v-model="tareaNombre" placeholder="Añadir tarea suelta"><input v-model="tareaInicio" type="date"><input v-model="tareaFin" type="date">
             <button type="submit">Añadir tarea</button>
           </form>

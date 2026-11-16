@@ -1,9 +1,9 @@
 /* Estudios fotovoltaicos: lista, editor y vista previa del informe. Solo variables del tema, para que el modo oscuro funcione solo. */
 .estudios,
-.estudio { max-width: 1100px; margin: 0 auto; padding: 0 16px 40px; }
+.estudio { padding: 0 0 40px; }
 
 .estudio-nuevo { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin: 12px 0; }
-.estudio-nuevo .survey-field { flex: 1 1 280px; }
+.estudio-nuevo .cuestionario-campo { flex: 1 1 280px; }
 
 .estudio-filtros { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 12px 0; }
 .estudio-filtros input[type='search'] { flex: 1 1 240px; min-width: 200px; }
@@ -31,7 +31,7 @@
 .estudio-estado.rechazado { background: rgba(220, 53, 69, 0.18); }
 .estudio-estado.cancelado { background: var(--bg-alt); color: var(--muted); }
 
-.estudio .setup-card { margin-top: 14px; }
+.estudio .alta-tarjeta { margin-top: 14px; }
 .estudio textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); resize: vertical; }
 
 .estudio-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 8px; }

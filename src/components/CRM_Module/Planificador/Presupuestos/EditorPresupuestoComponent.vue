@@ -1,11 +1,11 @@
 <template>
   <p v-if="error" class="error">No se ha podido cargar el catálogo: {{ error }}</p>
   <p v-else-if="!catalogo || !resumen" class="muted">Cargando catálogo…</p>
-  <div v-else class="costs" :class="{ locked: bloqueado }">
-    <div class="back-row"><button type="button" class="secondary" @click="$emit('volver')">← Presupuestos</button></div>
-    <div class="costs-title">
-      <div class="title-block">
-        <span class="step-kicker">Presupuestador</span>
+  <div v-else class="costes" :class="{ locked: bloqueado }">
+    <div class="back-fila"><button type="button" class="secondary" @click="$emit('volver')">← Presupuestos</button></div>
+    <div class="costes-titulo">
+      <div class="titulo-block">
+        <span class="paso-antetitulo">Presupuestador</span>
         <h1>{{ estado.client.trim() || 'Sin nombre' }}<small v-if="estado.reference.trim()" class="muted"> · {{ estado.reference.trim() }}</small></h1>
       </div>
     </div>
@@ -13,20 +13,20 @@
     <tira-variantes v-if="presupuesto.remote" :presupuesto-id="presupuesto.id" :refrescar="presupuesto.remote.status + '|' + estadoPropuesta"
                     @abrir="$emit('abrir-variante', $event)" @nueva="$emit('duplicar')" @eliminada="$emit('variante-eliminada', $event)" />
 
-    <div v-if="validado" class="budget-tabs" role="tablist" aria-label="Secciones del presupuesto validado">
+    <div v-if="validado" class="presupuesto-pestanas" role="tablist" aria-label="Secciones del presupuesto validado">
       <button type="button" role="tab" :aria-selected="pestana === 'propuesta'" :class="{ active: pestana === 'propuesta' }" @click="pestana = 'propuesta'">Propuesta al cliente</button>
       <button type="button" role="tab" :aria-selected="pestana === 'presupuesto'" :class="{ active: pestana === 'presupuesto' }" @click="pestana = 'presupuesto'">Presupuesto</button>
     </div>
 
-    <section v-if="validado && pestana === 'propuesta'" class="proposal-page" aria-label="Propuesta al cliente">
+    <section v-if="validado && pestana === 'propuesta'" class="propuesta-pagina" aria-label="Propuesta al cliente">
       <seccion-propuesta :presupuesto-id="presupuesto.id" @estado="estadoPropuesta = $event" />
       <caja-estado :presupuesto="presupuesto" :guardando="guardando" :estado-propuesta="estadoPropuesta" :sin-guardar="sucio" @estado="$emit('estado', $event)" />
       <p v-if="errorGuardar" class="error" role="alert">{{ errorGuardar }}</p>
     </section>
 
     <template v-else>
-      <section class="save-bar" :class="remoto ? 'shared' : 'local'" aria-label="Dónde se guarda este presupuesto">
-        <div class="save-where">
+      <section class="guardar-barra" :class="remoto ? 'shared' : 'local'" aria-label="Dónde se guarda este presupuesto">
+        <div class="guardar-donde">
           <template v-if="remoto && bloqueado">
             <strong><svg class="estado-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>{{ ETIQUETA_BLOQUEO[remoto.status] }}</strong>
             <span v-if="AYUDA_BLOQUEO[remoto.status]" class="muted"> · {{ AYUDA_BLOQUEO[remoto.status] }}</span>
@@ -42,7 +42,7 @@
             {{ editado ? 'Cambios sin guardar' : 'Precios actualizados' }}
           </span>
         </div>
-        <div class="save-actions">
+        <div class="guardar-acciones">
           <template v-if="!bloqueado">
             <button type="button" :disabled="guardando || (!!remoto && !sucio)" :title="remoto ? 'Guarda los cambios en el servidor para todos' : 'Lo guarda en el servidor: lo verán y podrán modificarlo todos los usuarios de la intranet'" @click="$emit('guardar')">
               {{ guardando ? 'Guardando…' : remoto ? 'Guardar cambios' : 'Guardar y compartir' }}
@@ -52,33 +52,33 @@
           <!-- Los del servidor se duplican con «Nueva variante», en la tira de variantes -->
           <button v-if="!remoto || remoto.status === 'descartado'" type="button" class="secondary" title="Crea una copia local con la que puedes trabajar sin tocar este presupuesto" @click="$emit('duplicar')">Duplicar</button>
         </div>
-        <p v-if="errorGuardar && !conflicto" class="error save-msg" role="alert">{{ errorGuardar }}</p>
-        <div v-if="conflicto && conflicto.kind === 'version'" class="save-conflict" role="alert">
+        <p v-if="errorGuardar && !conflicto" class="error guardar-mensaje" role="alert">{{ errorGuardar }}</p>
+        <div v-if="conflicto && conflicto.kind === 'version'" class="guardar-conflicto" role="alert">
           <p><strong>⚠ No se han guardado tus cambios.</strong> {{ conflicto.message }}</p>
-          <div class="save-actions">
+          <div class="guardar-acciones">
             <button type="button" class="secondary" :disabled="guardando" @click="$emit('resolver', 'servidor')">Cargar su versión (descarto mis cambios)</button>
             <button type="button" class="secondary" :disabled="guardando" @click="$emit('resolver', 'sobrescribir')">Guardar la mía encima</button>
             <button type="button" class="secondary" :disabled="guardando" @click="$emit('resolver', 'copia')">Guardar mis cambios como copia local</button>
           </div>
         </div>
-        <div v-if="conflicto && conflicto.kind === 'deleted'" class="save-conflict" role="alert">
+        <div v-if="conflicto && conflicto.kind === 'deleted'" class="guardar-conflicto" role="alert">
           <p><strong>⚠ Este borrador ya no existe en el servidor:</strong> su autor lo ha eliminado.</p>
-          <div class="save-actions">
+          <div class="guardar-acciones">
             <button type="button" class="secondary" :disabled="guardando" @click="$emit('resolver', 'recrear')">Volver a guardarlo y compartirlo</button>
             <button type="button" class="secondary" :disabled="guardando" @click="$emit('resolver', 'local')">Dejarlo como local</button>
           </div>
         </div>
       </section>
 
-      <section class="costs-head" aria-label="Parámetros del presupuesto">
-        <div class="params-head">
+      <section class="costes-cabecera" aria-label="Parámetros del presupuesto">
+        <div class="parametros-cabecera">
           <strong>Parámetros del presupuesto</strong>
-          <button type="button" class="link-btn" :disabled="bloqueado" @click="$emit('editar-parametros')">Editar parámetros</button>
-          <div class="head-actions">
+          <button type="button" class="enlace-boton" :disabled="bloqueado" @click="$emit('editar-parametros')">Editar parámetros</button>
+          <div class="cabecera-acciones">
             <button v-if="conInventario" type="button" class="secondary" title="Los precios y las características de los equipos se editan en el inventario" @click="$emit('abrir-inventario')">Precios en el inventario</button>
           </div>
         </div>
-        <ul class="param-list">
+        <ul class="param-lista">
           <li>
             <span class="muted">Cliente</span>
             <strong v-if="estado.customer">
@@ -96,14 +96,14 @@
         </ul>
       </section>
 
-      <div class="costs-body" :class="{ review: bloqueado }">
+      <div class="costes-cuerpo" :class="{ revision: bloqueado }">
         <fieldset v-if="!bloqueado" class="locked-fieldset">
           <pasos-presupuesto :catalogo="catalogo" :estado="estado" :avisos="avisos" :presupuesto-id="presupuesto.id" @cambiar="cambiar" @anadir="anadirProducto"
                              @quitar="quitarProducto" @ficha="fichaAbierta = $event" @editar-parametros="$emit('editar-parametros')" />
         </fieldset>
 
-        <aside class="costs-summary" aria-label="Presupuesto de costes">
-          <div class="summary-head">
+        <aside class="costes-resumen" aria-label="Presupuesto de costes">
+          <div class="resumen-cabecera">
             <h2>Presupuesto del proyecto</h2>
             <button type="button" class="secondary" :disabled="bloqueado || estado.lines.length === 0" title="Quita todas las filas del presupuesto, de todos los pasos" @click="vaciarFilas">Vaciar filas</button>
           </div>
@@ -113,44 +113,44 @@
             <button type="button" :class="{ active: orden === 'fijo' }" :aria-pressed="orden === 'fijo'" title="Las filas salen siempre en el mismo orden: el de los pasos (paneles, estructura, inversor…) y, dentro, por nombre. El PDF sale siempre así." @click="elegirOrden('fijo')">Fijo</button>
           </div>
           <!-- Siempre a la vista al recorrer una lista larga: se cambia el precio de venta viendo el beneficio -->
-          <div class="sale-bar">
-            <div class="sale-cell"><label><span>Precio de venta (€/Wp)</span><campo-numerico :model-value="estado.saleRatio" etiqueta="Precio de venta en euros por Wp" :paso="0.01" @update:model-value="cambiar({ saleRatio: $event })" /></label></div>
-            <div class="sale-cell"><span>Presupuesto</span><strong class="sale-value">{{ eur(resumen.budget) }}</strong></div>
-            <div class="sale-cell profit" :class="{ loss: resumen.profit < 0 }"><span>Beneficio</span><strong class="sale-value">{{ eur(resumen.profit) }} <small>{{ pct(resumen.margin) }}</small></strong></div>
+          <div class="venta-barra">
+            <div class="venta-celda"><label><span>Precio de venta (€/Wp)</span><campo-numerico :model-value="estado.saleRatio" etiqueta="Precio de venta en euros por Wp" :paso="0.01" @update:model-value="cambiar({ saleRatio: $event })" /></label></div>
+            <div class="venta-celda"><span>Presupuesto</span><strong class="venta-valor">{{ eur(resumen.budget) }}</strong></div>
+            <div class="venta-celda profit" :class="{ loss: resumen.profit < 0 }"><span>Beneficio</span><strong class="venta-valor">{{ eur(resumen.profit) }} <small>{{ pct(resumen.margin) }}</small></strong></div>
           </div>
-          <p v-if="sinPrecio > 0" class="step-note warn no-price-note" role="status">
+          <p v-if="sinPrecio > 0" class="paso-nota warn no-precio-nota" role="status">
             ⚠ {{ sinPrecio }} {{ sinPrecio === 1 ? 'fila sin precio' : 'filas sin precio' }}: el coste del presupuesto no está completo. Pon el precio en la propia fila o en el inventario.
           </p>
-          <div v-if="cambiosPrecio.length > 0" class="price-notice" role="status">
+          <div v-if="cambiosPrecio.length > 0" class="precio-aviso" role="status">
             <button type="button" class="icon-btn" aria-label="Cerrar el aviso" @click="cambiosPrecio = []">×</button>
             <strong>Precios actualizados desde el inventario</strong>
             <ul><li v-for="(c, i) in cambiosPrecio" :key="i">{{ c.name }}: {{ eur(c.from) }} → <strong>{{ eur(c.to) }}</strong></li></ul>
           </div>
-          <div v-if="avisos.length > 0" class="compat-banner" role="alert">
+          <div v-if="avisos.length > 0" class="compat-aviso" role="alert">
             <strong>{{ errores > 0 ? '⛔' : '⚠' }} {{ errores > 0 ? errores + ' incompatibilidad' + (errores === 1 ? '' : 'es') : '' }}{{ errores > 0 && revisar > 0 ? ' y ' : '' }}{{ revisar > 0 ? revisar + ' para revisar' : '' }}</strong>
             <p class="muted">Cambia los productos marcados: cada fila lleva su aviso.</p>
             <ul>
-              <li v-for="i in avisos" :key="i.id" :class="levelClass(i.level)"><span class="issue-step">{{ tituloPaso(i.step) }}</span> {{ i.message }}</li>
+              <li v-for="i in avisos" :key="i.id" :class="levelClass(i.level)"><span class="incidencia-paso">{{ tituloPaso(i.step) }}</span> {{ i.message }}</li>
             </ul>
           </div>
           <p v-if="estado.lines.length === 0" class="muted">Añade equipos desde las pestañas: aquí se irán sumando los costes del proyecto.</p>
 
           <template v-for="partida in catalogo.partidas" :key="partida.key">
             <div v-if="filasDe(partida.key).length > 0" class="partida">
-              <div class="partida-head">
+              <div class="partida-cabecera">
                 <h3>{{ partida.label }}</h3>
                 <span>
                   <span class="muted ratio" title="Coste ratio W/p de la partida">{{ ratio(porWp(resumen.byPartida[partida.key] || 0)) }} €/Wp</span>
                   <strong>{{ eur(resumen.byPartida[partida.key] || 0) }}</strong>
                 </span>
               </div>
-              <table class="line-table">
+              <table class="linea-tabla">
                 <thead><tr><th>Concepto</th><th class="num">Cant.</th><th class="num">Precio ud.</th><th class="num" title="Total de la fila y, debajo, su coste ratio W/p">Total · €/Wp</th><th /></tr></thead>
                 <tbody>
                   <template v-for="linea in filasDe(partida.key)" :key="linea.id">
                     <tr :class="claseFila(linea)">
                       <td>
-                        <button v-if="productoDe(linea)" type="button" class="product-link" title="Ver la ficha técnica" @click="fichaAbierta = productoDe(linea)">{{ lineName(linea) }}</button>
+                        <button v-if="productoDe(linea)" type="button" class="producto-enlace" title="Ver la ficha técnica" @click="fichaAbierta = productoDe(linea)">{{ lineName(linea) }}</button>
                         <template v-else>{{ lineName(linea) }}</template>
                         <span class="muted"> · {{ linea.unit }}</span>
                       </td>
@@ -160,16 +160,16 @@
                       </td>
                       <td class="num">
                         <campo-numerico :etiqueta="'Precio unitario de ' + lineName(linea)" :model-value="linea.price" @update:model-value="cambiarLinea(linea.id, { price: $event, priceEdited: true })" />
-                        <button v-if="linea.priceEdited" type="button" class="link-btn manual-price" title="Precio puesto a mano: ya no sigue al inventario. Pulsa para volver a usar el del inventario." @click="volverAlInventario(linea.id)">↺ del inventario</button>
+                        <button v-if="linea.priceEdited" type="button" class="enlace-boton manual-precio" title="Precio puesto a mano: ya no sigue al inventario. Pulsa para volver a usar el del inventario." @click="volverAlInventario(linea.id)">↺ del inventario</button>
                       </td>
                       <td class="num">{{ eur(lineTotal(linea, estado)) }}<div class="muted ratio" title="Coste ratio W/p de la fila">{{ ratio(porWp(lineTotal(linea, estado))) }}</div></td>
                       <td class="num"><button type="button" class="icon-btn trash" title="Quitar la fila" :aria-label="'Quitar ' + lineName(linea)" @click="quitarLinea(linea.id)">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h18" /><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
                       </button></td>
                     </tr>
-                    <tr v-if="(avisosPorFila.get(linea.id) || []).length > 0" class="issue-row">
+                    <tr v-if="(avisosPorFila.get(linea.id) || []).length > 0" class="incidencia-fila">
                       <td colspan="5">
-                        <div v-for="i in avisosPorFila.get(linea.id)" :key="i.id" class="line-issue" :class="levelClass(i.level)" role="alert"><strong>{{ i.level === 'error' ? 'Incompatible' : 'Revisar' }}:</strong> {{ i.message }}</div>
+                        <div v-for="i in avisosPorFila.get(linea.id)" :key="i.id" class="linea-incidencia" :class="levelClass(i.level)" role="alert"><strong>{{ i.level === 'error' ? 'Incompatible' : 'Revisar' }}:</strong> {{ i.message }}</div>
                       </td>
                     </tr>
                   </template>
@@ -184,20 +184,20 @@
             <div><dt>Presupuesto <span class="muted">({{ estado.saleRatio.toLocaleString('es-ES') }} €/Wp × {{ resumen.wp.toLocaleString('es-ES') }} Wp)</span></dt><dd>{{ eur(resumen.budget) }}</dd></div>
             <div class="profit" :class="{ loss: resumen.profit < 0 }"><dt>Beneficio</dt><dd>{{ eur(resumen.profit) }} <span>({{ pct(resumen.margin) }})</span></dd></div>
           </dl>
-          <div v-if="estado.lines.length > 0" class="export-box">
+          <div v-if="estado.lines.length > 0" class="exportar-caja">
             <strong>Exportar a PDF</strong>
-            <div class="export-actions">
+            <div class="exportar-acciones">
               <button type="button" :disabled="errores > 0 || exportando !== null" title="Con los costes, el coste por Wp y el beneficio: para uso interno" @click="exportar('interno')">{{ exportando === 'interno' ? 'Generando…' : 'PDF interno' }}</button>
               <button type="button" class="secondary" :disabled="errores > 0 || exportando !== null" title="La propuesta para el cliente en PDF (presentación con la instalación, el precio de venta y la página de firma, sin costes ni beneficio)" @click="exportar('cliente')">{{ exportando === 'cliente' ? 'Generando…' : 'PDF para el cliente' }}</button>
               <button type="button" class="secondary" :disabled="errores > 0 || exportando !== null" title="La misma propuesta como archivo HTML: se abre en el navegador y se puede mandar tal cual" @click="exportar('html')">{{ exportando === 'html' ? 'Generando…' : 'HTML de la propuesta' }}</button>
             </div>
             <p v-if="errorExportar" class="error" role="alert">{{ errorExportar }}</p>
-            <p v-if="errores > 0" class="step-note warn export-blocked" role="status">Con {{ errores }} incompatibilidad{{ errores === 1 ? '' : 'es' }} sin resolver no se podrá exportar: cambia los productos marcados.</p>
+            <p v-if="errores > 0" class="paso-nota warn export-blocked" role="status">Con {{ errores }} incompatibilidad{{ errores === 1 ? '' : 'es' }} sin resolver no se podrá exportar: cambia los productos marcados.</p>
           </div>
           <caja-estado v-if="!revisando" :presupuesto="presupuesto" :guardando="guardando" :estado-propuesta="estadoPropuesta" :sin-guardar="sucio" @estado="$emit('estado', $event)" />
         </aside>
       </div>
-      <div v-if="revisando" class="review-bar" role="region" aria-label="Validación del presupuesto">
+      <div v-if="revisando" class="revision-barra" role="region" aria-label="Validación del presupuesto">
         <strong>Pendiente de validar</strong>
         <caja-estado :presupuesto="presupuesto" :guardando="guardando" :estado-propuesta="''" :sin-guardar="sucio" @estado="$emit('estado', $event)" />
       </div>
@@ -441,7 +441,7 @@ export default {
     porWp(euros) { return this.resumen.wp > 0 ? euros / this.resumen.wp : 0 },
     claseFila(linea) {
       const delas = this.avisosPorFila.get(linea.id)
-      return delas ? 'has-issue ' + (delas.some((i) => i.level === 'error') ? 'bad' : 'warn') : undefined
+      return delas ? 'has-incidencia ' + (delas.some((i) => i.level === 'error') ? 'bad' : 'warn') : undefined
     },
     volverAlInventario(id) {
       const r = syncWithCatalog({ ...this.estado, lines: this.estado.lines.map((l) => (l.id === id ? { ...l, priceEdited: false } : l)) }, this.catalogo)

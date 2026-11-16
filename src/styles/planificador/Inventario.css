@@ -1,9 +1,9 @@
-.inv-note {
+.inv-nota {
   margin: 0 0 16px;
   font-size: 13px;
 }
 
-.inv-body {
+.inv-cuerpo {
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr);
   gap: 24px;
@@ -11,13 +11,13 @@
 }
 
 @media (max-width: 860px) {
-  .inv-body {
+  .inv-cuerpo {
     grid-template-columns: 1fr;
   }
 }
 
 /* Filtro: buscador y una columna de categorías con su icono y cuántos productos tiene cada una */
-.inv-filter {
+.inv-filtro {
   position: sticky;
   top: 12px;
   padding: 14px;
@@ -27,12 +27,12 @@
 }
 
 @media (max-width: 860px) {
-  .inv-filter {
+  .inv-filtro {
     position: static;
   }
 }
 
-.inv-search {
+.inv-buscar {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -41,12 +41,12 @@
   color: var(--text-h);
 }
 
-.inv-search input {
+.inv-buscar input {
   width: 100%;
   box-sizing: border-box;
 }
 
-.inv-filter h2 {
+.inv-filtro h2 {
   margin: 0 0 8px;
   font-size: 11px;
   font-weight: 600;
@@ -113,17 +113,17 @@
   color: var(--text-h);
 }
 
-.inv-cat-name {
+.inv-cat-nombre {
   flex: 1;
 }
 
-.inv-cat-count {
+.inv-cat-total {
   font-size: 12px;
   color: var(--muted);
 }
 
 /* Productos como tarjetas */
-.inv-results .result-count {
+.inv-resultados .resultado-total {
   margin: 0 0 10px;
 }
 
@@ -131,7 +131,7 @@
   padding: 24px 4px;
 }
 
-.inv-cards {
+.inv-tarjetas {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 14px;
@@ -140,7 +140,7 @@
   list-style: none;
 }
 
-.inv-card {
+.inv-tarjeta {
   display: flex;
   width: 100%;
   height: 100%;
@@ -159,29 +159,29 @@
     border-color 0.12s ease;
 }
 
-.inv-card:hover {
+.inv-tarjeta:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
   filter: none;
 }
 
 /* Precio por revisar: tarjeta en ámbar (y la etiqueta, para quien no distinga el color) */
-.inv-card.needs-review {
+.inv-tarjeta.needs-revision {
   border-color: #d97706;
   background: color-mix(in srgb, #f59e0b 9%, var(--bg));
 }
 
-.inv-card.needs-review:hover {
+.inv-tarjeta.needs-revision:hover {
   border-color: #b45309;
 }
 
-.tag.review {
+.tag.revision {
   background: color-mix(in srgb, #f59e0b 24%, transparent);
   color: #b45309;
   font-weight: 600;
 }
 
-.inv-card-top {
+.inv-tarjeta-cabecera {
   display: flex;
   width: 100%;
   flex-wrap: wrap;
@@ -189,7 +189,7 @@
   gap: 6px;
 }
 
-.inv-card-cat {
+.inv-tarjeta-cat {
   min-width: 0;
   font-size: 13px;
   font-weight: 600;
@@ -197,18 +197,18 @@
 }
 
 /* Marcas del producto (precio por revisar, ficha, dato de prueba) en su propia línea, bajo la categoría */
-.inv-card-flags {
+.inv-tarjeta-flags {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.inv-card-flags .tag {
+.inv-tarjeta-flags .tag {
   margin: 0;
   white-space: nowrap;
 }
 
-.inv-card-icon {
+.inv-tarjeta-icon {
   display: inline-grid;
   place-items: center;
   width: 34px;
@@ -219,17 +219,17 @@
   color: var(--text-h);
 }
 
-.inv-card-name {
+.inv-tarjeta-nombre {
   font-size: 15px;
   line-height: 1.3;
   color: var(--text-h);
 }
 
-.inv-card-supplier {
+.inv-tarjeta-proveedor {
   font-size: 12.5px;
 }
 
-.inv-specs {
+.inv-especificaciones {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 8px 12px;
@@ -237,13 +237,13 @@
   border-top: 1px solid var(--border);
 }
 
-.inv-spec {
+.inv-especificacion {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
-.inv-spec-label {
+.inv-especificacion-etiqueta {
   font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -251,20 +251,20 @@
   color: var(--muted);
 }
 
-.inv-spec-value {
+.inv-especificacion-valor {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-h);
   overflow-wrap: anywhere;
 }
 
-.inv-spec-more {
+.inv-especificacion-mas {
   grid-column: 1 / -1;
   font-size: 11.5px;
   color: var(--muted);
 }
 
-.inv-card-price {
+.inv-tarjeta-precio {
   margin-top: auto;
   padding-top: 4px;
   font-size: 15px;
@@ -273,35 +273,35 @@
 }
 
 /* Ventana del producto */
-.modal.wide:has(.inv-form) {
+.modal.wide:has(.inv-formulario) {
   width: min(820px, 100%);
 }
 
-.inv-form {
+.inv-formulario {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.inv-form fieldset {
+.inv-formulario fieldset {
   margin: 0;
   padding: 10px 14px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
 
-.inv-form legend {
+.inv-formulario legend {
   padding: 0 6px;
   font-weight: 600;
 }
 
-.inv-grid {
+.inv-rejilla {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 10px 14px;
 }
 
-.inv-form label {
+.inv-formulario label {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -309,14 +309,14 @@
   color: var(--text-h);
 }
 
-.inv-form input,
-.inv-form select,
-.inv-form textarea {
+.inv-formulario input,
+.inv-formulario select,
+.inv-formulario textarea {
   width: 100%;
   box-sizing: border-box;
 }
 
-.inv-hint {
+.inv-pista {
   margin: 0 0 8px;
   font-size: 12.5px;
 }
@@ -338,7 +338,7 @@
   color: var(--danger);
 }
 
-.inv-problem {
+.inv-problema {
   font-size: 13px;
 }
 
@@ -355,14 +355,14 @@
   background: var(--bg-alt);
 }
 
-.inv-tool {
+.inv-herramienta {
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-size: 13px;
 }
 
-.inv-tool-label {
+.inv-herramienta-etiqueta {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -370,18 +370,18 @@
   color: var(--muted);
 }
 
-.inv-tool select {
+.inv-herramienta select {
   min-width: 130px;
   max-width: 200px;
 }
 
-.inv-range {
+.inv-rango {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
-.inv-range input {
+.inv-rango input {
   width: 78px;
 }
 
@@ -422,7 +422,7 @@
 }
 
 /* Precio y stock al pie de la tarjeta */
-.inv-card-foot {
+.inv-tarjeta-pie {
   display: flex;
   width: 100%;
   flex-wrap: wrap;
@@ -433,7 +433,7 @@
   padding-top: 4px;
 }
 
-.inv-card-foot .inv-card-price {
+.inv-tarjeta-pie .inv-tarjeta-precio {
   margin-top: 0;
   padding-top: 0;
 }
@@ -452,13 +452,13 @@
 
 
 /* Ficha técnica en la ventana del producto */
-.inv-sheet-file {
+.inv-ficha-fichero {
   margin: 0 0 8px;
   font-size: 13px;
   overflow-wrap: anywhere;
 }
 
-.inv-attach {
+.inv-adjuntar {
   display: inline-block;
   cursor: pointer;
 }
@@ -484,7 +484,7 @@
   min-width: 0;
 }
 
-.inv-sheet-actions {
+.inv-ficha-acciones {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -500,7 +500,7 @@
 }
 
 /* Desplegable de una lista ampliable (marca, proveedor) con su botón de crear */
-.list-field {
+.lista-campo {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -508,37 +508,37 @@
   color: var(--text-h);
 }
 
-.list-field-row {
+.lista-campo-fila {
   display: flex;
   gap: 6px;
 }
 
-.list-field-row select,
-.list-field-row input {
+.lista-campo-fila select,
+.lista-campo-fila input {
   flex: 1;
   min-width: 0;
 }
 
-.list-field-new {
+.lista-campo-nuevo {
   flex: none;
   padding-inline: 10px;
   white-space: nowrap;
 }
 
-.list-field-error {
+.lista-campo-error {
   margin: 0;
   font-size: 12px;
 }
 
 /* Características adicionales: un desplegable por grupo */
-.inv-group {
+.inv-grupo {
   margin-bottom: 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--bg);
 }
 
-.inv-group > summary {
+.inv-grupo > summary {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -550,23 +550,23 @@
   list-style: none;
 }
 
-.inv-group > summary::-webkit-details-marker {
+.inv-grupo > summary::-webkit-details-marker {
   display: none;
 }
 
-.inv-group > summary::before {
+.inv-grupo > summary::before {
   content: '▸';
   font-size: 11px;
   color: var(--muted);
   transition: transform 0.15s ease;
 }
 
-.inv-group[open] > summary::before {
+.inv-grupo[open] > summary::before {
   transform: rotate(90deg);
 }
 
-.inv-group-count,
-.sheet-group-count {
+.inv-grupo-total,
+.ficha-grupo-total {
   margin-left: auto;
   padding: 0 8px;
   border-radius: 999px;
@@ -576,15 +576,15 @@
   color: var(--muted);
 }
 
-.inv-group .inv-extra {
+.inv-grupo .inv-extra {
   padding: 0 12px;
 }
 
-.inv-group .inv-extra:last-child {
+.inv-grupo .inv-extra:last-child {
   margin-bottom: 10px;
 }
 
-.inv-add-extra {
+.inv-anadir-extra {
   display: grid;
   grid-template-columns: minmax(150px, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
   gap: 8px;
@@ -594,13 +594,13 @@
 }
 
 @media (max-width: 700px) {
-  .inv-add-extra {
+  .inv-anadir-extra {
     grid-template-columns: 1fr;
   }
 }
 
 /* Proveedores y precios del producto: una tarjeta por proveedor */
-.inv-offer-summary {
+.inv-oferta-resumen {
   margin: 0 0 8px;
   padding: 8px 12px;
   border-radius: 8px;
@@ -608,7 +608,7 @@
   font-size: 13px;
 }
 
-.inv-offer-list {
+.inv-oferta-lista {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -617,7 +617,7 @@
   list-style: none;
 }
 
-.inv-offer-card {
+.inv-oferta-tarjeta {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -627,22 +627,22 @@
   background: var(--bg);
 }
 
-.inv-offer-card.main {
+.inv-oferta-tarjeta.main {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 6%, var(--bg));
 }
 
-.inv-offer-top {
+.inv-oferta-cabecera {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.inv-offer-remove {
+.inv-oferta-quitar {
   margin-left: auto;
 }
 
-.inv-offer-use {
+.inv-oferta-usar {
   padding: 3px 10px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -652,31 +652,31 @@
   font-weight: 600;
 }
 
-.inv-offer-use.on {
+.inv-oferta-usar.on {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--bg);
 }
 
-.inv-offer-fields {
+.inv-oferta-campos {
   display: grid;
   grid-template-columns: minmax(200px, 1.6fr) minmax(140px, 0.8fr);
   gap: 8px 12px;
 }
 
-.inv-offer-price input {
+.inv-oferta-precio input {
   font-size: 16px;
   font-weight: 600;
 }
 
-.inv-offer-compare {
+.inv-oferta-comparar {
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 12px;
 }
 
-.inv-offer-bar {
+.inv-oferta-barra {
   flex: 0 0 min(220px, 45%);
   height: 6px;
   border-radius: 3px;
@@ -684,14 +684,14 @@
   overflow: hidden;
 }
 
-.inv-offer-bar > span {
+.inv-oferta-barra > span {
   display: block;
   height: 100%;
   border-radius: 3px;
   background: color-mix(in srgb, var(--muted) 70%, transparent);
 }
 
-.inv-offer-bar > span.cheap {
+.inv-oferta-barra > span.cheap {
   background: #15803d;
 }
 
@@ -701,13 +701,13 @@
   color: #15803d;
 }
 
-.tag.no-price {
+.tag.no-precio {
   background: color-mix(in srgb, #f59e0b 24%, transparent);
   color: #b45309;
   font-weight: 600;
 }
 
-.list-field.compact > span:first-child {
+.lista-campo.compact > span:first-child {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -716,13 +716,13 @@
 }
 
 @media (max-width: 760px) {
-  .inv-offer-fields {
+  .inv-oferta-campos {
     grid-template-columns: 1fr;
   }
 }
 
 /* Revisión de precios */
-.inv-review {
+.inv-revision {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -737,12 +737,12 @@
   font-size: 13px;
 }
 
-.inv-review.due {
+.inv-revision.vencimiento {
   border-left-color: #d97706;
   background: color-mix(in srgb, #f59e0b 10%, var(--bg));
 }
 
-.inv-offer-actions {
+.inv-oferta-acciones {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -750,29 +750,29 @@
   gap: 8px 16px;
 }
 
-.inv-reviewed {
+.inv-revisado {
   font-size: 12.5px;
   color: var(--muted);
 }
 
 /* Aviso de que el producto que se está creando es una copia de otro: ocupa todo el ancho del formulario */
-.inv-copy-note {
+.inv-copy-nota {
   grid-column: 1 / -1;
   margin: 0 0 4px;
 }
 
 /* Rejilla de campos: si la etiqueta de uno ocupa dos líneas, las cajas de la fila siguen a la misma altura (cada fila se alinea
    por abajo, con su etiqueta justo encima de su caja) */
-.inv-grid > * {
+.inv-rejilla > * {
   justify-content: flex-end;
 }
 
 /* El buscador de la izquierda y los filtros de la derecha arrancan a la misma altura y con las etiquetas iguales */
-.inv-filter {
+.inv-filtro {
   padding-top: 12px;
 }
 
-.inv-search {
+.inv-buscar {
   font-size: 11px;
   line-height: 16.5px;
   font-weight: 600;
@@ -781,7 +781,7 @@
   color: var(--muted);
 }
 
-.inv-search input {
+.inv-buscar input {
   font-size: 13px;
   font-weight: 400;
   letter-spacing: normal;
@@ -790,21 +790,21 @@
 }
 
 /* Proveedor y precio: la caja del precio (más grande a propósito, en negrita) y el desplegable del proveedor miden lo mismo */
-.inv-offer-fields select,
-.inv-offer-fields input {
+.inv-oferta-campos select,
+.inv-oferta-campos input {
   box-sizing: border-box;
   height: 38px;
 }
 
 /* Desplegables y campos de texto de las características, exactamente de la misma altura (si no, difieren una fracción de píxel) */
-.inv-grid input,
-.inv-grid select {
+.inv-rejilla input,
+.inv-rejilla select {
   box-sizing: border-box;
   height: 38px;
 }
 
 /* Etiqueta de tipo y elemento de las protecciones (símbolo pequeño + texto, para no confundirla con el icono de categoría) */
-.prot-badge {
+.prot-insignia {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -818,18 +818,18 @@
   color: #475467;
   background: #eef0f3;
 }
-.prot-badge.tone-cc { color: #b54708; background: #fef0c7; }
-.prot-badge.tone-ac { color: #175cd3; background: #d1e9ff; }
-.prot-badge.tone-panel { color: #344054; background: #e4e7ec; }
-.prot-badge.tone-trafo { color: #6941c6; background: #ebe9fe; }
-html.tema-oscuro .prot-badge { color: #cbd5e1; background: #2a3342; }
-html.tema-oscuro .prot-badge.tone-cc { color: #fdb022; background: #4a3410; }
-html.tema-oscuro .prot-badge.tone-ac { color: #84caff; background: #12304f; }
-html.tema-oscuro .prot-badge.tone-panel { color: #d0d5dd; background: #333c4d; }
-html.tema-oscuro .prot-badge.tone-trafo { color: #c3b5fd; background: #2f2557; }
+.prot-insignia.tone-cc { color: #b54708; background: #fef0c7; }
+.prot-insignia.tone-ac { color: #175cd3; background: #d1e9ff; }
+.prot-insignia.tone-panel { color: #344054; background: #e4e7ec; }
+.prot-insignia.tone-trafo { color: #6941c6; background: #ebe9fe; }
+html.tema-oscuro .prot-insignia { color: #cbd5e1; background: #2a3342; }
+html.tema-oscuro .prot-insignia.tone-cc { color: #fdb022; background: #4a3410; }
+html.tema-oscuro .prot-insignia.tone-ac { color: #84caff; background: #12304f; }
+html.tema-oscuro .prot-insignia.tone-panel { color: #d0d5dd; background: #333c4d; }
+html.tema-oscuro .prot-insignia.tone-trafo { color: #c3b5fd; background: #2f2557; }
 
 /* Logo de marca: siempre sobre fondo claro para que se vea en los dos temas */
-.brand-logo {
+.marca-logo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -844,21 +844,21 @@ html.tema-oscuro .prot-badge.tone-trafo { color: #c3b5fd; background: #2f2557; }
   font-size: 0.8rem;
   overflow: hidden;
 }
-.brand-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
-.inv-card-top .brand-logo { margin-left: auto; }
-.brand-logo img { height: 100%; width: auto; max-width: 84px; }
+.marca-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.inv-tarjeta-cabecera .marca-logo { margin-left: auto; }
+.marca-logo img { height: 100%; width: auto; max-width: 84px; }
 
 .lists-manager { margin: 0 0 16px; padding: 14px 16px; border: 1px solid var(--border, #e4e7ec); border-radius: var(--radius, 8px); }
-.lists-help { margin: 0 0 10px; font-size: 0.85rem; }
-.lists-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+.lists-ayuda { margin: 0 0 10px; font-size: 0.85rem; }
+.lists-rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
 .lists-col h3 { margin: 0 0 8px; font-size: 1rem; }
 .lists-col ul { list-style: none; margin: 0; padding: 0; }
 .lists-col li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--border, #e4e7ec); }
 .lists-col li:first-child { border-top: 0; }
-.lists-add { display: flex; gap: 8px; margin: 0 0 10px; }
-.lists-add input { flex: 1; min-width: 0; }
-.lists-remove { color: #b91c1c; border-color: #b91c1c; padding: 2px 10px; font-size: 0.85rem; }
-.lists-name { display: flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: anywhere; }
-.lists-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.lists-logo-btn { cursor: pointer; white-space: nowrap; padding: 2px 10px; font-size: 0.85rem; display: inline-flex; align-items: center; }
-.lists-add .lists-logo-btn { padding: 0 12px; font-size: inherit; }
+.lists-anadir { display: flex; gap: 8px; margin: 0 0 10px; }
+.lists-anadir input { flex: 1; min-width: 0; }
+.lists-quitar { color: #b91c1c; border-color: #b91c1c; padding: 2px 10px; font-size: 0.85rem; }
+.lists-nombre { display: flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: anywhere; }
+.lists-acciones { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.lists-logo-boton { cursor: pointer; white-space: nowrap; padding: 2px 10px; font-size: 0.85rem; display: inline-flex; align-items: center; }
+.lists-anadir .lists-logo-boton { padding: 0 12px; font-size: inherit; }

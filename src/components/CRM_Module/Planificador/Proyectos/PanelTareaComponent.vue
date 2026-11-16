@@ -1,24 +1,24 @@
 <template>
   <aside v-if="vista" class="drawer" :style="{ '--c': color }">
-    <button type="button" class="drawer-close" title="Cerrar (Esc)" aria-label="Cerrar" @click="$emit('cerrar')">×</button>
+    <button type="button" class="drawer-cerrar" title="Cerrar (Esc)" aria-label="Cerrar" @click="$emit('cerrar')">×</button>
 
     <template v-if="tarea">
-      <header class="drawer-head">
+      <header class="drawer-cabecera">
         <div class="drawer-chips">
           <insignia-tarea v-if="tarea.phase" tipo="fase" :nombre="tarea.phase" :color="colores.get(tarea.phase) || NO_COLOR" :al-hacer-clic="true" @clic="$emit('seleccionar', { kind: 'phase', name: tarea.phase })" />
           <insignia-tarea tipo="area" :nombre="tarea.department" />
-          <span v-if="tarea.milestone" class="drawer-milestone">◆ Hito</span>
+          <span v-if="tarea.milestone" class="drawer-hito">◆ Hito</span>
         </div>
         <h2>{{ tarea.name }}</h2>
       </header>
 
-      <div v-if="cambiosPendientes.length > 0" class="change-banner" role="status">
+      <div v-if="cambiosPendientes.length > 0" class="cambio-aviso" role="status">
         <strong>↻ Cambios del contrato que afectan a esta tarea</strong>
         <ul>
           <li v-for="c in cambiosPendientes" :key="c.id">
             <div>
               <b>CAMBIO {{ c.number }}</b> · {{ c.date }} — {{ c.reason }}
-              <div class="change-values">
+              <div class="cambio-valores">
                 <span v-for="k in c.touched.filter((x) => tarea.uses.includes(x))" :key="k">{{ etiquetaTarea(campoDe(k) ? campoDe(k).label : k) }}: <strong>{{ k === 'importe_total' ? dinero(c.new_total) : formatoValor(campoDe(k), c.set[k]) }}</strong></span>
               </div>
             </div>
@@ -27,7 +27,7 @@
         </ul>
       </div>
 
-      <div v-if="retraso" class="alert-banner" :class="'level-' + retraso.level" :style="{ '--alert': retraso.color }" role="alert">
+      <div v-if="retraso" class="alerta-aviso" :class="'level-' + retraso.level" :style="{ '--alert': retraso.color }" role="alert">
         <strong>⚠ {{ retraso.label }} · Incidencia {{ levelName(retraso.level) }}</strong>
         <p>
           {{ retraso.own
@@ -36,27 +36,27 @@
         </p>
         <ul v-if="predecesorasRetrasadas.length > 0">
           <li v-for="x in predecesorasRetrasadas" :key="x.pred.id">
-            <button type="button" class="dep-link" @click="$emit('seleccionar', { kind: 'task', id: x.pred.id })">{{ x.pred.name }}</button>
-            <span class="alert-days" :style="{ color: x.retraso.color }">+{{ x.retraso.days }} d</span>
+            <button type="button" class="dep-enlace" @click="$emit('seleccionar', { kind: 'task', id: x.pred.id })">{{ x.pred.name }}</button>
+            <span class="alerta-dias" :style="{ color: x.retraso.color }">+{{ x.retraso.days }} d</span>
           </li>
         </ul>
         <p class="hint">Si cambias las fechas a mano, el nuevo fin pasa a ser el plazo de referencia y el aviso desaparece.</p>
       </div>
 
-      <div v-if="tarea.status === 'blocked'" class="status-banner blocked" role="status">
+      <div v-if="tarea.status === 'blocked'" class="estado-aviso blocked" role="status">
         <strong>⛔ Bloqueada: {{ tarea.status_reason || 'sin motivo indicado' }}</strong>
         <p v-if="tarea.status_note">{{ tarea.status_note }}</p>
-        <button type="button" class="link-btn" @click="$emit('pedir-estado', tarea, 'blocked')">Editar motivo</button>
+        <button type="button" class="enlace-boton" @click="$emit('pedir-estado', tarea, 'blocked')">Editar motivo</button>
       </div>
-      <div v-if="tarea.status === 'paused'" class="status-banner paused" role="status"><strong>⏸ En pausa</strong><p>La tarea está detenida. Mientras no se retome, sus plazos siguen corriendo.</p></div>
-      <div v-if="tarea.status === 'done'" class="status-banner done" role="status">
+      <div v-if="tarea.status === 'paused'" class="estado-aviso paused" role="status"><strong>⏸ En pausa</strong><p>La tarea está detenida. Mientras no se retome, sus plazos siguen corriendo.</p></div>
+      <div v-if="tarea.status === 'done'" class="estado-aviso done" role="status">
         <strong>✓ Finalizada{{ tarea.completed_at ? ' el ' + shortDate(tarea.completed_at) : '' }}</strong>
         <p v-if="tarea.closing_note">{{ tarea.closing_note }}</p>
       </div>
-      <div v-if="faltaDocumentacion" class="status-banner doing" role="status">
+      <div v-if="faltaDocumentacion" class="estado-aviso doing" role="status">
         <strong>Todas las subtareas están hechas, pero falta documentación</strong>
         <p>Para finalizar la tarea hay que aportar: {{ pendientes.map((d) => d.label).join('; ') }}.</p>
-        <button type="button" class="link-btn" @click="$emit('pedir-estado', tarea, 'done')">Aportar y finalizar…</button>
+        <button type="button" class="enlace-boton" @click="$emit('pedir-estado', tarea, 'done')">Aportar y finalizar…</button>
       </div>
 
       <section>
@@ -71,8 +71,8 @@
 
       <section v-if="filasContrato.length > 0">
         <h4>Datos vigentes del contrato</h4>
-        <dl class="contract-data">
-          <div v-for="r in filasContrato" :key="r.key" :class="{ changed: r.cambiado }">
+        <dl class="contrato-datos">
+          <div v-for="r in filasContrato" :key="r.key" :class="{ cambiado: r.cambiado }">
             <dt>{{ r.etiqueta }}</dt>
             <dd><strong>{{ r.valor }}</strong><span v-if="r.cambiado" class="was"> (antes {{ r.original }})</span><span v-if="r.extra" class="was"> · {{ r.extra }}</span></dd>
           </div>
@@ -81,7 +81,7 @@
 
       <section>
         <h4>Fechas</h4>
-        <div class="drawer-dates">
+        <div class="drawer-fechas">
           <label>Inicio <input type="date" :value="tarea.start" @change="moverInicio($event.target.value)"></label>
           <label>Fin <input type="date" :value="tarea.end" :min="tarea.start" @change="$event.target.value && $emit('cambiar', tarea.id, { end: $event.target.value })"></label>
           <span class="drawer-duration">{{ durationDays(tarea.start, tarea.end) }} días</span>
@@ -93,23 +93,23 @@
       <section>
         <h4>Depende de</h4>
         <p v-if="predecesoras.length === 0" class="hint">Puede empezar cuando quieras.</p>
-        <ul class="dep-list"><li v-for="p in predecesoras" :key="p.id">
-          <button type="button" class="dep-link" @click="$emit('seleccionar', { kind: 'task', id: p.id })"><span class="dep-dot" :style="{ background: colores.get(p.phase) || NO_COLOR }" />{{ p.name }}</button>
+        <ul class="dep-lista"><li v-for="p in predecesoras" :key="p.id">
+          <button type="button" class="dep-enlace" @click="$emit('seleccionar', { kind: 'task', id: p.id })"><span class="dep-punto" :style="{ background: colores.get(p.phase) || NO_COLOR }" />{{ p.name }}</button>
           <insignia-tarea tipo="estado" :estado="p.status" />
         </li></ul>
       </section>
 
       <section v-if="sucesoras.length > 0">
         <h4>Desbloquea</h4>
-        <ul class="dep-list"><li v-for="s in sucesoras" :key="s.id">
-          <button type="button" class="dep-link" @click="$emit('seleccionar', { kind: 'task', id: s.id })"><span class="dep-dot" :style="{ background: colores.get(s.phase) || NO_COLOR }" />{{ s.name }}</button>
+        <ul class="dep-lista"><li v-for="s in sucesoras" :key="s.id">
+          <button type="button" class="dep-enlace" @click="$emit('seleccionar', { kind: 'task', id: s.id })"><span class="dep-punto" :style="{ background: colores.get(s.phase) || NO_COLOR }" />{{ s.name }}</button>
           <insignia-tarea tipo="estado" :estado="s.status" />
         </li></ul>
       </section>
 
       <section v-if="tarea.checklist.length > 0">
         <h4>Subtareas <span class="count">{{ hechas }}/{{ tarea.checklist.length }}</span></h4>
-        <ul class="check-list"><li v-for="(item, i) in tarea.checklist" :key="i"><label>
+        <ul class="check-lista"><li v-for="(item, i) in tarea.checklist" :key="i"><label>
           <input type="checkbox" :checked="item.done" @change="marcarSubtarea(i, $event.target.checked)"><span :class="{ done: item.done }">{{ item.text }}</span>
         </label></li></ul>
       </section>
@@ -126,11 +126,11 @@
 
       <section v-if="tarea.description"><h4>Descripción</h4><texto-con-formato :texto="tarea.description" /></section>
 
-      <footer class="drawer-foot"><button type="button" class="danger-btn" @click="$emit('eliminar', tarea.id)">Eliminar tarea</button></footer>
+      <footer class="drawer-pie"><button type="button" class="danger-boton" @click="$emit('eliminar', tarea.id)">Eliminar tarea</button></footer>
     </template>
 
     <template v-else>
-      <header class="drawer-head"><div class="drawer-chips"><span class="drawer-milestone">Fase</span></div><h2>{{ nombreFase }}</h2></header>
+      <header class="drawer-cabecera"><div class="drawer-chips"><span class="drawer-hito">Fase</span></div><h2>{{ nombreFase }}</h2></header>
       <p v-if="propias.length === 0" class="hint">Esta fase no tiene tareas.</p>
       <template v-else>
         <section>
@@ -142,8 +142,8 @@
         </section>
         <section>
           <h4>Tareas <span class="count">{{ propias.length }}</span></h4>
-          <ul class="dep-list"><li v-for="t in propias" :key="t.id">
-            <button type="button" class="dep-link" @click="$emit('seleccionar', { kind: 'task', id: t.id })">{{ t.name }}</button>
+          <ul class="dep-lista"><li v-for="t in propias" :key="t.id">
+            <button type="button" class="dep-enlace" @click="$emit('seleccionar', { kind: 'task', id: t.id })">{{ t.name }}</button>
             <insignia-tarea tipo="estado" :estado="t.status" />
           </li></ul>
         </section>

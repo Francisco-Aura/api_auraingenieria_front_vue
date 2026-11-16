@@ -1,58 +1,58 @@
 <template>
-  <div class="costs budget-setup">
-    <div class="back-row">
+  <div class="costes budget-setup">
+    <div class="back-fila">
       <button type="button" class="secondary" @click="$emit('cancelar')">{{ modo === 'nuevo' ? '← Volver al listado' : '← Volver al presupuesto' }}</button>
     </div>
-    <div class="costs-title"><h1>{{ modo === 'nuevo' ? 'Nuevo presupuesto' : 'Parámetros del presupuesto' }}</h1></div>
-    <p class="muted setup-lead">
+    <div class="costes-titulo"><h1>{{ modo === 'nuevo' ? 'Nuevo presupuesto' : 'Parámetros del presupuesto' }}</h1></div>
+    <p class="muted alta-intro">
       {{ modo === 'nuevo'
         ? 'Estos datos se fijan al empezar y condicionan todos los pasos: la estructura, el inversor, las baterías y los cables se calculan a partir de ellos.'
         : 'Cambiar estos datos recalcula las cantidades que siguen al número de paneles y vuelve a comprobar la compatibilidad de lo ya elegido.' }}
     </p>
 
-    <form class="setup-form" novalidate @submit.prevent="enviar">
-      <fieldset class="setup-card">
+    <form class="alta-formulario" novalidate @submit.prevent="enviar">
+      <fieldset class="alta-tarjeta">
         <legend>Cliente</legend>
         <selector-cliente v-model="v.customer" :nombre-sugerido="inicio.client" :invalido="intentado && !v.customer" :cif-invalido="intentado" />
-        <label class="survey-field wide">
+        <label class="cuestionario-campo wide">
           Nombre del proyecto
           <input v-model="v.reference" list="proyectos-del-cliente" placeholder="Ej.: Nave 2, fotovoltaica" maxlength="80" autocomplete="off">
           <datalist id="proyectos-del-cliente"><option v-for="p in proyectosSugeridos" :key="p" :value="p" /></datalist>
-          <span class="muted field-hint">
+          <span class="muted campo-pista">
             Los presupuestos del mismo cliente con el mismo nombre de proyecto son versiones unos de otros (v1, v2…):
             {{ proyectosSugeridos.length > 0 ? 'elige uno de los que ya tiene para no escribirlo distinto.' : 'escríbelo igual en todos.' }}
           </span>
         </label>
-        <label v-if="!esPotencial" class="survey-field wide">
+        <label v-if="!esPotencial" class="cuestionario-campo wide">
           CIF de la empresa
-          <input v-model="v.cif" :class="{ 'required-empty': intentado && (!v.cif || v.cif.trim().length < 5) }" placeholder="Ej.: B12345678" maxlength="30" autocomplete="off">
-          <span class="muted field-hint">Obligatorio: sale en la propuesta que se le entrega al cliente.</span>
+          <input v-model="v.cif" :class="{ 'obligatorio-vacio': intentado && (!v.cif || v.cif.trim().length < 5) }" placeholder="Ej.: B12345678" maxlength="30" autocomplete="off">
+          <span class="muted campo-pista">Obligatorio: sale en la propuesta que se le entrega al cliente.</span>
         </label>
-        <div class="survey-field wide">
+        <div class="cuestionario-campo wide">
           Logo de la empresa
-          <div class="proposal-logo">
-            <button type="button" class="proposal-logo-box" :class="{ 'required-empty': intentado && !v.clientLogo }" title="Haz clic o arrastra una imagen para subir el logo" @click="$refs.logo.click()" @dragover.prevent @drop.prevent="soltarLogo">
+          <div class="propuesta-logo">
+            <button type="button" class="propuesta-logo-caja" :class="{ 'obligatorio-vacio': intentado && !v.clientLogo }" title="Haz clic o arrastra una imagen para subir el logo" @click="$refs.logo.click()" @dragover.prevent @drop.prevent="soltarLogo">
               <img v-if="v.clientLogo" :src="v.clientLogo" alt="Logo de la empresa del cliente">
               <span v-else class="muted">+ Subir logo</span>
             </button>
             <div>
-              <span class="muted field-hint">Obligatorio: sale en la propuesta. PNG, JPG, WebP o SVG; haz clic en la caja o arrastra la imagen.</span>
-              <button v-if="v.clientLogo" type="button" class="link-btn" @click="v.clientLogo = ''">Quitar el logo</button>
+              <span class="muted campo-pista">Obligatorio: sale en la propuesta. PNG, JPG, WebP o SVG; haz clic en la caja o arrastra la imagen.</span>
+              <button v-if="v.clientLogo" type="button" class="enlace-boton" @click="v.clientLogo = ''">Quitar el logo</button>
               <p v-if="errorLogo" class="error" role="alert">{{ errorLogo }}</p>
             </div>
             <input ref="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirLogo">
           </div>
         </div>
-        <div class="survey-field wide">
+        <div class="cuestionario-campo wide">
           Encaje de los paneles
-          <div class="proposal-logo">
-            <button type="button" class="proposal-logo-box proposal-encaje-box" title="Haz clic o arrastra una imagen para subir el encaje" @click="$refs.encaje.click()" @dragover.prevent @drop.prevent="soltarEncaje">
+          <div class="propuesta-logo">
+            <button type="button" class="propuesta-logo-caja propuesta-encaje-caja" title="Haz clic o arrastra una imagen para subir el encaje" @click="$refs.encaje.click()" @dragover.prevent @drop.prevent="soltarEncaje">
               <img v-if="v.encaje" :src="v.encaje" alt="Encaje de los paneles en el proyecto">
               <span v-else class="muted">+ Subir encaje</span>
             </button>
             <div>
-              <span class="muted field-hint">Opcional: la disposición en la que quedarán los paneles en el proyecto. Sale en la propuesta con un marco. PNG, JPG, WebP o SVG; haz clic en la caja o arrastra la imagen.</span>
-              <button v-if="v.encaje" type="button" class="link-btn" @click="v.encaje = ''">Quitar el encaje</button>
+              <span class="muted campo-pista">Opcional: la disposición en la que quedarán los paneles en el proyecto. Sale en la propuesta con un marco. PNG, JPG, WebP o SVG; haz clic en la caja o arrastra la imagen.</span>
+              <button v-if="v.encaje" type="button" class="enlace-boton" @click="v.encaje = ''">Quitar el encaje</button>
               <p v-if="errorEncaje" class="error" role="alert">{{ errorEncaje }}</p>
             </div>
             <input ref="encaje" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirEncaje">
@@ -60,59 +60,59 @@
         </div>
       </fieldset>
 
-      <fieldset class="setup-card">
+      <fieldset class="alta-tarjeta">
         <legend>Instalación</legend>
-        <div class="survey-row">
-          <label class="survey-field">Potencia que se quiere instalar (kWp) <campo-numerico v-model="v.targetKwp" etiqueta="Potencia a instalar en kWp" :paso="0.1" /></label>
-          <label class="survey-field">
+        <div class="cuestionario-fila">
+          <label class="cuestionario-campo">Potencia que se quiere instalar (kWp) <campo-numerico v-model="v.targetKwp" etiqueta="Potencia a instalar en kWp" :paso="0.1" /></label>
+          <label class="cuestionario-campo">
             Potencia de cada panel (Wp) <campo-numerico v-model="v.moduleWp" etiqueta="Potencia de cada panel en Wp" :paso="5" />
-            <span class="muted field-hint">Se actualiza al elegir el panel</span>
+            <span class="muted campo-pista">Se actualiza al elegir el panel</span>
           </label>
-          <label class="survey-field">
+          <label class="cuestionario-campo">
             Nº de paneles
             <campo-numerico :model-value="cuenta" etiqueta="Número de paneles" @update:model-value="v.moduleCount = Math.round($event); v.manualPanels = true" />
-            <span class="muted field-hint">{{ v.manualPanels ? 'Puesto a mano' : 'Se calcula: kWp ÷ Wp del panel' }}</span>
+            <span class="muted campo-pista">{{ v.manualPanels ? 'Puesto a mano' : 'Se calcula: kWp ÷ Wp del panel' }}</span>
           </label>
         </div>
-        <p v-if="cuenta > 0 && v.moduleWp > 0" class="step-note info setup-note">
+        <p v-if="cuenta > 0 && v.moduleWp > 0" class="paso-nota info alta-nota">
           {{ cuenta }} paneles de {{ v.moduleWp }} Wp = <strong>{{ kw(kwpReales) }} kWp</strong>
           <template v-if="v.manualPanels && auto > 0 && auto !== cuenta">
-            (para {{ kw(v.targetKwp) }} kWp saldrían {{ auto }}) <button type="button" class="link-btn" @click="v.manualPanels = false">Usar {{ auto }}</button>
+            (para {{ kw(v.targetKwp) }} kWp saldrían {{ auto }}) <button type="button" class="enlace-boton" @click="v.manualPanels = false">Usar {{ auto }}</button>
           </template>
         </p>
-        <div class="survey-row">
-          <label class="survey-field">
+        <div class="cuestionario-fila">
+          <label class="cuestionario-campo">
             Tipo de cubierta
             <select v-model="v.roof">
               <option v-for="k in tiposCubierta" :key="k" :value="k">{{ ROOF_LABEL[k] }}</option>
             </select>
           </label>
-          <label class="survey-field">
+          <label class="cuestionario-campo">
             Suministro eléctrico del cliente
             <select v-model="v.supply"><option value="">Sin decidir</option><option value="monofasico">Monofásico</option><option value="trifasico">Trifásico</option></select>
           </label>
         </div>
       </fieldset>
 
-      <fieldset v-if="cuenta >= 1 && !sinStrings" class="setup-card">
+      <fieldset v-if="cuenta >= 1 && !sinStrings" class="alta-tarjeta">
         <legend>Strings</legend>
         <disenador-strings :estado="estadoStrings" :panel="ctxStrings && ctxStrings.panel" :inversor="ctxStrings && ctxStrings.inverter"
                            :unidades="ctxStrings ? ctxStrings.units : 1" :grupos="ctxStrings ? ctxStrings.groups : null" @cambio="v.strings = $event" />
       </fieldset>
 
-      <fieldset class="setup-card">
+      <fieldset class="alta-tarjeta">
         <legend>Venta</legend>
-        <div class="survey-row">
-          <label class="survey-field">
+        <div class="cuestionario-fila">
+          <label class="cuestionario-campo">
             Precio de venta (€/Wp) <campo-numerico v-model="v.saleRatio" etiqueta="Precio de venta en euros por Wp" :paso="0.01" />
-            <span class="muted field-hint">Después se puede ajustar viendo el beneficio</span>
+            <span class="muted campo-pista">Después se puede ajustar viendo el beneficio</span>
           </label>
         </div>
       </fieldset>
 
       <!-- Barra anclada abajo: el botón de guardar y los avisos de lo que falta se ven siempre, aunque el formulario sea largo -->
-      <div class="setup-actions">
-        <div v-if="intentado && problemas.length > 0" class="setup-problems" role="alert"><p v-for="p in problemas" :key="p">{{ p }}</p></div>
+      <div class="alta-acciones">
+        <div v-if="intentado && problemas.length > 0" class="alta-problemas" role="alert"><p v-for="p in problemas" :key="p">{{ p }}</p></div>
         <button type="submit">{{ modo === 'nuevo' ? 'Crear presupuesto' : 'Guardar parámetros' }}</button>
         <button type="button" class="secondary" @click="$emit('cancelar')">Cancelar</button>
       </div>

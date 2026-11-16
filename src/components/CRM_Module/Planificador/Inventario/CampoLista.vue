@@ -1,7 +1,7 @@
 <template>
-  <label class="list-field">
+  <label class="lista-campo">
     <span>{{ etiqueta }}</span>
-    <span class="list-field-row">
+    <span class="lista-campo-fila">
       <select :value="modelValue" @change="$emit('update:modelValue', $event.target.value)">
         <option value="">{{ vacio }}</option>
         <option v-for="o in mostradas" :key="o" :value="o">{{ o }}</option>

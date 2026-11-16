@@ -112,7 +112,7 @@ textarea:focus {
 }
 
 /* Campo obligatorio que falta: solo se marca después de intentar generar el contrato, no desde el principio */
-input.required-empty {
+input.obligatorio-vacio {
   border-color: color-mix(in srgb, var(--danger) 65%, var(--border));
   background: color-mix(in srgb, var(--danger) 5%, var(--bg));
 }
@@ -154,7 +154,7 @@ html.tema-oscuro .tag.attr {
 
 /* Logos de marca: la mayoría están hechos para fondo claro (texto negro sobre transparente), así que la pastilla sigue
    siendo blanca también en el modo oscuro (el generador del tema la oscurecía y varios logos desaparecían) */
-html.tema-oscuro .brand-logo {
+html.tema-oscuro .marca-logo {
   background: #fff;
   border-color: #d0d5dd;
   color: #475467;

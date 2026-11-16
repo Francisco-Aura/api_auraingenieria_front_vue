@@ -1,16 +1,16 @@
-.payment-plan {
+.pago-plan {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.plan-mode {
+.plan-modo {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-.plan-mode label {
+.plan-modo label {
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -20,41 +20,41 @@
   cursor: pointer;
 }
 
-.plan-mode label.on {
+.plan-modo label.on {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 8%, var(--bg));
 }
 
-.plan-mode label span {
+.plan-modo label span {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.plan-mode small {
+.plan-modo small {
   color: var(--muted);
 }
 
-.plan-table {
+.plan-tabla {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
 }
 
-.plan-table th,
-.plan-table td {
+.plan-tabla th,
+.plan-tabla td {
   padding: 6px 8px;
   border-bottom: 1px solid var(--border);
   text-align: left;
   vertical-align: middle;
 }
 
-.plan-table .num {
+.plan-tabla .num {
   text-align: right;
   white-space: nowrap;
 }
 
-.plan-table td input {
+.plan-tabla td input {
   width: 100%;
   padding: 5px 8px;
   border: 1px solid var(--border);
@@ -64,48 +64,48 @@
   font: inherit;
 }
 
-.plan-table td input.pct {
+.plan-tabla td input.pct {
   width: 72px;
   text-align: right;
 }
 
 /* Pago que se ajusta solo para sumar 100 % */
-.plan-table td input.pct.auto {
+.plan-tabla td input.pct.auto {
   border-style: dashed;
   color: var(--muted);
 }
 
-.plan-hint {
+.plan-pista {
   font-size: 13px;
 }
 
-.plan-table tfoot td {
+.plan-tabla tfoot td {
   font-weight: 600;
   border-bottom: none;
 }
 
-.plan-table tfoot .good td:nth-child(2) {
+.plan-tabla tfoot .good td:nth-child(2) {
   color: #15803d;
 }
 
-.plan-table tfoot .bad td:nth-child(2) {
+.plan-tabla tfoot .bad td:nth-child(2) {
   color: var(--danger);
 }
 
-.plan-actions {
+.plan-acciones {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
 }
 
-.plan-problem {
+.plan-problema {
   color: var(--danger);
   font-size: 13px;
 }
 
 @media (max-width: 560px) {
-  .plan-mode {
+  .plan-modo {
     grid-template-columns: 1fr;
   }
 }

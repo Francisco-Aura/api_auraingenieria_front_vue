@@ -1,7 +1,7 @@
 <template>
   <modal-component titulo="Duplicar presupuesto" @cerrar="$emit('cerrar')">
     <p class="hint">Se copia todo el presupuesto: <strong>{{ nombre }}</strong></p>
-    <fieldset class="price-box payment-mode">
+    <fieldset class="precio-caja pago-modo">
       <legend>Cliente de la copia</legend>
       <label class="radio">
         <input v-model="cliente" type="radio" name="cliente-copia" value="mismo">

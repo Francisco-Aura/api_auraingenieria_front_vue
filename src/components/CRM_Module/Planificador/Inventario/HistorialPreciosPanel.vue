@@ -1,38 +1,38 @@
 <template>
   <div class="ph-panel">
-    <button type="button" class="link-btn ph-toggle" :aria-expanded="abierto" @click="abierto = !abierto">
+    <button type="button" class="enlace-boton ph-alternar" :aria-expanded="abierto" @click="abierto = !abierto">
       {{ abierto ? '▾ Ocultar historial de precios' : '▸ Ver historial de precios' }}
     </button>
-    <div v-if="abierto" class="ph-body">
+    <div v-if="abierto" class="ph-cuerpo">
       <p v-if="error" class="error-text">{{ error }}</p>
       <p v-else-if="puntos === null" class="muted">Cargando…</p>
       <p v-else-if="puntos.length === 0" class="muted">Este producto aún no tiene precio: el historial empieza cuando se le pone uno.</p>
       <template v-else>
-        <svg class="ph-chart" :viewBox="'0 0 ' + ANCHO + ' ' + ALTO" role="img" aria-label="Evolución del precio">
+        <svg class="ph-grafico" :viewBox="'0 0 ' + ANCHO + ' ' + ALTO" role="img" aria-label="Evolución del precio">
           <g v-for="v in marcasY" :key="'y' + v">
-            <line class="ph-grid" :x1="MARGEN.izq" :x2="ANCHO - MARGEN.der" :y1="y(v)" :y2="y(v)" />
-            <text class="ph-axis" :x="MARGEN.izq - 8" :y="y(v) + 4" text-anchor="end">{{ eur(v) }}</text>
+            <line class="ph-rejilla" :x1="MARGEN.izq" :x2="ANCHO - MARGEN.der" :y1="y(v)" :y2="y(v)" />
+            <text class="ph-eje" :x="MARGEN.izq - 8" :y="y(v) + 4" text-anchor="end">{{ eur(v) }}</text>
           </g>
-          <text v-for="(t, i) in marcasX" :key="'x' + i" class="ph-axis" :x="x(t)" :y="ALTO - 8" :text-anchor="anclaX(i)">{{ dia(t) }}</text>
+          <text v-for="(t, i) in marcasX" :key="'x' + i" class="ph-eje" :x="x(t)" :y="ALTO - 8" :text-anchor="anclaX(i)">{{ dia(t) }}</text>
           <g v-for="s in visibles" :key="s.key">
-            <path class="ph-line" :class="{ main: s.main }" :d="trazo(s)" :stroke="s.color" />
+            <path class="ph-linea" :class="{ main: s.main }" :d="trazo(s)" :stroke="s.color" />
             <template v-for="(v, i) in s.values" :key="i">
-              <circle v-if="v !== null" class="ph-dot" :cx="x(tiempos[i])" :cy="y(v)" :r="s.main ? 4.5 : 3.5" :fill="s.color">
+              <circle v-if="v !== null" class="ph-punto" :cx="x(tiempos[i])" :cy="y(v)" :r="s.main ? 4.5 : 3.5" :fill="s.color">
                 <title>{{ s.label + ': ' + eur(v) + ' / ' + unidad + ' (' + dia(tiempos[i]) + ')' }}</title>
               </circle>
             </template>
           </g>
         </svg>
-        <div class="ph-legend">
-          <button v-for="s in series" :key="s.key" type="button" class="ph-legend-item"
+        <div class="ph-leyenda">
+          <button v-for="s in series" :key="s.key" type="button" class="ph-leyenda-elemento"
                   :class="{ off: ocultas.includes(s.key) }" :aria-pressed="!ocultas.includes(s.key)" @click="alternar(s.key)">
-            <span class="ph-swatch" :style="{ background: s.color }" />{{ s.label }}
+            <span class="ph-muestra" :style="{ background: s.color }" />{{ s.label }}
           </button>
         </div>
         <p v-if="puntos.length === 1" class="muted">
           Aún no ha cambiado de precio. El historial se empezó a guardar el {{ dia(tiempos[0]) }}; no se conservan los precios anteriores.
         </p>
-        <table class="ph-table">
+        <table class="ph-tabla">
           <thead>
             <tr><th>Fecha</th><th>Proveedor</th><th class="num">Precio</th><th class="num">Cambio</th><th>Quién</th></tr>
           </thead>

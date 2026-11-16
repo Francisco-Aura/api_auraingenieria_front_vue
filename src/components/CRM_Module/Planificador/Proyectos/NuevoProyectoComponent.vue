@@ -1,36 +1,36 @@
 <template>
-  <div class="creator" :class="{ 'with-scan': archivoPresupuesto }">
-    <form class="new-project" :class="{ reading: leyendo }" :aria-busy="leyendo" @submit.prevent="crear">
-      <div class="new-project-head">
+  <div class="creator" :class="{ 'with-escaneo': archivoPresupuesto }">
+    <form class="nuevo-proyecto" :class="{ reading: leyendo }" :aria-busy="leyendo" @submit.prevent="crear">
+      <div class="nuevo-proyecto-cabecera">
         <h1>Nuevo proyecto</h1>
         <div class="row">
-          <span v-if="guardadoEl" class="muted draft-saved">Borrador guardado {{ horaBorrador(guardadoEl) }}</span>
+          <span v-if="guardadoEl" class="muted borrador-guardado">Borrador guardado {{ horaBorrador(guardadoEl) }}</span>
           <button type="button" class="secondary" :disabled="!hayContenido" @click="guardarYSalir">Guardar borrador y salir</button>
           <button type="button" class="secondary" @click="cancelar">Cancelar</button>
         </div>
       </div>
 
       <p v-if="problema && problema.kind === 'conflict'" class="notice warn" role="alert">
-        {{ problema.message }} <button type="button" class="link-btn" @click="cargarLaSuya">Cargar su versión</button>
+        {{ problema.message }} <button type="button" class="enlace-boton" @click="cargarLaSuya">Cargar su versión</button>
       </p>
       <p v-if="problema && problema.kind === 'lost'" class="notice warn" role="alert">
-        {{ problema.message }} Lo que tienes aquí ya no se guarda. <button type="button" class="link-btn" @click="separar">Seguir como borrador nuevo</button>
+        {{ problema.message }} Lo que tienes aquí ya no se guarda. <button type="button" class="enlace-boton" @click="separar">Seguir como borrador nuevo</button>
       </p>
       <p v-if="problema && problema.kind === 'offline'" class="notice warn">{{ problema.message }}</p>
 
-      <p v-if="restauradoEl && !problema" class="notice draft-notice" role="status">
+      <p v-if="restauradoEl && !problema" class="notice borrador-aviso" role="status">
         Estás con un borrador compartido<template v-if="actualizadoPor"> (último cambio de {{ actualizadoPor }}, {{ horaBorrador(restauradoEl) }})</template>.
         Lo que escribas se guarda en él y lo ven las demás personas. El PDF del presupuesto no se guarda: si lo
-        vuelves a subir, se leerá otra vez. <button type="button" class="link-btn" @click="empezarDeNuevo">Empezar un proyecto nuevo</button>
+        vuelves a subir, se leerá otra vez. <button type="button" class="enlace-boton" @click="empezarDeNuevo">Empezar un proyecto nuevo</button>
       </p>
 
       <!-- Lo primero es el presupuesto: de él salen el nombre y los datos del contrato inicial -->
-      <section class="contract-first">
+      <section class="contrato-primero">
         <h2>Presupuesto</h2>
         <subir-oferta :campos="campos" @ocupado="leyendo = $event" @archivo="archivoPresupuesto = $event" @proyecto="alLeerProyecto" @datos-extraidos="alLeerDatos" @extraccion="alLeerExtraccion" />
       </section>
 
-      <label :class="{ 'from-contract': nombreDeOferta }">
+      <label :class="{ 'from-contrato': nombreDeOferta }">
         Nombre
         <input v-model="datos.nombre" autofocus placeholder="Ej.: Instalación TIKI TAKA Lorca" required @input="nombreTocado = true; nombreDeOferta = false">
       </label>
@@ -44,34 +44,34 @@
         Fecha de inicio
         <input v-model="datos.inicio" type="date" required>
       </label>
-      <p v-if="fechaPasada" class="notice warn date-warning">
+      <p v-if="fechaPasada" class="notice warn fecha-warning">
         La fecha es anterior a hoy: las tareas que no estén hechas aparecerán con retraso desde el primer día.
       </p>
 
-      <fieldset v-if="campos.length > 0" class="contract-box">
+      <fieldset v-if="campos.length > 0" class="contrato-caja">
         <legend>Datos de instalación</legend>
         <campos-contrato :valores="datos.baseline" :campos="campos" :resaltar="datos.desdeContrato" :invalidos="invalidos" @update:valores="cambiarBaseline" />
         <comprobaciones-contrato :valores="datos.baseline" :reparto="planPercents(datos.plan)" />
       </fieldset>
 
-      <fieldset class="contract-box">
+      <fieldset class="contrato-caja">
         <legend>Forma de pago</legend>
         <plan-pagos-editor :plan="datos.plan" :total="datos.baseline.importe_total" @update:plan="datos.plan = $event; datos.contratoGenerado = false" />
       </fieldset>
 
       <!-- El contrato se genera con los datos de instalación y la forma de pago, y se guarda en la carpeta de Dropbox -->
-      <fieldset class="contract-box">
+      <fieldset class="contrato-caja">
         <legend>Contrato</legend>
         <generador-contrato :parte="datos.parte" :contrato="datos.baseline" :plan="datos.plan" :extras="datos.extras" :intentado="contratoIntentado"
                             @update:parte="datos.parte = $event; datos.contratoGenerado = false" @intento="contratoIntentado = true" @generado="datos.contratoGenerado = true" />
-        <p class="hint contract-state" :class="{ ok: datos.contratoGenerado }">
+        <p class="hint contrato-estado" :class="{ ok: datos.contratoGenerado }">
           {{ datos.contratoGenerado
             ? '✓ Contrato generado: al crear el proyecto se guarda solo en la carpeta de contrato de Dropbox.'
             : 'El contrato es obligatorio. Si no lo generas ahora, el proyecto se crea igualmente y queda con el contrato pendiente: lo generas desde su pantalla y se guarda solo en Dropbox.' }}
         </p>
       </fieldset>
 
-      <fieldset v-if="estadoDropbox && estadoDropbox.enabled" class="contract-box">
+      <fieldset v-if="estadoDropbox && estadoDropbox.enabled" class="contrato-caja">
         <legend>Carpeta en Dropbox</legend>
         <div v-if="datos.carpetaExistente" class="dbx-chosen" role="status">
           <span>📁 Se usará la carpeta que ya existe:</span>
@@ -81,11 +81,11 @@
         </div>
         <template v-else>
           <campo-carpeta-dropbox :empresa="empresaCarpeta" :lugar="lugarCarpeta" :fecha-inicio="datos.inicio" @update:empresa="datos.empresaCarpeta = $event" @update:lugar="datos.lugarCarpeta = $event" />
-          <div class="dbx-pick">
+          <div class="dbx-elegir">
             <p class="hint">¿La carpeta ya existe con otro nombre? Elígela en Dropbox en vez de crear una.</p>
             <button type="button" class="secondary" @click="eligiendoCarpeta = true">Elegir una carpeta que ya existe…</button>
           </div>
-          <p v-if="!nombreCarpeta.trim()" class="notice warn date-warning">
+          <p v-if="!nombreCarpeta.trim()" class="notice warn fecha-warning">
             Sin nombre no se crea carpeta: no se podrán subir archivos al proyecto hasta que la crees desde él.
           </p>
         </template>
@@ -102,7 +102,7 @@
       </div>
     </form>
 
-    <div v-if="archivoPresupuesto" class="creator-scan">
+    <div v-if="archivoPresupuesto" class="creador-escaneo">
       <visor-pdf :archivo="archivoPresupuesto" @cerrar="archivoPresupuesto = null" />
     </div>
   </div>

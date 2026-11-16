@@ -1,4 +1,4 @@
-.mat-help {
+.mat-ayuda {
   margin: 0 0 12px;
   font-size: 13px;
   line-height: 1.45;
@@ -14,7 +14,7 @@
   line-height: 1.4;
 }
 
-.mat-empty {
+.mat-vacio {
   margin: 0;
   padding: 10px 12px;
   border: 1px dashed var(--border);
@@ -24,20 +24,20 @@
   line-height: 1.45;
 }
 
-.mat-list,
+.mat-lista,
 .mat-returns {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.mat-list {
+.mat-lista {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.mat-item {
+.mat-elemento {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -54,7 +54,7 @@
   min-width: 0;
 }
 
-.mat-name {
+.mat-nombre {
   color: var(--text-h);
   overflow-wrap: anywhere;
 }
@@ -71,13 +71,13 @@
 }
 
 /* Cantidad, unidad y botón en una línea, con la misma altura y alineados por abajo */
-.mat-add {
+.mat-anadir {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.mat-add .num-field input {
+.mat-anadir .num-campo input {
   box-sizing: border-box;
   width: 96px;
   height: 36px;
@@ -85,7 +85,7 @@
   text-align: right;
 }
 
-.mat-add button {
+.mat-anadir button {
   box-sizing: border-box;
   height: 36px;
   padding: 0 14px;
@@ -127,8 +127,8 @@
   overflow-wrap: anywhere;
 }
 
-.mat-returns .link-btn,
-.mat-confirm {
+.mat-returns .enlace-boton,
+.mat-confirmar {
   flex: none;
   white-space: nowrap;
   font-size: 13px;

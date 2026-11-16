@@ -1,23 +1,23 @@
 <template>
   <div class="inventory">
-    <div v-if="etiquetaVolver" class="back-row">
+    <div v-if="etiquetaVolver" class="back-fila">
       <button type="button" class="secondary" @click="$emit('cerrar')">{{ etiquetaVolver }}</button>
     </div>
-    <div class="costs-title">
+    <div class="costes-titulo">
       <h1>Inventario</h1>
-      <div class="title-actions">
+      <div class="titulo-acciones">
         <button type="button" class="secondary" :aria-expanded="mostrarListas" @click="mostrarListas = !mostrarListas">Marcas y proveedores</button>
         <button type="button" class="secondary" :disabled="exportando" title="Descarga todo el inventario en un Excel: una hoja con todo, una por categoría y los precios de cada proveedor" @click="exportarExcel">{{ exportando ? 'Generando…' : 'Exportar a Excel' }}</button>
         <button type="button" @click="abrir(null)">+ Nuevo producto</button>
       </div>
     </div>
     <listas-marcas-proveedores v-if="mostrarListas" @cambiado="logosCambiados" />
-    <p class="muted inv-note">
+    <p class="muted inv-nota">
       Los productos de aquí son los que se eligen en el presupuestador. Cada categoría tiene sus características
       (potencia, tensión…) y además se pueden añadir las que hagan falta.
     </p>
 
-    <div v-if="revision && catalogo" class="inv-review" :class="{ due: revision.days_left <= 0 && !revision.notified }" role="status">
+    <div v-if="revision && catalogo" class="inv-revision" :class="{ vencimiento: revision.days_left <= 0 && !revision.notified }" role="status">
       <div>
         <strong>Revisión de precios</strong>
         <span v-if="revision.reviewed_products === 0"> · aún no se ha revisado ningún precio</span>
@@ -28,7 +28,7 @@
         Marcar como revisados los {{ visibles.length }} que veo
       </button>
     </div>
-    <div v-if="catalogo && sinPrecio.length > 0" class="inv-review due" role="status">
+    <div v-if="catalogo && sinPrecio.length > 0" class="inv-revision vencimiento" role="status">
       <div>
         <strong>⚠ {{ sinPrecio.length === 1 ? '1 producto sin precio' : sinPrecio.length + ' productos sin precio' }}</strong>
         <span class="muted"> · hay que completarlos: ábrelos y añade su proveedor y su precio. Se marcan con «Sin precio».</span>
@@ -40,9 +40,9 @@
     <p v-else-if="!catalogo" class="muted">Cargando inventario…</p>
     <p v-else-if="error" class="error" role="alert">{{ error }}</p>
 
-    <div v-if="catalogo" class="inv-body">
-      <aside class="inv-filter" aria-label="Filtrar productos">
-        <label class="inv-search">
+    <div v-if="catalogo" class="inv-cuerpo">
+      <aside class="inv-filtro" aria-label="Filtrar productos">
+        <label class="inv-buscar">
           Buscar
           <input v-model="consulta" type="search" placeholder="Marca, modelo, proveedor…">
         </label>
@@ -50,22 +50,22 @@
         <ul class="inv-cats">
           <li>
             <button type="button" :class="{ active: categoriaFiltro === '' }" :aria-pressed="categoriaFiltro === ''" @click="elegirCategoria('')">
-              <icono-categoria nombre="todas" /><span class="inv-cat-name">Todas</span><span class="inv-cat-count">{{ catalogo.items.length }}</span>
+              <icono-categoria nombre="todas" /><span class="inv-cat-nombre">Todas</span><span class="inv-cat-total">{{ catalogo.items.length }}</span>
             </button>
           </li>
           <li v-for="c in categorias" :key="c.key">
             <button type="button" :class="{ active: categoriaFiltro === c.key }" :aria-pressed="categoriaFiltro === c.key" @click="elegirCategoria(c.key)">
-              <icono-categoria :nombre="c.key" /><span class="inv-cat-name">{{ c.label }}</span><span class="inv-cat-count">{{ cuentas[c.key] || 0 }}</span>
+              <icono-categoria :nombre="c.key" /><span class="inv-cat-nombre">{{ c.label }}</span><span class="inv-cat-total">{{ cuentas[c.key] || 0 }}</span>
             </button>
           </li>
         </ul>
       </aside>
 
-      <section class="inv-results" aria-label="Productos">
+      <section class="inv-resultados" aria-label="Productos">
         <div class="inv-toolbar" role="search" aria-label="Filtros">
-          <div class="inv-tool">
-            <span class="inv-tool-label">Precio (€)</span>
-            <span class="inv-range">
+          <div class="inv-herramienta">
+            <span class="inv-herramienta-etiqueta">Precio (€)</span>
+            <span class="inv-rango">
               <input v-model="precioMin" aria-label="Precio mínimo" inputmode="decimal" placeholder="Desde">
               <span aria-hidden="true">–</span>
               <input v-model="precioMax" aria-label="Precio máximo" inputmode="decimal" placeholder="Hasta">
@@ -74,56 +74,56 @@
           <label class="switch">
             <input v-model="soloStock" type="checkbox"><span class="switch-track" aria-hidden="true" /> Solo con stock
           </label>
-          <label class="inv-tool">
-            <span class="inv-tool-label">Marca</span>
+          <label class="inv-herramienta">
+            <span class="inv-herramienta-etiqueta">Marca</span>
             <select v-model="marca"><option value="">Todas</option><option v-for="v in valoresDistintos(grupo, (i) => i.brand)" :key="v" :value="v">{{ v }}</option></select>
           </label>
-          <label class="inv-tool">
-            <span class="inv-tool-label">Proveedor</span>
+          <label class="inv-herramienta">
+            <span class="inv-herramienta-etiqueta">Proveedor</span>
             <select v-model="proveedor"><option value="">Todos</option><option v-for="v in valoresDistintos(grupo, (i) => i.supplier)" :key="v" :value="v">{{ v }}</option></select>
           </label>
           <template v-for="f in filtrosCategoria" :key="f.key">
-            <label v-if="opcionesFiltro(f).length > 1" class="inv-tool">
-              <span class="inv-tool-label">{{ f.label }}</span>
+            <label v-if="opcionesFiltro(f).length > 1" class="inv-herramienta">
+              <span class="inv-herramienta-etiqueta">{{ f.label }}</span>
               <select :value="filtrosAtributo[f.key] || ''" @change="filtrosAtributo[f.key] = $event.target.value"><option value="">Todos</option><option v-for="o in opcionesFiltro(f)" :key="o" :value="o">{{ o === 'Todas' ? 'Cualquier cubierta' : o }}</option></select>
             </label>
           </template>
-          <label class="inv-tool">
-            <span class="inv-tool-label">Ordenar por</span>
+          <label class="inv-herramienta">
+            <span class="inv-herramienta-etiqueta">Ordenar por</span>
             <select v-model="orden"><option v-for="o in ORDENES" :key="o.key" :value="o.key">{{ o.label }}</option></select>
           </label>
-          <button v-if="hayFiltros" type="button" class="link-btn" @click="quitarFiltros">Quitar filtros</button>
+          <button v-if="hayFiltros" type="button" class="enlace-boton" @click="quitarFiltros">Quitar filtros</button>
         </div>
-        <p class="muted result-count" aria-live="polite">
+        <p class="muted resultado-total" aria-live="polite">
           {{ visibles.length }} {{ visibles.length === 1 ? 'producto' : 'productos' }}{{ categoriaFiltro ? ' en ' + categoriaDe(categoriaFiltro).label.toLowerCase() : '' }}
           <template v-if="valorStock > 0"> · valor en stock <strong>{{ eur(valorStock) }}</strong></template>
         </p>
         <p v-if="visibles.length === 0" class="muted inv-none">Ningún producto cumple la búsqueda.</p>
-        <ul v-else class="inv-cards">
+        <ul v-else class="inv-tarjetas">
           <li v-for="item in visibles" :key="item.id">
-            <button type="button" class="inv-card" :class="{ 'needs-review': porRevisar(item) }" @click="abrir(item.id)">
-              <span class="inv-card-top">
-                <span class="inv-card-icon"><icono-categoria :nombre="item.category" /></span>
-                <span class="inv-card-cat">{{ categoriaDe(item.category) ? categoriaDe(item.category).label : item.category }}</span>
+            <button type="button" class="inv-tarjeta" :class="{ 'needs-revision': porRevisar(item) }" @click="abrir(item.id)">
+              <span class="inv-tarjeta-cabecera">
+                <span class="inv-tarjeta-icon"><icono-categoria :nombre="item.category" /></span>
+                <span class="inv-tarjeta-cat">{{ categoriaDe(item.category) ? categoriaDe(item.category).label : item.category }}</span>
                 <logo-marca v-if="item.brand" :nombre="item.brand" :tiene-logo="marcasConLogo.includes(item.brand)" :version="versionLogos" />
               </span>
-              <span v-if="porRevisar(item) || item.datasheet" class="inv-card-flags">
-                <span v-if="porRevisar(item)" class="tag review"
+              <span v-if="porRevisar(item) || item.datasheet" class="inv-tarjeta-flags">
+                <span v-if="porRevisar(item)" class="tag revision"
                       :title="item.price_reviewed_at ? 'Precio revisado el ' + fechaCorta(item.price_reviewed_at) : 'El precio no se ha revisado nunca'">Por revisar</span>
                 <span v-if="item.datasheet" class="tag ficha" title="Tiene la ficha técnica adjunta">📄 Ficha</span>
               </span>
-              <strong class="inv-card-name">{{ nombreProducto(item) }}</strong>
+              <strong class="inv-tarjeta-nombre">{{ nombreProducto(item) }}</strong>
               <insignia-proteccion :producto="item" />
-              <span class="muted inv-card-supplier">{{ item.supplier || 'Sin proveedor' }}{{ resumenOfertas(item) }}</span>
-              <span v-if="destacar(item).datos.length > 0 || destacar(item).mas > 0" class="inv-specs">
-                <span v-for="c in destacar(item).datos" :key="c.key" class="inv-spec">
-                  <span class="inv-spec-label">{{ c.label }}</span><span class="inv-spec-value">{{ c.value }}</span>
+              <span class="muted inv-tarjeta-proveedor">{{ item.supplier || 'Sin proveedor' }}{{ resumenOfertas(item) }}</span>
+              <span v-if="destacar(item).datos.length > 0 || destacar(item).mas > 0" class="inv-especificaciones">
+                <span v-for="c in destacar(item).datos" :key="c.key" class="inv-especificacion">
+                  <span class="inv-especificacion-etiqueta">{{ c.label }}</span><span class="inv-especificacion-valor">{{ c.value }}</span>
                 </span>
-                <span v-if="destacar(item).mas > 0" class="inv-spec-more" title="Más características en la ficha del producto">+{{ destacar(item).mas }} características más en la ficha</span>
+                <span v-if="destacar(item).mas > 0" class="inv-especificacion-mas" title="Más características en la ficha del producto">+{{ destacar(item).mas }} características más en la ficha</span>
               </span>
-              <span class="inv-card-foot">
-                <span v-if="item.unit_price > 0" class="inv-card-price">{{ eur(item.unit_price) }} <span class="muted">/ {{ item.unit }}</span></span>
-                <span v-else class="tag no-price" title="Este producto no tiene precio: complétalo en su ficha">⚠ Sin precio</span>
+              <span class="inv-tarjeta-pie">
+                <span v-if="item.unit_price > 0" class="inv-tarjeta-precio">{{ eur(item.unit_price) }} <span class="muted">/ {{ item.unit }}</span></span>
+                <span v-else class="tag no-precio" title="Este producto no tiene precio: complétalo en su ficha">⚠ Sin precio</span>
                 <span v-if="item.stock > 0" class="inv-stock con">{{ cantidad(item.stock) }} en stock</span>
               </span>
             </button>

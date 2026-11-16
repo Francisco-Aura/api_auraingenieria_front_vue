@@ -1,15 +1,15 @@
 <template>
   <div class="lists-manager">
-    <p class="muted lists-help">
+    <p class="muted lists-ayuda">
       Aquí se crean y se eliminan las marcas y los proveedores, y se pone el logo de cada marca; en cada producto solo se elige de la
       lista. Solo se puede eliminar uno que ningún producto use: para quitar uno que está en uso, cambia antes el de sus productos.
     </p>
-    <div class="lists-grid">
+    <div class="lists-rejilla">
       <section v-for="col in columnas" :key="col.tipo" class="lists-col" :aria-label="col.titulo">
         <h3>{{ col.titulo }} <span v-if="col.filas" class="muted">({{ col.filas.length }})</span></h3>
-        <form class="lists-add" @submit.prevent="anadir(col.tipo)">
+        <form class="lists-anadir" @submit.prevent="anadir(col.tipo)">
           <input v-model="nuevo[col.tipo]" :placeholder="col.marcador" :aria-label="col.tipo === 'marca' ? 'Nombre de la nueva marca' : 'Nombre del nuevo proveedor'">
-          <label v-if="col.tipo === 'marca'" class="secondary lists-logo-btn" :title="logoNuevo ? logoNuevo.name : 'Logo de la marca (opcional)'">
+          <label v-if="col.tipo === 'marca'" class="secondary lists-logo-boton" :title="logoNuevo ? logoNuevo.name : 'Logo de la marca (opcional)'">
             {{ logoNuevo ? 'Logo ✓' : 'Logo' }}
             <input type="file" :accept="TIPOS_LOGO" hidden @change="elegirLogoNuevo">
           </label>
@@ -19,17 +19,17 @@
         <p v-else-if="col.filas.length === 0" class="muted">No hay ninguno.</p>
         <ul v-else>
           <li v-for="f in col.filas" :key="f.name">
-            <span class="lists-name">
+            <span class="lists-nombre">
               <logo-marca v-if="col.tipo === 'marca'" :nombre="f.name" :tiene-logo="!!f.logo" :version="version" :tamano="28" />
               <span>{{ f.name }}</span>
             </span>
-            <span class="lists-actions">
-              <label v-if="col.tipo === 'marca'" class="secondary lists-logo-btn">
+            <span class="lists-acciones">
+              <label v-if="col.tipo === 'marca'" class="secondary lists-logo-boton">
                 {{ f.logo ? 'Cambiar logo' : 'Subir logo' }}
                 <input type="file" :accept="TIPOS_LOGO" hidden @change="subirLogo(f.name, $event)">
               </label>
               <span v-if="f.products > 0" class="muted">{{ f.products }} producto{{ f.products === 1 ? '' : 's' }}</span>
-              <button v-else type="button" class="secondary lists-remove" @click="eliminar(col.tipo, f.name)">Eliminar</button>
+              <button v-else type="button" class="secondary lists-quitar" @click="eliminar(col.tipo, f.name)">Eliminar</button>
             </span>
           </li>
         </ul>

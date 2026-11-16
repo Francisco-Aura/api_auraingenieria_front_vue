@@ -1,14 +1,14 @@
 <template>
   <div class="estudio">
-    <div class="back-row">
+    <div class="back-fila">
       <button type="button" class="secondary" @click="volver">← Volver a los estudios</button>
     </div>
     <p v-if="!e && error" class="error">{{ error }}</p>
     <p v-else-if="!e" class="muted">Cargando estudio…</p>
     <template v-else>
-      <div class="costs-title">
+      <div class="costes-titulo">
         <h1>{{ f.cliente || 'Estudio' }}</h1>
-        <div class="title-actions">
+        <div class="titulo-acciones">
           <span v-if="sinGuardar" class="muted">Cambios sin guardar</span>
           <span v-else-if="guardadoOk" class="estudio-ok" role="status">✓ Guardado</span>
           <button type="button" :disabled="ocupado" @click="guardar()">{{ ocupado ? 'Trabajando…' : '💾 Guardar y calcular' }}</button>
@@ -17,25 +17,25 @@
       <p v-if="error" class="error" role="alert">{{ error }}</p>
       <p v-if="aviso" class="estudio-aviso" role="status">{{ aviso }}</p>
 
-      <fieldset class="setup-card">
+      <fieldset class="alta-tarjeta">
         <legend>Cliente y seguimiento</legend>
-        <label class="survey-field">
+        <label class="cuestionario-campo">
           Cliente
           <input v-model.trim="f.cliente" maxlength="255" autocomplete="off">
         </label>
-        <label class="survey-field">
+        <label class="cuestionario-campo">
           Estado
           <select v-model="f.estado">
             <option v-for="s in e.estados" :key="s.id" :value="s.id">{{ s.nombre }}</option>
           </select>
         </label>
-        <label class="survey-field wide">
+        <label class="cuestionario-campo wide">
           Observaciones
           <textarea v-model="f.observaciones" rows="3" maxlength="5000" placeholder="Ej.: pendiente de la factura de julio; el cliente lo está hablando con su gestor" />
         </label>
       </fieldset>
 
-      <fieldset class="setup-card">
+      <fieldset class="alta-tarjeta">
         <legend>Consumo del cliente</legend>
         <div class="estudio-subida">
           <div>
@@ -65,54 +65,54 @@
         <div v-if="!e.curva.presente || e.curva.estimada" class="estudio-horario">
           <strong>Horario de funcionamiento (para estimar la curva)</strong>
           <div class="estudio-campos">
-            <label class="survey-field">Entrada (h)<input v-model.number="f.horario.ini" type="number" min="0" max="23" step="1"></label>
-            <label class="survey-field">Salida (h)<input v-model.number="f.horario.fin" type="number" min="1" max="24" step="1"></label>
-            <label class="survey-field">Consumo fuera de horario (%)<input v-model.number="f.horario.fuera" type="number" min="0" max="100" step="1"></label>
-            <label class="survey-field">Consumo en fin de semana (%)<input v-model.number="f.horario.finde" type="number" min="0" max="100" step="1"></label>
+            <label class="cuestionario-campo">Entrada (h)<input v-model.number="f.horario.ini" type="number" min="0" max="23" step="1"></label>
+            <label class="cuestionario-campo">Salida (h)<input v-model.number="f.horario.fin" type="number" min="1" max="24" step="1"></label>
+            <label class="cuestionario-campo">Consumo fuera de horario (%)<input v-model.number="f.horario.fuera" type="number" min="0" max="100" step="1"></label>
+            <label class="cuestionario-campo">Consumo en fin de semana (%)<input v-model.number="f.horario.finde" type="number" min="0" max="100" step="1"></label>
           </div>
           <p class="muted">Porcentaje respecto al consumo a plena carga en horario laboral. Si la actividad para por la noche y el fin de semana, pon valores bajos.</p>
         </div>
       </fieldset>
 
-      <fieldset class="setup-card">
+      <fieldset class="alta-tarjeta">
         <legend>Instalación propuesta</legend>
         <div class="estudio-campos">
-          <label class="survey-field">Paneles (kWp)<input v-model.number="f.instalacion.kwp" type="number" min="0" step="0.1"></label>
-          <label class="survey-field">Batería (kWh, 0 si no lleva)<input v-model.number="f.instalacion.bateriaKwh" type="number" min="0" step="1"></label>
-          <label class="survey-field">Orientación
+          <label class="cuestionario-campo">Paneles (kWp)<input v-model.number="f.instalacion.kwp" type="number" min="0" step="0.1"></label>
+          <label class="cuestionario-campo">Batería (kWh, 0 si no lleva)<input v-model.number="f.instalacion.bateriaKwh" type="number" min="0" step="1"></label>
+          <label class="cuestionario-campo">Orientación
             <select v-model="f.instalacion.orientacion">
               <option value="este-oeste">Este-Oeste (15°)</option>
               <option value="sur">Sur (30°)</option>
             </select>
           </label>
-          <label class="survey-field">Producción (kWh/kWp·año)
+          <label class="cuestionario-campo">Producción (kWh/kWp·año)
             <input v-model.number="f.instalacion.produccionEspecifica" type="number" min="500" max="2500" step="10" :placeholder="f.instalacion.orientacion === 'sur' ? '1.685 (por defecto)' : '1.420 (por defecto)'">
           </label>
         </div>
         <p class="muted">La potencia propuesta al cargar el consumo es la que produce la mitad de lo que consume el cliente en un año: ajústala y pulsa «Guardar y calcular».</p>
       </fieldset>
 
-      <fieldset class="setup-card">
+      <fieldset class="alta-tarjeta">
         <legend>Economía (sin IVA)</legend>
         <div class="estudio-campos">
-          <label class="survey-field">Precio de los paneles (€/Wp)<input v-model.number="f.economia.precioWp" type="number" min="0.05" max="5" step="0.01"></label>
-          <label class="survey-field">Precio de la batería (€/kWh)<input v-model.number="f.economia.precioBateriaKwh" type="number" min="0" step="10"></label>
-          <label class="survey-field">Precio medio de la energía (€/kWh)<input v-model.number="f.economia.precioEnergia" type="number" min="0.005" max="1" step="0.005"></label>
-          <label class="survey-field">Mantenimiento y seguro (% de la inversión al año)<input v-model.number="f.economia.mantenimientoPct" type="number" min="0" max="10" step="0.1"></label>
-          <label class="survey-field">Ahorro anual en potencia (€)<input v-model.number="f.economia.ahorroPotencia" type="number" min="0" step="100"></label>
+          <label class="cuestionario-campo">Precio de los paneles (€/Wp)<input v-model.number="f.economia.precioWp" type="number" min="0.05" max="5" step="0.01"></label>
+          <label class="cuestionario-campo">Precio de la batería (€/kWh)<input v-model.number="f.economia.precioBateriaKwh" type="number" min="0" step="10"></label>
+          <label class="cuestionario-campo">Precio medio de la energía (€/kWh)<input v-model.number="f.economia.precioEnergia" type="number" min="0.005" max="1" step="0.005"></label>
+          <label class="cuestionario-campo">Mantenimiento y seguro (% de la inversión al año)<input v-model.number="f.economia.mantenimientoPct" type="number" min="0" max="10" step="0.1"></label>
+          <label class="cuestionario-campo">Ahorro anual en potencia (€)<input v-model.number="f.economia.ahorroPotencia" type="number" min="0" step="100"></label>
         </div>
         <details class="estudio-avanzado">
           <summary>Ajustes avanzados</summary>
           <div class="estudio-campos">
-            <label class="survey-field">Inversión total fija (€, vacío = calcularla)<input v-model.number="f.economia.inversionTotal" type="number" min="0" step="100"></label>
-            <label class="survey-field">Mantenimiento fijo (€/año, vacío = % de la inversión)<input v-model.number="f.economia.mantenimiento" type="number" min="0" step="50"></label>
-            <label class="survey-field">Cambio de equipos: año<input v-model.number="f.economia.reposicionAno" type="number" min="1" max="25" step="1"></label>
-            <label class="survey-field">Cambio de equipos: importe (€, 0 = ninguno)<input v-model.number="f.economia.reposicion" type="number" min="0" step="1000"></label>
+            <label class="cuestionario-campo">Inversión total fija (€, vacío = calcularla)<input v-model.number="f.economia.inversionTotal" type="number" min="0" step="100"></label>
+            <label class="cuestionario-campo">Mantenimiento fijo (€/año, vacío = % de la inversión)<input v-model.number="f.economia.mantenimiento" type="number" min="0" step="50"></label>
+            <label class="cuestionario-campo">Cambio de equipos: año<input v-model.number="f.economia.reposicionAno" type="number" min="1" max="25" step="1"></label>
+            <label class="cuestionario-campo">Cambio de equipos: importe (€, 0 = ninguno)<input v-model.number="f.economia.reposicion" type="number" min="0" step="1000"></label>
           </div>
         </details>
       </fieldset>
 
-      <fieldset class="setup-card">
+      <fieldset class="alta-tarjeta">
         <legend>Resultado</legend>
         <p v-if="!r" class="muted">Todavía no hay resultado: carga el consumo del cliente y pulsa «Guardar y calcular».</p>
         <template v-else>

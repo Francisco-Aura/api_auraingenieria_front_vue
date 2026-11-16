@@ -24,9 +24,9 @@
     </label>
     <p v-if="error" class="error">{{ error }}</p>
     <template #pie>
-      <span v-if="pendientes.length > 0" class="foot-hint">Faltan {{ pendientes.length }} {{ pendientes.length === 1 ? 'elemento' : 'elementos' }} por aportar</span>
+      <span v-if="pendientes.length > 0" class="pie-pista">Faltan {{ pendientes.length }} {{ pendientes.length === 1 ? 'elemento' : 'elementos' }} por aportar</span>
       <button type="button" class="secondary" @click="$emit('cerrar')">Cancelar</button>
-      <button type="button" class="finish-btn" :disabled="pendientes.length > 0 || ocupado" @click="confirmarCierre">Finalizar tarea</button>
+      <button type="button" class="finish-boton" :disabled="pendientes.length > 0 || ocupado" @click="confirmarCierre">Finalizar tarea</button>
     </template>
   </modal-component>
 </template>

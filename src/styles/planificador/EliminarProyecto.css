@@ -1,10 +1,10 @@
-.danger-btn {
+.danger-boton {
   background: var(--danger);
   border-color: var(--danger);
   color: #fff;
 }
 
-.check-row {
+.check-fila {
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -13,7 +13,7 @@
   color: var(--text-h);
 }
 
-.confirm-name {
+.confirmar-nombre {
   padding: 4px 8px;
   border-radius: 6px;
   background: var(--bg-alt);

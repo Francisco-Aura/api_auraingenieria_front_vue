@@ -1,33 +1,33 @@
 <template>
-  <section class="string-designer" aria-label="Diseño de los strings">
-    <header class="string-head">
+  <section class="string-disenador" aria-label="Diseño de los strings">
+    <header class="string-cabecera">
       <h3>
-        <button type="button" class="string-toggle" :aria-expanded="abierto" :title="abierto ? 'Plegar el diseño de strings' : 'Desplegar el diseño de strings'" @click="abierto = !abierto">
+        <button type="button" class="string-alternar" :aria-expanded="abierto" :title="abierto ? 'Plegar el diseño de strings' : 'Desplegar el diseño de strings'" @click="abierto = !abierto">
           <span aria-hidden="true">{{ abierto ? '▾' : '▸' }}</span> Diseño de strings
         </button>
       </h3>
       <span class="tag state" :class="creado ? 'borrador' : 'local'" :title="creado ? 'Hay strings creados: cambia lo que quieras a mano' : 'Indica cuántos strings quieres crear'">
         {{ creado ? 'Repartido' : 'Sin repartir' }}
       </span>
-      <span v-if="!abierto" class="muted string-summary">
+      <span v-if="!abierto" class="muted string-resumen">
         {{ creado ? diseno.length + ' string' + (diseno.length === 1 ? '' : 's') + ' · ' + total + ' de ' + objetivo + ' paneles' : 'sin strings' }}{{ hayProblemas ? ' · ⛔ revisar' : '' }}
       </span>
     </header>
     <template v-if="abierto">
-    <p v-if="informe" class="muted string-help">
+    <p v-if="informe" class="muted string-ayuda">
       {{ informe.limits ? 'Entre ' + informe.limits.min + ' y ' + informe.limits.max + ' paneles por string con este panel y este inversor.' : 'Faltan datos técnicos para comprobar las tensiones.' }}
       {{ variosModelos ? 'Los inversores tienen' : 'El inversor tiene' }} {{ informe.inputsAvailable }} entrada{{ informe.inputsAvailable === 1 ? '' : 's' }}{{ variosModelos ? ' en total (' + nombresModelos + ')' : unidades > 1 ? ' (' + unidades + ' inversores)' : '' }}:
       los strings de una misma entrada tienen que ser iguales.
     </p>
-    <label class="string-count">
+    <label class="string-numero">
       ¿Cuántos strings quieres crear?
       <campo-numerico :model-value="diseno.length" etiqueta="Número de strings" @update:model-value="fijarCantidad" />
     </label>
-    <p v-if="rango" class="string-range muted" :class="{ bad: fueraDeRango }" role="status">
+    <p v-if="rango" class="string-rango muted" :class="{ bad: fueraDeRango }" role="status">
       Con {{ fmt(rango.total) }} paneles hacen falta entre <strong>{{ rango.min }}</strong> y <strong>{{ rango.max }}</strong> strings
       (de {{ rango.perMin }} a {{ rango.perMax }} paneles cada uno).
     </p>
-    <p v-else-if="objetivo > 0" class="string-range bad" role="status">
+    <p v-else-if="objetivo > 0" class="string-rango bad" role="status">
       Con {{ fmt(objetivo) }} paneles no se puede formar ningún string válido: revisa los paneles del presupuesto.
     </p>
 
@@ -35,8 +35,8 @@
       Lo que escribes en un string se queda <strong>fijado</strong> y los demás se reparten los paneles que quedan; pulsa «fijado ✕» para soltarlo o «Repartir por igual» para empezar de nuevo.
     </p>
 
-    <div class="strings-wrap">
-      <table class="strings-table">
+    <div class="strings-envoltorio">
+      <table class="strings-tabla">
         <thead>
           <tr>
             <th>String</th>
@@ -51,7 +51,7 @@
         <tbody>
           <tr v-for="(s, i) in diseno" :key="s.id" :class="{ bad: malo(i, s) }">
             <td><strong>{{ i + 1 }}</strong></td>
-            <td class="string-panels">
+            <td class="string-paneles">
               <campo-numerico :model-value="s.panels" :etiqueta="'Paneles del string ' + (i + 1)" @update:model-value="editarPaneles(s.id, Math.round($event))" />
               <button v-if="s.fixed" type="button" class="tag fijado" title="Lo has puesto tú y los demás se reparten el resto. Pulsa para soltarlo y que vuelva a repartirse" @click="soltar(s.id)">fijado ✕</button>
             </td>
@@ -63,7 +63,7 @@
                 <option :value="3">Partida en 3 tramos</option>
                 <option :value="4">Partida en 4 tramos</option>
               </select>
-              <span v-if="s.parts && s.parts > 1 && s.panels > 0" class="muted split-note">{{ partido(s.panels, s.parts) }}</span>
+              <span v-if="s.parts && s.parts > 1 && s.panels > 0" class="muted dividido-nota">{{ partido(s.panels, s.parts) }}</span>
             </td>
             <template v-if="informe && informe.strings[i]">
               <td>
@@ -72,7 +72,7 @@
                   <option v-for="k in Math.max(informe.inputsAvailable, s.input)" :key="k" :value="k">{{ etiquetaEntrada(k) }}</option>
                 </select>
               </td>
-              <td class="string-volts">
+              <td class="string-voltios">
                 <template v-if="informe.strings[i].vocCold !== null">
                   <span title="La tensión más alta que verá el inversor (el día más frío del año): no puede pasar de su tensión máxima de entrada">máx. {{ fmt(informe.strings[i].vocCold) }} V</span>
                   <span class="muted" title="La más baja (el día más caluroso): tiene que llegar al arranque del inversor">{{ informe.strings[i].vmpHot !== null ? 'mín. ' + fmt(informe.strings[i].vmpHot) + ' V' : '' }}</span>
@@ -84,7 +84,7 @@
                 <span v-else class="tag state validado">✓ Válido</span>
               </td>
             </template>
-            <td class="string-tools">
+            <td class="string-herramientas">
               <button type="button" class="icon-btn trash" title="Quitar el string" :aria-label="'Quitar el string ' + (i + 1)" @click="quitar(s.id)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h18" /><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
               </button>
@@ -97,28 +97,28 @@
       </table>
     </div>
 
-    <footer class="string-foot">
+    <footer class="string-pie">
       <span class="string-total" :class="!creado ? '' : faltan === 0 ? 'ok' : 'bad'">
         Paneles repartidos: <strong>{{ total }}</strong> de <strong>{{ objetivo }}</strong>
         {{ faltan > 0 ? ' · faltan ' + faltan : faltan < 0 ? ' · sobran ' + (-faltan) : ' ✓' }}
       </span>
-      <div class="string-actions">
+      <div class="string-acciones">
         <button type="button" :disabled="!creado || !cambiaReparto" :title="nFijados > 0 ? 'Vuelve a repartir todos los paneles por igual entre todos los strings, soltando los que habías fijado' : 'Reparte los paneles por igual entre los strings que hay, sin cambiar cuántos son'" @click="$emit('cambio', repartoIgual)">
           Repartir por igual
         </button>
         <button type="button" class="secondary" :disabled="rango && diseno.length >= rango.max" :title="rango && diseno.length >= rango.max ? 'Ya hay el máximo de strings: ' + rango.max : undefined" @click="anadir">+ Añadir string</button>
-        <details v-if="hayOpciones" class="string-more">
+        <details v-if="hayOpciones" class="string-mas">
           <summary class="secondary">Más opciones</summary>
-          <div class="string-more-menu">
-            <button v-if="sinAsignar && ctx" type="button" class="link-btn" title="Reparte los strings entre las entradas del inversor, sin cambiar sus paneles" @click="$emit('cambio', assignInputs(diseno, totalInputs(ctx)))">Asignar entradas</button>
-            <button v-if="hayProblemas && ctx" type="button" class="link-btn" title="Cambia los strings por unos que valgan para este panel y este inversor" @click="$emit('cambio', autoStrings(ctx))">Proponer strings para este inversor</button>
+          <div class="string-mas-menu">
+            <button v-if="sinAsignar && ctx" type="button" class="enlace-boton" title="Reparte los strings entre las entradas del inversor, sin cambiar sus paneles" @click="$emit('cambio', assignInputs(diseno, totalInputs(ctx)))">Asignar entradas</button>
+            <button v-if="hayProblemas && ctx" type="button" class="enlace-boton" title="Cambia los strings por unos que valgan para este panel y este inversor" @click="$emit('cambio', autoStrings(ctx))">Proponer strings para este inversor</button>
           </div>
         </details>
       </div>
     </footer>
 
     <!-- Las grapas son consecuencia de los strings y de sus particiones: van abajo del todo, después de configurarlos -->
-    <p class="string-clamps" role="status">
+    <p class="string-limites" role="status">
       <template v-if="grapas.rows > 0">
         Grapas de la estructura: <strong>{{ fmt(grapas.finals) }} finales</strong> y <strong>{{ fmt(grapas.intermediates) }} intermedias</strong>
         <span class="muted"> ({{ fmt(grapas.rows) }} fila{{ grapas.rows === 1 ? '' : 's' }} de paneles, con dos raíles por fila; un string partida son varias filas)</span>
@@ -126,11 +126,11 @@
       <span v-else class="muted">Crea los strings para saber cuántas grapas hacen falta.</span>
     </p>
 
-    <p v-if="textoEntradas.length > 0" class="muted string-inputs">{{ textoEntradas.join(' · ') }}</p>
-    <ul v-if="informe && informe.strings.some((s) => s.problems.some((m) => !isMissingInput(m)))" class="string-problems" role="alert">
+    <p v-if="textoEntradas.length > 0" class="muted string-entradas">{{ textoEntradas.join(' · ') }}</p>
+    <ul v-if="informe && informe.strings.some((s) => s.problems.some((m) => !isMissingInput(m)))" class="string-problemas" role="alert">
       <li v-for="m in problemasDeStrings" :key="m">{{ m }}</li>
     </ul>
-    <ul v-if="otrosProblemas.length > 0" class="string-problems" role="alert">
+    <ul v-if="otrosProblemas.length > 0" class="string-problemas" role="alert">
       <li v-for="m in otrosProblemas" :key="m">{{ m }}</li>
     </ul>
     </template>

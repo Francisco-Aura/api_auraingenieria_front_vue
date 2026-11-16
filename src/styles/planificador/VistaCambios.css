@@ -1,30 +1,30 @@
-.changes {
+.cambios {
   display: flex;
   flex-direction: column;
   gap: 18px;
   max-width: 960px;
 }
 
-.card-block {
+.tarjeta-block {
   padding: 16px 20px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg);
 }
 
-.card-block h2 {
+.tarjeta-block h2 {
   margin: 0 0 12px;
   font-size: 16px;
   color: var(--text-h);
 }
 
-.block-head {
+.block-cabecera {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.block-head h2 {
+.block-cabecera h2 {
   margin: 0;
 }
 
@@ -67,7 +67,7 @@
   color: #15803d;
 }
 
-.changes .hint {
+.cambios .hint {
   margin: 10px 0 0;
   font-size: 13px;
   color: var(--muted);
@@ -85,14 +85,14 @@
 
 /* ---- Formularios -------------------------------------------------------- */
 
-.form-grid {
+.formulario-rejilla {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px 16px;
   margin-bottom: 12px;
 }
 
-.form-grid label {
+.formulario-rejilla label {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -100,7 +100,7 @@
   color: var(--text-h);
 }
 
-.changes input,
+.cambios input,
 .modal input[type='text'],
 .modal input[type='number'],
 .modal input[type='date'],
@@ -116,20 +116,20 @@
 
 /* ---- Tabla de datos vigentes ------------------------------------------------ */
 
-.current-table {
+.actual-tabla {
   width: 100%;
   border-collapse: collapse;
 }
 
-.current-table th,
-.current-table td {
+.actual-tabla th,
+.actual-tabla td {
   padding: 7px 10px;
   text-align: left;
   border-bottom: 1px solid var(--border);
   font-size: 14px;
 }
 
-.current-table tr.changed td {
+.actual-tabla tr.cambiado td {
   background: color-mix(in srgb, #f59e0b 9%, transparent);
 }
 
@@ -145,7 +145,7 @@
 
 /* ---- Cambios registrados --------------------------------------------------------- */
 
-.change {
+.cambio {
   margin-top: 14px;
   padding: 14px 16px;
   border: 1px solid var(--border);
@@ -153,27 +153,27 @@
   border-radius: 8px;
 }
 
-.change header {
+.cambio header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
 }
 
-.change h3 {
+.cambio h3 {
   margin: 0;
   font-size: 14px;
   letter-spacing: 0.03em;
   color: var(--text-h);
 }
 
-.change-actions {
+.cambio-acciones {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.change dl {
+.cambio dl {
   display: grid;
   grid-template-columns: 210px minmax(0, 1fr);
   gap: 6px 14px;
@@ -181,11 +181,11 @@
   font-size: 14px;
 }
 
-.change dt {
+.cambio dt {
   color: var(--muted);
 }
 
-.change dd {
+.cambio dd {
   margin: 0;
   white-space: pre-wrap;
 }
@@ -200,12 +200,12 @@
   color: #15803d;
 }
 
-.warn-text {
+.aviso-text {
   color: #b45309;
   font-weight: 600;
 }
 
-.change footer {
+.cambio footer {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -216,7 +216,7 @@
   font-size: 13px;
 }
 
-.task-chip {
+.tarea-chip {
   padding: 2px 10px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -225,7 +225,7 @@
   color: var(--text);
 }
 
-.task-chip.pending {
+.tarea-chip.pendiente {
   border-color: color-mix(in srgb, #f59e0b 60%, transparent);
   background: color-mix(in srgb, #f59e0b 14%, transparent);
   color: var(--text-h);
@@ -233,7 +233,7 @@
 
 /* ---- Diálogo de cambio ------------------------------------------------------------- */
 
-.price-box {
+.precio-caja {
   margin: 0;
   padding: 10px 14px 12px;
   border: 1px solid var(--border);
@@ -244,13 +244,13 @@
   gap: 8px 18px;
 }
 
-.price-box legend {
+.precio-caja legend {
   padding: 0 6px;
   font-size: 13px;
   color: var(--text-h);
 }
 
-.price-box .hint {
+.precio-caja .hint {
   flex-basis: 100%;
   margin: 0;
 }
@@ -269,7 +269,7 @@
   gap: 8px;
 }
 
-.set-row {
+.conjunto-fila {
   flex-basis: 100%;
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr) auto;
@@ -280,11 +280,11 @@
 
 @media (max-width: 800px) {
   .stats,
-  .form-grid {
+  .formulario-rejilla {
     grid-template-columns: 1fr;
   }
 
-  .change dl {
+  .cambio dl {
     grid-template-columns: 1fr;
   }
 }

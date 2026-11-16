@@ -1,6 +1,6 @@
 /* Presupuesto con cambios (ver BudgetChanges.tsx) */
 
-.bd .bd-actions {
+.bd .bd-acciones {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -15,33 +15,33 @@
   color: var(--muted);
 }
 
-.bd-stats {
+.bd-estadisticas {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin: 14px 0;
 }
 
-.bd-stat {
+.bd-dato {
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--bg-alt);
 }
 
-.bd-stat span {
+.bd-dato span {
   display: block;
   font-size: 12px;
   color: var(--muted);
 }
 
-.bd-stat strong {
+.bd-dato strong {
   display: block;
   font-size: 18px;
   color: var(--text-h);
 }
 
-.bd-stat small {
+.bd-dato small {
   font-size: 12px;
   color: var(--muted);
 }
@@ -54,48 +54,48 @@
   color: #b91c1c;
 }
 
-.bd-table-wrap {
+.bd-tabla-envoltorio {
   overflow-x: auto;
 }
 
-.bd-table {
+.bd-tabla {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
 }
 
-.bd-table th,
-.bd-table td {
+.bd-tabla th,
+.bd-tabla td {
   padding: 7px 10px;
   border-top: 1px solid var(--border);
   text-align: left;
   vertical-align: top;
 }
 
-.bd-table th {
+.bd-tabla th {
   border-top: 0;
   font-size: 12px;
   color: var(--muted);
   font-weight: 600;
 }
 
-.bd-table .num {
+.bd-tabla .num {
   text-align: right;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
-.bd-group td {
+.bd-grupo td {
   background: var(--bg-alt);
   font-weight: 600;
   color: var(--text-h);
 }
 
-.bd-changed {
+.bd-cambiado {
   background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 
-.bd-name {
+.bd-nombre {
   color: var(--text-h);
 }
 
@@ -108,7 +108,7 @@
   color: var(--muted);
 }
 
-.bd-tag {
+.bd-etiqueta {
   padding: 0 6px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -120,12 +120,12 @@
   color: var(--muted);
 }
 
-.bd-input {
+.bd-entrada {
   width: 84px;
   text-align: right;
 }
 
-.bd-draft {
+.bd-borrador {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -142,7 +142,7 @@
   gap: 14px;
 }
 
-.bd-draft-actions {
+.bd-borrador-acciones {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -150,23 +150,23 @@
   flex-wrap: wrap;
 }
 
-.bd-draft-actions .muted {
+.bd-borrador-acciones .muted {
   margin-right: auto;
 }
 
-.bd-picker {
+.bd-selector {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 12px 12px;
 }
 
-.bd-picker-row {
+.bd-selector-fila {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.bd-picker-row input {
+.bd-selector-fila input {
   flex: 1;
   min-width: 180px;
 }
@@ -198,12 +198,12 @@
   background: color-mix(in srgb, var(--accent) 10%, var(--bg));
 }
 
-.bd-per-change {
+.bd-por-cambio {
   margin-top: 16px;
 }
 
 @media (max-width: 760px) {
-  .bd-stats {
+  .bd-estadisticas {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

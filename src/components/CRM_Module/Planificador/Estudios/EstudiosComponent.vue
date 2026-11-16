@@ -2,22 +2,22 @@
   <div class="estudios">
     <estudio-editor v-if="abierto" :id="abierto" @volver="cerrarEstudio" @cambiado="cargar" />
     <template v-else>
-      <div v-if="etiquetaVolver" class="back-row">
+      <div v-if="etiquetaVolver" class="back-fila">
         <button type="button" class="secondary" @click="$emit('cerrar')">{{ etiquetaVolver }}</button>
       </div>
-      <div class="costs-title">
+      <div class="costes-titulo">
         <h1>Estudios fotovoltaicos</h1>
-        <div class="title-actions">
+        <div class="titulo-acciones">
           <button type="button" @click="creando = !creando">+ Nuevo estudio</button>
         </div>
       </div>
-      <p class="muted inv-note">
+      <p class="muted inv-nota">
         Registro de los estudios de autoconsumo: cada uno guarda el consumo del cliente, la instalación propuesta, su rentabilidad
         y el informe en PDF, con su estado y observaciones.
       </p>
 
-      <form v-if="creando" class="estudio-nuevo setup-card" @submit.prevent="crear">
-        <label class="survey-field">
+      <form v-if="creando" class="estudio-nuevo alta-tarjeta" @submit.prevent="crear">
+        <label class="cuestionario-campo">
           Nombre del cliente
           <input ref="nuevoCliente" v-model.trim="nuevoCliente" maxlength="255" placeholder="Ej.: Curtidos Domingo Molina" autocomplete="off">
         </label>

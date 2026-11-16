@@ -1,14 +1,14 @@
 <template>
-  <aside class="scan" :style="altura ? { height: altura + 'px' } : undefined">
-    <header class="scan-head">
+  <aside class="escaneo" :style="altura ? { height: altura + 'px' } : undefined">
+    <header class="escaneo-cabecera">
       <strong :title="archivo.name">{{ archivo.name }}</strong>
-      <div class="scan-tools">
+      <div class="escaneo-herramientas">
         <a :href="url" target="_blank" rel="noreferrer" title="Abrir en una pestaña nueva">↗</a>
         <button type="button" title="Quitar el documento" @click="$emit('cerrar')">×</button>
       </div>
     </header>
 
-    <div class="scan-body">
+    <div class="escaneo-cuerpo">
       <iframe :src="url" :title="'Presupuesto: ' + archivo.name" />
     </div>
   </aside>

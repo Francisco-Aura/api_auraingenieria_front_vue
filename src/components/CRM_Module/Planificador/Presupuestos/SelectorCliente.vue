@@ -1,30 +1,30 @@
 <template>
-  <div v-if="modelValue && modelValue.kind === 'existente' && !cambiando" class="customer-picker chosen">
-    <div class="customer-current">
+  <div v-if="modelValue && modelValue.kind === 'existente' && !cambiando" class="cliente-selector chosen">
+    <div class="cliente-actual">
       <span class="tag state borrador" title="Cliente de la empresa, vinculado por su id">Cliente</span>
       <span class="customer-summary">
         <strong>{{ modelValue.name }}</strong>
         <span class="muted">{{ modelValue.tradeName && modelValue.tradeName !== modelValue.name ? ' · ' + modelValue.tradeName : '' }}{{ modelValue.cif ? ' · CIF ' + modelValue.cif : '' }}</span>
       </span>
     </div>
-    <button type="button" class="link-btn" @click="modo = 'buscar'; cambiando = true">Cambiar</button>
+    <button type="button" class="enlace-boton" @click="modo = 'buscar'; cambiando = true">Cambiar</button>
   </div>
 
-  <div v-else class="customer-picker" :class="{ invalid: invalido }">
-    <div class="customer-modes" role="tablist" aria-label="Tipo de cliente">
+  <div v-else class="cliente-selector" :class="{ invalid: invalido }">
+    <div class="cliente-modos" role="tablist" aria-label="Tipo de cliente">
       <button type="button" role="tab" :aria-selected="modo === 'buscar'" :class="{ on: modo === 'buscar' }" :disabled="!habilitado" @click="modo = 'buscar'">Cliente existente</button>
       <button type="button" role="tab" :aria-selected="modo === 'potencial'" :class="{ on: modo === 'potencial' }" @click="modo = 'potencial'">Cliente potencial nuevo</button>
     </div>
 
     <template v-if="modo === 'buscar'">
-      <label class="survey-field wide">
+      <label class="cuestionario-campo wide">
         Buscar por nombre, nombre comercial o CIF
         <input v-model="consulta" type="search" placeholder="Ej.: Ingaser" autocomplete="off">
       </label>
-      <p v-if="consulta.trim().length > 0 && consulta.trim().length < 2" class="muted field-hint">Escribe al menos dos letras.</p>
-      <p v-if="buscando" class="muted field-hint">Buscando…</p>
-      <p v-if="error" class="step-note warn" role="alert">{{ error }} Mientras tanto puedes crear un cliente potencial.</p>
-      <ul v-if="resultados && resultados.length > 0" class="customer-hits">
+      <p v-if="consulta.trim().length > 0 && consulta.trim().length < 2" class="muted campo-pista">Escribe al menos dos letras.</p>
+      <p v-if="buscando" class="muted campo-pista">Buscando…</p>
+      <p v-if="error" class="paso-nota warn" role="alert">{{ error }} Mientras tanto puedes crear un cliente potencial.</p>
+      <ul v-if="resultados && resultados.length > 0" class="cliente-resultados">
         <li v-for="h in resultados" :key="h.id">
           <button type="button" @click="elegir(h)">
             <strong>{{ h.name }}</strong>
@@ -32,36 +32,36 @@
           </button>
         </li>
       </ul>
-      <p v-if="resultados && resultados.length === 0 && !buscando" class="muted field-hint">
+      <p v-if="resultados && resultados.length === 0 && !buscando" class="muted campo-pista">
         Ningún cliente coincide con «{{ consulta.trim() }}».
-        <button type="button" class="link-btn" @click="crearPotencial">Crear un cliente potencial</button>
+        <button type="button" class="enlace-boton" @click="crearPotencial">Crear un cliente potencial</button>
       </p>
     </template>
 
     <template v-else>
-      <p v-if="!habilitado" class="step-note warn" role="status">Este servidor no tiene conexión con la intranet: aquí solo se pueden crear clientes potenciales.</p>
-      <p class="muted field-hint">Un cliente potencial se queda en este presupuesto: no se da de alta en la intranet.</p>
-      <div class="survey-row">
-        <label class="survey-field wide">
+      <p v-if="!habilitado" class="paso-nota warn" role="status">Este servidor no tiene conexión con la intranet: aquí solo se pueden crear clientes potenciales.</p>
+      <p class="muted campo-pista">Un cliente potencial se queda en este presupuesto: no se da de alta en la intranet.</p>
+      <div class="cuestionario-fila">
+        <label class="cuestionario-campo wide">
           Nombre del cliente
           <input :value="pot.name" placeholder="Ej.: Pedro Ingaser" maxlength="200" @input="editar({ name: $event.target.value })">
         </label>
       </div>
       <p v-if="invalido && !pot.name.trim()" class="error">Pon el nombre del cliente.</p>
-      <div class="survey-row">
-        <label class="survey-field">
+      <div class="cuestionario-fila">
+        <label class="cuestionario-campo">
           CIF de la empresa
-          <input :value="pot.cif" :class="{ 'required-empty': cifInvalido && pot.cif.trim().length < 5 }" maxlength="50" placeholder="Ej.: B12345678" @input="editar({ cif: $event.target.value })">
-          <span class="muted field-hint">Obligatorio: sale en la propuesta y hará falta al validar el presupuesto.</span>
+          <input :value="pot.cif" :class="{ 'obligatorio-vacio': cifInvalido && pot.cif.trim().length < 5 }" maxlength="50" placeholder="Ej.: B12345678" @input="editar({ cif: $event.target.value })">
+          <span class="muted campo-pista">Obligatorio: sale en la propuesta y hará falta al validar el presupuesto.</span>
         </label>
       </div>
-      <div class="survey-row">
-        <label class="survey-field">Teléfono (opcional) <input :value="pot.phone" inputmode="tel" maxlength="40" @input="editar({ phone: $event.target.value })"></label>
-        <label class="survey-field">Email (opcional) <input :value="pot.email" inputmode="email" maxlength="120" @input="editar({ email: $event.target.value })"></label>
+      <div class="cuestionario-fila">
+        <label class="cuestionario-campo">Teléfono (opcional) <input :value="pot.phone" inputmode="tel" maxlength="40" @input="editar({ phone: $event.target.value })"></label>
+        <label class="cuestionario-campo">Email (opcional) <input :value="pot.email" inputmode="email" maxlength="120" @input="editar({ email: $event.target.value })"></label>
       </div>
     </template>
 
-    <button v-if="modelValue && modelValue.kind === 'existente'" type="button" class="link-btn" :title="'Deja el cliente como estaba: ' + modelValue.name" @click="cambiando = false">Cancelar</button>
+    <button v-if="modelValue && modelValue.kind === 'existente'" type="button" class="enlace-boton" :title="'Deja el cliente como estaba: ' + modelValue.name" @click="cambiando = false">Cancelar</button>
   </div>
 </template>
 

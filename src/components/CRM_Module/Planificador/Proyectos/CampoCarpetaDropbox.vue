@@ -1,17 +1,17 @@
 <template>
-  <div class="dbx-field">
+  <div class="dbx-campo">
     <div class="dbx-two">
       <label>Empresa (nombre corto)<input :value="empresa" placeholder="Ej.: ALPEMA" maxlength="60" @input="$emit('update:empresa', $event.target.value)"></label>
       <label>Lugar o instalación (opcional)<input :value="lugar" placeholder="Ej.: PUNTA BALLENA" maxlength="60" @input="$emit('update:lugar', $event.target.value)"></label>
     </div>
-    <p v-if="actual && actual.error" class="error dbx-note">{{ actual.error }}</p>
+    <p v-if="actual && actual.error" class="error dbx-nota">{{ actual.error }}</p>
     <template v-if="vista">
-      <p class="dbx-note" :class="vista.exists ? 'dbx-ok' : vista.year_exists ? 'muted' : 'error'">
+      <p class="dbx-nota" :class="vista.exists ? 'dbx-ok' : vista.year_exists ? 'muted' : 'error'">
         📁 <strong>{{ vista.folder }}</strong> —
         {{ vista.exists ? 'ya existe: se usará esa carpeta.' : vista.year_exists ? 'no existe todavía: se creará.' : 'no existe todavía y falta la carpeta del año: pide a administración que la cree.' }}
       </p>
-      <div v-if="!vista.exists && vista.same_day.length > 0" class="dbx-same-day">
-        <p class="muted dbx-note">Ese día ya hay carpetas. Si administración ya creó la de este proyecto con otro nombre, elígela para no duplicarla:</p>
+      <div v-if="!vista.exists && vista.same_day.length > 0" class="dbx-same-dia">
+        <p class="muted dbx-nota">Ese día ya hay carpetas. Si administración ya creó la de este proyecto con otro nombre, elígela para no duplicarla:</p>
         <button v-for="nombre in vista.same_day" :key="nombre" type="button" class="btn-ish" @click="elegirDelMismoDia(nombre)">{{ nombre }}</button>
       </div>
     </template>
