@@ -15,8 +15,17 @@
 
 .home-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 18px;
+}
+
+/* Con ancho medio, agrupadas de 2 en 2 (nunca 3 + 1) */
+@media (max-width: 960px) {
+  .home-cards { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 520px) {
+  .home-cards { grid-template-columns: 1fr; }
 }
 
 .home-card {
