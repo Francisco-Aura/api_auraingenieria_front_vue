@@ -14,121 +14,129 @@ default:
   stage: build_and_deploy_frontend
 
   script:
-    - set -euo pipefail
-
-    - echo "========================================"
-    - echo " AURA - BUILD FRONTEND"
-    - echo " Entorno: ${DEPLOY_ENV}"
-    - echo "========================================"
-
-    - echo "=== Informacion del runner ==="
-    - hostname
-    - whoami
-    - node -v
-    - npm -v
-    - rsync --version | head -1
-
-    # ==================================================
-    # Dependencias
-    # ==================================================
-
-    - echo "=== Limpiando build anterior ==="
-
-    - rm -rf node_modules dist
-
-    - echo "=== Instalando dependencias ==="
-
     - |
-      if [ -f package-lock.json ]; then
+      set -euo pipefail
 
+      echo "========================================"
+      echo " AURA - BUILD FRONTEND"
+      echo " Entorno: ${DEPLOY_ENV}"
+      echo " Destino: ${DEPLOY_HOST}"
+      echo "========================================"
+
+      echo
+      echo "=== Informacion del runner ==="
+      hostname
+      whoami
+      node -v
+      npm -v
+      rsync --version | head -1
+
+      # ==================================================
+      # Limpieza
+      # ==================================================
+
+      echo
+      echo "=== Limpiando build anterior ==="
+
+      rm -rf node_modules
+      rm -rf dist
+
+      # ==================================================
+      # Dependencias
+      # ==================================================
+
+      echo
+      echo "=== Instalando dependencias ==="
+
+      if [ -f package-lock.json ]; then
         echo "Usando npm ci"
         npm ci --legacy-peer-deps
-
       else
-
         echo "No existe package-lock.json. Usando npm install"
         npm install --legacy-peer-deps
-
       fi
 
-    # ==================================================
-    # Build
-    # ==================================================
+      # ==================================================
+      # Build
+      # ==================================================
 
-    - echo "=== Compilando frontend ==="
+      echo
+      echo "=== Compilando frontend ==="
 
-    - npm run build
+      npm run build
 
-    - echo "=== Verificando build ==="
+      echo
+      echo "=== Verificando build ==="
 
-    - |
       if [ ! -f dist/index.html ]; then
         echo "ERROR: No existe dist/index.html"
         exit 1
       fi
 
-    - ls -lh dist/index.html
+      ls -lh dist/index.html
 
-    # ==================================================
-    # SSH
-    # ==================================================
+      # ==================================================
+      # SSH
+      # ==================================================
 
-    - echo "=== Comprobando SSH ${DEPLOY_ENV} ==="
+      echo
+      echo "=== Comprobando SSH con ${DEPLOY_ENV} ==="
 
-    - |
       ssh \
         -o BatchMode=yes \
         -o ConnectTimeout=10 \
         "babenza@${DEPLOY_HOST}" \
-        "echo SSH_OK && hostname"
+        "echo SSH_OK && hostname && whoami"
 
-    # ==================================================
-    # Directorio temporal
-    # ==================================================
+      # ==================================================
+      # Directorio temporal remoto
+      # ==================================================
 
-    - echo "=== Preparando destino ${DEPLOY_ENV} ==="
+      echo
+      echo "=== Preparando destino temporal ${DEPLOY_ENV} ==="
 
-    - |
       ssh \
         -o BatchMode=yes \
         -o ConnectTimeout=10 \
         "babenza@${DEPLOY_HOST}" \
         "rm -rf /tmp/aura-frontend && mkdir -p /tmp/aura-frontend"
 
-    # ==================================================
-    # Transferencia
-    # ==================================================
+      # ==================================================
+      # Transferencia
+      # ==================================================
 
-    - echo "=== Copiando frontend a ${DEPLOY_ENV} ==="
+      echo
+      echo "=== Copiando frontend a ${DEPLOY_ENV} ==="
 
-    - |
       rsync \
         -az \
         --delete \
-        -e "ssh -o BatchMode=yes -o ConnectTimeout=10" \
+        -e "ssh -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3" \
         dist/ \
         "babenza@${DEPLOY_HOST}:/tmp/aura-frontend/"
 
-    # ==================================================
-    # Deploy
-    # ==================================================
+      # ==================================================
+      # Deploy
+      # ==================================================
 
-    - echo "=== Ejecutando deploy frontend ${DEPLOY_ENV} ==="
+      echo
+      echo "=== Ejecutando deploy frontend ${DEPLOY_ENV} ==="
 
-    - |
       ssh \
         -o BatchMode=yes \
         -o ConnectTimeout=10 \
+        -o ServerAliveInterval=10 \
+        -o ServerAliveCountMax=3 \
         "babenza@${DEPLOY_HOST}" \
         "bash /home/babenza/deploy_frontend.sh"
 
-    # ==================================================
-    # Health check
-    # ==================================================
+      # ==================================================
+      # Health check
+      # ==================================================
 
-    - echo "=== Comprobando frontend ${DEPLOY_ENV} ==="
+      echo
+      echo "=== Comprobando frontend ${DEPLOY_ENV} ==="
 
-    - |
       HTTP_CODE="$(
         ssh \
           -o BatchMode=yes \
@@ -140,21 +148,24 @@ default:
       echo "HTTP ${DEPLOY_ENV} -> ${HTTP_CODE}"
 
       if [ "$HTTP_CODE" != "200" ]; then
-
         echo "ERROR: Frontend ${DEPLOY_ENV} devuelve HTTP ${HTTP_CODE}"
-
         exit 1
       fi
 
-    - echo "========================================"
-    - echo " FRONTEND ${DEPLOY_ENV} DESPLEGADO OK"
-    - echo "========================================"
+      # ==================================================
+      # Resultado
+      # ==================================================
+
+      echo
+      echo "========================================"
+      echo " FRONTEND ${DEPLOY_ENV} DESPLEGADO OK"
+      echo "========================================"
 
 
 # ======================================================
 # DES
-# develop -> Raspberry DES
-# LAN: 192.168.100.4:22
+# develop -> aura-des
+# 192.168.100.4
 # ======================================================
 
 deploy_frontend_DES:
@@ -170,8 +181,8 @@ deploy_frontend_DES:
 
 # ======================================================
 # PRE
-# release -> Raspberry PRE
-# LAN: 192.168.100.3:22
+# release -> aura-pre
+# 192.168.100.3
 # ======================================================
 
 deploy_frontend_PRE:
@@ -187,8 +198,8 @@ deploy_frontend_PRE:
 
 # ======================================================
 # PRO
-# main -> Raspberry PRO
-# LAN: 192.168.100.2:22
+# main -> aura-pro
+# 192.168.100.2
 # ======================================================
 
 deploy_frontend_PRO:
