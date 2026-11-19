@@ -29,7 +29,7 @@ default:
       whoami
       node -v
       npm -v
-      rsync --version | head -1
+      rsync --version
 
       # ==================================================
       # Limpieza
