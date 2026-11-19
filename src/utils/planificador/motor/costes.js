@@ -1,7 +1,8 @@
-import { ROOF_LABEL } from './pasosConfig.js';
+import { roofsOf } from './pasosConfig.js';
 import { clampTotals } from './strings.js';
 export const EMPTY_SURVEY = {
     roof: 'teja',
+    roofs: ['teja'],
     targetKwp: 0,
     cableMeters: 0,
     acMeters: 0,
@@ -24,14 +25,18 @@ export const EMPTY_COSTS = {
     survey: EMPTY_SURVEY,
     order: 'insercion',
 };
+/** Largo máximo de las observaciones internas de un producto del presupuesto. */
+export const MAX_OBSERVACIONES_LINEA = 1000;
 const STORAGE_KEY = 'planificador.costes.v5';
 const OLD_STORAGE_KEY = 'planificador.costes.v4';
 function loadSurvey(raw) {
     const d = (raw && typeof raw === 'object' ? raw : {});
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 0);
-    const roofs = Object.keys(ROOF_LABEL);
+    // Varios tipos de cubierta: `roofs` manda; un presupuesto anterior solo trae `roof`. `roof` queda siempre como la primera.
+    const roofs = roofsOf(d);
     return {
-        roof: roofs.includes(d.roof) ? d.roof : EMPTY_SURVEY.roof,
+        roof: roofs[0],
+        roofs,
         targetKwp: num(d.targetKwp),
         cableMeters: num(d.cableMeters),
         acMeters: num(d.acMeters),
@@ -89,6 +94,8 @@ export function parseCosts(raw) {
             saleRatio: num(data.saleRatio, EMPTY_COSTS.saleRatio),
             survey: loadSurvey(data.survey),
             order: data.order === 'fijo' ? 'fijo' : 'insercion',
+            // Solo un presupuesto recién creado: el editor le pone las partidas de proyecto y trámites por defecto y quita la marca
+            ...(data.tramitesPendientes === true ? { tramitesPendientes: true } : {}),
             lines: Array.isArray(data.lines)
                 ? data.lines
                     .filter((l) => l && typeof l.group === 'string')
@@ -107,6 +114,8 @@ export function parseCosts(raw) {
                     price: num(l.price, 0),
                     priceEdited: l.priceEdited === true,
                     notes: str(l.notes),
+                    // Observaciones internas del equipo sobre este producto (no salen en la propuesta del cliente); sin texto, ni existen
+                    ...(str(l.observaciones).trim() ? { observaciones: str(l.observaciones).trim().slice(0, MAX_OBSERVACIONES_LINEA) } : {}),
                 }))
                 : [],
         };

@@ -1,7 +1,7 @@
 // Los datos de partida de un presupuesto (equivale a Values/valuesOf/applyValues de BudgetSetup.tsx del Planificador actual):
 // se fijan al crearlo y condicionan todos los pasos.
 
-import { panelCount } from './motor/pasosConfig.js'
+import { panelCount, roofsOf } from './motor/pasosConfig.js'
 
 /** De un presupuesto (CostState) a los valores del formulario de datos de partida. */
 export function valoresDe(state) {
@@ -18,7 +18,7 @@ export function valoresDe(state) {
     moduleCount: state.moduleCount,
     // El nº de paneles lo ha puesto a mano quien crea el presupuesto: ya no sigue a la potencia a instalar
     manualPanels: s.targetKwp > 0 && panelCount(s.targetKwp, state.moduleWp) !== state.moduleCount,
-    roof: s.roof,
+    roofs: roofsOf(s),
     supply: s.supply,
     futureBattery: s.futureBattery,
     strings: state.strings,
@@ -52,7 +52,8 @@ export function aplicarValores(base, v) {
     strings: v.strings,
     survey: {
       ...base.survey,
-      roof: v.roof,
+      roof: roofsOf({ roofs: v.roofs })[0],
+      roofs: roofsOf({ roofs: v.roofs }),
       supply: v.supply,
       targetKwp: v.targetKwp,
       futureBattery: v.futureBattery,
@@ -66,9 +67,9 @@ export function aplicarValores(base, v) {
 export function problemasDe(v, count) {
   const problemas = []
   if (!v.customer) problemas.push('Elige el cliente del presupuesto: uno existente o un cliente potencial nuevo.')
+  if (!Array.isArray(v.roofs) || v.roofs.length === 0) problemas.push('Elige al menos un tipo de cubierta.')
   if (!v.reference.trim()) problemas.push('Escribe el nombre del proyecto (por ejemplo «Nave 2»): con el cliente identifica a qué proyecto pertenece el presupuesto.')
   if (!v.cif || v.cif.trim().length < 5) problemas.push('Escribe el CIF de la empresa del cliente: sale en la propuesta.')
-  if (!v.clientLogo) problemas.push('Sube el logo de la empresa del cliente: sale en la propuesta.')
   if (!(v.targetKwp > 0)) problemas.push('Indica la potencia que se quiere instalar (kWp).')
   if (!(v.moduleWp > 0)) problemas.push('Indica la potencia de cada panel (Wp).')
   if (!(count >= 1)) problemas.push('El presupuesto necesita al menos un panel.')

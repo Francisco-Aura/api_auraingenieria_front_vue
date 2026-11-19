@@ -97,6 +97,7 @@ export const STEPS = [
         key: 'tramites',
         short: 'Trámites',
         title: 'Trámites',
+        libre: true, // no depende de los pasos anteriores y no los desbloquea: lleva partidas por defecto desde que se crea el presupuesto
         help: [
             'También son parte del presupuesto. En España la instalación la tiene que legalizar un instalador autorizado, que emite el certificado (boletín), y se registra como autoconsumo en la comunidad autónoma.',
             'Para cobrar excedentes también se tramita con la distribuidora y la comercializadora.',
@@ -173,11 +174,29 @@ export function stringLimits(panel, inverter) {
         max: Math.floor(Math.min(vmax / (voc * COLD_VOC), mpptMax / vmp, MAX_STRING_PANELS)),
     };
 }
+/**
+ * Corriente máxima que admite una entrada MPPT según cuántos strings lleve: con uno solo vale `imax_mppt_1string_a` (si el inversor
+ * lo distingue; p. ej. 20 A) y con varios `imax_mppt_a` (p. ej. 30 A). Null si el inversor no trae el dato.
+ */
+export function imaxEntrada(attrs, strings) {
+    const varios = num(attrs.imax_mppt_a);
+    const uno = num(attrs.imax_mppt_1string_a);
+    return strings <= 1 && uno !== null ? uno : varios;
+}
+/** Cuántos strings iguales (de corriente imp) caben en paralelo en una entrada; sin datos, uno. Cero si ni uno solo admite ese panel. */
+export function stringsPorEntrada(attrs, imp) {
+    const varios = num(attrs.imax_mppt_a);
+    const uno = num(attrs.imax_mppt_1string_a);
+    if (imp === null || imp <= 0)
+        return 1;
+    if (uno !== null && imp > uno)
+        return 0;
+    return varios !== null ? Math.max(1, Math.floor(varios / imp)) : 1;
+}
 /** units: cuántos inversores de este modelo hay (cada uno con sus entradas MPPT). */
 export function stringPlan(panel, inverter, panels, units = 1) {
     const isc = num(panel.attrs.isc_a);
     const imp = num(panel.attrs.imp_a);
-    const imax = num(inverter.attrs.imax_mppt_a);
     const nMppt = (num(inverter.attrs.n_mppt) ?? 1) * Math.max(1, units);
     const limits = stringLimits(panel, inverter);
     if (limits === null)
@@ -205,8 +224,11 @@ export function stringPlan(panel, inverter, panels, units = 1) {
     }
     const strings = length && panels > 0 ? Math.ceil(panels / length) : null;
     if (strings !== null && nMppt > 0) {
-        const perMppt = imax !== null && imp !== null && imp > 0 ? Math.max(1, Math.floor(imax / imp)) : 1;
-        if (strings > nMppt * perMppt) {
+        const perMppt = stringsPorEntrada(inverter.attrs, imp);
+        if (perMppt === 0) {
+            problems.push(`Cada string da ${imp} A y una entrada de este inversor con un solo string admite ${num(inverter.attrs.imax_mppt_1string_a)} A.`);
+        }
+        else if (strings > nMppt * perMppt) {
             problems.push(`Hacen falta ${strings} strings y este inversor admite ${nMppt * perMppt} (${nMppt} entradas MPPT).`);
         }
         // La corriente de cortocircuito de los strings que comparten una entrada no puede pasar de la que aguanta esa entrada
@@ -277,6 +299,27 @@ export const ROOF_LABEL = {
 };
 /** Los tipos de cubierta que se ofrecen al crear un presupuesto, en este orden («chapa» solo lo conservan los presupuestos antiguos). */
 export const ROOF_OPTIONS = ['teja', 'chapa_minionda', 'chapa_grecada', 'plana', 'suelo', 'parking', 'flotante', 'pergola', 'sandwich'];
+/**
+ * Los tipos de cubierta del presupuesto: una instalación puede tener varios (nave con teja y plana). `roofs` es la lista completa;
+ * `roof` se conserva como la primera (lo usan la propuesta del servidor y los presupuestos anteriores, que solo tenían una).
+ */
+export function roofsOf(survey) {
+    const validos = (Array.isArray(survey?.roofs) ? survey.roofs : []).filter((r, i, todos) => typeof r === 'string' && r in ROOF_LABEL && todos.indexOf(r) === i);
+    if (validos.length > 0)
+        return validos;
+    return survey && survey.roof in ROOF_LABEL ? [survey.roof] : ['teja'];
+}
+/** Los valores de «cubierta» de un producto que valen para alguna de las cubiertas del presupuesto. */
+export function roofItemValues(survey) {
+    return [...new Set(roofsOf(survey).flatMap((r) => ROOF_ITEM_VALUES[r]))];
+}
+/** «Teja, Plana»: los tipos de cubierta como etiqueta de un dato. */
+export const roofLabels = (survey) => roofsOf(survey).map((r) => ROOF_LABEL[r]).join(', ');
+/** «teja», «teja y plana», «teja, plana y suelo»: los tipos de cubierta para un texto, en minúsculas. */
+export function roofText(survey) {
+    const nombres = roofsOf(survey).map((r) => ROOF_LABEL[r].toLowerCase());
+    return nombres.length > 1 ? `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}` : nombres[0];
+}
 /**
  * Tipos de estructura que admite cada tipo de cubierta (hoja de reglas de Ingeniería del 13/11/2026). Una cubierta que no sale aquí
  * (flotante, pérgola) no tiene regla todavía. «hormigón» agrupa el bloque de hormigón y la estructura de hormigón. En cubierta plana

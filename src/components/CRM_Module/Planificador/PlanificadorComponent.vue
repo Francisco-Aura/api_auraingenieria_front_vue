@@ -6,8 +6,9 @@
     <div v-if="pantallaCompleta" class="layout focus">
       <main class="content">
         <inicio-component v-if="mostrarInicio" :disponibles="disponibles" :pendientes="{ costing: pendientesValidar }" @abrir="abrirArea" />
-        <asistente-presupuesto-component v-else-if="foco === 'costing' && funciones.budgeter" :con-volver="true" :con-inventario="funciones.inventory" @cerrar="cerrarFoco" @abrir-inventario="abrirFoco('inventory')" />
-        <estudios-component v-else-if="foco === 'studies' && funciones.studies" etiqueta-volver="← Volver al inicio" @cerrar="cerrarFoco" />
+        <asistente-presupuesto-component v-else-if="foco === 'costing' && conLista" :con-volver="true" :con-inventario="funciones.inventory" :traspaso="traspaso" @cerrar="cerrarFoco" @abrir-inventario="abrirFoco('inventory')" @crear-estudio="abrirConTraspaso('studies', { tipo: 'estudio', ...$event })"
+                                          @abrir-boe="abrirConTraspaso('studies', { tipo: 'boe' })" @abrir-estudio="abrirConTraspaso('studies', { tipo: 'abrir-estudio', ...$event })" />
+        <estudios-component v-else-if="foco === 'studies' && funciones.studies" :traspaso="traspaso" @volver-a-presupuestos="volverAtras" @crear-presupuesto="abrirConTraspaso('costing', { tipo: 'presupuesto', ...$event })" @abrir-presupuesto="abrirConTraspaso('costing', { tipo: 'abrir-presupuesto', id: $event })" />
         <inventario-component v-else :etiqueta-volver="desde === 'costing' ? '← Volver al presupuestador' : '← Volver al inicio'" @cerrar="desde === 'costing' ? volverAtras() : cerrarFoco()" />
       </main>
     </div>
@@ -41,7 +42,9 @@ function leerGuardado() {
   if (leerEnlace()) return null
   try {
     const nav = JSON.parse(sessionStorage.getItem(CLAVE) || 'null')
-    return nav && typeof nav === 'object' ? nav : null
+    if (!nav || typeof nav !== 'object') return null
+    // Un estudio se abre con lo que le pasa la lista (el traspaso), y eso no se guarda: al recargar, a la lista
+    return nav.foco === 'studies' ? { ...nav, foco: 'costing' } : nav
   } catch (e) {
     return null
   }
@@ -65,15 +68,19 @@ export default {
       foco: guardado && ['costing', 'inventory', 'studies'].includes(guardado.foco) ? guardado.foco : null,
       desde: guardado && guardado.foco === 'inventory' ? guardado.desde || null : null,
       pendientesValidar: 0,
+      // Lo que una pantalla le pasa a otra al abrirla (p. ej. el cliente y el proyecto de un presupuesto para crear su estudio)
+      traspaso: null,
       enlace,
       guardadoAlArrancar: guardado
     }
   },
   computed: {
     hayHerramientas() { return this.funciones.budgeter || this.funciones.inventory || this.funciones.studies },
-    disponibles() { return ['projects', ...(this.funciones.budgeter ? ['costing'] : []), ...(this.funciones.inventory ? ['inventory'] : []), ...(this.funciones.studies ? ['studies'] : [])] },
+    // La lista de presupuestos y estudios sirve para lo uno y para lo otro
+    conLista() { return this.funciones.budgeter || this.funciones.studies },
+    disponibles() { return ['projects', ...(this.conLista ? ['costing'] : []), ...(this.funciones.inventory ? ['inventory'] : [])] },
     mostrarInicio() { return this.hayHerramientas && !this.entrado && !this.foco },
-    pantallaCompleta() { return this.mostrarInicio || (this.foco === 'costing' && this.funciones.budgeter) || (this.foco === 'inventory' && this.funciones.inventory) || (this.foco === 'studies' && this.funciones.studies) }
+    pantallaCompleta() { return this.mostrarInicio || (this.foco === 'costing' && this.conLista) || (this.foco === 'inventory' && this.funciones.inventory) || (this.foco === 'studies' && this.funciones.studies) }
   },
   watch: {
     entrado() { this.guardar() },
@@ -122,6 +129,7 @@ export default {
     // El presupuestador y el inventario ocupan toda la pantalla y no tienen dirección propia: cada pantalla que se abre añade una
     // entrada al historial, para que el botón Atrás deshaga solo el último paso y no salga del Planificador.
     mostrarFoco(vista, desde = null) {
+      if (vista !== 'studies' && vista !== 'costing') this.traspaso = null
       this.foco = vista
       this.desde = vista === 'inventory' ? desde : null
     },
@@ -132,6 +140,11 @@ export default {
         window.history.pushState({ plannerFocus: vista, depth: this.profundidad, from: desde }, '')
       }
       this.mostrarFoco(vista, desde)
+    },
+    // Abre otra pantalla llevándole algo (la destino lo recoge al montarse); un clic normal en el inicio no lleva nada
+    abrirConTraspaso(vista, traspaso) {
+      this.traspaso = traspaso
+      this.abrirFoco(vista)
     },
     cerrarFoco() {
       this.mostrarFoco(null)

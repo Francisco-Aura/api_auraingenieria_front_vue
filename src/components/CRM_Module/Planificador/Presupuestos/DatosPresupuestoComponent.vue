@@ -1,7 +1,7 @@
 <template>
   <div class="costes budget-setup">
     <div class="back-fila">
-      <button type="button" class="secondary" @click="$emit('cancelar')">{{ modo === 'nuevo' ? '← Volver al listado' : '← Volver al presupuesto' }}</button>
+      <button type="button" class="secondary" @click="$emit('cancelar')">{{ modo === 'nuevo' ? '← Volver a propuestas' : '← Volver al presupuesto' }}</button>
     </div>
     <div class="costes-titulo"><h1>{{ modo === 'nuevo' ? 'Nuevo presupuesto' : 'Parámetros del presupuesto' }}</h1></div>
     <p class="muted alta-intro">
@@ -12,38 +12,41 @@
 
     <form class="alta-formulario" novalidate @submit.prevent="enviar">
       <fieldset class="alta-tarjeta">
-        <legend>Cliente</legend>
-        <selector-cliente v-model="v.customer" :nombre-sugerido="inicio.client" :invalido="intentado && !v.customer" :cif-invalido="intentado" />
-        <label class="cuestionario-campo wide">
-          Nombre del proyecto
-          <input v-model="v.reference" list="proyectos-del-cliente" placeholder="Ej.: Nave 2, fotovoltaica" maxlength="80" autocomplete="off">
-          <datalist id="proyectos-del-cliente"><option v-for="p in proyectosSugeridos" :key="p" :value="p" /></datalist>
-          <span class="muted campo-pista">
-            Los presupuestos del mismo cliente con el mismo nombre de proyecto son versiones unos de otros (v1, v2…):
-            {{ proyectosSugeridos.length > 0 ? 'elige uno de los que ya tiene para no escribirlo distinto.' : 'escríbelo igual en todos.' }}
-          </span>
-        </label>
-        <label v-if="!esPotencial" class="cuestionario-campo wide">
+        <legend>{{ fijo ? 'Propuesta' : 'Cliente' }}</legend>
+        <div v-if="fijo" class="proyecto-fijo"><strong>{{ v.customer.name }}</strong><span class="muted">{{ v.reference }}</span></div>
+        <template v-else>
+          <selector-cliente v-model="v.customer" :nombre-sugerido="inicio.client" :invalido="intentado && !v.customer" :cif-invalido="intentado" />
+          <label class="cuestionario-campo wide">
+            Nombre del proyecto
+            <input v-model="v.reference" list="proyectos-del-cliente" placeholder="Ej.: Nave 2, fotovoltaica" maxlength="80" autocomplete="off">
+            <datalist id="proyectos-del-cliente"><option v-for="p in proyectosSugeridos" :key="p" :value="p" /></datalist>
+            <span class="muted campo-pista">
+              Los presupuestos del mismo cliente con el mismo nombre de proyecto son versiones unos de otros (v1, v2…):
+              {{ proyectosSugeridos.length > 0 ? 'elige uno de los que ya tiene para no escribirlo distinto.' : 'escríbelo igual en todos.' }}
+            </span>
+          </label>
+        </template>
+        <label v-if="(!esPotencial || fijo) && !oculta.cif" class="cuestionario-campo wide">
           CIF de la empresa
           <input v-model="v.cif" :class="{ 'obligatorio-vacio': intentado && (!v.cif || v.cif.trim().length < 5) }" placeholder="Ej.: B12345678" maxlength="30" autocomplete="off">
           <span class="muted campo-pista">Obligatorio: sale en la propuesta que se le entrega al cliente.</span>
         </label>
-        <div class="cuestionario-campo wide">
+        <div v-if="!oculta.logo" class="cuestionario-campo wide">
           Logo de la empresa
           <div class="propuesta-logo">
-            <button type="button" class="propuesta-logo-caja" :class="{ 'obligatorio-vacio': intentado && !v.clientLogo }" title="Haz clic o arrastra una imagen para subir el logo" @click="$refs.logo.click()" @dragover.prevent @drop.prevent="soltarLogo">
+            <button type="button" class="propuesta-logo-caja" title="Haz clic o arrastra una imagen para subir el logo" @click="$refs.logo.click()" @dragover.prevent @drop.prevent="soltarLogo">
               <img v-if="v.clientLogo" :src="v.clientLogo" alt="Logo de la empresa del cliente">
               <span v-else class="muted">+ Subir logo</span>
             </button>
             <div>
-              <span class="muted campo-pista">Obligatorio: sale en la propuesta. PNG, JPG, WebP o SVG; haz clic en la caja o arrastra la imagen.</span>
+              <span class="muted campo-pista">Opcional para crear el presupuesto, pero obligatorio para descargar la propuesta (sale en ella). PNG, JPG, WebP o SVG; haz clic en la caja o arrastra la imagen.</span>
               <button v-if="v.clientLogo" type="button" class="enlace-boton" @click="v.clientLogo = ''">Quitar el logo</button>
               <p v-if="errorLogo" class="error" role="alert">{{ errorLogo }}</p>
             </div>
             <input ref="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirLogo">
           </div>
         </div>
-        <div class="cuestionario-campo wide">
+        <div v-if="!oculta.encaje" class="cuestionario-campo wide">
           Encaje de los paneles
           <div class="propuesta-logo">
             <button type="button" class="propuesta-logo-caja propuesta-encaje-caja" title="Haz clic o arrastra una imagen para subir el encaje" @click="$refs.encaje.click()" @dragover.prevent @drop.prevent="soltarEncaje">
@@ -80,13 +83,16 @@
             (para {{ kw(v.targetKwp) }} kWp saldrían {{ auto }}) <button type="button" class="enlace-boton" @click="v.manualPanels = false">Usar {{ auto }}</button>
           </template>
         </p>
+        <div class="cuestionario-campo cubiertas-campo" role="group" aria-labelledby="cubiertas-etiqueta">
+          <span id="cubiertas-etiqueta">Tipo de cubierta</span>
+          <div class="cubiertas-opciones">
+            <label v-for="k in tiposCubierta" :key="k" :class="['cubierta-opcion', { on: v.roofs.includes(k) }]">
+              <input type="checkbox" :checked="v.roofs.includes(k)" :disabled="v.roofs.length === 1 && v.roofs.includes(k)" @change="alternarCubierta(k)" />
+              {{ ROOF_LABEL[k] }}
+            </label>
+          </div>
+        </div>
         <div class="cuestionario-fila">
-          <label class="cuestionario-campo">
-            Tipo de cubierta
-            <select v-model="v.roof">
-              <option v-for="k in tiposCubierta" :key="k" :value="k">{{ ROOF_LABEL[k] }}</option>
-            </select>
-          </label>
           <label class="cuestionario-campo">
             Suministro eléctrico del cliente
             <select v-model="v.supply"><option value="">Sin decidir</option><option value="monofasico">Monofásico</option><option value="trifasico">Trifásico</option></select>
@@ -142,7 +148,9 @@ export default {
   props: {
     // Presupuesto del que se parte (al editar, el que se está haciendo; al crear, uno vacío)
     base: { type: Object, default: null },
-    modo: { type: String, default: 'nuevo' }
+    modo: { type: String, default: 'nuevo' },
+    // Viene de una propuesta, que ya tiene el CIF, el logo y el encaje: lo que trae no se vuelve a pedir
+    hereda: { type: Boolean, default: false }
   },
   emits: ['enviar', 'cancelar'],
   data() {
@@ -167,8 +175,15 @@ export default {
       })
     },
     // «Chapa» a secas solo sale si el presupuesto ya la tenía (de antes de separar minionda y grecada)
-    tiposCubierta() { return this.v.roof && !ROOF_OPTIONS.includes(this.v.roof) ? [this.v.roof, ...ROOF_OPTIONS] : ROOF_OPTIONS },
+    tiposCubierta() { return [...this.v.roofs.filter((r) => !ROOF_OPTIONS.includes(r)), ...ROOF_OPTIONS] },
     esPotencial() { return !!this.v.customer && this.v.customer.kind === 'potencial' },
+    // El cliente y el proyecto vienen del proyecto (se eligen una sola vez, al crearlo): aquí no se tocan
+    // Qué no se pide porque la propuesta ya lo trae (se decide al abrir, no al teclear)
+    oculta() {
+      const i = this.inicio
+      return { cif: this.hereda && (i.cif || '').trim().length >= 5, logo: this.hereda && !!i.clientLogo, encaje: this.hereda && !!i.encaje }
+    },
+    fijo() { return !!this.inicio.customer && !!(this.inicio.reference || '').trim() },
     problemas() { return problemasDe(this.v, this.cuenta) }
   },
   watch: {
@@ -193,6 +208,11 @@ export default {
     planificadorApi.presupuestos().then((lista) => { this.nombresExistentes = [...this.nombresExistentes, ...lista.map((b) => b.name)] }, () => undefined)
   },
   methods: {
+    // Una instalación puede tener varias cubiertas: se marcan las que haya; siempre queda al menos una
+    alternarCubierta(k) {
+      const marcadas = this.v.roofs.includes(k) ? this.v.roofs.filter((r) => r !== k) : [...this.v.roofs, k]
+      if (marcadas.length > 0) this.v.roofs = ROOF_OPTIONS.concat(this.v.roofs.filter((r) => !ROOF_OPTIONS.includes(r))).filter((r) => marcadas.includes(r))
+    },
     kw(n) { return n.toLocaleString('es-ES', { maximumFractionDigits: 2 }) },
     subirLogo(evento) {
       const archivo = evento.target.files && evento.target.files[0]

@@ -1,7 +1,7 @@
 import { effectiveQty, isPerModule, lineName, newLine } from './costes.js';
 import { fuseKind, fuseNeed, fuseReason } from './protecciones.js';
 import { analyzeStrings, assignInputs, autoStrings, clampTotals, effectiveStrings, fitStrings, isValidDesign, reportProblems, spreadPanels, spreadStrings, summarizeStrings, totalInputs } from './strings.js';
-import { batteryCompat, COLD_VOC, ROOF_ITEM_VALUES, ROOF_LABEL, ROOF_STRUCTURE_TYPES, STRUCTURE_TYPE_LABEL, stringPlan } from './pasosConfig.js';
+import { batteryCompat, COLD_VOC, ROOF_ITEM_VALUES, ROOF_LABEL, ROOF_STRUCTURE_TYPES, STRUCTURE_TYPE_LABEL, roofItemValues, roofsOf, roofText, stringPlan } from './pasosConfig.js';
 /** Reglas cuyo error es una incompatibilidad de fondo (el resto depende de cantidades o de la potencia y solo avisa). */
 const HARD_RULES = new Set([
     'strings-imposible', 'optimizador-marca', 'medidor-fases', 'suministro', 'bateria', 'estructura-marco',
@@ -325,25 +325,28 @@ export function checkCompatibility(state, catalog) {
             add('warn', 'futuro-bateria', 'inversor', `Se prevén baterías más adelante y ${name(central[0])} no es híbrido.`, [central[0]]);
     }
     // --- Estructura
-    const roof = ROOF_ITEM_VALUES[survey.roof];
+    // El presupuesto puede tener varias cubiertas: una estructura vale si es de alguna de ellas
+    const roof = roofItemValues(survey);
     for (const e of cat('estructura')) {
         const roofOf = txt(e.item.attrs.cubierta) || 'Todas';
         if (!roof.includes(roofOf)) {
-            add('error', 'cubierta', 'estructura', `${name(e)} es para cubierta ${roofOf.toLowerCase()} y el presupuesto está en cubierta ${ROOF_LABEL[survey.roof].toLowerCase()}.`, [e]);
+            add('error', 'cubierta', 'estructura', `${name(e)} es para cubierta ${roofOf.toLowerCase()} y el presupuesto está en cubierta ${roofText(survey)}.`, [e]);
         }
     }
     // Cada cubierta admite unos tipos de estructura (hoja de reglas de Ingeniería). Solo se mira lo que es de esa cubierta (si no, ya avisa
     // «cubierta») y no lo genérico («Todas»: perfiles, grapas…) ni lo de un tipo que no se reconoce; flotante y pérgola no tienen regla.
-    const allowedTypes = ROOF_STRUCTURE_TYPES[survey.roof];
-    if (allowedTypes) {
-        for (const e of cat('estructura')) {
-            const roofOf = txt(e.item.attrs.cubierta) || 'Todas';
-            if (roofOf === 'Todas' || !roof.includes(roofOf))
-                continue;
-            const type = structureType(e.item);
-            if (type && !allowedTypes.includes(type)) {
-                add('error', 'estructura-tipo', 'estructura', `${name(e)} es una estructura ${STRUCTURE_TYPE_LABEL[type]} y en cubierta ${ROOF_LABEL[survey.roof].toLowerCase()} solo se admiten: ${allowedTypes.map((t) => STRUCTURE_TYPE_LABEL[t]).join(', ')}.`, [e]);
-            }
+    // Con varias cubiertas se miran las del presupuesto a las que pertenece la estructura: vale cualquier tipo que admita alguna de ellas.
+    for (const e of cat('estructura')) {
+        const roofOf = txt(e.item.attrs.cubierta) || 'Todas';
+        if (roofOf === 'Todas')
+            continue;
+        const suyas = roofsOf(survey).filter((r) => ROOF_ITEM_VALUES[r].includes(roofOf));
+        if (suyas.length === 0 || suyas.some((r) => !ROOF_STRUCTURE_TYPES[r]))
+            continue;
+        const allowedTypes = [...new Set(suyas.flatMap((r) => ROOF_STRUCTURE_TYPES[r]))];
+        const type = structureType(e.item);
+        if (type && !allowedTypes.includes(type)) {
+            add('error', 'estructura-tipo', 'estructura', `${name(e)} es una estructura ${STRUCTURE_TYPE_LABEL[type]} y en cubierta ${suyas.map((r) => ROOF_LABEL[r].toLowerCase()).join(' o ')} solo se admiten: ${allowedTypes.map((t) => STRUCTURE_TYPE_LABEL[t]).join(', ')}.`, [e]);
         }
     }
     // Varias filas «por módulo» de una misma categoría que se reparten los paneles (247 coplanares + 24 inclinados = 271) suman el
@@ -647,8 +650,8 @@ export function fitReasons(item, state, catalog) {
         }
         case 'estructura': {
             const roofOf = txt(item.attrs.cubierta) || 'Todas';
-            if (roofOf !== 'Todas' && ROOF_ITEM_VALUES[survey.roof].includes(roofOf))
-                out.push(`para cubierta ${ROOF_LABEL[survey.roof].toLowerCase()}`);
+            if (roofOf !== 'Todas' && roofItemValues(survey).includes(roofOf))
+                out.push(`para cubierta ${roofsOf(survey).filter((r) => ROOF_ITEM_VALUES[r].includes(roofOf)).map((r) => ROOF_LABEL[r].toLowerCase()).join(' o ')}`);
             const perKit = num(item.attrs.modulos_por_kit);
             if (perKit && n > 0 && n % perKit === 0)
                 out.push(`${n / perKit} kit${n / perKit === 1 ? '' : 's'} cubren exactamente los ${n} paneles`);

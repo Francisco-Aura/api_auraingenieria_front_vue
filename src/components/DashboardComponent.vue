@@ -43,7 +43,7 @@
         <router-link v-if="planificadorDisponible" to="/dashboard/planificador" class="menu-item" active-class="active">
           <i class="fas fa-project-diagram menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Planificador</span>
-          <span v-if="presupuestosPorValidar > 0" class="menu-dot" :title="presupuestosPorValidar + ' pendiente(s) en el presupuestador (por validar o con la propuesta enviada al cliente)'" aria-label="Hay pendientes en el presupuestador"></span>
+          <span v-if="presupuestosPorValidar > 0" class="menu-dot" :title="presupuestosPorValidar + ' propuesta(s) entregada(s) pendiente(s) de validar'" aria-label="Hay pendientes en el presupuestador"></span>
           <div v-if="sidebarCollapsed" class="tooltip">Planificador</div>
         </router-link>
 
@@ -279,7 +279,7 @@ export default {
         return;
       }
       try {
-        // El planificador lo cuenta: ofertas por validar y propuestas enviadas al cliente que esperan su respuesta
+        // El planificador lo cuenta: ofertas entregadas al cliente que esperan su validación
         const res = await fetch('/api/planificador/budgets/pending-validation', { headers: { 'X-Usuario-Id': String(usuario.id) } });
         if (!res.ok) return;
         const pendientes = await res.json();

@@ -99,6 +99,13 @@ export const planificadorApi = {
   aportarNota: (id, text, requirement) => datos(axios.post(`${BASE}/tasks/${id}/attachments`, { kind: 'note', text, requirement })),
   quitarAdjunto: (id, adjuntoId) => datos(axios.delete(`${BASE}/tasks/${id}/attachments/${adjuntoId}`)),
 
+  // Proyectos comerciales (la fila de la lista «Presupuestos y estudios»): se crean antes que sus estudios y presupuestos
+  proyectosComerciales: () => datos(axios.get(`${BASE}/commercial-projects`)),
+  proyectoComercial: (id) => datos(axios.get(`${BASE}/commercial-projects/${id}`)),
+  crearProyectoComercial: (customer, project, empresa = {}) => datos(axios.post(`${BASE}/commercial-projects`, { customer, project, ...empresa })),
+  guardarProyectoComercial: (id, empresa) => datos(axios.put(`${BASE}/commercial-projects/${id}`, empresa)),
+  borrarProyectoComercial: (id) => axios.delete(`${BASE}/commercial-projects/${id}`),
+
   // Presupuestos y propuestas
   presupuestos: () => datos(axios.get(`${BASE}/budgets`)),
   presupuesto: (id) => datos(axios.get(`${BASE}/budgets/${id}`)),
@@ -107,7 +114,9 @@ export const planificadorApi = {
   enviarPresupuesto: (id) => datos(axios.post(`${BASE}/budgets/${id}/send`)),
   variantePresupuesto: (id, name = '') => datos(axios.post(`${BASE}/budgets/${id}/variant`, { name })),
   renombrarVariante: (id, name) => datos(axios.post(`${BASE}/budgets/${id}/variant-name`, { name })),
-  validarPresupuesto: (id, cif = '') => datos(axios.post(`${BASE}/budgets/${id}/validate`, { cif })),
+  // Asocia el presupuesto a un estudio del mismo cliente y proyecto (id vacío = quitar la asociación)
+  asociarEstudio: (id, studyId = '') => datos(axios.post(`${BASE}/budgets/${id}/study`, { study_id: studyId })),
+  validarPresupuesto:(id, cif = '') => datos(axios.post(`${BASE}/budgets/${id}/validate`, { cif })),
   desvalidarPresupuesto: (id) => datos(axios.post(`${BASE}/budgets/${id}/unvalidate`)),
   borrarPresupuesto: (id) => axios.delete(`${BASE}/budgets/${id}`),
   pendientesDeValidar: () => datos(axios.get(`${BASE}/budgets/pending-validation`)),
@@ -178,11 +187,23 @@ export const planificadorApi = {
   crearEstudio: (cuerpo) => datos(axios.post(`${BASE}/studies`, cuerpo)),
   guardarEstudio: (id, cuerpo) => datos(axios.put(`${BASE}/studies/${id}`, cuerpo)),
   borrarEstudio: (id) => axios.delete(`${BASE}/studies/${id}`),
-  /** Sube el SIPS (Excel de la distribuidora): rellena el suministro y estima la curva si no hay una real. */
-  subirSips: (id, archivo) => subirArchivo(`${BASE}/studies/${id}/sips`, archivo),
-  /** Sube la curva horaria o cuartohoraria de la distribuidora (Excel o CSV). */
-  subirCurva: (id, archivo) => subirArchivo(`${BASE}/studies/${id}/curve`, archivo),
-  /** El informe del estudio: HTML (para verlo) o PDF (hecho con Chrome en el servidor; 501 si no lo hay). Devuelve { blob, nombre }. */
-  informeEstudioHtml: (id) => descargaBlob(`${BASE}/studies/${id}/report.html`, 'Estudio.html'),
-  informeEstudioPdf: (id) => descargaBlob(`${BASE}/studies/${id}/report.pdf`, 'Estudio.pdf')
+  // Peajes y cargos del BOE de los estudios: cada BOE con su nombre y la fecha desde la que vale
+  preciosBoe: () => datos(axios.get(`${BASE}/regulated-prices`)),
+  /** Añade un BOE nuevo ({ nombre, vigenteDesde, precios }). Devuelve todo y el id del nuevo. */
+  crearPreciosBoe: (cuerpo) => datos(axios.post(`${BASE}/regulated-prices`, cuerpo)),
+  guardarPreciosBoe: (id, cuerpo) => datos(axios.put(`${BASE}/regulated-prices/${id}`, cuerpo)),
+  borrarPreciosBoe: (id) => datos(axios.delete(`${BASE}/regulated-prices/${id}`)),
+  /** Las recomendaciones de un estudio entero, escritas con sus números: [{ id, titulo, texto, sugerida }]. */
+  recomendacionesDelEstudio: (cuerpo) => datos(axios.post(`${BASE}/studies/recommendations`, cuerpo)),
+  /** Calcula un estudio entero sin guardarlo (los locales viven en el navegador): devuelve el estudio con su resultado. */
+  calcularEstudio: (cuerpo) => datos(axios.post(`${BASE}/studies/calculate`, cuerpo)),
+  /** Busca un lugar por su nombre: devuelve [{ nombre, latitud, longitud }] (para la ubicación de la instalación). */
+  buscarLugar: (texto) => datos(axios.get(`${BASE}/studies/places`, { params: { q: texto } })),
+  /** Lee el SIPS (Excel de la distribuidora) sin guardarlo: suministro, tarifa, potencias y lecturas. */
+  leerSips: (archivo) => subirArchivo(`${BASE}/studies/read-sips`, archivo),
+  /** Lee la curva horaria o cuartohoraria de la distribuidora (Excel o CSV) sin guardarla: devuelve el año tipo como texto. */
+  leerCurva: (archivo) => subirArchivo(`${BASE}/studies/read-curve`, archivo),
+  /** El informe de un estudio entero, sin guardarlo: HTML (para verlo) o PDF (hecho con Chrome en el servidor; 501 si no lo hay). Devuelve { blob, nombre }. */
+  informeEstudioHtml: (cuerpo) => pdf(`${BASE}/studies/report.html`, cuerpo, undefined, 'Estudio.html'),
+  informeEstudioPdf: (cuerpo) => pdf(`${BASE}/studies/report.pdf`, cuerpo, undefined, 'Estudio.pdf')
 }

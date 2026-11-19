@@ -54,9 +54,9 @@
 
       <template v-else-if="paso.key === 'estructura'">
         <div class="fijo-parametros">
-          <ul><li><span class="muted">Cubierta</span> <strong>{{ ROOF_LABEL[s.roof] }}</strong></li></ul>
+          <ul><li><span class="muted">Cubierta</span> <strong>{{ roofLabels(s) }}</strong></li></ul>
         </div>
-        <p class="paso-nota info">Se enseña lo adecuado para cubierta {{ ROOF_LABEL[s.roof].toLowerCase() }}<template v-if="panel"> · paneles de {{ panel.attrs.largo_mm ?? '—' }} × {{ panel.attrs.ancho_mm ?? '—' }} mm, {{ estado.moduleCount }} unidades</template>.</p>
+        <p class="paso-nota info">Se enseña lo adecuado para cubierta {{ roofText(s) }}<template v-if="panel"> · paneles de {{ panel.attrs.largo_mm ?? '—' }} × {{ panel.attrs.ancho_mm ?? '—' }} mm, {{ estado.moduleCount }} unidades</template>.</p>
       </template>
 
       <template v-else-if="paso.key === 'inversor'">
@@ -150,7 +150,7 @@
 <script>
 import SeccionCatalogo from './SeccionCatalogo.vue'
 import DisenadorStrings from './DisenadorStrings.vue'
-import { CABLE_MARGIN, ROOF_LABEL, STEPS, panelCount, stringPlan, withMargin } from '@/utils/planificador/motor/pasosConfig'
+import { CABLE_MARGIN, ROOF_LABEL, STEPS, panelCount, roofLabels, roofText, stringPlan, withMargin } from '@/utils/planificador/motor/pasosConfig'
 import { FUSES_PER_STRING, fuseCoverage } from '@/utils/planificador/motor/protecciones'
 import { issuesByItem, stringContext } from '@/utils/planificador/motor/compatibilidad'
 import {
@@ -176,7 +176,7 @@ export default {
   emits: ['cambiar', 'anadir', 'quitar', 'ficha', 'editar-parametros'],
   data() {
     return {
-      STEPS, ROOF_LABEL, SUMINISTRO, CABLE_MARGIN, FUSES_PER_STRING, actual: 0, seccionActiva: '', listo: false
+      STEPS, ROOF_LABEL, roofLabels, roofText, SUMINISTRO, CABLE_MARGIN, FUSES_PER_STRING, actual: 0, seccionActiva: '', listo: false
     }
   },
   computed: {

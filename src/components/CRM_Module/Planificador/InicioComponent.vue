@@ -10,7 +10,7 @@
         </svg>
         <strong>{{ t.titulo }}</strong>
         <span>{{ t.texto }}</span>
-        <b v-if="(pendientes[t.area] || 0) > 0" class="inicio-insignia" :title="pendientes[t.area] + ' pendientes (por validar o con la propuesta entregada al cliente)'" :aria-label="pendientes[t.area] + ' pendientes'">{{ pendientes[t.area] }}</b>
+        <b v-if="(pendientes[t.area] || 0) > 0" class="inicio-insignia" :title="pendientes[t.area] + ' presupuesto(s) entregado(s) al cliente pendiente(s) de validar'" :aria-label="pendientes[t.area] + ' pendientes'">{{ pendientes[t.area] }}</b>
       </button>
     </div>
   </div>
@@ -20,8 +20,8 @@
 const TARJETAS = [
   {
     area: 'costing',
-    titulo: 'Presupuestador',
-    texto: 'Elegir los equipos paso a paso, con su compatibilidad, y calcular el coste de la instalación.',
+    titulo: 'Propuestas',
+    texto: 'Todo lo que se prepara para un cliente: su estudio y los presupuestos de la instalación.',
     rectangulos: [{ x: 5, y: 3, w: 14, h: 18, rx: 2 }],
     trazos: ['M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01']
   },
@@ -38,13 +38,6 @@ const TARJETAS = [
     texto: 'Dar de alta los productos y completar sus características: lo que se guarda aquí es lo que se elige al presupuestar.',
     rectangulos: [],
     trazos: ['M3 8l9-5 9 5v8l-9 5-9-5V8z', 'M3 8l9 5 9-5M12 13v8']
-  },
-  {
-    area: 'studies',
-    titulo: 'Estudios',
-    texto: 'Estudios de autoconsumo fotovoltaico: consumo del cliente, instalación recomendada, rentabilidad e informe en PDF.',
-    rectangulos: [],
-    trazos: ['M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4', 'M12 8a4 4 0 100 8 4 4 0 000-8z']
   }
 ]
 

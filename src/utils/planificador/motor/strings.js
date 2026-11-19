@@ -1,4 +1,4 @@
-import { COLD_VOC, HOT_VMP, MAX_STRING_PANELS, MIN_STRING_PANELS, stringLimits } from './pasosConfig.js';
+import { COLD_VOC, HOT_VMP, MAX_STRING_PANELS, MIN_STRING_PANELS, imaxEntrada, stringLimits, stringsPorEntrada } from './pasosConfig.js';
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 const fmt = (n, digits = 0) => n.toLocaleString('es-ES', { maximumFractionDigits: digits });
 let counter = 0;
@@ -47,9 +47,8 @@ export function autoStrings(ctx) {
     // Cuántos strings iguales admite cada entrada en paralelo (por corriente de trabajo y de cortocircuito); sin datos, uno
     const imp = num(ctx.panel.attrs.imp_a);
     const isc = num(ctx.panel.attrs.isc_a);
-    const imax = num(ctx.inverter.attrs.imax_mppt_a);
     const iscMax = num(ctx.inverter.attrs['x:Corriente de cortocircuito máx. (A)']);
-    const byImp = imp !== null && imp > 0 && imax !== null ? Math.floor(imax / imp) : 1;
+    const byImp = stringsPorEntrada(ctx.inverter.attrs, imp);
     const byIsc = isc !== null && isc > 0 && iscMax !== null ? Math.floor(iscMax / isc) : byImp;
     const capacity = inputs * Math.max(1, Math.min(byImp, byIsc));
     const equal = (upTo) => {
@@ -127,7 +126,6 @@ export function isValidDesign(design, ctx) {
     const inputs = inputsOf(ctx.inverter, ctx.units);
     const imp = num(ctx.panel.attrs.imp_a);
     const isc = num(ctx.panel.attrs.isc_a);
-    const imax = num(ctx.inverter.attrs.imax_mppt_a);
     const iscMax = num(ctx.inverter.attrs['x:Corriente de cortocircuito máx. (A)']);
     const byInput = new Map();
     let total = 0;
@@ -144,6 +142,7 @@ export function isValidDesign(design, ctx) {
             g.count++;
     }
     for (const g of byInput.values()) {
+        const imax = imaxEntrada(ctx.inverter.attrs, g.count);
         if (imp !== null && imax !== null && imp * g.count > imax)
             return false;
         if (isc !== null && iscMax !== null && isc * g.count > iscMax)
@@ -230,7 +229,7 @@ export function analyzeStrings(design, ctx) {
         const group = design.filter((s) => s.input === input);
         const problems = [];
         const inv = (inputOwner(ctx, input)?.item ?? ctx.inverter).attrs;
-        const imax = num(inv.imax_mppt_a);
+        const imax = imaxEntrada(inv, group.length);
         const iscMax = num(inv['x:Corriente de cortocircuito máx. (A)']);
         const sizes = [...new Set(group.map((s) => s.panels))];
         if (group.length > 1 && sizes.length > 1) {

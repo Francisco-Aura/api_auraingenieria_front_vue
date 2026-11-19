@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { valoresDe, cuantosPaneles, aplicarValores, problemasDe, cuerpoParaServidor, sincronizado } from '../../src/utils/planificador/datosPresupuesto.js'
-import { EMPTY_COSTS, EMPTY_SURVEY, parseCosts } from '../../src/utils/planificador/motor/costes.js'
+import { EMPTY_COSTS, EMPTY_SURVEY, MAX_OBSERVACIONES_LINEA, parseCosts } from '../../src/utils/planificador/motor/costes.js'
 import { canonical } from '../../src/utils/planificador/almacenPresupuestos.js'
 
 const vacio = () => ({ ...EMPTY_COSTS, survey: { ...EMPTY_SURVEY } })
@@ -24,7 +24,7 @@ test('el nº de paneles puesto a mano se detecta al abrir los parámetros de un 
 test('aplicar los valores conserva lo demás y pone cliente, paneles, cubierta y suministro', () => {
   const base = { ...vacio(), lines: [{ id: 'l1' }], order: 'fijo', client: 'viejo' }
   const v = { ...valoresDe(base), customer: potencial, reference: '  Nave 2  ', targetKwp: 10, moduleWp: 500, manualPanels: false,
-    roof: 'chapa', supply: 'trifasico', futureBattery: true, cableMeters: 40, acMeters: 15, saleRatio: 1.2 }
+    roofs: ['chapa'], supply: 'trifasico', futureBattery: true, cableMeters: 40, acMeters: 15, saleRatio: 1.2 }
   const r = aplicarValores(base, v)
   assert.equal(r.client, 'Pedro Ingaser')
   assert.equal(r.reference, 'Nave 2')
@@ -33,7 +33,7 @@ test('aplicar los valores conserva lo demás y pone cliente, paneles, cubierta y
   assert.equal(r.saleRatio, 1.2)
   assert.deepEqual(r.lines, [{ id: 'l1' }])
   assert.equal(r.order, 'fijo')
-  assert.deepEqual(r.survey, { ...base.survey, roof: 'chapa', supply: 'trifasico', targetKwp: 10, futureBattery: true, cableMeters: 40, acMeters: 15 })
+  assert.deepEqual(r.survey, { ...base.survey, roof: 'chapa', roofs: ['chapa'], supply: 'trifasico', targetKwp: 10, futureBattery: true, cableMeters: 40, acMeters: 15 })
 })
 
 test('sin cliente se conserva el nombre que ya tenía el presupuesto', () => {
@@ -41,23 +41,22 @@ test('sin cliente se conserva el nombre que ya tenía el presupuesto', () => {
   assert.equal(aplicarValores(base, { ...valoresDe(base), customer: null }).client, 'Antiguo SL')
 })
 
-test('problemas para crear: cliente, nombre del proyecto, CIF, logo, potencia a instalar, potencia del panel y al menos un panel', () => {
+test('problemas para crear: cliente, nombre del proyecto, CIF, potencia a instalar, potencia del panel y al menos un panel', () => {
   const v = valoresDe(vacio())
   const empresa = { cif: 'B12345678', clientLogo: 'data:image/png;base64,AAAA' }
   assert.deepEqual(problemasDe({ ...v, customer: null, reference: '', targetKwp: 0, moduleWp: 0 }, 0), [
     'Elige el cliente del presupuesto: uno existente o un cliente potencial nuevo.',
     'Escribe el nombre del proyecto (por ejemplo «Nave 2»): con el cliente identifica a qué proyecto pertenece el presupuesto.',
     'Escribe el CIF de la empresa del cliente: sale en la propuesta.',
-    'Sube el logo de la empresa del cliente: sale en la propuesta.',
     'Indica la potencia que se quiere instalar (kWp).',
     'Indica la potencia de cada panel (Wp).',
     'El presupuesto necesita al menos un panel.'
   ])
   assert.equal(problemasDe({ ...v, ...empresa, customer: potencial, reference: '   ', targetKwp: 10, moduleWp: 600 }, 17).length, 1, 'un nombre en blanco no vale')
   assert.deepEqual(problemasDe({ ...v, ...empresa, customer: potencial, reference: 'Nave 2', targetKwp: 10, moduleWp: 600 }, 17), [])
-  // El CIF y el logo son obligatorios cada uno por su lado
+  // El CIF es obligatorio; el logo no (solo se exige al descargar la propuesta)
   assert.equal(problemasDe({ ...v, ...empresa, cif: '   ', customer: potencial, reference: 'Nave 2', targetKwp: 10, moduleWp: 600 }, 17).length, 1)
-  assert.equal(problemasDe({ ...v, ...empresa, clientLogo: '', customer: potencial, reference: 'Nave 2', targetKwp: 10, moduleWp: 600 }, 17).length, 1)
+  assert.deepEqual(problemasDe({ ...v, ...empresa, clientLogo: '', customer: potencial, reference: 'Nave 2', targetKwp: 10, moduleWp: 600 }, 17), [])
 })
 
 test('el CIF y el logo de la empresa van y vuelven con el presupuesto, y el CIF pasa al cliente potencial que no lo tenga', () => {
@@ -103,4 +102,41 @@ test('tras guardar, la copia de trabajo recuerda la versión del servidor y lo s
   assert.equal(r.remote.ownerId, '7')
   assert.equal(sincronizado({ id: 'otro' }, completo, {}, canonical).remote, undefined, 'otro presupuesto: no se toca')
   assert.equal(sincronizado(null, completo, {}, canonical), null)
+})
+
+test('las observaciones internas de un producto se conservan al leer el presupuesto, recortadas; sin texto no existen', () => {
+  const base = { group: 'modulos', equipment: 'Panel', model: 'X', qty: 1, price: 10 }
+  const leido = parseCosts({ lines: [
+    { ...base, id: 'a', observaciones: '  Pedir a Juan  ' },
+    { ...base, id: 'b', observaciones: '   ' },
+    { ...base, id: 'c' },
+    { ...base, id: 'd', observaciones: 'x'.repeat(MAX_OBSERVACIONES_LINEA + 50) }
+  ] })
+  const por = (id) => leido.lines.find((l) => l.id === id)
+  assert.equal(por('a').observaciones, 'Pedir a Juan')
+  assert.ok(!('observaciones' in por('b')), 'solo espacios = sin observaciones')
+  assert.ok(!('observaciones' in por('c')), 'un producto sin ellas queda como antes (el presupuesto no cambia)')
+  assert.equal(por('d').observaciones.length, MAX_OBSERVACIONES_LINEA)
+  // No se confunden con la nota del producto del inventario
+  assert.equal(parseCosts({ lines: [{ ...base, id: 'e', notes: 'Del inventario' }] }).lines[0].notes, 'Del inventario')
+})
+
+test('varias cubiertas: roofs manda, roof es la primera y un presupuesto anterior (solo roof) sigue valiendo', () => {
+  assert.deepEqual(parseCosts({ survey: { roof: 'plana' } }).survey.roofs, ['plana'], 'solo roof: una cubierta')
+  const varias = parseCosts({ survey: { roof: 'teja', roofs: ['plana', 'teja', 'plana', 'inventada'] } }).survey
+  assert.deepEqual(varias.roofs, ['plana', 'teja'], 'sin repetidas ni desconocidas, en el orden dado')
+  assert.equal(varias.roof, 'plana', 'roof = la primera (lo lee la propuesta del servidor)')
+  assert.deepEqual(parseCosts({ survey: { roofs: [] } }).survey.roofs, ['teja'], 'sin ninguna, la de por defecto')
+  assert.deepEqual(parseCosts({}).survey.roofs, ['teja'])
+})
+
+test('varias cubiertas en el formulario: se leen, se aplican y hace falta al menos una', () => {
+  const base = { ...vacio(), survey: { ...EMPTY_SURVEY, roof: 'suelo', roofs: ['suelo', 'parking'] } }
+  const v = valoresDe(base)
+  assert.deepEqual(v.roofs, ['suelo', 'parking'])
+  const r = aplicarValores(base, { ...v, roofs: ['plana', 'teja'] })
+  assert.deepEqual(r.survey.roofs, ['plana', 'teja'])
+  assert.equal(r.survey.roof, 'plana')
+  assert.ok(problemasDe({ ...v, roofs: [] }, 12).some((p) => /cubierta/i.test(p)))
+  assert.ok(!problemasDe(v, 12).some((p) => /cubierta/i.test(p)))
 })

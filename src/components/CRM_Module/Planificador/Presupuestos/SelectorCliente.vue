@@ -40,7 +40,7 @@
 
     <template v-else>
       <p v-if="!habilitado" class="paso-nota warn" role="status">Este servidor no tiene conexión con la intranet: aquí solo se pueden crear clientes potenciales.</p>
-      <p class="muted campo-pista">Un cliente potencial se queda en este presupuesto: no se da de alta en la intranet.</p>
+      <p v-if="documento === 'presupuesto'" class="muted campo-pista">Un cliente potencial se queda en este presupuesto: no se da de alta en la intranet.</p>
       <div class="cuestionario-fila">
         <label class="cuestionario-campo wide">
           Nombre del cliente
@@ -50,9 +50,9 @@
       <p v-if="invalido && !pot.name.trim()" class="error">Pon el nombre del cliente.</p>
       <div class="cuestionario-fila">
         <label class="cuestionario-campo">
-          CIF de la empresa
+          CIF de la empresa{{ documento === 'estudio' ? ' (opcional)' : '' }}
           <input :value="pot.cif" :class="{ 'obligatorio-vacio': cifInvalido && pot.cif.trim().length < 5 }" maxlength="50" placeholder="Ej.: B12345678" @input="editar({ cif: $event.target.value })">
-          <span class="muted campo-pista">Obligatorio: sale en la propuesta y hará falta al validar el presupuesto.</span>
+          <span v-if="documento !== 'estudio'" class="muted campo-pista">Obligatorio: sale en la propuesta y hará falta al validar el presupuesto.</span>
         </label>
       </div>
       <div class="cuestionario-fila">
@@ -78,9 +78,11 @@ export default {
     nombreSugerido: { type: String, default: '' },
     invalido: { type: Boolean, default: false },
     // Marca en rojo el CIF del cliente potencial si falta (se pone al intentar guardar)
-    cifInvalido: { type: Boolean, default: false }
+    cifInvalido: { type: Boolean, default: false },
+    // Dónde se usa («presupuesto» o «estudio»): cambia los textos; solo en el presupuesto el CIF es obligatorio
+    documento: { type: String, default: 'presupuesto' }
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'modo'],
   data() {
     const v = this.modelValue
     return {
@@ -94,7 +96,7 @@ export default {
   },
   watch: {
     consulta() { this.programarBusqueda() },
-    modo() { this.programarBusqueda() }
+    modo: { immediate: true, handler(m, antes) { this.$emit('modo', m); if (antes !== undefined) this.programarBusqueda() } }
   },
   mounted() {
     // Un presupuesto de antes de la vinculación trae solo el nombre: pasa a ser un cliente potencial con ese nombre

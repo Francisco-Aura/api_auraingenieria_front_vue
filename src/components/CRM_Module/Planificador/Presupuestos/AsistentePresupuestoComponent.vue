@@ -1,14 +1,14 @@
 <template>
-  <datos-presupuesto-component v-if="vista === 'nuevo'" modo="nuevo" @cancelar="volverALista" @enviar="crearLocal" />
+  <datos-presupuesto-component v-if="vista === 'nuevo'" modo="nuevo" :base="baseNuevo" :hereda="!!(desde && desde.empresa)" @cancelar="volverALista" @enviar="crearLocal" />
   <datos-presupuesto-component v-else-if="vista === 'parametros' && trabajo" modo="editar" :base="trabajo.state" @cancelar="vista = 'editar'" @enviar="cambiarParametros" />
   <editor-presupuesto-component
     v-else-if="vista === 'editar' && trabajo" :key="trabajo.id" :con-inventario="conInventario" @abrir-inventario="$emit('abrir-inventario')" :presupuesto="trabajo" :guardando="guardando" :error-guardar="errorGuardar" :conflicto="conflicto"
     @cambiar="actualizar" @numeros="actualizarNumeros" @volver="volverALista" @editar-parametros="vista = 'parametros'" @guardar="guardar()" @descartar="descartar"
-    @duplicar="duplicarActual" @abrir-variante="abrirVariante" @variante-eliminada="varianteEliminada" @estado="cambiarEstado" @resolver="resolver"
+    @duplicar="duplicarActual" @abrir-variante="abrirVariante" @variante-eliminada="varianteEliminada" @estado="cambiarEstado" @resolver="resolver" @crear-estudio="crearEstudioDesde" @abrir-estudio="abrirEstudioDesde"
   />
   <div v-else>
     <p v-if="aviso" class="paso-nota warn" role="alert">{{ aviso }}</p>
-    <lista-presupuestos-component ref="lista" :con-volver="conVolver" @cerrar="$emit('cerrar')" @nuevo="vista = 'nuevo'" @abrir="(id) => abrir(id, true)" @abrir-local="(id) => abrir(id, false)" @duplicar="pedirDuplicado" />
+    <lista-presupuestos-component ref="lista" :con-volver="conVolver" @cerrar="$emit('cerrar')" @abrir-estudio="$emit('abrir-estudio', $event)" @crear-estudio="$emit('crear-estudio', $event)" @abrir-boe="$emit('abrir-boe')" @crear-presupuesto="nuevoDesdeEstudio" @abrir="(id) => abrir(id, true)" @abrir-local="(id) => abrir(id, false)" @duplicar="pedirDuplicado" />
   </div>
   <duplicar-presupuesto-modal v-if="duplicando" :nombre="duplicando.nombre" :variante="duplicando.variante" @cerrar="duplicando = null" @confirmar="duplicar" />
 </template>
@@ -19,7 +19,7 @@ import DatosPresupuestoComponent from './DatosPresupuestoComponent.vue'
 import EditorPresupuestoComponent from './EditorPresupuestoComponent.vue'
 import DuplicarPresupuestoModal from './DuplicarPresupuestoModal.vue'
 import { planificadorApi, mensajeError } from '@/services/planificadorApi'
-import { parseCosts } from '@/utils/planificador/motor/costes'
+import { parseCosts, EMPTY_COSTS, EMPTY_SURVEY } from '@/utils/planificador/motor/costes'
 import {
   budgetName, canonical, copyOf, fromServer, getLocal, isDirty, newLocal, putLocal, removeLocal
 } from '@/utils/planificador/almacenPresupuestos'
@@ -32,14 +32,36 @@ const estadoHttp = (e) => (e && e.response ? e.response.status : null)
 // servidor cuando se pulsa «Guardar».
 export default {
   name: 'Asistente-Presupuesto-Component',
-  props: { conVolver: { type: Boolean, default: false }, conInventario: { type: Boolean, default: false } },
-  emits: ['cerrar', 'abrir-inventario'],
+  props: {
+    conVolver: { type: Boolean, default: false },
+    conInventario: { type: Boolean, default: false },
+    // Al abrirlo desde un estudio: { tipo: 'presupuesto', estudioId, customer, proyecto, kwp }. El presupuesto nuevo arranca con su cliente,
+    // proyecto y potencia y, al guardarlo y compartirlo, nace asociado a ese estudio.
+    traspaso: { type: Object, default: null }
+  },
+  emits: ['cerrar', 'abrir-inventario', 'crear-estudio', 'abrir-estudio', 'abrir-boe'],
   components: { ListaPresupuestosComponent, DatosPresupuestoComponent, EditorPresupuestoComponent, DuplicarPresupuestoModal },
   data() {
     // duplicando: el presupuesto que se está duplicando mientras se elige el cliente de la copia
-    return { vista: 'lista', trabajo: null, guardando: false, errorGuardar: null, conflicto: null, aviso: '', duplicando: null }
+    const desde = this.traspaso && this.traspaso.tipo === 'presupuesto' ? this.traspaso : null
+    return { desde, vista: desde ? 'nuevo' : 'lista', trabajo: null, guardando: false, errorGuardar: null, conflicto: null, aviso: '', duplicando: null }
+  },
+  computed: {
+    /** Los datos de partida de un presupuesto nuevo: vacíos, o con lo que trae el estudio del que se viene. */
+    baseNuevo() {
+      const d = this.desde
+      if (!d) return null
+      const customer = d.customer ? JSON.parse(JSON.stringify(d.customer)) : null
+      return {
+        ...EMPTY_COSTS, survey: { ...EMPTY_SURVEY, targetKwp: d.kwp > 0 ? d.kwp : EMPTY_SURVEY.targetKwp, futureBattery: d.bateria === true }, // un estudio con batería: inversor híbrido
+        customer, client: (customer && customer.name) || '', reference: d.proyecto || '',
+        ...(d.empresa ? { cif: d.empresa.cif || '', clientLogo: d.empresa.logo || '', encaje: d.empresa.encaje || '' } : {})
+      }
+    }
   },
   mounted() {
+    // 'abrir-presupuesto': desde la pestaña «Presupuesto» de un estudio, directo al presupuesto elegido
+    if (this.traspaso && this.traspaso.tipo === 'abrir-presupuesto') this.abrir(this.traspaso.id, true)
     this.temporizador = null
     this.pendiente = null
     this.guardarTras = null // espera para guardar en el servidor los parámetros recién cambiados
@@ -62,7 +84,27 @@ export default {
       window.clearTimeout(this.temporizador)
       if (this.pendiente) { putLocal(this.pendiente); this.pendiente = null }
     },
+    nuevo() {
+      this.desde = null
+      this.vista = 'nuevo'
+    },
+    // Desde la lista: un presupuesto nuevo con el cliente, el proyecto y la potencia de un estudio (asociado a él si está compartido)
+    nuevoDesdeEstudio(datos) {
+      this.desde = { tipo: 'presupuesto', ...datos }
+      this.vista = 'nuevo'
+    },
+    // El estudio que se crea desde el editor de un presupuesto parte de su coste (su importe y sus kWp de ahora)
+    crearEstudioDesde(datos) {
+      const n = this.trabajo && this.trabajo.id === datos.presupuestoId ? this.trabajo.numbers : null
+      this.$emit('crear-estudio', { ...datos, presupuesto: n && n.total > 0 && n.kwp > 0 ? { id: datos.presupuestoId, total: n.total, kwp: n.kwp } : null })
+    },
+    // La pestaña «Estudio» del presupuesto: el estudio se abre con el coste de este presupuesto (su importe y sus kWp de ahora)
+    abrirEstudioDesde(datos) {
+      const n = this.trabajo && this.trabajo.id === datos.presupuestoId ? this.trabajo.numbers : null
+      this.$emit('abrir-estudio', { id: datos.id, kind: 'compartido', presupuesto: n && n.total > 0 && n.kwp > 0 ? { id: datos.presupuestoId, total: n.total, kwp: n.kwp } : null })
+    },
     volverALista() {
+      this.desde = null
       this.volcar()
       this.cancelarGuardadoDeParametros()
       this.trabajo = null
@@ -93,7 +135,11 @@ export default {
       // Tras cambiar los parámetros, el editor recalcula (catálogo, inversores…) y va mandando los números: se guarda cuando se calma
       if (this.guardarTrasId) this.programarGuardadoDeParametros(800)
     },
-    crearLocal(estado) { this.entrar(newLocal(estado)) },
+    crearLocal(estado) {
+      const nuevo = newLocal({ ...estado, tramitesPendientes: true }) // el editor le pone las partidas de proyecto y trámites por defecto
+      if (this.desde) nuevo.estudioOrigen = this.desde.estudioId // nace asociado a este estudio al compartirlo
+      this.entrar(nuevo)
+    },
     cambiarParametros(estado) {
       this.actualizar(estado)
       this.vista = 'editar'
@@ -255,7 +301,7 @@ export default {
         const cuerpo = cuerpoParaServidor(w, budgetName(w.state), cliente)
         const completo = w.remote && !recrear
           ? await planificadorApi.guardarPresupuesto(w.id, { ...cuerpo, version: w.remote.version, force: forzar })
-          : await planificadorApi.crearPresupuesto({ ...cuerpo, id: w.id })
+          : await planificadorApi.crearPresupuesto({ ...cuerpo, id: w.id, study_id: w.estudioOrigen || undefined })
         this.trabajo = sincronizado(this.trabajo, completo, w.state, canonical)
         this.programarVolcado()
       } catch (e) {

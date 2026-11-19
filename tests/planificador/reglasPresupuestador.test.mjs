@@ -169,6 +169,27 @@ test('estructura-tipo: cada cubierta solo admite los tipos de estructura de la h
   assert.equal(buscar(revisar([extra(estructura({ cubierta: 'Teja', montaje: 'Inclinada 5º' }))]), 'error', 'estructura-tipo').hard, false)
 })
 
+const solo = (roof, cubierta, montaje) => revisar([extra(estructura({ cubierta, montaje }))], { opciones: { survey: { roof } } })
+
+test('varias cubiertas: una estructura vale si es de alguna de ellas y los tipos admitidos son los de la suya', () => {
+  const con = (roofs, cubierta, montaje) => revisar([extra(estructura({ cubierta, montaje }))], { opciones: { survey: { roof: roofs[0], roofs } } })
+  // Teja y plana: valen los productos de las dos
+  assert.equal(tiene(con(['teja', 'plana'], 'Teja', 'Coplanar teja'), 'error', 'cubierta'), false)
+  assert.equal(tiene(con(['teja', 'plana'], 'Plana', 'Bloques (cubierta plana)'), 'error', 'cubierta'), false)
+  // Un producto de la plana se evalúa con las reglas de la plana (admite inclinada), no con las de la teja
+  assert.equal(tiene(con(['teja', 'plana'], 'Plana', 'Inclinada 5º'), 'error', 'estructura-tipo'), false)
+  assert.equal(tiene(solo('teja', 'Plana', 'Inclinada 5º'), 'error', 'cubierta'), true, 'con solo teja, un producto de plana no vale')
+  assert.equal(tiene(con(['teja', 'plana'], 'Plana', 'Coplanar teja'), 'error', 'estructura-tipo'), true, 'la plana no admite coplanar aunque la teja sí')
+  // Una cubierta que no está entre las elegidas sigue siendo error, y el aviso las nombra todas
+  const fuera = buscar(con(['teja', 'plana'], 'Suelo', 'Suelo (hormigón)'), 'error', 'cubierta')
+  assert.ok(fuera)
+  assert.ok(JSON.stringify(fuera).includes('teja y plana'))
+  // Chapa a secas vale para minionda y grecada: admite lo que admita cualquiera de las dos
+  assert.equal(tiene(con(['chapa_minionda', 'chapa_grecada'], 'Chapa', 'Inclinada 15º'), 'error', 'estructura-tipo'), false)
+  // Si una de las cubiertas del producto no tiene regla (flotante), no se evalúa el tipo
+  assert.equal(tiene(con(['teja', 'flotante'], 'Flotante', 'Inclinada 15º'), 'error', 'estructura-tipo'), false)
+})
+
 test('estructura-kits: kits que cubren menos paneles de los que hay (error) y sobra un kit entero (aviso)', () => {
   const kit = estructura({ modulos_por_kit: 3 })
   const falta = revisar([extra(kit, 3)]) // cubre 9 paneles, hay 12
@@ -283,6 +304,29 @@ test('con inversores de sobra, los strings que siguen en las entradas de cuando 
   assert.equal(checkCompatibility(ajustado, cat).some((i) => codigo(i) === 'strings-diseno'), false)
   // Un diseño que ya vale no se toca
   assert.equal(sizeInverters(ajustado, cat), null)
+})
+
+test('corriente máx. por MPPT distinta con un string (20 A) o con dos (30 A)', () => {
+  const huawei = (extra = {}) => producto('hw', 'inversores', {
+    tipo: 'String', potencia_kw: 50, mppt_min_v: 200, mppt_max_v: 1000, vmax_v: 1100, imax_mppt_a: 30, n_mppt: 4, ...extra
+  }, { brand: 'HUAWEI', model: 'SUN2000-50KTL-M3' })
+  const panel = (imp) => producto('p', 'modulos', { voc_v: 50, vmp_v: 42, isc_a: imp + 1, imp_a: imp, grosor_mm: 30 }, { brand: 'X', model: 'P' })
+  const problemas = (pan, inv, strings) => checkCompatibility(
+    estado([linea(pan, 12, { auto: true }), linea(inv, 1)], { n: 12, strings }), catalogo([pan, inv]))
+    .filter((i) => codigo(i) === 'strings-diseno' && /admite/.test(i.message))
+  const uno = [{ id: 'a', panels: 12, input: 1 }]
+  const dos = [{ id: 'a', panels: 6, input: 1 }, { id: 'b', panels: 6, input: 1 }]
+  // Panel de 22 A: con un solo string pasa los 20 A de la ficha; sin distinguir, valdría contra 30 A
+  assert.ok(problemas(panel(22), huawei({ imax_mppt_1string_a: 20 }), uno).some((i) => /20 A/.test(i.message)))
+  assert.equal(problemas(panel(22), huawei(), uno).length, 0, 'sin el dato nuevo se comporta como antes')
+  // Panel de 15 A: uno solo (15 ≤ 20) y dos en paralelo (30 ≤ 30) valen
+  assert.equal(problemas(panel(15), huawei({ imax_mppt_1string_a: 20 }), uno).length, 0)
+  assert.equal(problemas(panel(15), huawei({ imax_mppt_1string_a: 20 }), dos).length, 0)
+  // Panel de 16 A: uno solo vale, dos en paralelo dan 32 A y no valen
+  assert.ok(problemas(panel(16), huawei({ imax_mppt_1string_a: 20 }), dos).some((i) => /32 A y admite 30 A/.test(i.message)))
+  // El plan automático también lo respeta
+  assert.ok(stringPlan(panel(22), huawei({ imax_mppt_1string_a: 20 }), 12).problems.some((p) => /20 A/.test(p)))
+  assert.equal(stringPlan(panel(22), huawei(), 12).problems.some((p) => /20 A/.test(p)), false)
 })
 
 test('el diseño de strings: sin strings no hay nada que comprobar y los que no suman los paneles dan error', () => {

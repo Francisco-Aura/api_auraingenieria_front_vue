@@ -6,7 +6,7 @@
     </template>
     <template v-else>
       <template v-if="!actual">
-        <p class="muted">Este presupuesto está validado. Crea la propuesta que se le mandará al cliente y anota aquí cómo avanza.</p>
+        <p class="muted">Este presupuesto está aprobado. Crea la propuesta que se le mandará al cliente y anota aquí cómo avanza.</p>
         <div class="propuesta-acciones">
           <button type="button" :disabled="ocupado" @click="ejecutar(() => crear())">Crear propuesta</button>
         </div>
@@ -18,66 +18,59 @@
           <span class="tag state" :class="CLASE_PROPUESTA[actual.status]">{{ ETIQUETA[actual.status] }}</span>
         </div>
 
-        <section class="propuesta-documento" aria-label="Documento">
-          <div>
-            <strong>Presentación de la propuesta</strong>
-            <p class="muted propuesta-ayuda">Se genera con los datos del presupuesto; lo que no tiene, como la dirección del cliente, queda en blanco. Es un archivo HTML: se abre en el navegador, y para sacar el PDF se imprime (Ctrl+P, «Guardar como PDF»).</p>
-          </div>
-          <button type="button" class="secondary" :disabled="ocupado" @click="ejecutar(() => descargar(actual.id))">Descargar presentación</button>
-        </section>
-
-        <section class="propuesta-logo" aria-label="Logo del cliente">
+        <section v-if="!actual.has_logo" class="propuesta-logo" aria-label="Logo del cliente">
           <button type="button" class="propuesta-logo-caja" :disabled="ocupado" title="Haz clic o arrastra una imagen para subir el logo" @click="$refs.logo.click()" @dragover.prevent @drop.prevent="soltarLogo">
-            <img v-if="actual.client_logo" :src="actual.client_logo" alt="Logo de la empresa del cliente">
-            <span v-else class="muted">+ Subir logo</span>
+            <span class="muted">+ Subir logo</span>
           </button>
           <div>
             <strong>Logo de la empresa del cliente</strong>
-            <p class="muted propuesta-ayuda">Haz clic en la caja o arrastra la imagen: sustituye al logo anterior. Se inserta solo en la presentación («Te lo ponemos fácil»). PNG, JPG, WebP o SVG.</p>
+            <p class="muted propuesta-ayuda">Hace falta para descargar la presentación. PNG, JPG, WebP o SVG.</p>
           </div>
           <input ref="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirLogo">
         </section>
 
-        <ol class="propuesta-pasos">
-          <li class="done">
-            <span class="paso-marca" aria-hidden="true">✓</span>
-            <div>
-              <strong>Propuesta creada</strong>
-              <p class="muted">{{ dia(actual.created_at) }}{{ actual.created_by ? ' · ' + actual.created_by : '' }}</p>
-              <button v-if="actual.status === 'borrador'" type="button" class="enlace-boton" :disabled="ocupado" @click="eliminarBorrador">Eliminar borrador</button>
-            </div>
-          </li>
+        <section class="propuesta-documento" aria-label="Documento">
+          <div>
+            <strong>Presentación de la propuesta</strong>
+          </div>
+          <button type="button" class="secondary" :disabled="ocupado || !actual.has_logo" @click="ejecutar(() => descargar(actual.id))">Descargar presentación</button>
+        </section>
 
+        <ol class="propuesta-pasos">
           <li :class="enviada ? 'done' : 'now'">
-            <span class="paso-marca" aria-hidden="true">{{ enviada ? '✓' : '2' }}</span>
+            <span class="paso-marca" aria-hidden="true">{{ enviada ? '✓' : '1' }}</span>
             <div>
               <strong>Entregada al cliente</strong>
               <p v-if="enviada" class="muted">{{ dia(actual.sent_at) }}{{ actual.sent_by ? ' · ' + actual.sent_by : '' }}</p>
               <template v-else>
                 <p class="muted">Cuando ya se la hayas mandado, anótalo aquí.</p>
-                <button type="button" class="secondary" :disabled="ocupado" @click="marcarEntregada">Marcar como entregada</button>
+                <div class="propuesta-acciones">
+                  <button type="button" class="secondary" :disabled="ocupado" @click="marcarEntregada">Marcar como entregada</button>
+                  <button type="button" class="enlace-boton" :disabled="ocupado" @click="eliminarBorrador">Eliminar borrador</button>
+                </div>
               </template>
             </div>
           </li>
 
           <li :class="decidida ? 'done' : enviada ? 'now' : 'todo'">
-            <span class="paso-marca" aria-hidden="true">{{ decidida ? (actual.status === 'aprobada' ? '✓' : '✕') : '3' }}</span>
+            <span class="paso-marca" aria-hidden="true">{{ decidida ? (actual.status === 'aprobada' ? '✓' : '✕') : '2' }}</span>
             <div>
-              <strong>Respuesta del cliente</strong>
+              <strong>Validación</strong>
               <template v-if="decidida">
                 <p class="muted">
-                  {{ actual.status === 'aprobada' ? 'Aprobada' : 'Rechazada' }} el {{ dia(actual.decided_at) }}{{ actual.decided_by ? ' · anotado por ' + actual.decided_by : '' }}
+                  {{ actual.status === 'aprobada' ? 'Validada' : 'Anulada' }} el {{ dia(actual.decided_at) }}{{ actual.decided_by ? ' · ' + actual.decided_by : '' }}
                 </p>
                 <p v-if="actual.note" class="propuesta-nota">«{{ actual.note }}»</p>
               </template>
-              <template v-else-if="enviada">
-                <p class="muted">¿Qué ha contestado el cliente?</p>
+              <template v-else-if="enviada && validador">
+                <p v-if="!estudioAceptado" class="muted">Falta que el estudio esté aceptado.</p>
                 <div class="propuesta-acciones">
-                  <button type="button" class="secondary" :disabled="ocupado" @click="responder('aprobar')">La aprueba</button>
-                  <button type="button" class="secondary" :disabled="ocupado" @click="responder('rechazar')">La rechaza</button>
+                  <button type="button" class="secondary" :disabled="ocupado || !estudioAceptado" :title="estudioAceptado ? '' : 'Se valida con el presupuesto aprobado y el estudio aceptado'" @click="responder('aprobar')">Validar</button>
+                  <button type="button" class="secondary" :disabled="ocupado" @click="responder('rechazar')">Anular</button>
                 </div>
               </template>
-              <p v-else class="muted">Pendiente de que se envíe.</p>
+              <p v-else-if="enviada" class="muted">Pendiente de validar.</p>
+              <p v-else class="muted">Pendiente de que se entregue.</p>
             </div>
           </li>
         </ol>
@@ -85,7 +78,7 @@
         <div v-if="actual.status === 'rechazada'" class="propuesta-acciones">
           <button type="button" :disabled="ocupado" @click="ejecutar(() => crear())">Crear la propuesta nº {{ actual.version + 1 }}</button>
         </div>
-        <p v-if="actual.status === 'aprobada'" class="paso-nota ok">El cliente aprobó la propuesta.</p>
+        <p v-if="actual.status === 'aprobada'" class="paso-nota ok">Propuesta validada.</p>
       </template>
 
       <details v-if="historial.length > 0" class="propuesta-historial">
@@ -106,19 +99,22 @@
 import { planificadorApi, mensajeError } from '@/services/planificadorApi'
 import { prepararLogo } from '@/utils/planificador/logo'
 import { CLASE_PROPUESTA } from '@/utils/planificador/listaPresupuestos'
+import { esValidador } from '@/services/usuarioActual'
 
-const ETIQUETA = { borrador: 'Borrador', enviada: 'Entregada al cliente', aprobada: 'Aprobada', rechazada: 'Rechazada' }
+const ETIQUETA = { borrador: 'Borrador', enviada: 'Entregada al cliente', aprobada: 'Validada', rechazada: 'Anulada' }
 
-// Segunda fase de un presupuesto validado: la propuesta que se manda al cliente para que la apruebe. Cada versión tiene su
-// estado (borrador, enviada, aprobada o rechazada); si el cliente la rechaza se crea otra sin tocar el presupuesto validado.
+// Segunda fase de un presupuesto aprobado: la propuesta que se manda al cliente para que la apruebe. Cada versión tiene su
+// estado (borrador, entregada, validada o anulada); validarla (con el presupuesto aprobado y el estudio aceptado) o anularla es cosa de quien valida. Si se anula se crea otra
+// sin tocar el presupuesto aprobado.
 export default {
   name: 'Seccion-Propuesta',
-  props: { presupuestoId: { type: String, required: true } },
+  props: { presupuestoId: { type: String, required: true }, estudioAceptado: { type: Boolean, default: false } },
   emits: ['cambio', 'estado'],
   data() { return { ETIQUETA, CLASE_PROPUESTA, planificadorApi, lista: null, ocupado: false, error: '' } },
   computed: {
     actual() { return this.lista && this.lista[0] },
     historial() { return this.lista ? this.lista.slice(1) : [] },
+    validador() { return esValidador() },
     enviada() { return !!this.actual && this.actual.status !== 'borrador' },
     decidida() { return !!this.actual && (this.actual.status === 'aprobada' || this.actual.status === 'rechazada') }
   },
@@ -182,8 +178,8 @@ export default {
     },
     responder(que) {
       const texto = que === 'aprobar'
-        ? 'El cliente ha aprobado la propuesta. Si quieres, anota una condición o un comentario:'
-        : 'El cliente ha rechazado la propuesta. Si lo sabes, anota el motivo:'
+        ? 'Se validará la propuesta. Si quieres, anota una condición o un comentario:'
+        : 'Se anulará la propuesta. Si lo sabes, anota el motivo:'
       const nota = window.prompt(texto)
       if (nota === null) return
       this.ejecutar(() => (que === 'aprobar' ? planificadorApi.aprobarPropuesta(this.actual.id, nota) : planificadorApi.rechazarPropuesta(this.actual.id, nota)))

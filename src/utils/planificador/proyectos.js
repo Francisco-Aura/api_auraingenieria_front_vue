@@ -7,6 +7,9 @@ const VERSION_FINAL = /\s*(\(copia\)|v\d+)$/
 
 const normalizar = (texto) => texto.normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase().replace(/\s+/g, ' ').trim()
 
+/** Un texto para compararlo: sin mayúsculas, sin tildes y sin espacios de más. */
+export const claveTexto = (texto) => normalizar(texto || '')
+
 /** El nombre sin el «v2» / «(copia)» del final, tal como se enseña. */
 const sinVersion = (texto) => texto.trim().replace(VERSION_FINAL, '').trim()
 
