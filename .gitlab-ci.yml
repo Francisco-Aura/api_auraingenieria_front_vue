@@ -1,125 +1,213 @@
-image: node:20
-
 stages:
   - build_and_deploy_frontend
+
+default:
+  tags:
+    - aura-runner
+
+
+# ======================================================
+# PLANTILLA COMUN FRONTEND
+# ======================================================
 
 .deploy_frontend:
   stage: build_and_deploy_frontend
 
-  before_script:
-    - apt-get update -y
-    - apt-get install -y openssh-client rsync
-
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-
-    - |
-      if [ -f "$DEPLOY_PRIVATE_KEY" ]; then
-        echo "Usando clave SSH desde variable GitLab tipo File"
-        cp "$DEPLOY_PRIVATE_KEY" ~/.ssh/id_rsa_gitlab
-      else
-        echo "Usando clave SSH desde variable GitLab normal"
-        printf '%s\n' "$DEPLOY_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_gitlab
-      fi
-
-    - chmod 600 ~/.ssh/id_rsa_gitlab
-
-    - |
-      echo "=== Validando clave SSH ==="
-      ssh-keygen -y -f ~/.ssh/id_rsa_gitlab > /dev/null || {
-        echo "ERROR: La clave privada SSH no es valida"
-        exit 1
-      }
-
-    - |
-      echo "=== Registrando host SSH ==="
-      ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
-
-    - chmod 600 ~/.ssh/known_hosts
-
-    - |
-      echo "=== Probando conexion SSH ==="
-      ssh \
-        -p "$DEPLOY_PORT" \
-        -i ~/.ssh/id_rsa_gitlab \
-        -o BatchMode=yes \
-        -o ConnectTimeout=10 \
-        "gitlab-deploy@${DEPLOY_HOST}" \
-        "echo SSH_OK && hostname && whoami"
-
   script:
-    - echo "=== Instalando dependencias ==="
-    - rm -rf node_modules dist
-
     - |
+      set -euo pipefail
+
+      echo "========================================"
+      echo " AURA - BUILD FRONTEND"
+      echo " Entorno: ${DEPLOY_ENV}"
+      echo " Destino: ${DEPLOY_HOST}"
+      echo "========================================"
+
+      echo
+      echo "=== Informacion del runner ==="
+      hostname
+      whoami
+      node -v
+      npm -v
+      rsync --version
+
+      # ==================================================
+      # Limpieza
+      # ==================================================
+
+      echo
+      echo "=== Limpiando build anterior ==="
+
+      rm -rf node_modules
+      rm -rf dist
+
+      # ==================================================
+      # Dependencias
+      # ==================================================
+
+      echo
+      echo "=== Instalando dependencias ==="
+
       if [ -f package-lock.json ]; then
+        echo "Usando npm ci"
         npm ci --legacy-peer-deps
       else
+        echo "No existe package-lock.json. Usando npm install"
         npm install --legacy-peer-deps
       fi
 
-    - echo "=== Compilando frontend ==="
-    - npm run build
+      # ==================================================
+      # Build
+      # ==================================================
 
-    - echo "=== Verificando build ==="
-    - test -f dist/index.html
+      echo
+      echo "=== Compilando frontend ==="
 
-    - echo "=== Preparando despliegue remoto ==="
-    - |
+      npm run build
+
+      echo
+      echo "=== Verificando build ==="
+
+      if [ ! -f dist/index.html ]; then
+        echo "ERROR: No existe dist/index.html"
+        exit 1
+      fi
+
+      ls -lh dist/index.html
+
+      # ==================================================
+      # SSH
+      # ==================================================
+
+      echo
+      echo "=== Comprobando SSH con ${DEPLOY_ENV} ==="
+
       ssh \
-        -p "$DEPLOY_PORT" \
-        -i ~/.ssh/id_rsa_gitlab \
         -o BatchMode=yes \
-        "gitlab-deploy@${DEPLOY_HOST}" \
+        -o ConnectTimeout=10 \
+        "babenza@${DEPLOY_HOST}" \
+        "echo SSH_OK && hostname && whoami"
+
+      # ==================================================
+      # Directorio temporal remoto
+      # ==================================================
+
+      echo
+      echo "=== Preparando destino temporal ${DEPLOY_ENV} ==="
+
+      ssh \
+        -o BatchMode=yes \
+        -o ConnectTimeout=10 \
+        "babenza@${DEPLOY_HOST}" \
         "rm -rf /tmp/aura-frontend && mkdir -p /tmp/aura-frontend"
 
-    - echo "=== Enviando frontend ==="
-    - |
-      rsync \
-        -avz \
-        --delete \
-        -e "ssh -p ${DEPLOY_PORT} -i ~/.ssh/id_rsa_gitlab" \
-        dist/ \
-        "gitlab-deploy@${DEPLOY_HOST}:/tmp/aura-frontend/"
+      # ==================================================
+      # Transferencia
+      # ==================================================
 
-    - echo "=== Instalando frontend ==="
-    - |
+      echo
+      echo "=== Copiando frontend a ${DEPLOY_ENV} ==="
+
+      rsync \
+        -az \
+        --delete \
+        -e "ssh -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3" \
+        dist/ \
+        "babenza@${DEPLOY_HOST}:/tmp/aura-frontend/"
+
+      # ==================================================
+      # Deploy
+      # ==================================================
+
+      echo
+      echo "=== Ejecutando deploy frontend ${DEPLOY_ENV} ==="
+
       ssh \
-        -p "$DEPLOY_PORT" \
-        -i ~/.ssh/id_rsa_gitlab \
         -o BatchMode=yes \
-        "gitlab-deploy@${DEPLOY_HOST}" \
-        "sudo -n /usr/local/sbin/aura-deploy-frontend"
+        -o ConnectTimeout=10 \
+        -o ServerAliveInterval=10 \
+        -o ServerAliveCountMax=3 \
+        "babenza@${DEPLOY_HOST}" \
+        "bash /home/babenza/deploy_frontend.sh"
+
+      # ==================================================
+      # Health check
+      # ==================================================
+
+      echo
+      echo "=== Comprobando frontend ${DEPLOY_ENV} ==="
+
+      HTTP_CODE="$(
+        ssh \
+          -o BatchMode=yes \
+          -o ConnectTimeout=10 \
+          "babenza@${DEPLOY_HOST}" \
+          "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1/"
+      )"
+
+      echo "HTTP ${DEPLOY_ENV} -> ${HTTP_CODE}"
+
+      if [ "$HTTP_CODE" != "200" ]; then
+        echo "ERROR: Frontend ${DEPLOY_ENV} devuelve HTTP ${HTTP_CODE}"
+        exit 1
+      fi
+
+      # ==================================================
+      # Resultado
+      # ==================================================
+
+      echo
+      echo "========================================"
+      echo " FRONTEND ${DEPLOY_ENV} DESPLEGADO OK"
+      echo "========================================"
+
+
+# ======================================================
+# DES
+# develop -> aura-des
+# 192.168.100.4
+# ======================================================
 
 deploy_frontend_DES:
   extends: .deploy_frontend
 
   variables:
-    DEPLOY_HOST: "5.34.148.92"
-    DEPLOY_PORT: "2223"
-    DEPLOY_PRIVATE_KEY: "$SSH_PRIVATE_KEY_DES"
+    DEPLOY_ENV: "DES"
+    DEPLOY_HOST: "192.168.100.4"
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
+
+
+# ======================================================
+# PRE
+# release -> aura-pre
+# 192.168.100.3
+# ======================================================
 
 deploy_frontend_PRE:
   extends: .deploy_frontend
 
   variables:
-    DEPLOY_HOST: "5.34.148.92"
-    DEPLOY_PORT: "2222"
-    DEPLOY_PRIVATE_KEY: "$SSH_PRIVATE_KEY_PRE"
+    DEPLOY_ENV: "PRE"
+    DEPLOY_HOST: "192.168.100.3"
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "release"'
+
+
+# ======================================================
+# PRO
+# main -> aura-pro
+# 192.168.100.2
+# ======================================================
 
 deploy_frontend_PRO:
   extends: .deploy_frontend
 
   variables:
-    DEPLOY_HOST: "5.34.148.92"
-    DEPLOY_PORT: "22"
-    DEPLOY_PRIVATE_KEY: "$SSH_PRIVATE_KEY_PRO"
+    DEPLOY_ENV: "PRO"
+    DEPLOY_HOST: "192.168.100.2"
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
