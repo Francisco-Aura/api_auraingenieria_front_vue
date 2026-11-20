@@ -344,3 +344,52 @@ export const STRUCTURE_TYPE_LABEL = {
     hincada: 'hincada',
     metálica: 'metálica',
 };
+/** Cómo se colocan los paneles en una cubierta (a ras de ella o con inclinación) y qué tipos de estructura son de cada disposición. */
+export const ROOF_LAYOUT_LABEL = { coplanar: 'Coplanar', inclinada: 'Inclinada' };
+const LAYOUT_TYPES = {
+    coplanar: ['coplanar', 'perfil corrido', 'micro rail'],
+    inclinada: ['inclinada', 'hormigón', 'hincada', 'metálica'],
+};
+/** Las disposiciones que admite una cubierta según la hoja de reglas (vacío si la cubierta no tiene regla: flotante, pérgola). */
+export function roofLayoutsOf(roof) {
+    const tipos = ROOF_STRUCTURE_TYPES[roof] || [];
+    return Object.keys(LAYOUT_TYPES).filter((l) => tipos.some((t) => LAYOUT_TYPES[l].includes(t)));
+}
+/** La disposición elegida para una cubierta del presupuesto: la guardada si vale y, si no, vacía (sin restricción de estructura). */
+export function layoutOf(survey, roof) {
+    const l = survey?.roofLayouts?.[roof];
+    return roofLayoutsOf(roof).includes(l) ? l : '';
+}
+/** La disposición por defecto de una cubierta (la primera que admite; '' si no tiene regla). */
+export const defaultLayout = (roof) => roofLayoutsOf(roof)[0] || '';
+/** Tipos de estructura que valen en una cubierta con la disposición elegida (todos los de la cubierta si no hay disposición). */
+export function structureTypesFor(roof, layout) {
+    const tipos = ROOF_STRUCTURE_TYPES[roof] || [];
+    return layout && LAYOUT_TYPES[layout] ? tipos.filter((t) => LAYOUT_TYPES[layout].includes(t)) : tipos;
+}
+/**
+ * Paneles en cada cubierta { cubierta: n }. Con una sola cubierta son todos; con varias vale el reparto guardado si suma el total y,
+ * si no, null (no hay reparto: las comprobaciones usan el total).
+ */
+export function panelsOnRoofs(survey, total) {
+    const roofs = roofsOf(survey);
+    if (roofs.length === 1)
+        return { [roofs[0]]: total };
+    const guardado = survey?.roofPanels;
+    if (!guardado || typeof guardado !== 'object')
+        return null;
+    const reparto = Object.fromEntries(roofs.map((r) => [r, guardado[r]]));
+    const valido = roofs.every((r) => Number.isInteger(reparto[r]) && reparto[r] >= 0) && roofs.reduce((s, r) => s + reparto[r], 0) === total;
+    return valido ? reparto : null;
+}
+/** Un reparto de `total` paneles entre las cubiertas: se conserva lo guardado si suma el total; si no, a partes iguales (el resto a la primera). */
+export function repartoDePaneles(roofs, guardado, total) {
+    const t = Math.max(0, Math.round(total) || 0);
+    if (roofs.length === 1)
+        return { [roofs[0]]: t };
+    const previo = Object.fromEntries(roofs.map((r) => [r, guardado && Number.isInteger(guardado[r]) && guardado[r] >= 0 ? guardado[r] : -1]));
+    if (roofs.every((r) => previo[r] >= 0) && roofs.reduce((s, r) => s + previo[r], 0) === t)
+        return previo;
+    const base = Math.floor(t / roofs.length);
+    return Object.fromEntries(roofs.map((r, i) => [r, base + (i === 0 ? t - base * roofs.length : 0)]));
+}

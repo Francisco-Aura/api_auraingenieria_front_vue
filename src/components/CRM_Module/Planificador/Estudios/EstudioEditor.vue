@@ -101,7 +101,7 @@
       <template v-else>
         <div class="estudio-kpis">
           <div class="principal"><b>{{ r.finanzas.retorno ? fmt(r.finanzas.retorno, 1) + ' años' : '—' }}</b><span>{{ r.finanzas.retorno ? 'retorno de la inversión' : 'no se recupera en 25 años' }}</span></div>
-          <div><b>{{ fmt(r.finanzas.inversion, 0) }} €</b><span>inversión</span></div>
+          <div><b>{{ fmt(r.finanzas.ahorroEnergiaPrimerAno, 0) }} €</b><span>de ahorro en energía el año 1</span></div>
           <div><b>{{ fmt(r.simulacion.cobertura * 100, 0) }} %</b><span>del consumo cubierto</span></div>
           <div><b>{{ r.finanzas.tir !== null ? fmt(r.finanzas.tir * 100, 1) + ' %' : '—' }}</b><span>TIR</span></div>
           <div><b>{{ fmt(r.simulacion.solarConsumida / 1000, 0) }} MWh</b><span>solares de {{ fmt(r.consumo.consumoAnual / 1000, 0) }} MWh de consumo</span></div>
@@ -333,6 +333,8 @@ export default {
           }
         }
         this.eligiendo = false
+        // Entregado el informe, un estudio compartido y sin cambios pendientes pasa solo a «Informe entregado» (y no retrocede de ahí)
+        if (this.remoto && !this.sucio && ['en_estudio', 'pte_doc'].includes(this.remoto.estado)) this.$emit('cambiar-estado', 'entregado')
       } catch (e) {
         this.error = mensajeError(e)
         this.eligiendo = false

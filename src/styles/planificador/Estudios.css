@@ -18,10 +18,13 @@
 .estudio-cliente { display: flex; flex-direction: column; gap: 12px; }
 .estudio-cliente .cuestionario-campo.wide { margin: 0; }
 .estudio-columnas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
-.estudio-columna { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.estudio-columna > .alta-tarjeta { margin: 0; min-width: 0; }
-.estudio-columna > .alta-tarjeta:last-child { flex: 1 1 auto; }
-.estudio-consumo .estudio-zonas { grid-template-columns: minmax(0, 1fr); grid-auto-rows: 1fr; flex: 1 1 auto; }
+.estudio-columnas > .alta-tarjeta { margin: 0; min-width: 0; }
+.estudio-columnas > .estudio-coste-obs { display: flex; flex-direction: column; }
+.estudio-coste-obs > .estudio-observaciones { flex: 1 1 auto; display: flex; flex-direction: column; }
+.estudio-columnas.aislada > .estudio-coste-obs { grid-column: 1 / -1; }
+.estudio-columnas > .alta-tarjeta.completa { grid-column: 1 / -1; } /* Instalación y potencia contratada en una sola tarjeta: no quedan dos tarjetas de distinta altura */
+.estudio-observaciones textarea { flex: 1 1 auto; min-height: 56px; }
+.estudio-consumo .estudio-zonas { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); grid-auto-rows: 1fr; }
 @media (max-width: 1000px) { .estudio-columnas { grid-template-columns: minmax(0, 1fr); } }
 .estudios textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); resize: vertical; }
 
@@ -37,11 +40,13 @@
 /* Grupos de cuatro (el horario): los cuatro en una fila, nunca 3 + 1 */
 .estudio-campos-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .estudio-campos > .estudio-mitad { grid-column: span 2; }
+/* Potencia contratada: P1 a P4 en una fila, P5, P6 y el ahorro (doble) en la otra: dos filas llenas, como las tres de Instalación */
+.estudio-potencia .estudio-campos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .estudio-campos > .estudio-ancho { grid-column: 1 / -1; }
 /* Casilla no editable (p. ej. azimut e inclinación si la orientación no es «Otra») */
 .estudio-campos input:disabled { opacity: 0.4; cursor: not-allowed; background: transparent; }
 .estudio-campos label:has(> input:disabled) { opacity: 0.55; }
-@media (max-width: 640px) { .estudio-campos-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .estudio-campos-4, .estudio-potencia .estudio-campos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .estudio-subtitulo { margin: 2px 0 0; }
 .estudio-leyendo { margin: 8px 0 0; }
 
@@ -70,12 +75,17 @@
   display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 104px; padding: 14px 16px; text-align: left;
   background: var(--bg-alt); color: var(--text); border: 2px dashed var(--border); border-radius: 12px; font-weight: 400;
 }
-.estudio-zona:hover:not(:disabled), .estudio-zona.arrastrando { border-color: var(--accent); filter: none; }
+.estudio-zona:hover:not(:disabled):not(.ok), .estudio-zona.arrastrando { border-color: var(--accent); filter: none; }
 .estudio-zona.ok { border-style: solid; border-color: rgb(46, 160, 67); }
+.estudio-zona.ok.arrastrando { border-color: var(--accent); }
 .estudio-zona-titulo { font-weight: 700; color: var(--text-h); }
 .estudio-zona-titulo small { font-weight: 400; color: var(--muted); }
 .estudio-zona-detalle { font-size: 0.88em; color: var(--muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .estudio-zona-botones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; padding-top: 8px; }
+.estudio-coste-ref { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 24px; margin: 8px 0; }
+.estudio-coste-boton { margin-left: 32px; }
+.estudio-coste-manual { align-items: end; gap: 12px 32px; }
+.estudio-potencia-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .estudio-mini { padding: 4px 14px; font-size: 0.85em; font-weight: 600; }
 .estudio-quitar { color: var(--danger); }
 .estudio-zona-accion { margin-top: auto; font-size: 0.85em; font-weight: 600; color: var(--accent-text, var(--text-h)); }
@@ -151,10 +161,12 @@
 .estudio-svg .retorno line { stroke: var(--brand); stroke-dasharray: 4 3; }
 .estudio-svg .retorno text { fill: var(--brand); font-size: 11px; }
 .estudio-periodos { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border, rgba(127, 127, 127, 0.25)); }
+.estudio-periodos.estudio-coste { margin-top: 0; padding-top: 0; border-top: 0; } /* es lo primero de su tarjeta: sin separador */
 .estudio-periodos small { display: block; margin-top: 2px; font-weight: normal; }
 .estudio-check { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; cursor: pointer; }
 
 .estudio-ubicacion { grid-column: 2 / -1; min-width: 0; }
+.estudio-ubicacion.completa { grid-column: 1 / -1; } /* sin tarifa al lado (instalación aislada) ocupa toda la fila */
 .estudio-ubicacion .estudio-buscador { width: 100%; min-width: 0; }
 .estudio-buscador { position: relative; display: block; }
 .estudio-buscador input { width: 100%; }

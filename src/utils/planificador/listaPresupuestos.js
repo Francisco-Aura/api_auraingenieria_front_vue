@@ -76,7 +76,7 @@ export function construirFilas({ remotos, locales, copiaLocal, usuario, estudios
       id: b.id, name: b.name || 'Sin nombre', kind: b.status, offerId: b.offer_id, owner: b.owner, kwp: b.kwp, panels: b.panels,
       total: b.budget_total, updatedAt: b.updated_at, updatedBy: b.updated_by, mine: esMio(b.owner, b.owner_id, usuario),
       customer: b.customer_kind, proposal: b.proposal_status, variantName: b.variant_name, created: b.created_at,
-      estudioId: b.study_id || '', dirty: !!copia && isDirty(copia), orphan: false
+      estudioId: b.study_id || '', proyectoId: b.project_id || '', dirty: !!copia && isDirty(copia), orphan: false
     })
   }
   for (const l of locales) {
@@ -126,7 +126,7 @@ export function filasDeEstudios({ remotos, locales, usuario }) {
       id: s.id, tipo: 'estudio', name: nombre(s.cliente || 'Sin cliente', s.proyecto), kind: 'estudio', estado: s.estado, estadoNombre: s.estadoNombre,
       offerId: '', owner: s.creadoPor || s.actualizadoPor || '', kwp: Number(s.kwp) || 0, panels: 0, total: 0, updatedAt: s.actualizadoEl || '',
       updatedBy: s.actualizadoPor || '', mine: false, customer: (s.customer && s.customer.kind) || '', created: s.creadoEl || s.actualizadoEl || '',
-      dirty: false, orphan: false
+      proyectoId: s.project_id || '', dirty: false, orphan: false
     })
   }
   for (const l of locales || []) {
@@ -143,13 +143,16 @@ export function filasDeEstudios({ remotos, locales, usuario }) {
 }
 
 /**
- * A cada fila le pone su cliente y su proyecto (del nombre «Cliente · Proyecto») y su `grupo`: los presupuestos del mismo cliente y
- * del mismo proyecto son variantes unos de otros, tengan o no la oferta del servidor (los locales no la tienen). Sin proyecto en el
- * nombre, o si la fila está sola, el grupo es el de su oferta (o ninguno).
+ * A cada fila le pone su cliente y su proyecto (del nombre «Cliente · Proyecto») y su `grupo`. Si el servidor ya le dio su propuesta
+ * (`proyectoId`), el grupo es esa propuesta, esté el nombre escrito como esté; las copias locales, que aún no la tienen, entran en la de
+ * las filas del servidor con su mismo cliente y proyecto. Sin propuesta, los presupuestos del mismo cliente y del mismo proyecto son
+ * variantes unos de otros, tengan o no la oferta del servidor (los locales no la tienen); sin proyecto en el nombre, o si la fila está
+ * sola, el grupo es el de su oferta (o ninguno).
  */
 function asignarGrupos(filas) {
   const cuenta = new Map()
   const ofertaDe = new Map()
+  const propuestaDe = new Map()
   for (const r of filas) {
     const { cliente, proyecto } = partesDeNombre(r.name)
     r.clienteNombre = cliente
@@ -159,8 +162,14 @@ function asignarGrupos(filas) {
     if (!r.proyectoClave) continue
     cuenta.set(r.proyectoClave, (cuenta.get(r.proyectoClave) || 0) + 1)
     if (r.offerId && !ofertaDe.has(r.proyectoClave)) ofertaDe.set(r.proyectoClave, r.offerId)
+    if (r.proyectoId && !propuestaDe.has(r.proyectoClave)) propuestaDe.set(r.proyectoClave, r.proyectoId)
   }
   for (const r of filas) {
+    r.proyectoId = r.proyectoId || (r.proyectoClave && propuestaDe.get(r.proyectoClave)) || ''
+    if (r.proyectoId) {
+      r.grupo = 'propuesta:' + r.proyectoId
+      continue
+    }
     r.grupo = r.offerId || (r.proyectoClave && cuenta.get(r.proyectoClave) > 1 ? ofertaDe.get(r.proyectoClave) || 'proyecto:' + r.proyectoClave : '')
   }
 }
@@ -182,10 +191,16 @@ export function opcionesFiltro(filas, clienteElegido = '') {
   return { clientes: lista(clientes), proyectos: lista(proyectos) }
 }
 
-/** Los presupuestos cuya propuesta entregada ya se puede validar: presupuesto aprobado y estudio asociado aceptado. */
+/** Estados de un estudio con los que no se valida su propuesta: los decide una persona (el cliente lo rechazó o se cayó). */
+export const ESTADOS_QUE_BLOQUEAN_LA_VALIDACION = ['rechazado', 'cancelado']
+
+/**
+ * Los presupuestos cuya propuesta entregada ya se puede validar: presupuesto aprobado y estudio asociado que no esté rechazado ni
+ * cancelado (al validar la propuesta, el estudio pasa solo a aceptado).
+ */
 export function pendientesDeValidar(filas) {
-  const aceptados = new Set(filas.filter((r) => r.tipo === 'estudio' && r.estado === 'aceptado').map((r) => r.id))
-  return filas.filter((r) => r.tipo !== 'estudio' && r.kind === 'validado' && r.proposal === 'enviada' && aceptados.has(r.estudioId))
+  const validos = new Set(filas.filter((r) => r.tipo === 'estudio' && r.kind !== 'local' && !ESTADOS_QUE_BLOQUEAN_LA_VALIDACION.includes(r.estado)).map((r) => r.id))
+  return filas.filter((r) => r.tipo !== 'estudio' && r.kind === 'validado' && r.proposal === 'enviada' && validos.has(r.estudioId))
 }
 
 /** Lo que tiene pendiente quien valida: las propuestas entregadas que ya cumplen las condiciones. */
@@ -241,9 +256,11 @@ export function armarProyectos(todas, filtradas, orden = null, desplegados = new
   }
   const proyectos = [...grupos].map(([k, filas]) => armarProyecto(k, filas, desplegados.has(k), verTodos.has(k)))
   const conDocumentos = new Set(todas.map((r) => r.proyectoClave).filter(Boolean))
-  for (const v of vacios) if (!conDocumentos.has(claveDeProyectoServidor(v))) proyectos.push(proyectoVacio(v))
+  const conPropuesta = new Set(todas.map((r) => r.proyectoId).filter(Boolean))
+  for (const v of vacios) if (!conPropuesta.has(v.id) && !conDocumentos.has(claveDeProyectoServidor(v))) proyectos.push(proyectoVacio(v))
   const registroDe = new Map(registros.map((v) => [claveDeProyectoServidor(v), v]))
-  for (const p of proyectos) if (!p.registro) p.registro = registroDe.get(p.proyectoClave) || null
+  const registroDeId = new Map(registros.map((v) => [v.id, v]))
+  for (const p of proyectos) if (!p.registro) p.registro = registroDeId.get(p.proyectoId) || registroDe.get(p.proyectoClave) || null
   // Sin ordenar, lo modificado (o creado) más recientemente, primero
   if (!orden) proyectos.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   return sortRows(proyectos, orden, valorProyecto)
@@ -284,7 +301,7 @@ function armarProyecto(clave, filas, abierto, todos) {
   const etiquetas = variantLabels(presupuestos.map((r) => ({ id: r.id, created_at: r.created || '', variant_name: r.variantName || '' })))
   const plegable = estudios.length > 1 || presupuestos.length > 1
   const proyecto = {
-    clave, estudios, presupuestos, etiquetas, plegable, final: propuestaFinalDe(estudios, presupuestos), abierto: plegable && abierto, todos, proyectoClave: primera.proyectoClave || '', registro: null,
+    clave, estudios, presupuestos, etiquetas, plegable, final: propuestaFinalDe(estudios, presupuestos), abierto: plegable && abierto, todos, proyectoClave: primera.proyectoClave || '', proyectoId: (filas.find((r) => r.proyectoId) || {}).proyectoId || '', registro: null,
     cliente: primera.clienteNombre || primera.name, proyecto: primera.proyectoNombre || '',
     nombre: (primera.clienteNombre || primera.name) + ' ' + (primera.proyectoNombre || ''),
     sinCliente: filas.some((r) => r.customer === ''), potencial: filas.some((r) => r.customer === 'potencial'),

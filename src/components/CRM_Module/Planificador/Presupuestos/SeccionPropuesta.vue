@@ -63,9 +63,9 @@
                 <p v-if="actual.note" class="propuesta-nota">«{{ actual.note }}»</p>
               </template>
               <template v-else-if="enviada && validador">
-                <p v-if="!estudioAceptado" class="muted">Falta que el estudio esté aceptado.</p>
+                <p v-if="!estudioValido" class="muted">El estudio está rechazado o cancelado: cambia su estado para poder validar.</p>
                 <div class="propuesta-acciones">
-                  <button type="button" class="secondary" :disabled="ocupado || !estudioAceptado" :title="estudioAceptado ? '' : 'Se valida con el presupuesto aprobado y el estudio aceptado'" @click="responder('aprobar')">Validar</button>
+                  <button type="button" class="secondary" :disabled="ocupado || !estudioValido" :title="estudioValido ? '' : 'Con el estudio rechazado o cancelado no se valida'" @click="responder('aprobar')">Validar</button>
                   <button type="button" class="secondary" :disabled="ocupado" @click="responder('rechazar')">Anular</button>
                 </div>
               </template>
@@ -104,11 +104,11 @@ import { esValidador } from '@/services/usuarioActual'
 const ETIQUETA = { borrador: 'Borrador', enviada: 'Entregada al cliente', aprobada: 'Validada', rechazada: 'Anulada' }
 
 // Segunda fase de un presupuesto aprobado: la propuesta que se manda al cliente para que la apruebe. Cada versión tiene su
-// estado (borrador, entregada, validada o anulada); validarla (con el presupuesto aprobado y el estudio aceptado) o anularla es cosa de quien valida. Si se anula se crea otra
+// estado (borrador, entregada, validada o anulada); validarla (con el presupuesto aprobado y un estudio que no esté rechazado ni cancelado, que pasa a aceptado) o anularla es cosa de quien valida. Si se anula se crea otra
 // sin tocar el presupuesto aprobado.
 export default {
   name: 'Seccion-Propuesta',
-  props: { presupuestoId: { type: String, required: true }, estudioAceptado: { type: Boolean, default: false } },
+  props: { presupuestoId: { type: String, required: true }, estudioValido: { type: Boolean, default: true } },
   emits: ['cambio', 'estado'],
   data() { return { ETIQUETA, CLASE_PROPUESTA, planificadorApi, lista: null, ocupado: false, error: '' } },
   computed: {

@@ -154,7 +154,8 @@ function graficasBateria(g) {
 
 function potencia(g) {
   const p = g.potencia
-  if (!p) return null
+  // Solo tiene sentido cuando se propone bajar la potencia en algún periodo; si se mantiene, la gráfica sería de barras iguales
+  if (!p || !(p.hoy || []).some((h, i) => h - (p.aContratar || [])[i] > 0)) return null
   const kw = (v) => f(v, 1) + ' kW'
   const cat = (p.hoy || []).map((_, i) => ['P' + (i + 1)].concat(p.conPrecios ? [f(p.precio[i], 2) + ' €/kW·año'] : []))
   const hayContratada = (p.contratada || []).some((v) => v > 0)
@@ -162,6 +163,7 @@ function potencia(g) {
   if (hayContratada) series.push({ nombre: 'Punta registrada', color: GRIS_CLARO, tipo: 'barra', pila: 'p', datos: p.punta, fmt: kw })
   series.push({ nombre: hayContratada ? 'Contratada hoy' : 'Punta registrada hoy', color: GRIS, tipo: 'barra', pila: 'h', datos: p.hoy, fmt: kw, valores: (v) => f(v, 0) })
   series.push({ nombre: 'A contratar', color: VERDE, tipo: 'barra', pila: 'c', datos: p.aContratar, fmt: kw, valores: (v) => f(v, 0) })
+  if (Array.isArray(p.puntaConInstalacion)) series.push({ nombre: 'Punta con la instalación', color: AZUL, tipo: 'barra', pila: 'i', datos: p.puntaConInstalacion, fmt: kw, valores: (v) => f(v, 0) })
   return {
     titulo: 'Potencia contratada por periodo', unidad: 'kW', categorias: cat, series,
     extra: (i) => (p.conPrecios && p.ahorro[i] > 0 ? ['Ahorro ' + f(p.ahorro[i], 0) + ' €/año'] : []), tituloGlobo: (i) => 'Periodo P' + (i + 1)

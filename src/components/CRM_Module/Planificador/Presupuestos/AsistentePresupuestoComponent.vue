@@ -23,7 +23,7 @@ import { parseCosts, EMPTY_COSTS, EMPTY_SURVEY } from '@/utils/planificador/moto
 import {
   budgetName, canonical, copyOf, fromServer, getLocal, isDirty, newLocal, putLocal, removeLocal
 } from '@/utils/planificador/almacenPresupuestos'
-import { cuerpoParaServidor, sincronizado } from '@/utils/planificador/datosPresupuesto'
+import { conEmpresaDePropuesta, cuerpoParaServidor, propuestaDelPresupuesto, sincronizado } from '@/utils/planificador/datosPresupuesto'
 
 const estadoHttp = (e) => (e && e.response ? e.response.status : null)
 
@@ -120,6 +120,19 @@ export default {
       this.errorGuardar = null
       this.conflicto = null
       this.vista = 'editar'
+      this.completarEmpresa(b)
+    },
+    // El CIF, el logo y el encaje son de la propuesta: un borrador que no los tiene los toma de ella al abrirlo (uno enviado o aprobado no cambia)
+    async completarEmpresa(b) {
+      const s = b.state
+      if ((b.remote && b.remote.status !== 'borrador') || (s.cif && s.clientLogo && s.encaje)) return
+      try {
+        const registro = propuestaDelPresupuesto(s, await planificadorApi.proyectosComerciales())
+        if (!registro) return
+        const propuesta = await planificadorApi.proyectoComercial(registro.id)
+        if (!this.trabajo || this.trabajo.id !== b.id) return
+        this.actualizar(conEmpresaDePropuesta(this.trabajo.state, propuesta))
+      } catch (e) { /* sin propuesta que leer: el presupuesto se queda como está */ }
     },
     actualizar(estado) {
       if (!this.trabajo || estado === this.trabajo.state) return

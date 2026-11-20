@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { valoresDe, cuantosPaneles, aplicarValores, problemasDe, cuerpoParaServidor, sincronizado } from '../../src/utils/planificador/datosPresupuesto.js'
+import { valoresDe, cuantosPaneles, aplicarValores, problemasDe, cuerpoParaServidor, sincronizado, propuestaDelPresupuesto, conEmpresaDePropuesta } from '../../src/utils/planificador/datosPresupuesto.js'
 import { EMPTY_COSTS, EMPTY_SURVEY, MAX_OBSERVACIONES_LINEA, parseCosts } from '../../src/utils/planificador/motor/costes.js'
 import { canonical } from '../../src/utils/planificador/almacenPresupuestos.js'
 
@@ -139,4 +139,45 @@ test('varias cubiertas en el formulario: se leen, se aplican y hace falta al men
   assert.equal(r.survey.roof, 'plana')
   assert.ok(problemasDe({ ...v, roofs: [] }, 12).some((p) => /cubierta/i.test(p)))
   assert.ok(!problemasDe(v, 12).some((p) => /cubierta/i.test(p)))
+})
+
+test('un presupuesto toma de su propuesta el CIF, el logo y el encaje que le faltan, sin pisar lo que ya tiene', () => {
+  const base = { ...vacio(), client: 'Solaria', reference: 'Nave 2', customer: { kind: 'existente', id: 5, name: 'Solaria' }, cif: '', clientLogo: '', encaje: '' }
+  const registros = [
+    { id: 'p0', customer: { kind: 'existente', id: 6, name: 'Otro' }, project: 'Nave 2' },
+    { id: 'p1', customer: { kind: 'existente', id: 5, name: 'Solaria', cif: 'B123' }, project: 'Nave 2' }
+  ]
+  assert.equal(propuestaDelPresupuesto(base, registros).id, 'p1')
+  assert.equal(propuestaDelPresupuesto({ ...base, reference: 'Otra' }, registros), null)
+  assert.equal(propuestaDelPresupuesto({ ...base, reference: '' }, registros), null)
+  const propuesta = { customer: { cif: 'B123' }, logo: 'L', encaje: 'E' }
+  const completo = conEmpresaDePropuesta(base, propuesta)
+  assert.deepEqual([completo.cif, completo.clientLogo, completo.encaje], ['B123', 'L', 'E'])
+  const propio = { ...base, cif: 'X1234', clientLogo: 'mio', encaje: 'mio' }
+  assert.equal(conEmpresaDePropuesta(propio, propuesta), propio, 'lo que ya tiene no se pisa y no hay cambio')
+  assert.equal(conEmpresaDePropuesta(base, null), base)
+})
+
+test('con la empresa de la propuesta, los parámetros no piden el CIF', () => {
+  const v = { ...valoresDe(vacio()), customer: potencial, reference: 'Nave 2', targetKwp: 10, moduleWp: 600, cif: '' }
+  assert.equal(problemasDe(v, 17).length, 1)
+  assert.deepEqual(problemasDe(v, 17, { empresaDeLaPropuesta: true }), [])
+})
+
+test('cada cubierta guarda su disposición (coplanar o inclinada) y el reparto de paneles; con una sola no hay reparto', () => {
+  const base = vacio()
+  const v = { ...valoresDe(base), customer: potencial, reference: 'Nave', targetKwp: 12.3, moduleWp: 615, manualPanels: false }
+  assert.deepEqual(v.roofLayouts, { teja: 'coplanar' })
+  const dos = { ...v, roofs: ['teja', 'chapa_minionda'], roofLayouts: { teja: 'coplanar', chapa_minionda: 'inclinada' }, roofPanels: { teja: 12, chapa_minionda: 8 }, moduleCount: 20, manualPanels: true }
+  const r = aplicarValores(base, dos)
+  assert.deepEqual(r.survey.roofLayouts, { teja: 'coplanar', chapa_minionda: 'inclinada' })
+  assert.deepEqual(r.survey.roofPanels, { teja: 12, chapa_minionda: 8 })
+  assert.deepEqual(aplicarValores(base, v).survey.roofPanels, {})
+  assert.deepEqual(parseCosts(JSON.parse(JSON.stringify(r))).survey.roofLayouts, { teja: 'coplanar', chapa_minionda: 'inclinada' })
+})
+
+test('con varias cubiertas el reparto tiene que sumar los paneles del presupuesto', () => {
+  const v = { ...valoresDe(vacio()), customer: potencial, reference: 'Nave', targetKwp: 10, moduleWp: 500, roofs: ['teja', 'plana'] }
+  assert.ok(problemasDe({ ...v, roofPanels: { teja: 12, plana: 6 } }, 20).some((p) => p.includes('Reparte los 20 paneles')))
+  assert.ok(!problemasDe({ ...v, roofPanels: { teja: 12, plana: 8 } }, 20).some((p) => p.includes('Reparte')))
 })

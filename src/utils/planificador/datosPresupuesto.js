@@ -1,7 +1,18 @@
 // Los datos de partida de un presupuesto (equivale a Values/valuesOf/applyValues de BudgetSetup.tsx del Planificador actual):
 // se fijan al crearlo y condicionan todos los pasos.
 
-import { panelCount, roofsOf } from './motor/pasosConfig.js'
+import { defaultLayout, layoutOf, panelCount, repartoDePaneles, roofsOf } from './motor/pasosConfig.js'
+import { claveGrupo } from './proyectos.js'
+import { budgetName } from './almacenPresupuestos.js'
+
+/** Cómo se colocan los paneles en cada cubierta y cuántos van en cada una; lo que falta se rellena (disposición por defecto, reparto igual). */
+export function disposicionDe(survey, total) {
+  const roofs = roofsOf(survey)
+  return {
+    roofLayouts: Object.fromEntries(roofs.filter((r) => defaultLayout(r)).map((r) => [r, layoutOf(survey, r) || defaultLayout(r)])),
+    roofPanels: repartoDePaneles(roofs, survey && survey.roofPanels, total)
+  }
+}
 
 /** De un presupuesto (CostState) a los valores del formulario de datos de partida. */
 export function valoresDe(state) {
@@ -19,6 +30,7 @@ export function valoresDe(state) {
     // El nº de paneles lo ha puesto a mano quien crea el presupuesto: ya no sigue a la potencia a instalar
     manualPanels: s.targetKwp > 0 && panelCount(s.targetKwp, state.moduleWp) !== state.moduleCount,
     roofs: roofsOf(s),
+    ...disposicionDe(s, state.moduleCount),
     supply: s.supply,
     futureBattery: s.futureBattery,
     strings: state.strings,
@@ -54,6 +66,9 @@ export function aplicarValores(base, v) {
       ...base.survey,
       roof: roofsOf({ roofs: v.roofs })[0],
       roofs: roofsOf({ roofs: v.roofs }),
+      // Solo de las cubiertas elegidas; con una sola cubierta no hay reparto que guardar
+      roofLayouts: Object.fromEntries(roofsOf({ roofs: v.roofs }).filter((r) => v.roofLayouts && layoutOf({ roofLayouts: v.roofLayouts }, r)).map((r) => [r, v.roofLayouts[r]])),
+      roofPanels: roofsOf({ roofs: v.roofs }).length > 1 ? repartoDePaneles(roofsOf({ roofs: v.roofs }), v.roofPanels, moduleCount) : {},
       supply: v.supply,
       targetKwp: v.targetKwp,
       futureBattery: v.futureBattery,
@@ -63,13 +78,37 @@ export function aplicarValores(base, v) {
   }
 }
 
-/** Lo que falta para poder crear el presupuesto. */
-export function problemasDe(v, count) {
+/**
+ * La propuesta del servidor a la que pertenece un presupuesto (mismo cliente y mismo nombre de proyecto), entre `registros` (la lista de
+ * propuestas: { id, customer, project }). Null si no hay.
+ */
+export function propuestaDelPresupuesto(state, registros) {
+  if (!state || !state.customer || !(state.reference || '').trim()) return null
+  const clave = claveGrupo(budgetName(state), state.customer.kind)
+  return (registros || []).find((v) => v.customer && claveGrupo(v.customer.name + ' · ' + v.project, v.customer.kind) === clave) || null
+}
+
+/** El CIF, el logo y el encaje que tiene la propuesta y le faltan al presupuesto. El mismo estado si no hay nada que completar. */
+export function conEmpresaDePropuesta(state, propuesta) {
+  if (!propuesta) return state
+  const cif = (state.cif || '').trim() ? state.cif : (propuesta.customer && propuesta.customer.cif) || ''
+  const clientLogo = state.clientLogo || propuesta.logo || ''
+  const encaje = state.encaje || propuesta.encaje || ''
+  if (cif === (state.cif || '') && clientLogo === (state.clientLogo || '') && encaje === (state.encaje || '')) return state
+  return { ...state, cif, clientLogo, encaje }
+}
+
+/** Lo que falta para poder crear el presupuesto. Con `empresaDeLaPropuesta`, el CIF no se pide aquí: lo pide la propia propuesta. */
+export function problemasDe(v, count, { empresaDeLaPropuesta = false } = {}) {
   const problemas = []
   if (!v.customer) problemas.push('Elige el cliente del presupuesto: uno existente o un cliente potencial nuevo.')
   if (!Array.isArray(v.roofs) || v.roofs.length === 0) problemas.push('Elige al menos un tipo de cubierta.')
+  if (Array.isArray(v.roofs) && v.roofs.length > 1 && count >= 1) {
+    const puestos = v.roofs.reduce((s, r) => s + (Number.isInteger(v.roofPanels && v.roofPanels[r]) ? v.roofPanels[r] : 0), 0)
+    if (puestos !== count) problemas.push(`Reparte los ${count} paneles entre las cubiertas: ahora suman ${puestos}.`)
+  }
   if (!v.reference.trim()) problemas.push('Escribe el nombre del proyecto (por ejemplo «Nave 2»): con el cliente identifica a qué proyecto pertenece el presupuesto.')
-  if (!v.cif || v.cif.trim().length < 5) problemas.push('Escribe el CIF de la empresa del cliente: sale en la propuesta.')
+  if (!empresaDeLaPropuesta && (!v.cif || v.cif.trim().length < 5)) problemas.push('Escribe el CIF de la empresa del cliente: sale en la propuesta.')
   if (!(v.targetKwp > 0)) problemas.push('Indica la potencia que se quiere instalar (kWp).')
   if (!(v.moduleWp > 0)) problemas.push('Indica la potencia de cada panel (Wp).')
   if (!(count >= 1)) problemas.push('El presupuesto necesita al menos un panel.')

@@ -1,8 +1,10 @@
-import { roofsOf } from './pasosConfig.js';
+import { layoutOf, roofsOf } from './pasosConfig.js';
 import { clampTotals } from './strings.js';
 export const EMPTY_SURVEY = {
     roof: 'teja',
     roofs: ['teja'],
+    roofLayouts: {},
+    roofPanels: {},
     targetKwp: 0,
     cableMeters: 0,
     acMeters: 0,
@@ -37,6 +39,9 @@ function loadSurvey(raw) {
     return {
         roof: roofs[0],
         roofs,
+        // Cómo se colocan los paneles en cada cubierta y cuántos van en cada una (solo se guarda lo de las cubiertas que hay)
+        roofLayouts: Object.fromEntries(roofs.filter((r) => layoutOf(d, r)).map((r) => [r, layoutOf(d, r)])),
+        roofPanels: Object.fromEntries(roofs.filter((r) => Number.isInteger(d.roofPanels?.[r]) && d.roofPanels[r] >= 0).map((r) => [r, d.roofPanels[r]])),
         targetKwp: num(d.targetKwp),
         cableMeters: num(d.cableMeters),
         acMeters: num(d.acMeters),

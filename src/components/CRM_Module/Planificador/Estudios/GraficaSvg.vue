@@ -53,6 +53,8 @@
                 :opacity="hover === null || hover === i ? 1 : 0.5" />
         </template>
         <text v-for="t in valoresBarra" :key="t.k" :x="t.x" :y="t.y" text-anchor="middle" class="valor-barra">{{ t.texto }}</text>
+        <!-- Informe: lo que en pantalla enseña el globo, escrito dentro de cada bloque -->
+        <text v-for="t in valoresSegmento" :key="'s' + t.k" :x="t.x" :y="t.y" text-anchor="middle" :fill="t.color" :class="t.clase">{{ t.texto }}</text>
         <text v-for="t in etiquetasSobre" :key="'e' + t.i" :x="t.x" :y="t.y" text-anchor="middle" class="etiqueta">{{ t.texto }}</text>
       </g>
 
@@ -70,9 +72,9 @@
         <line :x1="px(v.x)" :x2="px(v.x)" :y1="ARR" :y2="H - ABA" />
         <text :x="px(v.x) + 5" :y="ARR + 12">{{ v.texto }}</text>
       </g>
-      <g v-for="m in (spec.marcas || [])" :key="'m' + m.x + m.texto" class="marca">
+      <g v-for="m in marcasPuestas" :key="'m' + m.x + m.texto" class="marca">
         <circle :cx="px(m.x)" :cy="py(m.y)" r="5.5" :fill="m.color || 'var(--brand)'" stroke="var(--bg)" stroke-width="1.5" />
-        <text :x="marcaX(m)" :y="py(m.y) + (m.pos === 'arr' ? -12 : m.pos === 'aba' ? 20 : 4)" :text-anchor="m.pos === 'izq' ? 'end' : m.pos === 'arr' || m.pos === 'aba' ? 'middle' : 'start'">{{ m.texto }}</text>
+        <text :x="m.tx" :y="m.ty" :text-anchor="m.ancla">{{ m.texto }}</text>
       </g>
 
       <line v-if="hover !== null && !hayBarras" :x1="guiaX" :x2="guiaX" :y1="ARR" :y2="H - ABA" class="guia" />
@@ -93,6 +95,7 @@
 </template>
 
 <script>
+import { colocarMarcas } from '@/utils/planificador/colocarMarcas'
 let contador = 0
 
 /**
@@ -207,7 +210,8 @@ export default {
           let neg = 0
           const grupoSegs = []
           const x = this.IZQ + this.columna * i + (this.columna - this.anchoBarra * this.grupos.length) / 2 + g * this.anchoBarra
-          for (const s of this.seriesBarra.filter((z) => (z.pila || z.nombre) === k)) {
+          const ss = this.seriesBarra.filter((z) => (z.pila || z.nombre) === k)
+          for (const s of ss) {
             const v = s.datos[i] || 0
             const desde = v >= 0 ? pos : neg
             const hasta = desde + v
@@ -215,7 +219,7 @@ export default {
             const y1 = this.py(Math.max(desde, hasta))
             const y2 = this.py(Math.min(desde, hasta))
             const resaltado = this.spec.resaltar === i && s.colorResaltado
-            const seg = { x, w: this.anchoBarra - 1.5, y: y1, h: Math.max(0, y2 - y1), color: resaltado ? s.colorResaltado : s.color, rayado: s.rayado, arriba: false, abajo: false }
+            const seg = { x, w: this.anchoBarra - 1.5, y: y1, h: Math.max(0, y2 - y1), color: resaltado ? s.colorResaltado : s.color, rayado: s.rayado, arriba: false, abajo: false, valor: v, etiquetar: !ss.some((z) => z.valores) }
             segs.push(seg)
             if (seg.h > 0) grupoSegs.push(seg)
           }
@@ -244,6 +248,22 @@ export default {
       }
       return r
     },
+    /**
+     * Solo en el informe, donde no hay ratón: el valor de cada bloque escrito dentro de él (sin ceros, sin unidades —van en el eje— y sin
+     * los bloques tan finos que el número no cabría). Las columnas que ya llevan su valor encima no lo repiten.
+     */
+    valoresSegmento() {
+      if (!this.imprimir) return []
+      const r = []
+      this.barras.forEach((segs, i) => segs.forEach((g, k) => {
+        if (!g.etiquetar || g.h < 8.5 || Math.round(Math.abs(g.valor) * 10) === 0) return
+        const texto = this.numero(g.valor, 1)
+        if (texto.length * 5.4 > g.w) return
+        r.push({ k: i + '-' + k, x: g.x + g.w / 2, y: g.y + g.h / 2 + (g.h < 12 ? 2.8 : 3.4), texto, color: g.rayado ? '#2c2c2e' : this.colorTexto(g.color),
+          clase: 'valor-seg' + (g.h < 12 ? ' chico' : '') + (g.rayado ? ' sobre-trama' : '') })
+      }))
+      return r
+    },
     /** Una etiqueta (por ejemplo el %) encima de lo más alto de cada categoría. */
     etiquetasSobre() {
       const e = this.spec.etiquetas
@@ -269,6 +289,15 @@ export default {
     },
     lineas() {
       return this.series.filter((s) => s.tipo === 'linea').map((s) => ({ nombre: s.nombre, color: s.color, discontinua: s.discontinua, grosor: s.grosor || 2.2, ruta: this.ruta(s.datos, s.escalon) }))
+    },
+    /** Cada marca con su texto ya colocado donde no tape las líneas, las barras ni otra etiqueta ({@link colocarMarcas}). */
+    marcasPuestas() {
+      const marcas = this.spec.marcas || []
+      if (!marcas.length) return []
+      return colocarMarcas({
+        marcas, px: this.px, py: this.py, obstaculos: this.obstaculos(),
+        limites: { x0: this.IZQ + 2, x1: this.W - this.DER - 2, y0: this.ARR - 4, y1: this.H - this.ABA + 2 }
+      })
     },
     guiaX() {
       if (this.hover === null) return 0
@@ -327,7 +356,6 @@ export default {
       const [a, b] = this.dominioX
       return this.IZQ + ((x - a) / (b - a)) * (this.W - this.IZQ - this.DER)
     },
-    marcaX(m) { return this.px(m.x) + (m.pos === 'izq' ? -10 : m.pos === 'arr' || m.pos === 'aba' ? 0 : 10) },
     cumulado(s, i) {
       if (s.tipo !== 'area') return s.datos[i]
       const ss = this.pilasArea[s.pila || s.nombre]
@@ -351,6 +379,37 @@ export default {
       const b = this.puntos(base, escalon).reverse()
       if (!a.length) return ''
       return 'M' + a.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L') + ' L' + b.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L') + ' Z'
+    },
+    /** Texto oscuro sobre los colores claros y blanco sobre los oscuros (colores rgb o #hex; una variable CSS se toma por clara). */
+    colorTexto(c) {
+      const t = String(c || '')
+      const hex = /^#([0-9a-f]{6})$/i.exec(t)
+      const rgb = /^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i.exec(t)
+      let v
+      if (hex) { const n = parseInt(hex[1], 16); v = [n >> 16, (n >> 8) & 255, n & 255] } else if (rgb) v = [+rgb[1], +rgb[2], +rgb[3]]
+      else return '#1c1c1e'
+      return (0.299 * v[0] + 0.587 * v[1] + 0.114 * v[2]) / 255 > 0.62 ? '#1c1c1e' : '#ffffff'
+    },
+    /** Puntos por donde pasa algo dibujado (líneas, bordes de áreas, barras y la línea de referencia), para que las etiquetas no los tapen. */
+    obstaculos() {
+      const r = []
+      const tramo = (a, b) => {
+        const largo = Math.hypot(b[0] - a[0], b[1] - a[1])
+        const n = Math.max(1, Math.ceil(largo / 4))
+        for (let k = 0; k <= n; k++) r.push([a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n])
+      }
+      const recorrer = (pts) => { for (let i = 0; i < pts.length - 1; i++) tramo(pts[i], pts[i + 1]); if (pts.length === 1) r.push(pts[0]) }
+      for (const s of this.series.filter((z) => z.tipo === 'linea')) recorrer(this.puntos(s.datos, s.escalon))
+      for (const k of Object.keys(this.pilasArea)) {
+        let base = new Array(this.n).fill(0)
+        for (const s of this.pilasArea[k]) {
+          base = base.map((b, i) => b + (s.datos[i] || 0))
+          recorrer(this.puntos(base, s.escalon))
+        }
+      }
+      for (const segs of this.barras) for (const g of segs) for (let x = g.x; x <= g.x + g.w; x += 4) for (let y = g.y; y <= g.y + g.h; y += 4) r.push([x, y])
+      if (this.spec.lineaH) tramo([this.IZQ, this.py(this.spec.lineaH.valor)], [this.W - this.DER, this.py(this.spec.lineaH.valor)])
+      return r
     },
     /** El punto o la columna más cercana al ratón. */
     mover(e) {

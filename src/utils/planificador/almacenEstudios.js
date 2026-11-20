@@ -28,8 +28,8 @@ export function estadoInicial() {
       precioWp: 0.85, precioBateriaKwh: 250, precioEnergia: 0.1, mantenimientoPct: 1, ahorroPotencia: 0, inversionTotal: null, mantenimiento: null,
       // El presupuesto del que sale el coste de la instalación (su id y su importe y kWp al elegirlo); sin él, el precio provisional
       presupuestoId: '', presupuestoTotal: null, presupuestoKwp: null,
-      reposicionAno: 13, reposicion: 0, modoPrecio: 'medio', incluyePeajes: false, boeId: null, financiacionMeses: null, financiacionTae: 9.8,
-      preciosPeriodo: seis(null, null), reduccionPotencia: seis(null, 0)
+      reposicionAno: 13, reposicion: null, modoPrecio: 'medio', incluyePeajes: false, boeId: null, financiacionMeses: null, financiacionTae: 9.8,
+      preciosPeriodo: seis(null, null), reduccionPotencia: seis(null, null)
     }
   }
 }
@@ -48,7 +48,7 @@ export function estadoDe(e) {
   eco.financiacionTae = eco.financiacionTae ?? 9.8
   delete eco.anioPrecios // los estudios de antes elegían un año; ahora, un BOE (sin elegir, el vigente hoy)
   eco.preciosPeriodo = seis(eco.preciosPeriodo, null)
-  eco.reduccionPotencia = seis(eco.reduccionPotencia, 0)
+  eco.reduccionPotencia = seis(eco.reduccionPotencia, null).map((x) => (Number(x) > 0 ? x : null))
   const ins = { ...base.instalacion, ...copia(d.instalacion) }
   if (!(Number(ins.kwp) > 0)) ins.kwp = ''
   return {
@@ -240,7 +240,7 @@ function normalizar(raw) {
     economia: { ...base.economia, ...(s.economia || {}) }
   }
   state.economia.preciosPeriodo = seis(state.economia.preciosPeriodo, null)
-  state.economia.reduccionPotencia = seis(state.economia.reduccionPotencia, 0)
+  state.economia.reduccionPotencia = seis(state.economia.reduccionPotencia, null).map((x) => (Number(x) > 0 ? x : null))
   const r = raw.remote
   const remote = r && typeof r === 'object' && typeof r.version === 'number'
     ? { version: r.version, syncedJson: texto(r.syncedJson), owner: texto(r.owner), updatedBy: texto(r.updatedBy), updatedAt: texto(r.updatedAt) }

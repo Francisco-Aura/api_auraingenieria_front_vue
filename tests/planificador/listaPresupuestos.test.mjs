@@ -122,19 +122,23 @@ test('filtros: texto (nombre, autor, quién modificó), borradores, locales y pe
   assert.deepEqual(ids(filtrarFilas(todas, '', 'porvalidar')), [], 'sin estudio aceptado no hay nada que validar')
 })
 
-test('pendientes de validar: propuesta entregada con presupuesto aprobado y estudio aceptado, y solo lo ve quien valida', () => {
+test('pendientes de validar: propuesta entregada con presupuesto aprobado y estudio no rechazado ni cancelado, y solo lo ve quien valida', () => {
   const remotos = [
     remoto('a', { status: 'enviado' }),
     remoto('b', { status: 'validado', proposal_status: 'enviada', study_id: 'e1' }),
     remoto('c', { status: 'validado', proposal_status: 'enviada', study_id: 'e2' }),
     remoto('d', { status: 'validado', proposal_status: 'enviada' }),
-    remoto('f', { status: 'validado', proposal_status: 'aprobada', study_id: 'e1' })
+    remoto('f', { status: 'validado', proposal_status: 'aprobada', study_id: 'e1' }),
+    remoto('g', { status: 'validado', proposal_status: 'enviada', study_id: 'e3' })
   ]
-  const estudios = filasDeEstudios({ remotos: [estudioRemoto('e1', { estado: 'aceptado' }), estudioRemoto('e2', { estado: 'pte_cliente' })], locales: [], usuario: ANA })
+  const estudios = filasDeEstudios({
+    remotos: [estudioRemoto('e1', { estado: 'aceptado' }), estudioRemoto('e2', { estado: 'rechazado' }), estudioRemoto('e3', { estado: 'pte_cliente' })],
+    locales: [], usuario: ANA
+  })
   const todas = construirFilas({ remotos, locales: [], copiaLocal: () => null, usuario: ANA, estudios })
-  assert.deepEqual(pendientesDeValidar(todas).map((r) => r.id), ['b'])
-  assert.deepEqual(filtrarFilas(todas, '', 'porvalidar').map((r) => r.id), ['b'])
-  assert.equal(contarPendientes(todas, true), 1)
+  assert.deepEqual(pendientesDeValidar(todas).map((r) => r.id).sort(), ['b', 'g'])
+  assert.deepEqual(filtrarFilas(todas, '', 'porvalidar').map((r) => r.id).sort(), ['b', 'g'])
+  assert.equal(contarPendientes(todas, true), 2)
   assert.equal(contarPendientes(todas, false), 0)
 })
 
@@ -156,8 +160,8 @@ test('un proyecto recoge las variantes de una oferta: el más reciente a la vist
   assert.deepEqual(o1.lineas, [], 'cerrado no lleva líneas')
   const abierta = armarProyectos(todas, todas, null, new Set(['o1']))[0]
   assert.deepEqual(abierta.lineas.map((l) => l.presupuesto.id), ['a', 'b'])
-  assert.equal(abierta.etiquetas.get('a'), 'v1')
-  assert.equal(abierta.etiquetas.get('b'), 'v2 · Con batería')
+  assert.equal(abierta.etiquetas.get('a'), 'Versión 1')
+  assert.equal(abierta.etiquetas.get('b'), 'Con batería')
   assert.equal(armarProyectos(todas, todas, null, new Set(['solo:c']))[1].abierto, false, 'con un solo presupuesto no hay nada que abrir')
 })
 
@@ -180,8 +184,8 @@ test('el mismo cliente y el mismo proyecto son un grupo aunque no compartan ofer
   const o9 = proyectos.find((p) => p.clave === 'o9')
   assert.equal(o9.presupuestos.length, 2)
   assert.equal(proyectos.length, 3)
-  assert.equal(o9.etiquetas.get('r1'), 'v1')
-  assert.equal(o9.etiquetas.get('l1'), 'v2', 'el orden lo da la fecha de creación')
+  assert.equal(o9.etiquetas.get('r1'), 'Versión 1')
+  assert.equal(o9.etiquetas.get('l1'), 'Versión 2', 'el orden lo da la fecha de creación')
   // Dos locales del mismo proyecto, sin ninguna oferta del servidor
   const dos = filas([], [local('a', { state: estado('Pepe', 'Nave 2') }), local('b', { state: estado('Pepe', 'Nave 2') })])
   assert.equal(dos[0].grupo, dos[1].grupo)
@@ -225,13 +229,13 @@ test('el ciclo del orden: ascendente → descendente → sin ordenar, y números
   assert.deepEqual(sortRows(['10', '2', null, 'b'], { key: 'k', dir: 'asc' }, (r) => r), ['2', '10', 'b', null])
 })
 
-test('variantLabels: «vN» por orden de creación y, si tiene nombre, «vN · nombre»', () => {
+test('variantLabels: «Versión N» por orden de creación y, si tiene nombre, el nombre', () => {
   const m = variantLabels([
     { id: 'b', created_at: '2026-11-02', variant_name: '  ' }, { id: 'a', created_at: '2026-11-01', variant_name: '' }, { id: 'c', created_at: '2026-11-03', variant_name: 'Plus' }
   ])
-  assert.equal(m.get('a'), 'v1')
-  assert.equal(m.get('b'), 'v2')
-  assert.equal(m.get('c'), 'v3 · Plus')
+  assert.equal(m.get('a'), 'Versión 1')
+  assert.equal(m.get('b'), 'Versión 2')
+  assert.equal(m.get('c'), 'Plus')
 })
 
 test('esVariantable: un compartido se duplica como variante; un local o descartado, como copia local', () => {
@@ -272,7 +276,7 @@ test('un estudio sale en la lista y cae en el grupo de los presupuestos de su mi
   assert.equal(p.presupuestos.length, 2, 'dos presupuestos')
   assert.equal(p.estudios.length, 1)
   assert.equal(p.etiquetas.has('e1'), false, 'un estudio no es una versión')
-  assert.equal(p.etiquetas.get('a'), 'v1')
+  assert.equal(p.etiquetas.get('a'), 'Versión 1')
 })
 
 test('un estudio y un presupuesto del mismo proyecto son un proyecto; un estudio de otro proyecto, otro', () => {
@@ -391,4 +395,39 @@ test('un proyecto del servidor sin estudios ni presupuestos sale vacío, con los
   assert.equal(proyectos.find((p) => p.vacio).registro.id, 'p2')
   // Un filtro que deja fuera al servidor (los pasa vacíos) no los inventa
   assert.deepEqual(armarProyectos(todas, todas).map((p) => p.clave), ['solo:a'])
+})
+
+test('con la propuesta que da el servidor (project_id) se agrupa aunque el nombre esté escrito distinto, y el registro sale por su id', () => {
+  const estudios = filasDeEstudios({
+    remotos: [{ id: 'e1', cliente: 'Solaria', proyecto: 'nave getafe', estado: 'en_estudio', estadoNombre: 'En estudio', customer: { kind: 'existente' }, actualizadoEl: '2026-11-03T10:00:00.000Z', project_id: 'pr1' }],
+    locales: [], usuario: ANA
+  })
+  const todas = construirFilas({
+    remotos: [
+      remoto('a', { name: 'Solaria · Nave Getafe', project_id: 'pr1' }),
+      remoto('b', { name: 'SOLARIA S.L. · Nave de Getafe', project_id: 'pr1' }),
+      remoto('c', { name: 'Solaria · Nave Leganés', project_id: 'pr2' })
+    ],
+    locales: [], copiaLocal: () => null, usuario: ANA, estudios
+  })
+  const registros = [{ id: 'pr1', customer: { kind: 'existente', name: 'Solaria' }, project: 'Nave Getafe' }, { id: 'pr2', customer: { kind: 'existente', name: 'Solaria' }, project: 'Nave Leganés' }]
+  const proyectos = armarProyectos(todas, todas, null, new Set(), new Set(), registros, registros)
+  assert.equal(proyectos.length, 2, 'dos propuestas, no tres: los nombres distintos de la misma propuesta no la parten')
+  const p1 = proyectos.find((p) => p.proyectoId === 'pr1')
+  assert.equal(p1.presupuestos.length, 2)
+  assert.equal(p1.estudios.length, 1)
+  assert.equal(p1.registro.id, 'pr1')
+  assert.equal(proyectos.find((p) => p.proyectoId === 'pr2').registro.id, 'pr2')
+  assert.equal(proyectos.some((p) => p.vacio), false, 'una propuesta con documentos no sale además como vacía')
+})
+
+test('una copia local sin propuesta entra en la del servidor con su mismo cliente y proyecto', () => {
+  const l = local('l1', { state: { ...EMPTY_COSTS, client: 'solaria', reference: 'nave getafe v2', customer: { kind: 'existente', name: 'Solaria' } } })
+  const todas = construirFilas({
+    remotos: [remoto('a', { name: 'Solaria · Nave Getafe', project_id: 'pr1' })], locales: [l], copiaLocal: () => null, usuario: ANA
+  })
+  const local1 = todas.find((r) => r.id === 'l1')
+  assert.equal(local1.proyectoId, 'pr1')
+  assert.equal(local1.grupo, todas.find((r) => r.id === 'a').grupo)
+  assert.equal(armarProyectos(todas, todas).length, 1)
 })

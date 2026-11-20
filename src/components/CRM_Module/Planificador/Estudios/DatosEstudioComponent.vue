@@ -6,9 +6,6 @@
     <div class="costes-titulo"><h1>{{ modo === 'nuevo' ? 'Nuevo estudio' : 'Parámetros del estudio' }}</h1></div>
 
     <form class="alta-formulario estudio-formulario" novalidate @submit.prevent="enviar">
-      <div class="estudio-columnas">
-      <div class="estudio-columna">
-
       <fieldset class="alta-tarjeta estudio-cliente">
         <legend>{{ fijo ? 'Propuesta' : 'Cliente' }}</legend>
         <div v-if="fijo" class="proyecto-fijo"><strong>{{ v.customer.name }}</strong><span class="muted">{{ v.proyecto }}</span></div>
@@ -22,55 +19,6 @@
         </template>
       </fieldset>
 
-      <fieldset class="alta-tarjeta">
-        <legend>Instalación</legend>
-        <div class="estudio-campos estudio-campos-4">
-          <div class="cuestionario-campo estudio-ancho">
-            Tipo de instalación
-            <div class="estudio-segmento" role="radiogroup" aria-label="Tipo de instalación">
-              <button type="button" role="radio" :aria-checked="!aislada" :class="{ on: !aislada }" @click="v.economia.modo = 'red'">Conectada a la red</button>
-              <button type="button" role="radio" :aria-checked="aislada" :class="{ on: aislada }" @click="v.economia.modo = 'aislada'">Aislada con grupo electrógeno</button>
-            </div>
-          </div>
-          <label class="cuestionario-campo estudio-mitad">Paneles (kWp)<input v-model.number="v.instalacion.kwp" type="number" min="0" step="1" placeholder="Automática"></label>
-          <label class="cuestionario-campo estudio-mitad">Batería (kWh)<input v-model.number="v.instalacion.bateriaKwh" type="number" min="0" step="1" placeholder="0 = sin batería"></label>
-          <div class="cuestionario-campo estudio-mitad">
-            Orientación
-            <div class="estudio-segmento" role="radiogroup" aria-label="Orientación">
-              <button v-for="o in ORIENTACIONES" :key="o.id" type="button" role="radio" :aria-checked="v.instalacion.orientacion === o.id"
-                      :class="{ on: v.instalacion.orientacion === o.id }" @click="v.instalacion.orientacion = o.id">{{ o.nombre }}</button>
-            </div>
-          </div>
-          <label class="cuestionario-campo">Azimut (°)
-            <input v-if="personalizada" v-model.number="v.instalacion.azimut" type="number" min="-180" max="180" step="5" placeholder="0 sur · -90 este">
-            <input v-else :value="orientacionFija.azimut" type="text" disabled>
-          </label>
-          <label class="cuestionario-campo">Inclinación (°)
-            <input v-if="personalizada" v-model.number="v.instalacion.inclinacion" type="number" min="0" max="90" step="1">
-            <input v-else :value="orientacionFija.inclinacion" type="text" disabled>
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset class="alta-tarjeta estudio-coste">
-        <legend>Coste de la instalación</legend>
-        <p v-if="conPresupuestoRef" class="estudio-coste-ref">
-          Según el presupuesto de <strong>{{ fmt(v.economia.presupuestoTotal, 0) }} €</strong> · {{ fmt(v.economia.presupuestoKwp, 2) }} kWp
-          <button type="button" class="enlace-boton" @click="usarProvisional">Poner un coste provisional</button>
-        </p>
-        <div v-else class="estudio-campos">
-          <label class="cuestionario-campo">Coste total (€)<input v-model.number="v.economia.inversionTotal" type="number" min="0" step="100" placeholder="Vacío: se calcula con el €/Wp"></label>
-          <label class="cuestionario-campo">Precio (€/Wp)<input v-model.number="v.economia.precioWp" type="number" min="0.05" max="5" step="0.01" :disabled="costeTotalPuesto"></label>
-          <label v-if="bateriaPuesta" class="cuestionario-campo">Batería (€/kWh)<input v-model.number="v.economia.precioBateriaKwh" type="number" min="0" step="10" :disabled="costeTotalPuesto"></label>
-        </div>
-      </fieldset>
-
-      <fieldset class="alta-tarjeta estudio-observaciones">
-        <legend>Observaciones</legend>
-        <textarea v-model="v.observaciones" rows="2" maxlength="5000" aria-label="Observaciones" placeholder="Ej.: pendiente de la factura de julio; el cliente lo está hablando con su gestor" />
-      </fieldset>
-      </div>
-      <div class="estudio-columna">
       <fieldset class="alta-tarjeta estudio-consumo">
         <legend>Consumo del cliente</legend>
         <div class="estudio-zonas">
@@ -87,34 +35,26 @@
           <button v-else type="button" class="estudio-zona" :class="{ arrastrando: arrastrando === 'sips' }" :disabled="leyendo"
                   @click="$refs.sips.click()" @dragover.prevent="arrastrando = 'sips'" @dragleave="arrastrando = ''" @drop.prevent="soltar($event, 'sips')">
             <span class="estudio-zona-titulo">SIPS</span>
-            <span class="estudio-zona-accion">Arrastra el .xls / .xlsx o haz clic</span>
+            <span class="estudio-zona-accion">Arrastra el .xlsx / .xls / .csv o haz clic</span>
           </button>
 
           <div v-if="curvaReal" class="estudio-zona ok" :class="{ arrastrando: arrastrando === 'curva' }"
-               @dragover.prevent="arrastrando = 'curva'" @dragleave="arrastrando = ''" @drop.prevent="soltar($event, v.curva.tipo === 'cuartohoraria' ? 'cuartos' : 'curva')">
-            <span class="estudio-zona-titulo">✓ {{ v.curva.tipo === 'cuartohoraria' ? 'Consumo cuartohorario' : 'Curva horaria' }}</span>
+               @dragover.prevent="arrastrando = 'curva'" @dragleave="arrastrando = ''" @drop.prevent="soltar($event, 'curva')">
+            <span class="estudio-zona-titulo">✓ Curva de consumo</span>
             <span class="estudio-zona-detalle" :title="v.curva.origen">{{ v.curva.origen }}</span>
             <span class="estudio-zona-botones">
-              <button type="button" class="secondary estudio-mini" :disabled="leyendo" @click="$refs[v.curva.tipo === 'cuartohoraria' ? 'cuartos' : 'curva'].click()">Cambiar</button>
+              <button type="button" class="secondary estudio-mini" :disabled="leyendo" @click="$refs.curva.click()">Cambiar</button>
               <button type="button" class="secondary estudio-mini estudio-quitar" :disabled="leyendo" @click="quitar('curva')">Quitar</button>
             </span>
           </div>
-          <template v-else>
-            <button type="button" class="estudio-zona" :class="{ arrastrando: arrastrando === 'curva' }" :disabled="leyendo"
-                    @click="$refs.curva.click()" @dragover.prevent="arrastrando = 'curva'" @dragleave="arrastrando = ''" @drop.prevent="soltar($event, 'curva')">
-              <span class="estudio-zona-titulo">Curva horaria</span>
-              <span v-if="tieneSips" class="estudio-zona-detalle">Ahora se usa la estimada con el SIPS</span>
-              <span class="estudio-zona-accion">Arrastra el .xlsx / .csv o haz clic</span>
-            </button>
-            <button type="button" class="estudio-zona" :class="{ arrastrando: arrastrando === 'cuartos' }" :disabled="leyendo"
-                    @click="$refs.cuartos.click()" @dragover.prevent="arrastrando = 'cuartos'" @dragleave="arrastrando = ''" @drop.prevent="soltar($event, 'cuartos')">
-              <span class="estudio-zona-titulo">Consumo cuartohorario</span>
-              <span class="estudio-zona-accion">Arrastra el .xlsx / .csv o haz clic</span>
-            </button>
-          </template>
-          <input ref="sips" type="file" accept=".xlsx,.xls" hidden @change="elegido($event, 'sips')">
+          <button v-else type="button" class="estudio-zona" :class="{ arrastrando: arrastrando === 'curva' }" :disabled="leyendo"
+                  @click="$refs.curva.click()" @dragover.prevent="arrastrando = 'curva'" @dragleave="arrastrando = ''" @drop.prevent="soltar($event, 'curva')">
+            <span class="estudio-zona-titulo">Curva horaria o cuartohoraria</span>
+            <span v-if="tieneSips" class="estudio-zona-detalle">Ahora se usa la estimada con el SIPS</span>
+            <span class="estudio-zona-accion">Arrastra el .xlsx / .xls / .csv o haz clic</span>
+          </button>
+          <input ref="sips" type="file" accept=".xlsx,.xls,.csv,.txt" hidden @change="elegido($event, 'sips')">
           <input ref="curva" type="file" accept=".xlsx,.xls,.csv,.txt" hidden @change="elegido($event, 'curva')">
-          <input ref="cuartos" type="file" accept=".xlsx,.xls,.csv,.txt" hidden @change="elegido($event, 'cuartos')">
         </div>
         <p v-if="leyendo" class="muted estudio-leyendo">Leyendo el fichero…</p>
         <p v-if="errorArchivo" class="error" role="alert">{{ errorArchivo }}</p>
@@ -125,7 +65,7 @@
               <option v-for="t in tarifas" :key="t" :value="t">{{ t }}</option>
             </select>
           </label>
-          <label class="cuestionario-campo estudio-ubicacion">Ubicación de la instalación
+          <label class="cuestionario-campo estudio-ubicacion" :class="{ completa: aislada }">Ubicación de la instalación
             <span class="estudio-buscador">
               <span v-if="conUbicacion" class="estudio-ubicacion-fijada">
                 <span>✓ {{ nombreLugar || 'Ubicación' }} · {{ fmt(v.instalacion.latitud, 2) }}°, {{ fmt(v.instalacion.longitud, 2) }}°</span>
@@ -156,21 +96,51 @@
         </div>
       </fieldset>
 
-      </div>
-      </div>
-
-
-      <fieldset v-if="!aislada" class="alta-tarjeta estudio-potencia">
-        <legend>Potencia contratada</legend>
-        <div class="estudio-campos">
-          <label v-for="p in nPotencia" :key="'p' + p" class="cuestionario-campo">Reducción en P{{ p }} (kW)
-            <input v-model.number="v.economia.reduccionPotencia[p - 1]" type="number" min="0" :max="maxReduccion(p)" step="1">
-            <small class="muted">{{ infoPotencia(p) }}</small>
+      <!-- Dos columnas por filas: cada pareja de tarjetas tiene la misma altura; Observaciones es la única que se estira (su casilla crece) -->
+      <div class="estudio-columnas" :class="{ aislada }">
+      <fieldset class="alta-tarjeta" :class="{ completa: !aislada }">
+        <legend>{{ aislada ? 'Instalación' : 'Instalación y potencia contratada' }}</legend>
+        <div class="estudio-campos estudio-campos-4">
+          <div class="cuestionario-campo estudio-ancho">
+            Tipo de instalación
+            <div class="estudio-segmento" role="radiogroup" aria-label="Tipo de instalación">
+              <button type="button" role="radio" :aria-checked="!aislada" :class="{ on: !aislada }" @click="v.economia.modo = 'red'">Conectada a la red</button>
+              <button type="button" role="radio" :aria-checked="aislada" :class="{ on: aislada }" @click="v.economia.modo = 'aislada'">Aislada con grupo electrógeno</button>
+            </div>
+          </div>
+          <label class="cuestionario-campo estudio-mitad">Paneles (kWp)<input v-model.number="v.instalacion.kwp" type="number" min="0" step="1" :placeholder="kwpPropuesto ? kwpPropuesto + ' (propuesta)' : 'Carga primero el consumo'" title="Vacío: se usa la potencia propuesta, la que produce más o menos la mitad de lo que consume el cliente al año"></label>
+          <label class="cuestionario-campo estudio-mitad">Batería (kWh)<input v-model.number="v.instalacion.bateriaKwh" type="number" min="0" step="1" placeholder="0 = sin batería"></label>
+          <div class="cuestionario-campo estudio-mitad">
+            Orientación
+            <div class="estudio-segmento" role="radiogroup" aria-label="Orientación">
+              <button v-for="o in ORIENTACIONES" :key="o.id" type="button" role="radio" :aria-checked="v.instalacion.orientacion === o.id"
+                      :class="{ on: v.instalacion.orientacion === o.id }" @click="v.instalacion.orientacion = o.id">{{ o.nombre }}</button>
+            </div>
+          </div>
+          <label class="cuestionario-campo">Azimut (°)
+            <input v-if="personalizada" v-model.number="v.instalacion.azimut" type="number" min="-180" max="180" step="5" placeholder="0 sur · -90 este">
+            <input v-else :value="orientacionFija.azimut" type="text" disabled>
           </label>
-          <label class="cuestionario-campo">Ahorro anual en potencia (€)
-            <input v-if="!reducePotencia" v-model.number="v.economia.ahorroPotencia" type="number" min="0" step="100">
-            <input v-else :value="precios && precios.potenciaCalculada ? fmt(precios.ahorroPotencia, 0) : 'Se calcula al crear'" type="text" disabled>
+          <label class="cuestionario-campo">Inclinación (°)
+            <input v-if="personalizada" v-model.number="v.instalacion.inclinacion" type="number" min="0" max="90" step="1">
+            <input v-else :value="orientacionFija.inclinacion" type="text" disabled>
           </label>
+        </div>
+        <div v-if="!aislada" class="estudio-periodos estudio-potencia">
+          <div class="estudio-potencia-cabecera">
+            <strong>Potencia contratada</strong>
+            <button v-if="sugeridaPotencia" type="button" class="secondary estudio-mini" @click="usarSugerida">Usar la reducción sugerida</button>
+          </div>
+          <div class="estudio-campos">
+            <label v-for="p in nPotencia" :key="'p' + p" class="cuestionario-campo">Reducción en P{{ p }} (kW)
+              <input v-model.number="v.economia.reduccionPotencia[p - 1]" type="number" min="0" :max="maxReduccion(p)" step="1" :placeholder="placeholderReduccion(p)">
+              <small class="muted">{{ infoPotencia(p) }}</small>
+            </label>
+            <label class="cuestionario-campo" :style="{ gridColumn: 'span ' + (nPotencia % 4 ? 4 - nPotencia % 4 : 1) }">Ahorro anual en potencia (€)
+              <input v-if="!reducePotencia" v-model.number="v.economia.ahorroPotencia" type="number" min="0" step="100">
+              <input v-else :value="precios && precios.potenciaCalculada ? fmt(precios.ahorroPotencia, 0) : 'Se calcula al crear'" type="text" disabled>
+            </label>
+          </div>
         </div>
       </fieldset>
 
@@ -184,7 +154,28 @@
           <label class="cuestionario-campo">Mantenimiento fijo (€/año, vacío = % de la inversión)<input v-model.number="v.economia.mantenimiento" type="number" min="0" step="50"></label>
         </div>
       </fieldset>
-      <fieldset v-else class="alta-tarjeta estudio-ajustes">
+
+
+      <fieldset class="alta-tarjeta estudio-coste-obs">
+        <legend>Coste y observaciones</legend>
+        <div class="estudio-periodos estudio-coste">
+          <strong>Coste de la instalación</strong>
+          <p v-if="conPresupuestoRef" class="estudio-coste-ref">
+            <span>Según el presupuesto de <strong>{{ fmt(v.economia.presupuestoTotal, 0) }} €</strong> · {{ fmt(v.economia.presupuestoKwp, 2) }} kWp</span>
+            <button type="button" class="secondary estudio-mini estudio-coste-boton" @click="usarProvisional">Poner un coste a mano</button>
+          </p>
+          <div v-else class="estudio-campos estudio-coste-manual">
+            <label class="cuestionario-campo">Coste total (€)<input v-model.number="v.economia.inversionTotal" type="number" min="0" step="100" :placeholder="costeEstimado"></label>
+            <button v-if="presupuestoGuardado" type="button" class="secondary estudio-mini estudio-coste-boton" @click="volverAlPresupuesto">Volver al presupuesto ({{ fmt(presupuestoGuardado.total, 0) }} €)</button>
+          </div>
+        </div>
+        <div class="estudio-periodos estudio-observaciones">
+          <strong>Observaciones</strong>
+          <textarea v-model="v.observaciones" rows="2" maxlength="5000" aria-label="Observaciones" placeholder="Ej.: pendiente de la factura de julio; el cliente lo está hablando con su gestor" />
+        </div>
+      </fieldset>
+
+      <fieldset v-if="!aislada" class="alta-tarjeta estudio-ajustes">
         <legend>Energía y mantenimiento</legend>
         <div class="estudio-campos">
           <label class="cuestionario-campo">Precio de la energía
@@ -212,9 +203,12 @@
           <strong>Avanzado</strong>
           <div class="estudio-campos">
             <label class="cuestionario-campo">Mantenimiento fijo (€/año, vacío = % de la inversión)<input v-model.number="v.economia.mantenimiento" type="number" min="0" step="50"></label>
+            <label class="cuestionario-campo">Reposición de batería e inversores (€)<input v-model.number="v.economia.reposicion" type="number" min="0" step="100" :placeholder="reposicionSugerida"></label>
+            <label class="cuestionario-campo">Año de la reposición<input v-model.number="v.economia.reposicionAno" type="number" min="1" max="25" step="1" :disabled="!(Number(v.economia.reposicion) > 0)"></label>
           </div>
         </div>
       </fieldset>
+      </div>
 
       <!-- Barra anclada abajo: el botón y los avisos de lo que falta se ven siempre, aunque el formulario sea largo -->
       <div class="alta-acciones">
@@ -261,7 +255,7 @@ export default {
     const v = this.base ? JSON.parse(JSON.stringify(this.base)) : estadoInicial()
     // El cliente y el proyecto vienen del proyecto (se eligen una sola vez, al crearlo): aquí no se tocan. Se decide al abrir, no al teclear
     const fijo = !!v.customer && !!(v.proyecto || '').trim()
-    return { fijo, modoCliente: "buscar", v, intentado: false, leyendo: false, errorArchivo: '', arrastrando: '', lugar: '', nombreLugar: '', lugares: [], boes: [], abierto: false, buscando: false, errorLugar: '', temporizador: null, ORIENTACIONES, horarioAbierto: false }
+    return { presupuestoGuardado: null, fijo, modoCliente: "buscar", v, intentado: false, leyendo: false, errorArchivo: '', arrastrando: '', lugar: '', nombreLugar: '', lugares: [], boes: [], abierto: false, buscando: false, errorLugar: '', temporizador: null, ORIENTACIONES, horarioAbierto: false }
   },
   computed: {
     /** Dos números escritos en el buscador (40,42 -3,70) se toman como coordenadas. */
@@ -285,6 +279,15 @@ export default {
       return t && !TARIFAS.includes(t) ? [...TARIFAS, t] : TARIFAS
     },
     curvaReal() { return !!this.v.curva },
+    /** La potencia que se usa si se deja vacía: la que produce la mitad del consumo anual (igual que el servidor), en tramos de 5 kWp. Null sin consumo. */
+    kwpPropuesto() {
+      let consumo = 0
+      if (this.v.curva && this.v.curva.texto) consumo = this.v.curva.texto.split(',').reduce((a, x) => a + Number(x), 0) / 1000
+      else if (this.v.suministro.sips) consumo = Number(this.v.suministro.sips.kwhAnual) || 0
+      if (!(consumo > 0)) return null
+      const porKwp = this.v.instalacion.orientacion === 'sur' ? 1685 : 1420
+      return Math.max(5, Math.round((0.5 * consumo) / porKwp / 5) * 5)
+    },
     precios() { const r = this.calc && this.calc.resultado; return r && r.precios ? r.precios : null },
     /** Los peajes y cargos del último cálculo, solo mientras valgan para la tarifa elegida ahora. */
     boe() {
@@ -301,9 +304,27 @@ export default {
     conPresupuestoRef() { return conPresupuesto(this.v) },
     aislada() { return this.v.economia.modo === 'aislada' },
     bateriaPuesta() { return Number(this.v.instalacion.bateriaKwh) > 0 },
-    costeTotalPuesto() { return Number(this.v.economia.inversionTotal) > 0 },
+    /** Lo que costaría con el precio por Wp de partida (y la batería), para la casilla vacía del coste total. */
+    costeEstimado() {
+      const e = this.v.economia
+      const kwp = Number(this.v.instalacion.kwp) > 0 ? Number(this.v.instalacion.kwp) : this.kwpPropuesto
+      if (!(kwp > 0)) return 'Carga primero el consumo'
+      return 'Estimado: ' + this.fmt(kwp * 1000 * Number(e.precioWp) + Number(this.v.instalacion.bateriaKwh || 0) * Number(e.precioBateriaKwh || 0), 0) + ' € (si se deja vacío)'
+    },
+    /** Orientación para la casilla vacía de la reposición (no se aplica sola): unos 117 €/kWp de inversores y 146 €/kWh de batería. */
+    reposicionSugerida() {
+      const kwp = Number(this.v.instalacion.kwp) > 0 ? Number(this.v.instalacion.kwp) : this.kwpPropuesto
+      if (!(kwp > 0)) return '0 = sin reposición'
+      return 'Sugerido: ' + this.fmt(kwp * 116.7 + Number(this.v.instalacion.bateriaKwh || 0) * 145.8, 0) + ' €'
+    },
     nEnergia() { return this.es20 ? 3 : 6 },
     nPotencia() { return this.es20 ? 2 : 6 },
+    /** Reducción sugerida por periodo en el último cálculo (null si aún no hay o no sugiere bajar nada). */
+    sugeridaPotencia() {
+      const g = this.calc && this.calc.resultado && this.calc.resultado.graficas ? this.calc.resultado.graficas.potencia : null
+      const s = g && Array.isArray(g.sugerida) ? g.sugerida : null
+      return s && s.slice(0, this.nPotencia).some((x) => Number(x) > 0) ? s : null
+    },
     reducePotencia() { return this.v.economia.reduccionPotencia.slice(0, this.nPotencia).some((x) => Number(x) > 0) },
     /** Los proyectos que ya tienen los estudios de ese cliente, para no escribirlos distinto. */
     proyectosSugeridos() {
@@ -321,7 +342,7 @@ export default {
   watch: {
     // Con menos periodos (2.0TD) se vacían los que sobran, para que no queden valores ocultos que sigan contando
     nEnergia(n) { for (let i = n; i < 6; i++) this.v.economia.preciosPeriodo[i] = null },
-    nPotencia(n) { for (let i = n; i < 6; i++) this.v.economia.reduccionPotencia[i] = 0 }
+    nPotencia(n) { for (let i = n; i < 6; i++) this.v.economia.reduccionPotencia[i] = null }
   },
   mounted() {
     // Los BOE que hay, para poder elegir uno concreto en los ajustes (sin elegir, se usa el vigente hoy)
@@ -329,7 +350,19 @@ export default {
   },
   methods: {
     /** Deja de partir del presupuesto: el coste vuelve a ser el precio provisional (€/Wp). */
-    usarProvisional() { this.v = conCoste(this.v, null) },
+    usarProvisional() {
+      const total = this.v.economia.presupuestoTotal
+      const e = this.v.economia
+      this.presupuestoGuardado = { id: e.presupuestoId, total: e.presupuestoTotal, kwp: e.presupuestoKwp }
+      this.v = conCoste(this.v, null)
+      if (Number(total) > 0) this.v.economia.inversionTotal = Number(total)
+    },
+    /** Vuelve a partir del presupuesto del que se venía (el coste a mano se vacía). */
+    volverAlPresupuesto() {
+      this.v = conCoste(this.v, this.presupuestoGuardado)
+      this.v.economia.inversionTotal = null
+      this.presupuestoGuardado = null
+    },
     fechaCorta,
     mismaTarifa(a, b) {
       const n = (t) => String(t || '').toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/^(\d)(\d)TD$/, '$1.$2TD')
@@ -350,6 +383,16 @@ export default {
       if (punta > 0) partes.push('punta ' + this.fmt(punta, 0) + ' kW')
       if (this.boe) partes.push(this.fmt(this.boe.potencia[p - 1], 2) + ' €/kW·año')
       return partes.join(' · ')
+    },
+    /** En gris dentro de la casilla: la reducción sugerida (solo orienta: vacía, la reducción es 0). */
+    placeholderReduccion(p) {
+      const sug = this.sugeridaPotencia
+      return sug && Number(sug[p - 1]) > 0 ? this.fmt(sug[p - 1], 0) + ' (sugerida)' : '0'
+    },
+    /** Rellena las reducciones con las sugeridas (se pueden corregir a mano). */
+    usarSugerida() {
+      const sug = this.sugeridaPotencia || []
+      for (let i = 0; i < this.nPotencia; i++) this.v.economia.reduccionPotencia[i] = Number(sug[i]) > 0 ? Number(sug[i]) : null
     },
     aplicarHorario(h) {
       this.v.horario = h
@@ -380,7 +423,7 @@ export default {
           this.ubicarDelSips()
         } else {
           const r = await planificadorApi.leerCurva(archivo)
-          this.v.curva = { texto: r.texto, origen: r.origen || archivo.name, tipo: tipo === 'cuartos' ? 'cuartohoraria' : 'horaria' }
+          this.v.curva = { texto: r.texto, origen: r.origen || archivo.name }
         }
       } catch (e) {
         this.errorArchivo = mensajeError(e)

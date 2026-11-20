@@ -91,6 +91,24 @@
               {{ ROOF_LABEL[k] }}
             </label>
           </div>
+          <!-- Por cada cubierta: cómo van los paneles (coplanar o inclinada) y cuántos; el reparto solo se pide con varias cubiertas -->
+          <div v-if="hayDetalleCubiertas" class="cubiertas-detalle">
+            <div v-for="k in v.roofs" :key="k" class="cubierta-fila">
+              <span class="cubierta-nombre">{{ ROOF_LABEL[k] }}</span>
+              <span v-if="disposiciones(k).length > 1" class="cubierta-disposicion" role="radiogroup" :aria-label="'Disposición en cubierta ' + ROOF_LABEL[k]">
+                <label v-for="d in disposiciones(k)" :key="d" :class="['cubierta-opcion', { on: v.roofLayouts[k] === d }]">
+                  <input v-model="v.roofLayouts[k]" type="radio" :name="'disposicion-' + k" :value="d" /> {{ ROOF_LAYOUT_LABEL[d] }}
+                </label>
+              </span>
+              <span v-else-if="disposiciones(k).length === 1" class="muted">{{ ROOF_LAYOUT_LABEL[disposiciones(k)[0]] }}</span>
+              <span v-if="v.roofs.length > 1" class="cubierta-paneles">
+                <campo-numerico :model-value="v.roofPanels[k]" :etiqueta="'Paneles en cubierta ' + ROOF_LABEL[k]" @update:model-value="v.roofPanels[k] = Math.max(0, Math.round($event))" /> paneles
+              </span>
+            </div>
+            <p v-if="v.roofs.length > 1" :class="['paso-nota', repartoCuadra ? 'info' : 'error']">
+              Reparto: {{ repartidos }} de {{ cuenta }} paneles<template v-if="!repartoCuadra"> ({{ repartidos < cuenta ? 'faltan ' + (cuenta - repartidos) : 'sobran ' + (repartidos - cuenta) }})</template>
+            </p>
+          </div>
         </div>
         <div class="cuestionario-fila">
           <label class="cuestionario-campo">
@@ -132,7 +150,7 @@ import DisenadorStrings from './DisenadorStrings.vue'
 import CampoNumerico from './CampoNumerico.vue'
 import { planificadorApi } from '@/services/planificadorApi'
 import { prepararLogo, prepararEncaje } from '@/utils/planificador/logo'
-import { panelCount, ROOF_LABEL, ROOF_OPTIONS } from '@/utils/planificador/motor/pasosConfig'
+import { defaultLayout, panelCount, repartoDePaneles, roofLayoutsOf, ROOF_LABEL, ROOF_LAYOUT_LABEL, ROOF_OPTIONS } from '@/utils/planificador/motor/pasosConfig'
 import { EMPTY_COSTS, EMPTY_SURVEY } from '@/utils/planificador/motor/costes'
 import { stringContext } from '@/utils/planificador/motor/compatibilidad'
 import { spreadPanels, spreadStrings } from '@/utils/planificador/motor/strings'
@@ -156,7 +174,7 @@ export default {
   data() {
     const inicio = this.base || { ...EMPTY_COSTS, survey: EMPTY_SURVEY }
     // nombresExistentes: los nombres de los presupuestos que ya hay (de este navegador y del servidor), para sugerir los proyectos del cliente
-    return { inicio, v: valoresDe(inicio), intentado: false, catalogo: null, nombresExistentes: [], errorLogo: '', errorEncaje: '', ROOF_LABEL }
+    return { inicio, v: valoresDe(inicio), intentado: false, catalogo: null, nombresExistentes: [], errorLogo: '', errorEncaje: '', ROOF_LABEL, ROOF_LAYOUT_LABEL }
   },
   computed: {
     proyectosSugeridos() { return proyectosDeCliente(this.v.customer && this.v.customer.name, this.nombresExistentes) },
@@ -176,15 +194,22 @@ export default {
     },
     // «Chapa» a secas solo sale si el presupuesto ya la tenía (de antes de separar minionda y grecada)
     tiposCubierta() { return [...this.v.roofs.filter((r) => !ROOF_OPTIONS.includes(r)), ...ROOF_OPTIONS] },
+    // El detalle por cubierta (disposición y reparto) sale con varias cubiertas o cuando alguna admite elegir coplanar o inclinada
+    hayDetalleCubiertas() { return this.v.roofs.length > 1 || this.v.roofs.some((r) => roofLayoutsOf(r).length > 0) },
+    repartidos() { return this.v.roofs.reduce((s, r) => s + (Number.isInteger(this.v.roofPanels[r]) ? this.v.roofPanels[r] : 0), 0) },
+    repartoCuadra() { return this.repartidos === this.cuenta },
     esPotencial() { return !!this.v.customer && this.v.customer.kind === 'potencial' },
     // El cliente y el proyecto vienen del proyecto (se eligen una sola vez, al crearlo): aquí no se tocan
     // Qué no se pide porque la propuesta ya lo trae (se decide al abrir, no al teclear)
+    // Al editar los parámetros de un presupuesto de una propuesta, el CIF, el logo y el encaje son de la propuesta: se editan allí
+    empresaDeLaPropuesta() { return this.modo === 'editar' && this.fijo },
     oculta() {
       const i = this.inicio
+      if (this.empresaDeLaPropuesta) return { cif: true, logo: true, encaje: true }
       return { cif: this.hereda && (i.cif || '').trim().length >= 5, logo: this.hereda && !!i.clientLogo, encaje: this.hereda && !!i.encaje }
     },
     fijo() { return !!this.inicio.customer && !!(this.inicio.reference || '').trim() },
-    problemas() { return problemasDe(this.v, this.cuenta) }
+    problemas() { return problemasDe(this.v, this.cuenta, { empresaDeLaPropuesta: this.empresaDeLaPropuesta }) }
   },
   watch: {
     // Si el cliente elegido ya trae su CIF (los de la intranet), se rellena solo mientras no se haya escrito otro
@@ -195,7 +220,13 @@ export default {
       else if (c.cif && !this.v.cif) this.v.cif = c.cif
     },
     // Si cambian los paneles (potencia, panel o número) y ya hay strings repartidos, se reparten de nuevo entre los mismos strings
+    // Cambian las cubiertas: las nuevas toman su disposición por defecto y el reparto se rehace si ya no suma
+    'v.roofs'(roofs) {
+      for (const r of roofs) if (!this.v.roofLayouts[r] && defaultLayout(r)) this.v.roofLayouts[r] = defaultLayout(r)
+      this.v.roofPanels = repartoDePaneles(roofs, this.v.roofPanels, this.cuenta)
+    },
     cuenta(n) {
+      this.ajustarReparto(n)
       const diseno = this.v.strings
       if (!diseno || diseno.length === 0 || n <= 0) return
       if (diseno.reduce((s, x) => s + (x.panels > 0 ? x.panels : 0), 0) === n) return
@@ -212,6 +243,16 @@ export default {
     alternarCubierta(k) {
       const marcadas = this.v.roofs.includes(k) ? this.v.roofs.filter((r) => r !== k) : [...this.v.roofs, k]
       if (marcadas.length > 0) this.v.roofs = ROOF_OPTIONS.concat(this.v.roofs.filter((r) => !ROOF_OPTIONS.includes(r))).filter((r) => marcadas.includes(r))
+    },
+    disposiciones(roof) { return roofLayoutsOf(roof) },
+    // Cambia el total de paneles: la diferencia se la lleva la cubierta con más paneles (si no cabe, se reparte a partes iguales)
+    ajustarReparto(total) {
+      const roofs = this.v.roofs
+      const dif = total - this.repartidos
+      if (roofs.length < 2 || dif === 0) { this.v.roofPanels = repartoDePaneles(roofs, this.v.roofPanels, total); return }
+      const mayor = roofs.reduce((a, r) => ((this.v.roofPanels[r] || 0) > (this.v.roofPanels[a] || 0) ? r : a), roofs[0])
+      const nuevo = (this.v.roofPanels[mayor] || 0) + dif
+      this.v.roofPanels = nuevo >= 0 ? { ...this.v.roofPanels, [mayor]: nuevo } : repartoDePaneles(roofs, null, total)
     },
     kw(n) { return n.toLocaleString('es-ES', { maximumFractionDigits: 2 }) },
     subirLogo(evento) {

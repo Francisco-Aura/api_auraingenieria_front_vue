@@ -1,7 +1,7 @@
 import { effectiveQty, isPerModule, lineName, newLine } from './costes.js';
 import { fuseKind, fuseNeed, fuseReason } from './protecciones.js';
 import { analyzeStrings, assignInputs, autoStrings, clampTotals, effectiveStrings, fitStrings, isValidDesign, reportProblems, spreadPanels, spreadStrings, summarizeStrings, totalInputs } from './strings.js';
-import { batteryCompat, COLD_VOC, ROOF_ITEM_VALUES, ROOF_LABEL, ROOF_STRUCTURE_TYPES, STRUCTURE_TYPE_LABEL, roofItemValues, roofsOf, roofText, stringPlan } from './pasosConfig.js';
+import { batteryCompat, COLD_VOC, ROOF_ITEM_VALUES, ROOF_LABEL, ROOF_STRUCTURE_TYPES, STRUCTURE_TYPE_LABEL, layoutOf, panelsOnRoofs, roofItemValues, roofsOf, roofText, stringPlan, structureTypesFor } from './pasosConfig.js';
 /** Reglas cuyo error es una incompatibilidad de fondo (el resto depende de cantidades o de la potencia y solo avisa). */
 const HARD_RULES = new Set([
     'strings-imposible', 'optimizador-marca', 'medidor-fases', 'suministro', 'bateria', 'estructura-marco',
@@ -343,7 +343,8 @@ export function checkCompatibility(state, catalog) {
         const suyas = roofsOf(survey).filter((r) => ROOF_ITEM_VALUES[r].includes(roofOf));
         if (suyas.length === 0 || suyas.some((r) => !ROOF_STRUCTURE_TYPES[r]))
             continue;
-        const allowedTypes = [...new Set(suyas.flatMap((r) => ROOF_STRUCTURE_TYPES[r]))];
+        // Si se ha elegido coplanar o inclinada para una cubierta, solo valen los tipos de esa disposición
+        const allowedTypes = [...new Set(suyas.flatMap((r) => structureTypesFor(r, layoutOf(survey, r))))];
         const type = structureType(e.item);
         if (type && !allowedTypes.includes(type)) {
             add('error', 'estructura-tipo', 'estructura', `${name(e)} es una estructura ${STRUCTURE_TYPE_LABEL[type]} y en cubierta ${suyas.map((r) => ROOF_LABEL[r].toLowerCase()).join(' o ')} solo se admiten: ${allowedTypes.map((t) => STRUCTURE_TYPE_LABEL[t]).join(', ')}.`, [e]);
@@ -360,7 +361,19 @@ export function checkCompatibility(state, catalog) {
                 filas.forEach((e) => repartidas.add(e.line.id));
         }
     }
+    // Con varias cubiertas y un reparto de paneles, una estructura solo cubre los paneles de las cubiertas a las que sirve (las de su
+    // cubierta y con una disposición que admita su tipo): a ellos se compara su cantidad, no al total.
+    const reparto = panelsOnRoofs(survey, n);
+    const paneles = (e) => {
+        const roofOf = txt(e.item.attrs.cubierta) || 'Todas';
+        const type = structureType(e.item);
+        if (!reparto || roofOf === 'Todas' || !type)
+            return n;
+        const suyas = roofsOf(survey).filter((r) => ROOF_ITEM_VALUES[r].includes(roofOf) && structureTypesFor(r, layoutOf(survey, r)).includes(type));
+        return suyas.length > 0 ? suyas.reduce((s, r) => s + reparto[r], 0) : n;
+    };
     for (const e of [...cat('estructura'), ...cat('mano_obra')]) {
+        const n = paneles(e);
         const perKit = num(e.item.attrs.modulos_por_kit);
         const perPanel = num(e.item.attrs.uds_por_panel);
         if (perKit !== null && perKit > 0 && n > 0) {

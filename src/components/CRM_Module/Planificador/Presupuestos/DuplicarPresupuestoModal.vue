@@ -20,7 +20,7 @@
     </fieldset>
     <label v-if="variante && cliente === 'mismo'" class="field">
       Nombre de la versión <span class="muted">(opcional, por ejemplo «con baterías»)</span>
-      <input v-model="nombreVariante" maxlength="60" placeholder="Si lo dejas vacío solo se numera: v2, v3…" @keydown.enter.prevent="confirmar">
+      <input v-model="nombreVariante" maxlength="60" placeholder="Si lo dejas vacío se llamará Versión 2, Versión 3…" @keydown.enter.prevent="confirmar">
     </label>
     <template #pie>
       <button type="button" class="secondary" @click="$emit('cerrar')">Cancelar</button>

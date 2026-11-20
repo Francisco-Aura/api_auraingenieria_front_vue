@@ -874,3 +874,22 @@ test('cubierta: se guardan y se leen todos los tipos, y uno desconocido vuelve a
   }
   assert.equal(parseCosts({ survey: { roof: 'volcan' } }).survey.roof, 'teja')
 })
+
+test('disposición por cubierta: coplanar o inclinada deja solo los tipos de estructura de esa disposición', () => {
+  const con = (layout, montaje) => revisar([extra(estructura({ cubierta: 'Chapa minionda', montaje }))],
+    { opciones: { survey: { roof: 'chapa_minionda', roofs: ['chapa_minionda'], roofLayouts: { chapa_minionda: layout } } } })
+  assert.equal(tiene(con('coplanar', 'Micro rail'), 'error', 'estructura-tipo'), false)
+  assert.equal(tiene(con('coplanar', 'Inclinada 15º'), 'error', 'estructura-tipo'), true)
+  assert.equal(tiene(con('inclinada', 'Inclinada 15º'), 'error', 'estructura-tipo'), false)
+  assert.equal(tiene(con('inclinada', 'Micro rail'), 'error', 'estructura-tipo'), true)
+  assert.equal(tiene(con('', 'Micro rail'), 'error', 'estructura-tipo'), false, 'sin disposición elegida valen todos los de la cubierta')
+})
+
+test('reparto de paneles por cubierta: una estructura solo cubre los paneles de su cubierta', () => {
+  const kits = (roofPanels) => revisar([extra(estructura({ cubierta: 'Teja', montaje: 'Coplanar teja', modulos_por_kit: 1 }), 8)],
+    { opciones: { survey: { roof: 'teja', roofs: ['teja', 'chapa_minionda'], roofPanels } } })
+  // 12 paneles: 8 en teja y 4 en minionda → 8 kits de teja bastan; sin reparto harían falta 12
+  assert.equal(tiene(kits({ teja: 8, chapa_minionda: 4 }), 'error', 'estructura-kits'), false)
+  assert.equal(tiene(kits(undefined), 'error', 'estructura-kits'), true)
+  assert.equal(tiene(kits({ teja: 9, chapa_minionda: 4 }), 'error', 'estructura-kits'), true, 'un reparto que no suma el total no se usa')
+})
