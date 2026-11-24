@@ -39,7 +39,10 @@
           <div>
             <strong>Presentación de la propuesta</strong>
           </div>
-          <button type="button" class="secondary" :disabled="ocupado || !actual.has_logo" @click="ejecutar(() => descargar(actual.id))">Descargar presentación</button>
+          <div class="propuesta-acciones">
+            <button type="button" class="secondary" :disabled="ocupado || !actual.has_logo" @click="ejecutar(() => descargar(actual.id))">Descargar presentación</button>
+            <button type="button" class="enlace-boton" :disabled="ocupado || !actual.has_logo" @click="ejecutar(() => descargarHtml(actual.id))">Descargar HTML</button>
+          </div>
         </section>
 
         <ol class="propuesta-pasos">
@@ -104,6 +107,7 @@
 <script>
 import { planificadorApi, mensajeError } from '@/services/planificadorApi'
 import { prepararLogo } from '@/utils/planificador/logo'
+import { descargarArchivo, imprimirHtml } from '@/utils/planificador/documentos/descarga'
 import { CLASE_PROPUESTA } from '@/utils/planificador/listaPresupuestos'
 import { esValidador } from '@/services/usuarioActual'
 
@@ -153,17 +157,28 @@ export default {
         this.ocupado = false
       }
     },
-    // Se descarga con su nombre: abrir una pestaña tras una petición asíncrona lo bloquea el navegador
+    // La presentación se descarga en PDF (con la página de aceptación y firma, que solo sale al imprimir), hecho en el servidor con Chrome. Si el
+    // servidor no lo tiene, se abre el cuadro de impresión de la presentación para guardarla como PDF desde el navegador; y si tampoco se
+    // puede, se descarga el HTML. Se descarga con su nombre: abrir una pestaña tras una petición asíncrona lo bloquea el navegador.
     async descargar(id) {
+      try {
+        const pdf = await planificadorApi.propuestaPdf(id)
+        descargarArchivo(pdf.blob, pdf.nombre)
+        return
+      } catch (e) {
+        // 501: el servidor no tiene Chrome; 404: servidor anterior, sin el PDF de la propuesta guardada
+        if (!(e && e.response && [501, 404].includes(e.response.status))) throw e
+      }
       const { blob, filename } = await planificadorApi.propuestaHtml(id)
-      const url = URL.createObjectURL(blob)
-      const enlace = document.createElement('a')
-      enlace.href = url
-      enlace.download = filename
-      document.body.appendChild(enlace)
-      enlace.click()
-      enlace.remove()
-      window.setTimeout(() => URL.revokeObjectURL(url), 10000)
+      try {
+        await imprimirHtml(await blob.text(), filename.replace(/\.html$/i, ''))
+      } catch (e) {
+        descargarArchivo(blob, filename)
+      }
+    },
+    async descargarHtml(id) {
+      const { blob, filename } = await planificadorApi.propuestaHtml(id)
+      descargarArchivo(blob, filename)
     },
     subirLogo(evento) {
       const archivo = evento.target.files && evento.target.files[0]

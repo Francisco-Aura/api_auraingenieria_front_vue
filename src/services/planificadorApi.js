@@ -144,6 +144,9 @@ export const planificadorApi = {
     }
   },
 
+  /** La presentación de la propuesta guardada en PDF, con la página de firma: { blob, nombre }. Sin Chrome en el servidor responde 501. */
+  propuestaPdf: (id) => descargaBlob(`${BASE}/proposals/${id}/pdf`, 'Propuesta.pdf'),
+
   // Fichas técnicas: se guardan en Dropbox, en la carpeta de la marca del producto
   subirFicha: (id, archivo) => datos(axios.put(`${BASE}/equipment/${id}/datasheet`, archivo, { params: { name: archivo.name }, headers: { 'Content-Type': 'application/pdf' } })),
   opcionesFicha: (id) => datos(axios.get(`${BASE}/equipment/${id}/datasheet-options`)),
