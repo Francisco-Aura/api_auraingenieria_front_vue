@@ -35,11 +35,29 @@
           <input ref="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirLogo">
         </section>
 
+        <section class="propuesta-logo" aria-label="Encaje de los paneles">
+          <button type="button" class="propuesta-logo-caja propuesta-encaje-caja" :disabled="ocupado || encajeBloqueado" :title="encajeBloqueado ? 'Encaje de los paneles en el proyecto' : 'Haz clic o arrastra una imagen para subir el encaje'" @click="$refs.encaje.click()" @dragover.prevent @drop.prevent="soltarEncaje">
+            <img v-if="actual.client_encaje" :src="actual.client_encaje" alt="Encaje de los paneles en el proyecto">
+            <span v-else class="muted">+ Subir encaje</span>
+          </button>
+          <div>
+            <strong>Encaje de los paneles</strong>
+            <p v-if="!actual.has_encaje" class="muted propuesta-ayuda">Obligatorio para descargar la presentación: la disposición en la que quedarán los paneles en el proyecto. PNG, JPG, WebP o SVG.</p>
+            <p v-else-if="!actual.client_encaje" class="muted propuesta-ayuda">Se usa el encaje de los parámetros del presupuesto. Si subes otro, será el de esta propuesta.</p>
+            <div v-else-if="!encajeBloqueado" class="propuesta-acciones">
+              <button type="button" class="enlace-boton" :disabled="ocupado" @click="$refs.encaje.click()">Cambiar el encaje</button>
+              <button type="button" class="enlace-boton" :disabled="ocupado" @click="quitarEncaje">Quitar el encaje</button>
+            </div>
+          </div>
+          <input ref="encaje" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirEncaje">
+        </section>
+
         <section class="propuesta-documento" aria-label="Documento">
           <div>
             <strong>Presentación de la propuesta</strong>
           </div>
-          <button type="button" class="secondary" :disabled="ocupado || !actual.has_logo" @click="ejecutar(() => descargar(actual.id))">Descargar presentación</button>
+          <p v-if="faltan.length > 0" class="muted propuesta-faltantes">Para descargarla falta: {{ faltan.join(' y ') }}.</p>
+          <button type="button" class="secondary" :disabled="ocupado || faltan.length > 0" @click="ejecutar(() => descargar(actual.id))">Descargar presentación</button>
         </section>
 
         <ol class="propuesta-pasos">
@@ -103,7 +121,7 @@
 
 <script>
 import { planificadorApi, mensajeError } from '@/services/planificadorApi'
-import { prepararLogo } from '@/utils/planificador/logo'
+import { prepararLogo, prepararEncaje } from '@/utils/planificador/logo'
 import { CLASE_PROPUESTA } from '@/utils/planificador/listaPresupuestos'
 import { esValidador } from '@/services/usuarioActual'
 
@@ -124,7 +142,16 @@ export default {
     enviada() { return !!this.actual && this.actual.status !== 'borrador' },
     decidida() { return !!this.actual && (this.actual.status === 'aprobada' || this.actual.status === 'rechazada') },
     // El logo de una propuesta ya validada o anulada se ve, pero no se cambia
-    logoBloqueado() { return this.decidida && !!this.actual.client_logo }
+    logoBloqueado() { return this.decidida && !!this.actual.client_logo },
+    // Lo mismo con el encaje de los paneles
+    encajeBloqueado() { return this.decidida && !!this.actual.client_encaje },
+    // La presentación no se descarga sin el logo del cliente ni el encaje de los paneles (el servidor también lo exige)
+    faltan() {
+      const f = []
+      if (!this.actual.has_logo) f.push('el logo de la empresa')
+      if (!this.actual.has_encaje) f.push('el encaje de los paneles')
+      return f
+    }
   },
   watch: { presupuestoId() { this.lista = null; this.cargar() } },
   mounted() { this.cargar() },
@@ -180,6 +207,22 @@ export default {
     },
     quitarLogo() {
       this.ejecutar(() => planificadorApi.borrarLogoPropuesta(this.actual.id))
+    },
+    subirEncaje(evento) {
+      const archivo = evento.target.files && evento.target.files[0]
+      evento.target.value = ''
+      if (archivo) this.guardarEncaje(archivo)
+    },
+    soltarEncaje(evento) {
+      const archivo = evento.dataTransfer.files && evento.dataTransfer.files[0]
+      if (archivo && archivo.type.startsWith('image/')) this.guardarEncaje(archivo)
+    },
+    // El encaje se reduce en el navegador y se guarda en la propuesta
+    guardarEncaje(archivo) {
+      this.ejecutar(async () => planificadorApi.guardarEncajePropuesta(this.actual.id, await prepararEncaje(archivo)))
+    },
+    quitarEncaje() {
+      this.ejecutar(() => planificadorApi.borrarEncajePropuesta(this.actual.id))
     },
     eliminarBorrador() {
       if (window.confirm('Se eliminará esta propuesta en borrador. ¿Continuar?')) this.ejecutar(() => planificadorApi.borrarPropuesta(this.actual.id))

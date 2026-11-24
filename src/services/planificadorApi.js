@@ -128,6 +128,8 @@ export const planificadorApi = {
   rechazarPropuesta: (id, note = '') => datos(axios.post(`${BASE}/proposals/${id}/reject`, { note })),
   guardarLogoPropuesta: (id, logo) => datos(axios.put(`${BASE}/proposals/${id}/logo`, { logo })),
   borrarLogoPropuesta: (id) => datos(axios.delete(`${BASE}/proposals/${id}/logo`)),
+  guardarEncajePropuesta: (id, encaje) => datos(axios.put(`${BASE}/proposals/${id}/encaje`, { encaje })),
+  borrarEncajePropuesta: (id) => datos(axios.delete(`${BASE}/proposals/${id}/encaje`)),
   borrarPropuesta: (id) => axios.delete(`${BASE}/proposals/${id}`),
   /** La presentación HTML de la propuesta como archivo descargable: { blob, filename }. */
   async propuestaHtml(id) {
