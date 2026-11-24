@@ -373,8 +373,9 @@ export default {
     // navegador para guardarla como PDF y, si tampoco deja, se descarga el HTML.
     async propuestaParaElCliente(formato) {
       const estado = this.estado
-      // El presupuesto se crea sin logo, pero la propuesta no se descarga sin él (el servidor también lo exige)
+      // El presupuesto se crea sin logo ni encaje, pero la propuesta no se descarga sin ellos (el servidor también lo exige)
       if (!estado.clientLogo) throw new Error('Sube el logo de la empresa del cliente (en los datos de partida) para descargar la propuesta: sale en la presentación.')
+      if (!estado.encaje) throw new Error('Sube el encaje de los paneles en el proyecto (en los datos de partida) para descargar la propuesta: sale en la presentación.')
       const cuerpo = {
         name: [estado.client, estado.reference].filter(Boolean).join(' · '),
         // El diseño de strings que vale ahora (vacío con microinversores o sin panel), no uno viejo guardado

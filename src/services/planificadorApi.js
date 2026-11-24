@@ -128,6 +128,8 @@ export const planificadorApi = {
   rechazarPropuesta: (id, note = '') => datos(axios.post(`${BASE}/proposals/${id}/reject`, { note })),
   guardarLogoPropuesta: (id, logo) => datos(axios.put(`${BASE}/proposals/${id}/logo`, { logo })),
   borrarLogoPropuesta: (id) => datos(axios.delete(`${BASE}/proposals/${id}/logo`)),
+  guardarEncajePropuesta: (id, encaje) => datos(axios.put(`${BASE}/proposals/${id}/encaje`, { encaje })),
+  borrarEncajePropuesta: (id) => datos(axios.delete(`${BASE}/proposals/${id}/encaje`)),
   borrarPropuesta: (id) => axios.delete(`${BASE}/proposals/${id}`),
   /** La presentación HTML de la propuesta como archivo descargable: { blob, filename }. */
   async propuestaHtml(id) {
@@ -143,6 +145,11 @@ export const planificadorApi = {
       throw e
     }
   },
+
+  /** Lo que ya se sabe para crear el proyecto de una propuesta validada: { proposal_id, name, baseline, contract_party }. 409 si no está validada o ya tiene proyecto. */
+  datosParaProyecto: (id) => datos(axios.get(`${BASE}/proposals/${id}/project-data`)),
+  /** La presentación de la propuesta guardada en PDF, con la página de firma: { blob, nombre }. Sin Chrome en el servidor responde 501. */
+  propuestaPdf: (id) => descargaBlob(`${BASE}/proposals/${id}/pdf`, 'Propuesta.pdf'),
 
   // Fichas técnicas: se guardan en Dropbox, en la carpeta de la marca del producto
   subirFicha: (id, archivo) => datos(axios.put(`${BASE}/equipment/${id}/datasheet`, archivo, { params: { name: archivo.name }, headers: { 'Content-Type': 'application/pdf' } })),
@@ -168,8 +175,8 @@ export const planificadorApi = {
   // Contrato en PDF (solo PDF)
   generarContratoProyecto: (id, partes) => datos(axios.post(`${BASE}/projects/${id}/contract-document`, { party: partes })),
   urlContratoProyecto: (id) => `/api${BASE}/projects/${id}/contract-document`,
-  /** Lee el presupuesto de la oferta (PDF) y devuelve los datos que se pueden leer: campos, proyecto, avisos, cliente y garantías. No guarda nada. */
-  leerOferta: (archivo) => datos(axios.post(`${BASE}/budget/extract`, archivo, { params: { name: archivo.name }, headers: { 'Content-Type': 'application/pdf' } })),
+  /** Lee la propuesta de Aura (PDF) y devuelve los datos que se pueden leer: campos, proyecto, cliente, forma de pago, avisos y garantías. No guarda nada. */
+  leerPropuesta: (archivo) => datos(axios.post(`${BASE}/proposal/extract`, archivo, { params: { name: archivo.name }, headers: { 'Content-Type': 'application/pdf' } })),
   /** El contrato con los datos indicados, sin guardar nada: devuelve { blob, nombre }. */
   generarContrato: (datosContrato) => pdf(`${BASE}/contract/generate`, datosContrato, { format: 'pdf' }, 'Contrato.pdf'),
   /** PDF del presupuesto en curso: «interno» (costes y beneficio) o «cliente» (solo el precio de venta). Devuelve { blob, nombre }. */

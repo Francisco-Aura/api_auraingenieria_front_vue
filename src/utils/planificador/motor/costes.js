@@ -17,7 +17,7 @@ export const EMPTY_COSTS = {
     reference: '',
     cif: '',
     clientLogo: '',
-    // «Encaje»: imagen con la disposición de los paneles en el proyecto; sale en la propuesta HTML (opcional)
+    // «Encaje»: imagen con la disposición de los paneles en el proyecto; sale en la propuesta HTML (obligatorio para descargarla)
     encaje: '',
     strings: null,
     moduleWp: 615,

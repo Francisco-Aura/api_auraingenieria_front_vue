@@ -35,11 +35,32 @@
           <input ref="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirLogo">
         </section>
 
+        <section class="propuesta-logo" aria-label="Encaje de los paneles">
+          <button type="button" class="propuesta-logo-caja propuesta-encaje-caja" :disabled="ocupado || encajeBloqueado" :title="encajeBloqueado ? 'Encaje de los paneles en el proyecto' : 'Haz clic o arrastra una imagen para subir el encaje'" @click="$refs.encaje.click()" @dragover.prevent @drop.prevent="soltarEncaje">
+            <img v-if="actual.client_encaje" :src="actual.client_encaje" alt="Encaje de los paneles en el proyecto">
+            <span v-else class="muted">+ Subir encaje</span>
+          </button>
+          <div>
+            <strong>Encaje de los paneles</strong>
+            <p v-if="!actual.has_encaje" class="muted propuesta-ayuda">Obligatorio para descargar la presentación: la disposición en la que quedarán los paneles en el proyecto. PNG, JPG, WebP o SVG.</p>
+            <p v-else-if="!actual.client_encaje" class="muted propuesta-ayuda">Se usa el encaje de los parámetros del presupuesto. Si subes otro, será el de esta propuesta.</p>
+            <div v-else-if="!encajeBloqueado" class="propuesta-acciones">
+              <button type="button" class="enlace-boton" :disabled="ocupado" @click="$refs.encaje.click()">Cambiar el encaje</button>
+              <button type="button" class="enlace-boton" :disabled="ocupado" @click="quitarEncaje">Quitar el encaje</button>
+            </div>
+          </div>
+          <input ref="encaje" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirEncaje">
+        </section>
+
         <section class="propuesta-documento" aria-label="Documento">
           <div>
             <strong>Presentación de la propuesta</strong>
           </div>
-          <button type="button" class="secondary" :disabled="ocupado || !actual.has_logo" @click="ejecutar(() => descargar(actual.id))">Descargar presentación</button>
+          <p v-if="faltan.length > 0" class="muted propuesta-faltantes">Para descargarla falta: {{ faltan.join(' y ') }}.</p>
+          <div class="propuesta-acciones">
+            <button type="button" class="secondary" :disabled="ocupado || faltan.length > 0" @click="ejecutar(() => descargar(actual.id))">Descargar presentación</button>
+            <button type="button" class="enlace-boton" :disabled="ocupado || faltan.length > 0" @click="ejecutar(() => descargarHtml(actual.id))">Descargar HTML</button>
+          </div>
         </section>
 
         <ol class="propuesta-pasos">
@@ -84,7 +105,16 @@
         <div v-if="actual.status === 'rechazada'" class="propuesta-acciones">
           <button type="button" :disabled="ocupado" @click="ejecutar(() => crear())">Crear la propuesta nº {{ actual.version + 1 }}</button>
         </div>
-        <p v-if="actual.status === 'aprobada'" class="paso-nota ok">Propuesta validada.</p>
+        <template v-if="actual.status === 'aprobada'">
+          <p class="paso-nota ok">Propuesta validada.</p>
+          <!-- Del puente con los proyectos: una propuesta validada da un proyecto (con sus datos ya puestos) y solo uno -->
+          <p v-if="actual.project" class="paso-nota ok">
+            Proyecto creado: <button type="button" class="enlace-boton" @click="$emit('abrir-proyecto', actual.project.id)">{{ actual.project.name }}</button>
+          </p>
+          <div v-else class="propuesta-acciones">
+            <button type="button" :disabled="ocupado" @click="$emit('crear-proyecto', actual.id)">Crear proyecto</button>
+          </div>
+        </template>
       </template>
 
       <details v-if="historial.length > 0" class="propuesta-historial">
@@ -103,7 +133,8 @@
 
 <script>
 import { planificadorApi, mensajeError } from '@/services/planificadorApi'
-import { prepararLogo } from '@/utils/planificador/logo'
+import { prepararLogo, prepararEncaje } from '@/utils/planificador/logo'
+import { descargarArchivo, imprimirHtml } from '@/utils/planificador/documentos/descarga'
 import { CLASE_PROPUESTA } from '@/utils/planificador/listaPresupuestos'
 import { esValidador } from '@/services/usuarioActual'
 
@@ -115,7 +146,7 @@ const ETIQUETA = { borrador: 'Borrador', enviada: 'Entregada al cliente', aproba
 export default {
   name: 'Seccion-Propuesta',
   props: { presupuestoId: { type: String, required: true }, estudioValido: { type: Boolean, default: true } },
-  emits: ['cambio', 'estado'],
+  emits: ['cambio', 'estado', 'crear-proyecto', 'abrir-proyecto'],
   data() { return { ETIQUETA, CLASE_PROPUESTA, planificadorApi, lista: null, ocupado: false, error: '' } },
   computed: {
     actual() { return this.lista && this.lista[0] },
@@ -124,7 +155,16 @@ export default {
     enviada() { return !!this.actual && this.actual.status !== 'borrador' },
     decidida() { return !!this.actual && (this.actual.status === 'aprobada' || this.actual.status === 'rechazada') },
     // El logo de una propuesta ya validada o anulada se ve, pero no se cambia
-    logoBloqueado() { return this.decidida && !!this.actual.client_logo }
+    logoBloqueado() { return this.decidida && !!this.actual.client_logo },
+    // Lo mismo con el encaje de los paneles
+    encajeBloqueado() { return this.decidida && !!this.actual.client_encaje },
+    // La presentación no se descarga sin el logo del cliente ni el encaje de los paneles (el servidor también lo exige)
+    faltan() {
+      const f = []
+      if (!this.actual.has_logo) f.push('el logo de la empresa')
+      if (!this.actual.has_encaje) f.push('el encaje de los paneles')
+      return f
+    }
   },
   watch: { presupuestoId() { this.lista = null; this.cargar() } },
   mounted() { this.cargar() },
@@ -153,17 +193,28 @@ export default {
         this.ocupado = false
       }
     },
-    // Se descarga con su nombre: abrir una pestaña tras una petición asíncrona lo bloquea el navegador
+    // La presentación se descarga en PDF (con la página de aceptación y firma, que solo sale al imprimir), hecho en el servidor con Chrome. Si el
+    // servidor no lo tiene, se abre el cuadro de impresión de la presentación para guardarla como PDF desde el navegador; y si tampoco se
+    // puede, se descarga el HTML. Se descarga con su nombre: abrir una pestaña tras una petición asíncrona lo bloquea el navegador.
     async descargar(id) {
+      try {
+        const pdf = await planificadorApi.propuestaPdf(id)
+        descargarArchivo(pdf.blob, pdf.nombre)
+        return
+      } catch (e) {
+        // 501: el servidor no tiene Chrome; 404: servidor anterior, sin el PDF de la propuesta guardada
+        if (!(e && e.response && [501, 404].includes(e.response.status))) throw e
+      }
       const { blob, filename } = await planificadorApi.propuestaHtml(id)
-      const url = URL.createObjectURL(blob)
-      const enlace = document.createElement('a')
-      enlace.href = url
-      enlace.download = filename
-      document.body.appendChild(enlace)
-      enlace.click()
-      enlace.remove()
-      window.setTimeout(() => URL.revokeObjectURL(url), 10000)
+      try {
+        await imprimirHtml(await blob.text(), filename.replace(/\.html$/i, ''))
+      } catch (e) {
+        descargarArchivo(blob, filename)
+      }
+    },
+    async descargarHtml(id) {
+      const { blob, filename } = await planificadorApi.propuestaHtml(id)
+      descargarArchivo(blob, filename)
     },
     subirLogo(evento) {
       const archivo = evento.target.files && evento.target.files[0]
@@ -180,6 +231,22 @@ export default {
     },
     quitarLogo() {
       this.ejecutar(() => planificadorApi.borrarLogoPropuesta(this.actual.id))
+    },
+    subirEncaje(evento) {
+      const archivo = evento.target.files && evento.target.files[0]
+      evento.target.value = ''
+      if (archivo) this.guardarEncaje(archivo)
+    },
+    soltarEncaje(evento) {
+      const archivo = evento.dataTransfer.files && evento.dataTransfer.files[0]
+      if (archivo && archivo.type.startsWith('image/')) this.guardarEncaje(archivo)
+    },
+    // El encaje se reduce en el navegador y se guarda en la propuesta
+    guardarEncaje(archivo) {
+      this.ejecutar(async () => planificadorApi.guardarEncajePropuesta(this.actual.id, await prepararEncaje(archivo)))
+    },
+    quitarEncaje() {
+      this.ejecutar(() => planificadorApi.borrarEncajePropuesta(this.actual.id))
     },
     eliminarBorrador() {
       if (window.confirm('Se eliminará esta propuesta en borrador. ¿Continuar?')) this.ejecutar(() => planificadorApi.borrarPropuesta(this.actual.id))

@@ -54,7 +54,7 @@
               <span v-else class="muted">+ Subir encaje</span>
             </button>
             <div>
-              <span class="muted campo-pista">Opcional: la disposición en la que quedarán los paneles en el proyecto. Sale en la propuesta con un marco. PNG, JPG, WebP o SVG; haz clic en la caja o arrastra la imagen.</span>
+              <span class="muted campo-pista">Opcional para crear el presupuesto, pero obligatorio para descargar la propuesta: la disposición en la que quedarán los paneles en el proyecto. Sale en ella con un marco. PNG, JPG, WebP o SVG; haz clic en la caja o arrastra la imagen.</span>
               <button v-if="v.encaje" type="button" class="enlace-boton" @click="v.encaje = ''">Quitar el encaje</button>
               <p v-if="errorEncaje" class="error" role="alert">{{ errorEncaje }}</p>
             </div>

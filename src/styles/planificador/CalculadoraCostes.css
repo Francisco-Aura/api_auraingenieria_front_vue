@@ -289,10 +289,19 @@ th .orden-boton.on .orden-icon {
 
 .tag {
   display: inline-block;
+  box-sizing: border-box;
+  max-width: 100%;
   margin: 0 4px 4px 0;
   padding: 1px 8px;
   border-radius: 999px;
   font-size: 12px;
+  line-height: 1.4;
+  /* Una etiqueta es una píldora de una sola línea: si el texto saltara de línea en una columna estrecha, se saldría del contorno.
+     La columna se ensancha lo necesario y, si aun así no cabe, se recorta con puntos suspensivos (el título tiene el texto entero). */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle; /* con overflow oculto la línea base pasa al borde inferior: sin esto la píldora bajaría respecto al texto */
   background: var(--bg-alt);
   color: var(--text);
 }
@@ -1141,6 +1150,7 @@ th .orden-boton.on .orden-icon {
   background: var(--bg-alt);
   font-size: 11.5px;
   font-weight: 600;
+  white-space: nowrap;
   color: var(--muted);
 }
 

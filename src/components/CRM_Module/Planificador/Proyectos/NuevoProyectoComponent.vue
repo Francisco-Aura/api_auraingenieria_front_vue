@@ -1,5 +1,5 @@
 <template>
-  <div class="creator" :class="{ 'with-escaneo': archivoPresupuesto }">
+  <div class="creator" :class="{ 'with-escaneo': archivoPropuesta }">
     <form class="nuevo-proyecto" :class="{ reading: leyendo }" :aria-busy="leyendo" @submit.prevent="crear">
       <div class="nuevo-proyecto-cabecera">
         <h1>Nuevo proyecto</h1>
@@ -18,16 +18,21 @@
       </p>
       <p v-if="problema && problema.kind === 'offline'" class="notice warn">{{ problema.message }}</p>
 
+      <p v-if="datos.propuestaId" class="notice" role="status">
+        Proyecto creado a partir de una propuesta validada: el nombre, el cliente y los datos del contrato de referencia (importe, equipos y potencia) vienen de su presupuesto. Revísalos antes de crearlo.
+      </p>
+
       <p v-if="restauradoEl && !problema" class="notice borrador-aviso" role="status">
         Estás con un borrador compartido<template v-if="actualizadoPor"> (último cambio de {{ actualizadoPor }}, {{ horaBorrador(restauradoEl) }})</template>.
-        Lo que escribas se guarda en él y lo ven las demás personas. El PDF del presupuesto no se guarda: si lo
+        Lo que escribas se guarda en él y lo ven las demás personas. El PDF de la propuesta no se guarda: si lo
         vuelves a subir, se leerá otra vez. <button type="button" class="enlace-boton" @click="empezarDeNuevo">Empezar un proyecto nuevo</button>
       </p>
 
-      <!-- Lo primero es el presupuesto: de él salen el nombre y los datos del contrato inicial -->
-      <section class="contrato-primero">
-        <h2>Presupuesto</h2>
-        <subir-oferta :campos="campos" @ocupado="leyendo = $event" @archivo="archivoPresupuesto = $event" @proyecto="alLeerProyecto" @datos-extraidos="alLeerDatos" @extraccion="alLeerExtraccion" />
+      <!-- Lo primero es la propuesta: de ella salen el nombre, el cliente y los datos del contrato inicial.
+           Se oculta cuando el proyecto ya viene de una propuesta validada (propuestaId): esos datos se toman de su presupuesto -->
+      <section v-if="!datos.propuestaId" class="contrato-primero">
+        <h2>Propuesta</h2>
+        <subir-propuesta :campos="campos" @ocupado="leyendo = $event" @archivo="archivoPropuesta = $event" @proyecto="alLeerProyecto" @datos-extraidos="alLeerDatos" @extraccion="alLeerExtraccion" @plan-extraido="alLeerPlan" />
       </section>
 
       <label :class="{ 'from-contrato': nombreDeOferta }">
@@ -102,8 +107,8 @@
       </div>
     </form>
 
-    <div v-if="archivoPresupuesto" class="creador-escaneo">
-      <visor-pdf :archivo="archivoPresupuesto" @cerrar="archivoPresupuesto = null" />
+    <div v-if="archivoPropuesta" class="creador-escaneo">
+      <visor-pdf :archivo="archivoPropuesta" @cerrar="archivoPropuesta = null" />
     </div>
   </div>
 </template>
@@ -116,7 +121,7 @@ import GeneradorContrato from '../Contratos/GeneradorContrato.vue'
 import VisorPdf from '../Contratos/VisorPdf.vue'
 import CampoCarpetaDropbox from './CampoCarpetaDropbox.vue'
 import SelectorCarpetaDropbox from './SelectorCarpetaDropbox.vue'
-import SubirOferta from './SubirOfertaComponent.vue'
+import SubirPropuesta from './SubirPropuestaComponent.vue'
 import { planificadorApi, mensajeError } from '@/services/planificadorApi'
 import { STANDARD_PLAN, planPayload, planPercents, planProblem } from '@/utils/planificador/contratos/pagos'
 import { formularioDeContrato } from '@/utils/planificador/contratos/formatoContrato'
@@ -131,25 +136,34 @@ const estadoHttp = (e) => (e && e.response && e.response.status) || 0
 // proyecto, el servidor consume el borrador. Los datos del borrador usan los mismos nombres que el Planificador anterior.
 export default {
   name: 'Nuevo-Proyecto-Component',
-  components: { CamposContrato, ComprobacionesContrato, PlanPagosEditor, GeneradorContrato, VisorPdf, CampoCarpetaDropbox, SelectorCarpetaDropbox, SubirOferta },
+  components: { CamposContrato, ComprobacionesContrato, PlanPagosEditor, GeneradorContrato, VisorPdf, CampoCarpetaDropbox, SelectorCarpetaDropbox, SubirPropuesta },
   props: {
     plantillas: { type: Array, default: () => [] },
     // Datos del contrato de referencia (importe, equipos, potencia)
     campos: { type: Array, default: () => [] },
     // Borrador que se retoma: { id, name, data, updated_at, updated_by }
-    borrador: { type: Object, default: null }
+    borrador: { type: Object, default: null },
+    // Propuesta validada de la que se crea el proyecto: { proposal_id, name, baseline, contract_party } (lo que dice el servidor de ella)
+    desdePropuesta: { type: Object, default: null }
   },
   emits: ['crear', 'cancelar', 'borradores-cambiados'],
   data() {
-    const g = (this.borrador && this.borrador.data) || {}
+    const p = this.desdePropuesta
+    // Sin borrador, con una propuesta validada: se parte de lo que ya se sabe de ella (los datos del contrato se marcan como leídos del presupuesto)
+    const g = (this.borrador && this.borrador.data) || (p ? {
+      name: p.name, baseline: Object.fromEntries(Object.entries(p.baseline || {}).map(([k, v]) => [k, String(v)])), fromContract: Object.keys(p.baseline || {}),
+      party: p.contract_party, proposalId: p.proposal_id
+    } : {})
     return {
       datos: {
+        // La propuesta de la que viene (si viene de una): se guarda también en el borrador para no perder el enlace
+        propuestaId: g.proposalId || '',
         nombre: g.name || '', descripcion: g.description || '', inicio: g.startDate || todayStr(),
         baseline: { ...formularioDeContrato(this.campos), ...(g.baseline || {}) }, desdeContrato: Array.isArray(g.fromContract) ? g.fromContract : [],
         plan: g.plan || STANDARD_PLAN, parte: { ...PARTE_VACIA, ...(g.party || {}) },
         // El contrato es obligatorio: si no se genera aquí, el proyecto se crea igualmente y queda pendiente de generar
         contratoGenerado: g.contractGenerated === true,
-        // Garantías de los módulos leídas del presupuesto (van al contrato)
+        // Garantías de los módulos leídas de la propuesta (van al contrato)
         extras: g.extras || {},
         // Empresa en corto y lugar de la carpeta de Dropbox: null = el sugerido a partir de la empresa del contrato
         empresaCarpeta: g.folderCompany ?? null, lugarCarpeta: g.folderPlace ?? null, carpetaExistente: g.existingFolder || null
@@ -162,7 +176,7 @@ export default {
       // Problema con el borrador: otra persona lo cambió (conflict) o ya no existe (lost); en ambos se deja de guardar
       problema: null,
       error: null, ocupado: false, temporizador: null, cadena: Promise.resolve(), estadoDropbox: null, contratoIntentado: false, eligiendoCarpeta: false,
-      leyendo: false, nombreDeOferta: false, nombreTocado: !!(g.name && g.name.trim()), archivoPresupuesto: null
+      leyendo: false, nombreDeOferta: false, nombreTocado: !!(g.name && g.name.trim()), archivoPropuesta: null
     }
   },
   computed: {
@@ -172,7 +186,7 @@ export default {
     nombreCarpeta() { return folderBase(this.empresaCarpeta, this.lugarCarpeta) },
     fechaPasada() { return this.datos.inicio < todayStr() },
     problemaPlan() { return planProblem(this.datos.plan) },
-    // Datos del presupuesto que faltan para el contrato, a marcar en rojo después del intento
+    // Datos de la propuesta que faltan para el contrato, a marcar en rojo después del intento
     invalidos() { return this.contratoIntentado ? DATOS_OBLIGATORIOS_DEL_CONTRATO.map(([clave]) => clave) : [] },
     // Hay algo escrito que merezca guardarse (un formulario vacío no deja borrador)
     hayContenido() {
@@ -203,7 +217,8 @@ export default {
       const d = this.datos
       return {
         name: d.nombre, description: d.descripcion, startDate: d.inicio, baseline: d.baseline, fromContract: d.desdeContrato, plan: d.plan, party: d.parte,
-        extras: d.extras, folderCompany: d.empresaCarpeta, folderPlace: d.lugarCarpeta, existingFolder: d.carpetaExistente, contractGenerated: d.contratoGenerado
+        extras: d.extras, folderCompany: d.empresaCarpeta, folderPlace: d.lugarCarpeta, existingFolder: d.carpetaExistente, contractGenerated: d.contratoGenerado,
+        proposalId: d.propuestaId
       }
     },
     // Los guardados van de uno en uno y en orden: el primero crea el borrador y los siguientes lo actualizan
@@ -251,6 +266,7 @@ export default {
     },
     aplicar(g) {
       this.datos = {
+        propuestaId: g.proposalId || '',
         nombre: g.name || '', descripcion: g.description || '', inicio: g.startDate || todayStr(),
         baseline: { ...formularioDeContrato(this.campos), ...(g.baseline || {}) }, desdeContrato: Array.isArray(g.fromContract) ? g.fromContract : [],
         plan: g.plan || STANDARD_PLAN, parte: { ...PARTE_VACIA, ...(g.party || {}) }, contratoGenerado: g.contractGenerated === true, extras: g.extras || {},
@@ -283,7 +299,7 @@ export default {
       this.problema = null
     },
     empezarDeNuevo() { this.separar(); this.aplicar({}) },
-    // El nombre sugerido por el presupuesto no pisa lo que ya se haya escrito
+    // El nombre sugerido por la propuesta no pisa lo que ya se haya escrito
     alLeerProyecto({ name }) {
       if (name && !this.nombreTocado) { this.datos.nombre = name; this.nombreDeOferta = true }
     },
@@ -294,19 +310,27 @@ export default {
     },
     alLeerExtraccion(lectura) {
       this.datos.extras = lectura.extras || {}
-      // Datos del cliente del presupuesto para el contrato (lo ya tecleado no se pisa)
+      // Datos del cliente de la propuesta para el contrato (lo ya tecleado no se pisa)
       const p = this.datos.parte
       this.datos.parte = {
-        ...p, empresa: p.empresa || lectura.client.name || '', domicilio: p.domicilio || lectura.client.address || '', instalacion: p.instalacion || lectura.client.address || ''
+        ...p, empresa: p.empresa || lectura.client.name || '', cif: p.cif || lectura.client.cif || '',
+        domicilio: p.domicilio || lectura.client.address || '', instalacion: p.instalacion || lectura.client.address || ''
       }
-      // Lugar de la carpeta de Dropbox: la localidad del presupuesto, salvo que ya lo indique la empresa (lo que va entre paréntesis) o se haya escrito a mano
+      // Lugar de la carpeta de Dropbox: la localidad de la propuesta, salvo que ya lo indique la empresa (lo que va entre paréntesis) o se haya escrito a mano
       const localidad = lectura.project.locality && lectura.project.locality.value
       if (localidad && !suggestedPlace(this.datos.parte.empresa) && this.datos.lugarCarpeta === null) {
         this.datos.lugarCarpeta = localidad.replace(/\s+/g, ' ').trim().toUpperCase()
       }
       this.datos.contratoGenerado = false
     },
-    // Al editar un dato a mano deja de considerarse «leído del presupuesto»; cambiar los datos del contrato obliga a generarlo de nuevo
+    // La forma de pago que lleva la propuesta (la habitual del contrato modelo, o la que se pactó con porcentajes propios)
+    alLeerPlan(plan) {
+      this.datos.plan = plan.mode === 'standard'
+        ? STANDARD_PLAN
+        : { mode: 'custom', stages: plan.stages.map((s) => ({ label: s.label, note: s.note || '', percent: String(s.percent) })) }
+      this.datos.contratoGenerado = false
+    },
+    // Al editar un dato a mano deja de considerarse «leído de la propuesta»; cambiar los datos del contrato obliga a generarlo de nuevo
     cambiarBaseline(valores) {
       this.datos.desdeContrato = this.datos.desdeContrato.filter((k) => valores[k] === this.datos.baseline[k])
       this.datos.baseline = valores
@@ -323,6 +347,8 @@ export default {
         name: d.nombre.trim(), description: d.descripcion.trim(), start_date: d.inicio,
         template_id: this.plantilla ? this.plantilla.id : null, exclude_steps: [],
         baseline: d.baseline, payment_plan: planPayload(d.plan),
+        // Si viene de una propuesta validada, el servidor lo enlaza con ella (y no deja crear otro de la misma)
+        proposal_id: d.propuestaId || null,
         // Con una carpeta existente elegida se usa esa; si no, se crea (o reutiliza) la de «aammdd_EMPRESA_LUGAR»
         dropbox_existing: this.estadoDropbox && this.estadoDropbox.enabled && d.carpetaExistente ? d.carpetaExistente : '',
         dropbox_name: this.estadoDropbox && this.estadoDropbox.enabled && !d.carpetaExistente ? this.nombreCarpeta.trim() : '',
