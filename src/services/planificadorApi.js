@@ -144,6 +144,8 @@ export const planificadorApi = {
     }
   },
 
+  /** Lo que ya se sabe para crear el proyecto de una propuesta validada: { proposal_id, name, baseline, contract_party }. 409 si no está validada o ya tiene proyecto. */
+  datosParaProyecto: (id) => datos(axios.get(`${BASE}/proposals/${id}/project-data`)),
   /** La presentación de la propuesta guardada en PDF, con la página de firma: { blob, nombre }. Sin Chrome en el servidor responde 501. */
   propuestaPdf: (id) => descargaBlob(`${BASE}/proposals/${id}/pdf`, 'Propuesta.pdf'),
 

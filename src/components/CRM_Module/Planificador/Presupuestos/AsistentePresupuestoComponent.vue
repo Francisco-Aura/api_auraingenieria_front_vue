@@ -8,7 +8,7 @@
   />
   <div v-else>
     <p v-if="aviso" class="paso-nota warn" role="alert">{{ aviso }}</p>
-    <lista-presupuestos-component ref="lista" :con-volver="conVolver" @cerrar="$emit('cerrar')" @abrir-estudio="$emit('abrir-estudio', $event)" @crear-estudio="$emit('crear-estudio', $event)" @abrir-boe="$emit('abrir-boe')" @crear-presupuesto="nuevoDesdeEstudio" @abrir="(id) => abrir(id, true)" @abrir-local="(id) => abrir(id, false)" @duplicar="pedirDuplicado" />
+    <lista-presupuestos-component ref="lista" :con-volver="conVolver" @cerrar="$emit('cerrar')" @abrir-estudio="$emit('abrir-estudio', $event)" @crear-estudio="$emit('crear-estudio', $event)" @abrir-boe="$emit('abrir-boe')" @crear-proyecto="$emit('crear-proyecto', $event)" @abrir-proyecto="$emit('abrir-proyecto', $event)" @crear-presupuesto="nuevoDesdeEstudio" @abrir="(id) => abrir(id, true)" @abrir-local="(id) => abrir(id, false)" @duplicar="pedirDuplicado" />
   </div>
   <duplicar-presupuesto-modal v-if="duplicando" :nombre="duplicando.nombre" :variante="duplicando.variante" @cerrar="duplicando = null" @confirmar="duplicar" />
 </template>
@@ -39,7 +39,7 @@ export default {
     // proyecto y potencia y, al guardarlo y compartirlo, nace asociado a ese estudio.
     traspaso: { type: Object, default: null }
   },
-  emits: ['cerrar', 'abrir-inventario', 'crear-estudio', 'abrir-estudio', 'abrir-boe'],
+  emits: ['cerrar', 'abrir-inventario', 'crear-estudio', 'abrir-estudio', 'abrir-boe', 'crear-proyecto', 'abrir-proyecto'],
   components: { ListaPresupuestosComponent, DatosPresupuestoComponent, EditorPresupuestoComponent, DuplicarPresupuestoModal },
   data() {
     // duplicando: el presupuesto que se está duplicando mientras se elige el cliente de la copia

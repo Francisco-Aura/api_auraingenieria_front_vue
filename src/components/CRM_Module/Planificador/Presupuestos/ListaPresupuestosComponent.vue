@@ -182,7 +182,7 @@
       </table>
     </div>
     <modal-component v-if="propuestaFinal" :titulo="'Propuesta final · ' + propuestaFinal.cliente + (propuestaFinal.proyecto ? ' · ' + propuestaFinal.proyecto : '')" @cerrar="cerrarPropuestaFinal">
-      <seccion-propuesta :presupuesto-id="propuestaFinal.final.presupuesto.id" :estudio-valido="!['rechazado', 'cancelado'].includes(propuestaFinal.final.estudio.estado)" @cambio="cargar" />
+      <seccion-propuesta :presupuesto-id="propuestaFinal.final.presupuesto.id" :estudio-valido="!['rechazado', 'cancelado'].includes(propuestaFinal.final.estudio.estado)" @cambio="cargar" @crear-proyecto="$emit('crear-proyecto', $event)" @abrir-proyecto="$emit('abrir-proyecto', $event)" />
     </modal-component>
   </div>
 </template>
@@ -228,7 +228,7 @@ export default {
   components: { SelectorCliente, DatosEmpresaPropuesta, SeccionPropuesta, ModalComponent },
   // abrir: un compartido (se ve su detalle) o un local (lo abre el asistente); duplicar: lo hace el asistente
   props: { conVolver: { type: Boolean, default: false } },
-  emits: ['abrir', 'abrir-local', 'abrir-estudio', 'duplicar', 'cerrar', 'crear-estudio', 'crear-presupuesto', 'abrir-boe'],
+  emits: ['abrir', 'abrir-local', 'abrir-estudio', 'duplicar', 'cerrar', 'crear-estudio', 'crear-presupuesto', 'abrir-boe', 'crear-proyecto', 'abrir-proyecto'],
   data() {
     return {
       COLUMNAS, estudiosRemotos: [], proyectosServidor: [], propuestaFinal: null, remotos: null, errorServidor: null, version: 0, mensaje: null, ocupado: null, consulta: '', filtro: 'todos',

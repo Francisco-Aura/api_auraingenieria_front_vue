@@ -15,7 +15,7 @@
         <li v-if="proyectos.length === 0 && borradores.length === 0" class="muted empty">Aún no hay proyectos.</li>
         <li v-else-if="abiertos.length === 0 && borradores.length === 0" class="muted empty">No hay proyectos en curso.</li>
       </ul>
-      <button type="button" class="wide" @click="borradorAbierto = null; creando = true">+ Nuevo proyecto</button>
+      <button type="button" class="wide" @click="borradorAbierto = null; datosPropuesta = null; creando = true">+ Nuevo proyecto</button>
 
       <template v-if="terminados.length > 0">
         <button type="button" class="archivado-alternar" :aria-expanded="verTerminados || terminadoAbierto" @click="verTerminados = !verTerminados">
@@ -33,7 +33,7 @@
     <main class="content" :class="{ 'drawer-abrir': seleccion && seleccionado && !creando }">
       <p v-if="error" class="error">Error: {{ error }}</p>
 
-      <nuevo-proyecto-component v-if="creando" :key="borradorAbierto ? borradorAbierto.id : 'nuevo'" :plantillas="plantillas" :campos="camposContrato" :borrador="borradorAbierto"
+      <nuevo-proyecto-component v-if="creando" :key="borradorAbierto ? borradorAbierto.id : datosPropuesta ? 'propuesta-' + datosPropuesta.proposal_id : 'nuevo'" :plantillas="plantillas" :campos="camposContrato" :borrador="borradorAbierto" :desde-propuesta="borradorAbierto ? null : datosPropuesta"
                                 @crear="alCrear" @cancelar="creando = false" @borradores-cambiados="cargarBorradores" />
       <p v-else-if="!seleccionado" class="muted">Selecciona un proyecto o crea uno nuevo.</p>
       <template v-else>
@@ -128,13 +128,14 @@ import { horaBorrador } from '@/utils/planificador/borradores'
 export default {
   name: 'Proyectos-Component',
   // enlace: {proyecto, tarea} de un aviso de la intranet; con-volver: hay más herramientas y se puede volver al inicio
-  props: { enlace: { type: Object, default: null }, conVolver: { type: Boolean, default: false } },
-  emits: ['volver'],
+  // desde-propuesta: id de una propuesta validada de la que crear el proyecto (abre «Nuevo proyecto» con sus datos)
+  props: { enlace: { type: Object, default: null }, conVolver: { type: Boolean, default: false }, desdePropuesta: { type: String, default: null } },
+  emits: ['volver', 'propuesta-recogida'],
   components: { NuevoProyectoComponent, ListaTareasComponent, TableroTareasComponent, CronogramaComponent, PanelTareaComponent, ActividadComponent, EliminarProyectoModal, DialogosTarea, CambiosComponent, EditarProyectoModal, CarpetaDropboxComponent, ContratoProyectoComponent , DocumentosProyecto},
   data() {
     return {
       proyectos: [], plantillas: [], borradores: [], seleccionadoId: null, cargadasDe: null, tareas: [], seleccion: null, contrato: null, camposContrato: [], editandoProyecto: false, estadoDropbox: null,
-      creando: false, borradorAbierto: null, verTerminados: false, eliminando: null, dialogo: null, error: null, ocupado: false,
+      creando: false, borradorAbierto: null, datosPropuesta: null, verTerminados: false, eliminando: null, dialogo: null, error: null, ocupado: false,
       seccion: 'tareas', vista: 'cronograma', versionActividad: 0, inicioPlantilla: todayStr(),
       tareaNombre: '', tareaInicio: todayStr(), tareaFin: todayStr()
     }
@@ -164,6 +165,7 @@ export default {
   async mounted() {
     await this.ejecutar(async () => { this.proyectos = await planificadorApi.proyectos() })
     await this.recuperarDondeEstaba()
+    if (this.desdePropuesta) await this.empezarDesdePropuesta()
     planificadorApi.dropboxEstado().then((e) => { this.estadoDropbox = e }, () => { this.estadoDropbox = { enabled: false, base: '' } })
     planificadorApi.camposContrato().then((c) => { this.camposContrato = c }, () => undefined)
     planificadorApi.plantillas().then((p) => { this.plantillas = p }, () => { this.error = 'No se pudieron cargar las plantillas. Es posible que el servidor se esté reiniciando: recarga la página (Ctrl+F5).' })
@@ -255,6 +257,19 @@ export default {
     },
     revisarCambios(tareaId, ids) { this.cambiarTarea(tareaId, { change_acks: ids }).then(() => this.recargarContrato()) },
     async recargarContrato() { if (this.seleccionadoId) this.contrato = await planificadorApi.contrato(this.seleccionadoId) },
+    // Del puente con las propuestas: «Nuevo proyecto» con lo que ya se sabe de la propuesta validada (importe, equipos, potencia y cliente).
+    // Se olvida la propuesta pedida al recogerla, para que volver a esta pantalla más tarde no reabra el formulario.
+    async empezarDesdePropuesta() {
+      const id = this.desdePropuesta
+      this.$emit('propuesta-recogida')
+      try {
+        this.datosPropuesta = await planificadorApi.datosParaProyecto(id)
+        this.borradorAbierto = null
+        this.creando = true
+      } catch (e) {
+        this.error = mensajeError(e)
+      }
+    },
     async abrirBorrador(id) {
       try { this.borradorAbierto = await planificadorApi.borrador(id); this.creando = true } catch (e) { this.error = mensajeError(e); this.cargarBorradores() }
     },

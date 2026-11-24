@@ -18,6 +18,10 @@
       </p>
       <p v-if="problema && problema.kind === 'offline'" class="notice warn">{{ problema.message }}</p>
 
+      <p v-if="datos.propuestaId" class="notice" role="status">
+        Proyecto creado a partir de una propuesta validada: el nombre, el cliente y los datos del contrato de referencia (importe, equipos y potencia) vienen de su presupuesto. Revísalos antes de crearlo.
+      </p>
+
       <p v-if="restauradoEl && !problema" class="notice borrador-aviso" role="status">
         Estás con un borrador compartido<template v-if="actualizadoPor"> (último cambio de {{ actualizadoPor }}, {{ horaBorrador(restauradoEl) }})</template>.
         Lo que escribas se guarda en él y lo ven las demás personas. El PDF del presupuesto no se guarda: si lo
@@ -137,13 +141,22 @@ export default {
     // Datos del contrato de referencia (importe, equipos, potencia)
     campos: { type: Array, default: () => [] },
     // Borrador que se retoma: { id, name, data, updated_at, updated_by }
-    borrador: { type: Object, default: null }
+    borrador: { type: Object, default: null },
+    // Propuesta validada de la que se crea el proyecto: { proposal_id, name, baseline, contract_party } (lo que dice el servidor de ella)
+    desdePropuesta: { type: Object, default: null }
   },
   emits: ['crear', 'cancelar', 'borradores-cambiados'],
   data() {
-    const g = (this.borrador && this.borrador.data) || {}
+    const p = this.desdePropuesta
+    // Sin borrador, con una propuesta validada: se parte de lo que ya se sabe de ella (los datos del contrato se marcan como leídos del presupuesto)
+    const g = (this.borrador && this.borrador.data) || (p ? {
+      name: p.name, baseline: Object.fromEntries(Object.entries(p.baseline || {}).map(([k, v]) => [k, String(v)])), fromContract: Object.keys(p.baseline || {}),
+      party: p.contract_party, proposalId: p.proposal_id
+    } : {})
     return {
       datos: {
+        // La propuesta de la que viene (si viene de una): se guarda también en el borrador para no perder el enlace
+        propuestaId: g.proposalId || '',
         nombre: g.name || '', descripcion: g.description || '', inicio: g.startDate || todayStr(),
         baseline: { ...formularioDeContrato(this.campos), ...(g.baseline || {}) }, desdeContrato: Array.isArray(g.fromContract) ? g.fromContract : [],
         plan: g.plan || STANDARD_PLAN, parte: { ...PARTE_VACIA, ...(g.party || {}) },
@@ -203,7 +216,8 @@ export default {
       const d = this.datos
       return {
         name: d.nombre, description: d.descripcion, startDate: d.inicio, baseline: d.baseline, fromContract: d.desdeContrato, plan: d.plan, party: d.parte,
-        extras: d.extras, folderCompany: d.empresaCarpeta, folderPlace: d.lugarCarpeta, existingFolder: d.carpetaExistente, contractGenerated: d.contratoGenerado
+        extras: d.extras, folderCompany: d.empresaCarpeta, folderPlace: d.lugarCarpeta, existingFolder: d.carpetaExistente, contractGenerated: d.contratoGenerado,
+        proposalId: d.propuestaId
       }
     },
     // Los guardados van de uno en uno y en orden: el primero crea el borrador y los siguientes lo actualizan
@@ -251,6 +265,7 @@ export default {
     },
     aplicar(g) {
       this.datos = {
+        propuestaId: g.proposalId || '',
         nombre: g.name || '', descripcion: g.description || '', inicio: g.startDate || todayStr(),
         baseline: { ...formularioDeContrato(this.campos), ...(g.baseline || {}) }, desdeContrato: Array.isArray(g.fromContract) ? g.fromContract : [],
         plan: g.plan || STANDARD_PLAN, parte: { ...PARTE_VACIA, ...(g.party || {}) }, contratoGenerado: g.contractGenerated === true, extras: g.extras || {},
@@ -323,6 +338,8 @@ export default {
         name: d.nombre.trim(), description: d.descripcion.trim(), start_date: d.inicio,
         template_id: this.plantilla ? this.plantilla.id : null, exclude_steps: [],
         baseline: d.baseline, payment_plan: planPayload(d.plan),
+        // Si viene de una propuesta validada, el servidor lo enlaza con ella (y no deja crear otro de la misma)
+        proposal_id: d.propuestaId || null,
         // Con una carpeta existente elegida se usa esa; si no, se crea (o reutiliza) la de «aammdd_EMPRESA_LUGAR»
         dropbox_existing: this.estadoDropbox && this.estadoDropbox.enabled && d.carpetaExistente ? d.carpetaExistente : '',
         dropbox_name: this.estadoDropbox && this.estadoDropbox.enabled && !d.carpetaExistente ? this.nombreCarpeta.trim() : '',

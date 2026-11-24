@@ -7,12 +7,12 @@
       <main class="content">
         <inicio-component v-if="mostrarInicio" :disponibles="disponibles" :pendientes="{ costing: pendientesValidar }" @abrir="abrirArea" />
         <asistente-presupuesto-component v-else-if="foco === 'costing' && conLista" :con-volver="true" :con-inventario="funciones.inventory" :traspaso="traspaso" @cerrar="cerrarFoco" @abrir-inventario="abrirFoco('inventory')" @crear-estudio="abrirConTraspaso('studies', { tipo: 'estudio', ...$event })"
-                                          @abrir-boe="abrirConTraspaso('studies', { tipo: 'boe' })" @abrir-estudio="abrirConTraspaso('studies', { tipo: 'abrir-estudio', ...$event })" />
+                                          @abrir-boe="abrirConTraspaso('studies', { tipo: 'boe' })" @abrir-estudio="abrirConTraspaso('studies', { tipo: 'abrir-estudio', ...$event })" @crear-proyecto="crearProyectoDesdePropuesta" @abrir-proyecto="abrirProyecto" />
         <estudios-component v-else-if="foco === 'studies' && funciones.studies" :traspaso="traspaso" @volver-a-presupuestos="volverAtras" @crear-presupuesto="abrirConTraspaso('costing', { tipo: 'presupuesto', ...$event })" @abrir-presupuesto="abrirConTraspaso('costing', { tipo: 'abrir-presupuesto', id: $event })" />
         <inventario-component v-else :etiqueta-volver="desde === 'costing' ? '← Volver al presupuestador' : '← Volver al inicio'" @cerrar="desde === 'costing' ? volverAtras() : cerrarFoco()" />
       </main>
     </div>
-    <proyectos-component v-else :enlace="enlace" :con-volver="hayHerramientas" @volver="entrado = false" />
+    <proyectos-component v-else :enlace="enlace" :desde-propuesta="desdePropuesta" :con-volver="hayHerramientas" @volver="entrado = false" @propuesta-recogida="desdePropuesta = null" />
   </template>
 </template>
 
@@ -71,6 +71,8 @@ export default {
       // Lo que una pantalla le pasa a otra al abrirla (p. ej. el cliente y el proyecto de un presupuesto para crear su estudio)
       traspaso: null,
       enlace,
+      // Propuesta validada de la que se va a crear un proyecto (la pantalla de proyectos la recoge al abrirse y la olvida)
+      desdePropuesta: null,
       guardadoAlArrancar: guardado
     }
   },
@@ -145,6 +147,20 @@ export default {
     abrirConTraspaso(vista, traspaso) {
       this.traspaso = traspaso
       this.abrirFoco(vista)
+    },
+    // Del puente entre propuestas y proyectos: se pasa a la pantalla de proyectos, que abre «Nuevo proyecto» con los datos de la propuesta
+    // validada, o el proyecto que ya se creó con ella
+    crearProyectoDesdePropuesta(propuestaId) {
+      this.desdePropuesta = propuestaId
+      this.irAProyectos()
+    },
+    abrirProyecto(proyectoId) {
+      this.enlace = { proyecto: proyectoId, tarea: null }
+      this.irAProyectos()
+    },
+    irAProyectos() {
+      this.cerrarFoco()
+      this.entrado = true
     },
     cerrarFoco() {
       this.mostrarFoco(null)

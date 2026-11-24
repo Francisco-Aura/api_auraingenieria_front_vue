@@ -87,7 +87,16 @@
         <div v-if="actual.status === 'rechazada'" class="propuesta-acciones">
           <button type="button" :disabled="ocupado" @click="ejecutar(() => crear())">Crear la propuesta nº {{ actual.version + 1 }}</button>
         </div>
-        <p v-if="actual.status === 'aprobada'" class="paso-nota ok">Propuesta validada.</p>
+        <template v-if="actual.status === 'aprobada'">
+          <p class="paso-nota ok">Propuesta validada.</p>
+          <!-- Del puente con los proyectos: una propuesta validada da un proyecto (con sus datos ya puestos) y solo uno -->
+          <p v-if="actual.project" class="paso-nota ok">
+            Proyecto creado: <button type="button" class="enlace-boton" @click="$emit('abrir-proyecto', actual.project.id)">{{ actual.project.name }}</button>
+          </p>
+          <div v-else class="propuesta-acciones">
+            <button type="button" :disabled="ocupado" @click="$emit('crear-proyecto', actual.id)">Crear proyecto</button>
+          </div>
+        </template>
       </template>
 
       <details v-if="historial.length > 0" class="propuesta-historial">
@@ -119,7 +128,7 @@ const ETIQUETA = { borrador: 'Borrador', enviada: 'Entregada al cliente', aproba
 export default {
   name: 'Seccion-Propuesta',
   props: { presupuestoId: { type: String, required: true }, estudioValido: { type: Boolean, default: true } },
-  emits: ['cambio', 'estado'],
+  emits: ['cambio', 'estado', 'crear-proyecto', 'abrir-proyecto'],
   data() { return { ETIQUETA, CLASE_PROPUESTA, planificadorApi, lista: null, ocupado: false, error: '' } },
   computed: {
     actual() { return this.lista && this.lista[0] },
