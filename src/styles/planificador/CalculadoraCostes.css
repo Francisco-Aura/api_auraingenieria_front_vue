@@ -374,7 +374,17 @@ th .orden-boton.on .orden-icon {
 
 .linea-tabla {
   font-size: 13px;
+  /* Cada partida es una tabla aparte: con el ancho automático cada una repartía las columnas
+     según su contenido y Cant., Precio ud. y Total no caían en la misma vertical de una a otra.
+     Anchos fijos para las numéricas; Concepto se queda con el resto. */
+  table-layout: fixed;
+  width: 100%;
 }
+
+.linea-tabla th:nth-child(2) { width: 96px; }  /* Cant. */
+.linea-tabla th:nth-child(3) { width: 128px; } /* Precio ud. */
+.linea-tabla th:nth-child(4) { width: 118px; } /* Total · €/Wp */
+.linea-tabla th:nth-child(5) { width: 44px; }  /* Observaciones / papelera */
 
 .linea-tabla th,
 .linea-tabla td {
@@ -2341,3 +2351,13 @@ tr.grupo-fila .grupo-alternar:hover { text-decoration: underline; }
 .btn-peligro:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .filtros-derecha { margin-left: auto; align-self: flex-end; display: flex; gap: 8px; }
+
+/* Pantallas del Planificador a pantalla completa (propuestas, presupuestador, estudios, precios del BOE): en
+   monitores anchos el contenido no se estira hasta los bordes (columnas e iconos quedaban a cientos de píxeles
+   de su dato); se centra con el mismo orden de ancho que Gestión de Tareas. El inventario y los proyectos
+   (Gantt, tablas con muchas columnas) siguen a todo el ancho. */
+.layout.focus > .content :is(.costes, .estudios, .boe) { max-width: 1440px; margin-inline: auto; }
+/* Presupuesto en revisión: una sola columna, Concepto quedaba a un lado y las cifras a 1500 px de distancia.
+   El tope es de toda la pantalla (versiones, aviso, parámetros y cuerpo), para que todos acaben en el mismo borde derecho. */
+.layout.focus > .content .costes:has(.costes-cuerpo.revision) { max-width: 1200px; }
+.proyectos-tabla .celda-documento { gap: 8px; }

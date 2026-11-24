@@ -1,26 +1,36 @@
+/* Paleta de Aura (src/styles/tokens.css del front): amarillo de marca #fcd700, azul marino del menú lateral
+   #2c3e50 → #1a252f y, en modo oscuro, las superficies del tema oscuro de la intranet. */
+@font-face { font-family: 'Poppins'; font-weight: 400; src: url('fonts/poppins-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 500; src: url('fonts/poppins-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 600; src: url('fonts/poppins-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 700; src: url('fonts/poppins-latin-700-normal.woff2') format('woff2'); }
+
 :root {
   --fondo: #ffffff;
-  --fondo-2: #f3f6fa;
-  --borde: #dde3ec;
-  --texto: #1d2733;
-  --texto-2: #6b7a8c;
-  --acento: #2980b9;
-  --acento-2: #1f6896;
-  --ok: #27ae60;
-  --peligro: #c0392b;
+  --fondo-2: #f1f4f8;
+  --borde: #e0e0e0;
+  --texto: #2c3e50;
+  --texto-2: #5b6b79;
+  --acento: #fcd700;
+  --acento-2: #e0ac00;
+  --sobre-acento: #2c3e50;   /* texto sobre el amarillo, como en los botones de la intranet */
+  --ok: #28a745;
+  --peligro: #e74c3c;
   --aviso-fondo: #fdecea;
+  --marino-1: #2c3e50;
+  --marino-2: #1a252f;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --fondo: #1b2230;
-    --fondo-2: #242d3e;
-    --borde: #33405a;
-    --texto: #e6ebf2;
-    --texto-2: #93a1b5;
-    --acento: #4aa3df;
-    --acento-2: #6cb7ea;
-    --aviso-fondo: #4a2a2a;
+    --fondo: #1a222b;
+    --fondo-2: #222c37;
+    --borde: #34414f;
+    --texto: #e6ebf0;
+    --texto-2: #a7b4c1;
+    --ok: #34c76b;
+    --peligro: #f0616d;
+    --aviso-fondo: rgba(240, 97, 109, .16);
   }
 }
 
@@ -31,7 +41,7 @@ html, body {
   height: 100%;
   background: transparent;
   overflow: hidden;
-  font: 13px/1.35 "Segoe UI", system-ui, sans-serif;
+  font: 12.5px/1.35 'Poppins', 'Segoe UI', system-ui, sans-serif;
   color: var(--texto);
   user-select: none;
 }
@@ -43,7 +53,7 @@ html, body {
   height: 100%;
   background: var(--fondo);
   border: 1px solid var(--borde);
-  border-radius: 14px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
@@ -57,14 +67,18 @@ button { cursor: pointer; }
   align-items: center;
   gap: 6px;
   padding: 8px 8px 8px 12px;
-  background: var(--fondo-2);
-  border-bottom: 1px solid var(--borde);
+  background: linear-gradient(to bottom, var(--marino-1), var(--marino-2));
+  color: #ecf0f1;
+  border-bottom: 1px solid rgba(255, 255, 255, .1);
   -webkit-app-region: drag;
   flex: none;
 }
 .cabecera button { -webkit-app-region: no-drag; }
+.cabecera .icono { color: #b4c0cc; }
+.cabecera .icono:hover { background: rgba(255, 255, 255, .14); color: #fff; }
 
-.marca { font-weight: 700; display: flex; align-items: center; gap: 7px; }
+.marca { font-weight: 700; display: flex; align-items: center; gap: 8px; letter-spacing: .02em; }
+.logo { width: 24px; height: 24px; flex: none; }
 .punto { width: 9px; height: 9px; border-radius: 50%; background: var(--texto-2); }
 .punto.activo { background: var(--ok); box-shadow: 0 0 0 3px rgba(39, 174, 96, .25); animation: latido 1.6s infinite; }
 @keyframes latido { 50% { box-shadow: 0 0 0 5px rgba(39, 174, 96, 0); } }
@@ -73,7 +87,7 @@ button { cursor: pointer; }
   flex: 1;
   min-width: 0;
   text-align: right;
-  color: var(--texto-2);
+  color: #b4c0cc;
   font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
@@ -119,7 +133,7 @@ input {
   color: var(--texto);
   user-select: text;
 }
-input:focus { outline: 2px solid var(--acento); outline-offset: -1px; }
+input:focus { outline: none; border-color: var(--acento); box-shadow: 0 0 0 3px rgba(252, 215, 0, .3); }
 
 .primario, .secundario {
   padding: 8px 14px;
@@ -127,7 +141,7 @@ input:focus { outline: 2px solid var(--acento); outline-offset: -1px; }
   border: 1px solid transparent;
   font-weight: 600;
 }
-.primario { background: var(--acento); color: #fff; width: 100%; }
+.primario { background: var(--acento); color: var(--sobre-acento); width: 100%; }
 .primario:hover { background: var(--acento-2); }
 .primario:disabled { opacity: .6; cursor: default; }
 .secundario { background: var(--fondo-2); border-color: var(--borde); }
@@ -138,7 +152,7 @@ input:focus { outline: 2px solid var(--acento); outline-offset: -1px; }
 .fila > button { flex: 1; width: auto; }
 
 .servidor-pie, .ayuda { margin: 10px 0 0; color: var(--texto-2); font-size: 11.5px; }
-.servidor-pie a { color: var(--acento); }
+.servidor-pie a { color: var(--texto); text-decoration: underline; text-decoration-color: var(--acento); text-underline-offset: 2px; }
 .ayuda { margin-top: -4px; margin-bottom: 12px; }
 .ajustes-pie { margin-top: 18px; }
 
@@ -199,7 +213,7 @@ input:focus { outline: 2px solid var(--acento); outline-offset: -1px; }
   border: 0;
   border-radius: 50%;
   background: var(--acento);
-  color: #fff;
+  color: var(--sobre-acento);
   font-size: 11px;
   padding-left: 2px;
 }
@@ -209,10 +223,126 @@ input:focus { outline: 2px solid var(--acento); outline-offset: -1px; }
 
 .vacio { padding: 18px 8px; text-align: center; color: var(--texto-2); }
 
-/* ---------- Vista compacta (ventana de ~78 px): solo cabecera + tarea en curso ---------- */
-.widget.compacto .lista-cabecera,
-.widget.compacto .lista,
-.widget.compacto .actual-botones { display: none; }
-.widget.compacto .vista { padding: 8px 10px; }
-.widget.compacto .actual { padding: 6px 10px; }
-.widget.compacto .cronometro { font-size: 20px; }
+/* ---------- Vista mínima (rectángulo): título arriba; tiempo y botón debajo ---------- */
+.mini, .mini-lista { display: none; }
+
+/* La píldora/rectángulo mínimo usa el azul marino del menú de Aura en cualquier tema */
+.widget.minimo {
+  background: linear-gradient(to bottom, var(--marino-1), var(--marino-2));
+  border-color: rgba(255, 255, 255, .12);
+  --fondo: #1a252f;
+  --fondo-2: rgba(255, 255, 255, .09);
+  --borde: rgba(255, 255, 255, .16);
+  --texto: #ecf0f1;
+  --texto-2: #b4c0cc;
+  --ok: #34c76b;
+  --peligro: #ff8a94;
+  color: var(--texto);
+}
+.widget.minimo .cabecera,
+.widget.minimo .vista,
+.widget.minimo .aviso { display: none; }
+.widget.minimo .mini { display: flex; }
+.widget.minimo .mini-lista:not([hidden]) { display: block; }
+
+.mini {
+  flex: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  height: 90px;
+  padding: 0 10px 0 14px;
+  -webkit-app-region: drag;
+}
+.mini button { -webkit-app-region: no-drag; }
+.mini-fila { display: flex; align-items: center; gap: 8px; }
+.mini .punto { flex: none; }
+
+.mini-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+}
+.mini-info:hover { background: var(--fondo-2); }
+.mini-titulo { flex: 0 1 auto; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-flecha { flex: none; color: var(--texto-2); font-size: 11px; }
+.mini.pausa .mini-titulo { color: var(--texto-2); font-weight: 500; }
+.mini.error .mini-titulo { color: var(--peligro); }
+
+.mini-crono {
+  flex: 1;
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+  color: var(--texto-2);
+}
+.mini.corriendo .mini-crono { color: var(--ok); }
+
+.mini-play {
+  flex: none;
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--acento);
+  color: var(--sobre-acento);
+  font-weight: 600;
+}
+.mini-play:hover { background: var(--acento-2); }
+.mini-play:disabled { opacity: .5; cursor: default; }
+.mini.corriendo .mini-play { background: var(--fondo-2); border-color: var(--ok); color: var(--ok); }
+
+/* Selector de tarea: pocas filas, con desplazamiento; el resto en la vista completa */
+.mini-lista {
+  list-style: none;
+  margin: 0;
+  padding: 4px 8px 8px;
+  border-top: 1px solid var(--borde);
+  overflow-y: auto;
+}
+.mini-lista li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  border-left: 3px solid var(--color, var(--borde));
+  cursor: pointer;
+  height: 34px;
+}
+.mini-lista li:hover { background: var(--fondo-2); }
+.mini-lista li.corriendo { background: var(--fondo-2); }
+.mini-lista .ml-titulo { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-lista .ml-tiempo { flex: none; font-size: 12px; color: var(--texto-2); font-variant-numeric: tabular-nums; }
+.mini-lista li.ml-mas { border-left-color: transparent; color: var(--acento); justify-content: center; font-weight: 600; }
+
+/* Login y ajustes: el contenido manda; la ventana se ajusta a él (ajustarAltoFormulario) */
+.widget.formulario .vista { flex: none; }
+
+/* ---------- Prioridad: mismos colores que la tabla de tareas de la intranet ---------- */
+.prio {
+  display: inline-block;
+  flex: none;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 17px;
+  white-space: nowrap;
+}
+.prio-0 { background: #8b0000; color: #fff; border-color: #5c0000; }
+.prio-1 { background: #dc3545; color: #fff; border-color: #bd2130; }
+.prio-2 { background: #fff3cd; color: #856404; border-color: #ffc107; }
+.prio-3 { background: #d4edda; color: #155724; border-color: #28a745; }
+.tarea-meta .prio { margin-right: 2px; }
+.mini-info .prio { margin-left: 2px; }

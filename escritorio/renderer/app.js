@@ -1,8 +1,8 @@
-// Lógica del widget. Habla con la API de la intranet a través del proceso principal (window.workmeeter).
+// Lógica del widget. Habla con la API de la intranet a través del proceso principal (window.workmeter).
 (() => {
   'use strict';
 
-  const api = window.workmeeter;
+  const api = window.workmeter;
   const $ = id => document.getElementById(id);
 
   const REFRESCO_MS = 30000;
@@ -15,8 +15,16 @@
     ocupado: false,     // hay un cambio de estado en marcha
     vistaAnterior: 'login',
     avisoTimer: null,
-    confirmarFin: null
+    confirmarFin: null,
+    modo: 'minimo',          // modo que se ve ahora ('minimo' = píldora, 'completo' = lista)
+    modoPreferido: 'minimo', // el que elige el usuario; el login fuerza 'completo' sin cambiarlo
+    selectorAbierto: false,
+    miniAviso: ''            // error que se muestra en la píldora (no cabe el recuadro rojo)
   };
+
+  const MAX_FILAS_SELECTOR = 6;
+  const ALTO_FILA_SELECTOR = 34;
+  const ALTO_MINIMO = 92; // igual que en main.js
 
   // ---------- Utilidades ----------
 
@@ -39,18 +47,69 @@
     const el = $('aviso');
     el.textContent = texto;
     el.hidden = false;
+    estado.miniAviso = texto;
     clearTimeout(estado.avisoTimer);
-    estado.avisoTimer = setTimeout(() => { el.hidden = true; }, ms);
+    estado.avisoTimer = setTimeout(() => { el.hidden = true; estado.miniAviso = ''; pintarMini(); ajustarAltoFormulario(); }, ms);
+    pintarMini();
+    ajustarAltoFormulario();
   }
 
   function ocultarAviso() {
     clearTimeout(estado.avisoTimer);
     $('aviso').hidden = true;
+    estado.miniAviso = '';
+    pintarMini();
+    ajustarAltoFormulario();
   }
 
   function mostrarVista(nombre) {
     for (const id of ['login', 'principal', 'ajustes']) $(`vista-${id}`).hidden = id !== nombre;
     if (nombre !== 'ajustes') estado.vistaAnterior = nombre;
+    // Entrar o ajustar necesita sitio: la píldora se amplía por esta vez, sin perder la preferencia.
+    if (nombre !== 'principal' && estado.modo === 'minimo') aplicarModo('completo', false);
+    if (nombre === 'principal' && estado.modo !== estado.modoPreferido) aplicarModo(estado.modoPreferido);
+    $('widget').classList.toggle('formulario', nombre !== 'principal');
+    if (nombre === 'principal') api.fijarModo(estado.modo, false); // vuelve al alto normal
+    else ajustarAltoFormulario();
+  }
+
+  // Login y ajustes: la ventana mide lo que su contenido, sin hueco vacío debajo.
+  function ajustarAltoFormulario() {
+    setTimeout(() => {
+      if (!$('widget').classList.contains('formulario')) return;
+      const alto = [...$('widget').children].reduce((t, el) => t + (el.hidden ? 0 : el.offsetHeight), 0);
+      api.fijarAlto(alto + 14, true);
+    }, 0);
+  }
+
+  // ---------- Modo: mínimo (píldora) o completo ----------
+
+  function ponerModoVisual(modo) {
+    estado.modo = modo;
+    $('widget').classList.toggle('minimo', modo === 'minimo');
+    cerrarSelector();
+  }
+
+  // persistir=false: cambio temporal (la preferencia guardada no se toca).
+  function aplicarModo(modo, persistir = true) {
+    ponerModoVisual(modo);
+    if (persistir) estado.modoPreferido = modo;
+    api.fijarModo(modo, persistir);
+  }
+
+  // Llamada a la API. Un 401 fuera del login es sesión caducada o cerrada en el servidor:
+  // se vuelve a la pantalla de entrada (como hace la intranet).
+  async function llamar(metodo, ruta, cuerpo) {
+    const r = await api.api(metodo, ruta, cuerpo);
+    if (r.estado === 401 && !ruta.startsWith('/usuarios/login') && estado.usuario) {
+      await api.guardarSesion(null);
+      ponerUsuario(null);
+      estado.tareas = [];
+      pintar();
+      mostrarVista('login');
+      mostrarAviso('La sesión ha caducado. Vuelve a entrar.', 8000);
+    }
+    return r;
   }
 
   // Convierte una respuesta fallida en un mensaje legible.
@@ -79,7 +138,7 @@
   // ---------- Carga de datos ----------
 
   async function cargarEstados() {
-    const r = await api.api('GET', '/tareas/estados');
+    const r = await llamar('GET', '/tareas/estados');
     if (!r.ok) throw new Error(mensajeError(r, 'No se pudieron cargar los estados'));
     estado.estados = Array.isArray(r.datos) ? r.datos : [];
     if (!estadoQueCuenta()) throw new Error('El módulo de tareas no tiene un estado que cuente tiempo');
@@ -87,7 +146,12 @@
 
   async function cargarTareas({ silencioso = false } = {}) {
     if (!estado.usuario) return;
-    const r = await api.api('GET', `/tareas/usuario/${estado.usuario.id}`);
+    // Si al entrar no había estados (módulo sin configurar), se reintenta en cada refresco.
+    if (!estado.estados.length) {
+      try { await cargarEstados(); } catch (e) { if (!silencioso && estado.usuario) mostrarAviso(e.message); return; }
+    }
+    const r = await llamar('GET', `/tareas/usuario/${estado.usuario.id}`);
+    if (!estado.usuario) return; // sesión caducada: llamar() ya avisó y volvió al login
     if (!r.ok) {
       if (!silencioso) mostrarAviso(mensajeError(r, 'No se pudieron cargar las tareas'));
       return;
@@ -103,7 +167,7 @@
   // ---------- Acciones ----------
 
   async function cambiarEstado(tarea, destino) {
-    const r = await api.api('PATCH', `/tareas/${tarea.id}/estado`, {
+    const r = await llamar('PATCH', `/tareas/${tarea.id}/estado`, {
       estadoId: destino.id,
       usuarioAccionId: estado.usuario.id
     });
@@ -126,20 +190,35 @@
 
   const tareaEnCurso = () => estado.tareas.find(estaCorriendo);
 
+  // La píldora «reanuda» la última tarea con la que se trabajó.
+  function recordarUltima(id) {
+    try { localStorage.setItem('workmeter.ultima', String(id)); } catch (e) { /* sin almacenamiento: da igual */ }
+  }
+
+  function tareaParaReanudar() {
+    let ultima = null;
+    try { ultima = Number(localStorage.getItem('workmeter.ultima')); } catch (e) { /* idem */ }
+    const posibles = estado.tareas.filter(t => !t.estadoBloqueo);
+    return posibles.find(t => t.id === ultima) || ordenar(posibles)[0] || null;
+  }
+
   function iniciar(tarea) {
+    recordarUltima(tarea.id);
     return ejecutar(async () => {
-      // Un solo cronómetro a la vez: la que estuviera en curso pasa a espera.
-      const otra = tareaEnCurso();
-      if (otra && otra.id !== tarea.id) {
+      // Un solo cronómetro a la vez: las que estuvieran en curso (también las iniciadas desde la
+      // intranet) pasan a espera.
+      const otras = estado.tareas.filter(t => estaCorriendo(t) && t.id !== tarea.id);
+      if (otras.length) {
         const espera = estadoEspera();
         if (!espera) throw new Error('No hay un estado de espera al que pasar la tarea en curso');
-        await cambiarEstado(otra, espera);
+        for (const otra of otras) await cambiarEstado(otra, espera);
       }
       await cambiarEstado(tarea, estadoQueCuenta());
     });
   }
 
   function pausar(tarea) {
+    recordarUltima(tarea.id);
     return ejecutar(async () => {
       const espera = estadoEspera();
       if (!espera) throw new Error('No hay un estado de espera al que pasar la tarea');
@@ -153,6 +232,17 @@
       if (!fin) throw new Error('No hay un estado final en el módulo de tareas');
       await cambiarEstado(tarea, fin);
     });
+  }
+
+  // ---------- Prioridad (mismos niveles y colores que la tabla de la intranet) ----------
+
+  const PRIORIDADES = { 0: ['Urgente', '⚠'], 1: ['Alta', '▲'], 2: ['Media', '–'], 3: ['Baja', '▼'] };
+
+  // Chip de prioridad; con corto=true solo el icono (el texto va en el tooltip).
+  function chipPrioridad(t, corto = false) {
+    const n = PRIORIDADES[t.prioridad] ? t.prioridad : 2;
+    const [texto, icono] = PRIORIDADES[n];
+    return `<span class="prio prio-${n}" title="Prioridad ${texto.toLowerCase()}">${icono}${corto ? '' : ' ' + texto}</span>`;
   }
 
   // ---------- Pintado ----------
@@ -211,7 +301,7 @@
         const corriendo = estaCorriendo(t);
         const cliente = t.clienteRelacionadoNombre || t.clientePotencialNombre || '';
         // El vencimiento va primero: es lo que no debe quedar cortado en una línea estrecha.
-        const meta = [textoVencimiento(t), escapar(t.estadoNombre), cliente && escapar(cliente)].filter(Boolean).join(' · ');
+        const meta = [chipPrioridad(t), textoVencimiento(t), escapar(t.estadoNombre), cliente && escapar(cliente)].filter(Boolean).join(' · ');
         return `
           <li class="tarea${corriendo ? ' corriendo' : ''}" data-id="${t.id}" style="--color:${escapar(t.estadoColor || '')}">
             <div class="tarea-info">
@@ -224,13 +314,80 @@
           </li>`;
       }).join('');
     }
+    pintarMini();
     pintarCronometro();
+  }
+
+  // Píldora: la tarea en curso (o la que se reanudaría), su tiempo y un solo botón.
+  function pintarMini() {
+    const enCurso = tareaEnCurso();
+    const objetivo = enCurso || tareaParaReanudar();
+    const mini = $('mini');
+    mini.classList.toggle('corriendo', !!enCurso);
+    mini.classList.toggle('pausa', !enCurso);
+    mini.classList.toggle('error', !!estado.miniAviso);
+    $('mini-punto').classList.toggle('activo', !!enCurso);
+
+    const prio = $('mini-prio');
+    prio.hidden = !objetivo || !!estado.miniAviso;
+    if (objetivo) prio.innerHTML = chipPrioridad(objetivo);
+
+    const titulo = estado.miniAviso || (objetivo ? objetivo.titulo : 'Sin tareas pendientes');
+    $('mini-titulo').textContent = titulo;
+    $('mini-info').title = estado.miniAviso || (objetivo ? `${objetivo.titulo} — cambiar de tarea` : 'Cambiar de tarea');
+
+    const play = $('mini-play');
+    play.textContent = enCurso ? '❚❚ Pausar' : '▶ Reanudar';
+    play.title = enCurso ? 'Pausar' : (objetivo ? `Reanudar: ${objetivo.titulo}` : 'Sin tareas');
+    play.setAttribute('aria-label', enCurso ? 'Pausar' : 'Reanudar');
+    play.disabled = estado.ocupado || !objetivo;
+
+    if (estado.selectorAbierto) pintarSelector();
+  }
+
+  // Selector de tarea de la píldora: unas pocas filas (la en curso, luego por prioridad); si hay más, se sigue en la vista completa.
+  function abrirSelector() {
+    if (estado.modo !== 'minimo' || !estado.tareas.length) return;
+    estado.selectorAbierto = true;
+    $('mini-info').setAttribute('aria-expanded', 'true');
+    pintarSelector();
+  }
+
+  function cerrarSelector() {
+    if (!estado.selectorAbierto) return;
+    estado.selectorAbierto = false;
+    $('mini-lista').hidden = true;
+    $('mini-info').setAttribute('aria-expanded', 'false');
+    api.fijarAlto(0); // vuelve al alto de la píldora
+  }
+
+  function pintarSelector() {
+    const todas = ordenar(estado.tareas);
+    const filas = todas.slice(0, MAX_FILAS_SELECTOR);
+    const hayMas = todas.length > filas.length;
+    $('mini-lista').innerHTML = filas.map(t => {
+      const corriendo = estaCorriendo(t);
+      return `<li class="${corriendo ? 'corriendo' : ''}" data-id="${t.id}" style="--color:${escapar(t.estadoColor || '')}"
+                title="${escapar(t.titulo)}">
+                <span class="ml-titulo">${escapar(t.titulo)}</span>
+                ${chipPrioridad(t, true)}
+                <span class="ml-tiempo" data-ml-tiempo="${t.id}">${formatoCorto(segundosActuales(t))}</span>
+              </li>`;
+    }).join('') + `<li class="ml-mas" data-mas="1">${hayMas ? `Ver las ${todas.length} tareas` : 'Vista completa'} ›</li>`;
+    $('mini-lista').hidden = false;
+    api.fijarAlto(ALTO_MINIMO + 12 + (filas.length + 1) * ALTO_FILA_SELECTOR);
   }
 
   // Se llama cada segundo: solo toca los textos que cambian.
   function pintarCronometro() {
     const enCurso = tareaEnCurso();
+    const objetivo = enCurso || tareaParaReanudar();
     $('cronometro').textContent = formatoTiempo(enCurso ? segundosActuales(enCurso) : 0);
+    $('mini-crono').textContent = formatoTiempo(objetivo ? segundosActuales(objetivo) : 0);
+    for (const t of estado.tareas) {
+      const ml = document.querySelector(`[data-ml-tiempo="${t.id}"]`);
+      if (ml) ml.textContent = formatoCorto(segundosActuales(t));
+    }
     for (const t of estado.tareas) {
       const el = document.querySelector(`[data-tiempo="${t.id}"]`);
       if (el) el.textContent = formatoCorto(segundosActuales(t));
@@ -250,7 +407,8 @@
       await cargarEstados();
       await cargarTareas();
     } catch (e) {
-      mostrarAviso(e.message || String(e), 8000);
+      // Si la sesión había caducado, ya se avisó y se volvió al login.
+      if (estado.usuario) mostrarAviso(e.message || String(e), 8000);
     }
   }
 
@@ -261,8 +419,13 @@
     boton.textContent = 'Entrando…';
     ocultarAviso();
     try {
-      const q = `user=${encodeURIComponent($('login-usuario').value.trim())}&pass=${encodeURIComponent($('login-clave').value)}`;
-      const r = await api.api('GET', `/usuarios/login?${q}`);
+      const user = $('login-usuario').value.trim();
+      const pass = $('login-clave').value;
+      // El backend actual abre la sesión con POST (cookie); uno anterior solo tenía GET con la clave en la URL.
+      let r = await api.api('POST', '/usuarios/login', { user, pass });
+      if (r.estado === 404 || r.estado === 405) {
+        r = await api.api('GET', `/usuarios/login?user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`);
+      }
       if (r.ok && r.datos && r.datos.id != null) {
         $('login-clave').value = '';
         const usuario = r.datos;
@@ -281,6 +444,7 @@
   }
 
   async function cerrarSesion() {
+    await api.api('POST', '/usuarios/logout'); // cierra la sesión del servidor; si falla, da igual
     await api.guardarSesion(null);
     ponerUsuario(null);
     estado.tareas = [];
@@ -307,20 +471,14 @@
     if (estado.usuario) entrarEnPrincipal();
   }
 
-  // ---------- Vista compacta ----------
-
-  function aplicarCompacto(compacto) {
-    $('widget').classList.toggle('compacto', !!compacto);
-    estado.config.compacto = !!compacto;
-  }
-
   // ---------- Arranque ----------
 
   async function init() {
     estado.config = await api.leerConfig();
     $('login-servidor').textContent = estado.config.servidor;
-    $('version').textContent = `Workmeeter ${estado.config.version}`;
-    aplicarCompacto(estado.config.compacto);
+    $('version').textContent = `Workmeter ${estado.config.version}`;
+    estado.modoPreferido = estado.config.modo === 'completo' ? 'completo' : 'minimo';
+    ponerModoVisual(estado.modoPreferido); // la ventana ya nace con ese alto (main.js)
 
     // Eventos
     $('form-login').addEventListener('submit', iniciarSesion);
@@ -331,11 +489,32 @@
     $('btn-cerrar-sesion').addEventListener('click', cerrarSesion);
     $('btn-salir').addEventListener('click', () => api.salir());
     $('btn-ocultar').addEventListener('click', () => api.ocultar());
-    $('btn-compacto').addEventListener('click', () => {
-      aplicarCompacto(!estado.config.compacto);
-      api.fijarCompacto(estado.config.compacto);
+    $('btn-minimo').addEventListener('click', () => aplicarModo('minimo'));
+    $('mini-expandir').addEventListener('click', () => aplicarModo('completo'));
+    // Cambio hecho desde el menú de la bandeja: main ya ha ajustado la ventana.
+    api.alCambiarModo(modo => { estado.modoPreferido = modo; ponerModoVisual(modo); });
+
+    // Píldora: un botón que pausa la tarea en curso o reanuda la última; el título abre el selector.
+    $('mini-play').addEventListener('click', () => {
+      const enCurso = tareaEnCurso();
+      if (enCurso) return pausar(enCurso);
+      const objetivo = tareaParaReanudar();
+      if (objetivo) iniciar(objetivo);
     });
-    api.alCambiarCompacto(aplicarCompacto);
+    $('mini-info').addEventListener('click', () => (estado.selectorAbierto ? cerrarSelector() : abrirSelector()));
+    $('mini-lista').addEventListener('click', ev => {
+      const fila = ev.target.closest('li');
+      if (!fila) return;
+      if (fila.dataset.mas) return aplicarModo('completo');
+      const tarea = estado.tareas.find(t => String(t.id) === fila.dataset.id);
+      cerrarSelector();
+      if (tarea && !estaCorriendo(tarea)) iniciar(tarea);
+    });
+    document.addEventListener('click', ev => {
+      if (estado.selectorAbierto && !ev.target.closest('#mini-lista, #mini-info')) cerrarSelector();
+    });
+    document.addEventListener('keydown', ev => { if (ev.key === 'Escape') cerrarSelector(); });
+    window.addEventListener('blur', cerrarSelector);
 
     $('btn-refrescar').addEventListener('click', () => cargarTareas());
     $('filtro').addEventListener('input', pintar);

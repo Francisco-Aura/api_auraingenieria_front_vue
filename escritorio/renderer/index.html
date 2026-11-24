@@ -2,19 +2,37 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; font-src 'self'; img-src 'self' data:">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Workmeeter</title>
+  <title>Workmeter</title>
   <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
   <div class="widget" id="widget">
 
+    <!-- Vista mínima (rectángulo): tarea, tiempo y un botón. Se arrastra desde cualquier parte libre. -->
+    <div class="mini" id="mini">
+      <div class="mini-fila">
+        <span class="punto" id="mini-punto"></span>
+        <button class="mini-info" id="mini-info" title="Cambiar de tarea" aria-label="Cambiar de tarea" aria-expanded="false">
+          <span class="mini-titulo" id="mini-titulo">Sin tareas pendientes</span>
+          <span id="mini-prio" hidden></span>
+          <span class="mini-flecha" aria-hidden="true">▾</span>
+        </button>
+        <button class="icono" id="mini-expandir" title="Vista completa" aria-label="Vista completa">⤢</button>
+      </div>
+      <div class="mini-fila">
+        <span class="mini-crono" id="mini-crono">00:00:00</span>
+        <button class="mini-play" id="mini-play" title="Reanudar" aria-label="Reanudar">▶ Reanudar</button>
+      </div>
+    </div>
+    <ul class="mini-lista" id="mini-lista" hidden></ul>
+
     <!-- Cabecera: se arrastra desde aquí -->
     <header class="cabecera">
-      <span class="marca"><span class="punto" id="punto"></span>Workmeeter</span>
+      <span class="marca"><img class="logo" src="../assets/icon.png" alt="">Workmeter<span class="punto" id="punto"></span></span>
       <span class="usuario" id="usuario"></span>
-      <button class="icono" id="btn-compacto" title="Vista compacta" aria-label="Vista compacta">▭</button>
+      <button class="icono" id="btn-minimo" title="Vista mínima" aria-label="Vista mínima">⤡</button>
       <button class="icono" id="btn-ajustes" title="Ajustes" aria-label="Ajustes">⚙</button>
       <button class="icono" id="btn-ocultar" title="Ocultar (sigue en la bandeja)" aria-label="Ocultar">–</button>
     </header>
@@ -67,7 +85,7 @@
       </form>
       <div class="fila ajustes-pie">
         <button class="secundario" type="button" id="btn-cerrar-sesion">Cerrar sesión</button>
-        <button class="secundario peligro" type="button" id="btn-salir">Salir de Workmeeter</button>
+        <button class="secundario peligro" type="button" id="btn-salir">Salir de Workmeter</button>
       </div>
       <p class="servidor-pie" id="version"></p>
     </section>

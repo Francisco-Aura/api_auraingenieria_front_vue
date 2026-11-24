@@ -172,6 +172,14 @@
                   </div>
                 </div>
               </th>
+              <th class="sortable th-col-tiempo">
+                <div class="column-header">
+                  <div class="column-title" @click="sortBy('duracionActivaSegundos')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('duracionActivaSegundos')" @keydown.space.prevent="sortBy('duracionActivaSegundos')">
+                    <i class="fas fa-stopwatch mr-2"></i>Tiempo
+                    <i :class="getSortIcon('duracionActivaSegundos')"></i>
+                  </div>
+                </div>
+              </th>
               <th class="th-col-acciones">
                 <div class="column-header">
                   <div class="column-title column-title--sin-orden">
@@ -184,7 +192,7 @@
           <tbody>
             <template v-if="cargando">
               <tr v-for="n in 8" :key="'skeleton-' + n" class="skeleton-row">
-                <td v-for="col in 8" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
+                <td v-for="col in 9" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
               </tr>
             </template>
             <tr v-for="tarea in paginatedTareas" v-show="!cargando" :key="tarea.id" 
@@ -234,8 +242,21 @@
               <td :class="{ 'fecha-vencida': tarea.vencida }">
                 {{ formatearFecha(tarea.fechaVencimiento) || '-' }}
               </td>
+              <td class="celda-tiempo" :class="{ 'celda-tiempo--en-curso': tareaEnCurso(tarea) }"
+                  :title="tareaEnCurso(tarea) ? 'Cronómetro en marcha' : 'Tiempo activo acumulado'">
+                <span v-if="tareaEnCurso(tarea)" class="tiempo-punto" aria-hidden="true"></span>
+                {{ formatearTiempo(segundosTarea(tarea)) }}
+              </td>
               <td>
                 <div class="action-buttons">
+                  <button v-if="puedeCronometrar(tarea)" class="btn-icon btn-cronometro"
+                          :class="{ 'btn-cronometro--en-curso': tareaEnCurso(tarea) }"
+                          :disabled="cambiandoEstadoTarea"
+                          @click="alternarCronometro(tarea)"
+                          :title="tareaEnCurso(tarea) ? 'Pausar cronómetro' : 'Iniciar cronómetro'"
+                          :aria-label="tareaEnCurso(tarea) ? 'Pausar cronómetro de la tarea' : 'Iniciar cronómetro de la tarea'">
+                    <i :class="tareaEnCurso(tarea) ? 'fas fa-pause' : 'fas fa-play'"></i>
+                  </button>
                   <button class="btn-icon btn-view" @click="handleVerDetalle(tarea)" title="Ver detalle" aria-label="Ver detalle de tarea">
                     <i class="fas fa-eye"></i>
                   </button>
@@ -249,7 +270,7 @@
               </td>
             </tr>
             <tr v-if="!cargando && paginatedTareas.length === 0">
-              <td colspan="8" class="text-center py-4">
+              <td colspan="9" class="text-center py-4">
                 <div class="empty-state">
                   <i class="fas fa-search fa-3x text-muted"></i>
                   <p class="mt-3">{{ tareas.length === 0 ? 'No hay tareas. ¡Crea una nueva!' : 'No se encontraron tareas que coincidan con los filtros' }}</p>
@@ -422,6 +443,12 @@ export default {
       // Paginación
       paginaActual: 1,
       tareasPorPagina: 10,
+
+      // Cronómetro de la columna Tiempo: la duración que manda el servidor es la de ese instante;
+      // lo que corre desde entonces se suma en pantalla (ahoraMs se actualiza cada segundo solo si hay tareas en curso)
+      tareasRecibidasEn: Date.now(),
+      ahoraMs: Date.now(),
+      temporizadorTiempo: null,
       
       // Snackbar
       snackbar: {
@@ -475,6 +502,10 @@ export default {
     }
   },
   watch: {
+    tareas() {
+      this.tareasRecibidasEn = Date.now()
+      this.ahoraMs = this.tareasRecibidasEn
+    },
     mostrarCompletadas() {
       this.paginaActual = 1
       this.aplicarFiltros()
@@ -502,8 +533,12 @@ export default {
   beforeUnmount() {
     if (this.filtroDebounceTimer) clearTimeout(this.filtroDebounceTimer)
     clearTimeout(this.temporizadorMensaje)
+    clearInterval(this.temporizadorTiempo)
   },
   async mounted() {
+    this.temporizadorTiempo = setInterval(() => {
+      if (this.paginatedTareas.some(t => this.tareaEnCurso(t))) this.ahoraMs = Date.now()
+    }, 1000)
     await this.inicializar()
     // Abrir detalle si viene en query params (por si el watch no lo pilló antes de cargar)
     const tareaId = this.$route.query.abrirDetalle
@@ -513,6 +548,65 @@ export default {
   },
   methods: {
     colorTextoSobre,
+
+    // ---- Tiempo de las tareas (el estado que «cuenta tiempo» suma a duracionActivaSegundos) ----
+    tareaEnCurso(tarea) {
+      return this.estados.some(e => e.id === tarea.estadoId && e.cuentaTiempo)
+    },
+
+    segundosTarea(tarea) {
+      const base = tarea.duracionActivaSegundos || 0
+      if (!this.tareaEnCurso(tarea)) return base
+      return base + Math.max(0, (this.ahoraMs - this.tareasRecibidasEn) / 1000)
+    },
+
+    formatearTiempo(segundos) {
+      const s = Math.max(0, Math.floor(segundos))
+      const h = Math.floor(s / 3600)
+      const m = Math.floor((s % 3600) / 60)
+      if (s === 0) return '0 min'
+      if (s < 60) return '< 1 min'
+      return h > 0 ? `${h} h ${String(m).padStart(2, '0')} min` : `${m} min`
+    },
+
+    // El cronómetro lo maneja quien tiene la tarea asignada (o un administrador)
+    puedeCronometrar(tarea) {
+      if (tarea.estadoFinal) return false
+      if (this.esAdmin) return true
+      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+      return !!usuario && tarea.usuarioAsignadoId === usuario.id
+    },
+
+    // Iniciar pone la tarea «En Progreso» y pausa las demás que esa persona tuviera en marcha;
+    // pausar la devuelve al estado de espera.
+    async alternarCronometro(tarea) {
+      if (this.cambiandoEstadoTarea) return
+      const cuenta = this.estados.find(e => e.cuentaTiempo && !e.estadoFinal)
+      const espera = this.estados.find(e => !e.cuentaTiempo && !e.estadoBloqueo && !e.estadoFinal)
+      if (!cuenta || !espera) {
+        this.mostrarMensaje('El módulo de tareas no tiene estados de «en progreso» y de espera', 'warning')
+        return
+      }
+      this.cambiandoEstadoTarea = true
+      try {
+        if (this.tareaEnCurso(tarea)) {
+          await tareasApi.cambiarEstadoTarea(tarea.id, espera.id)
+        } else {
+          const otras = this.tareas.filter(t => t.id !== tarea.id
+            && t.usuarioAsignadoId === tarea.usuarioAsignadoId && this.tareaEnCurso(t))
+          for (const otra of otras) await tareasApi.cambiarEstadoTarea(otra.id, espera.id)
+          await tareasApi.cambiarEstadoTarea(tarea.id, cuenta.id)
+        }
+        await this.cargarTareas()
+        if (this.$refs.estadisticas) await this.$refs.estadisticas.cargarEstadisticas()
+      } catch (error) {
+        console.error('Error con el cronómetro de la tarea:', error)
+        this.mostrarMensaje('No se pudo cambiar el cronómetro de la tarea', 'error')
+      } finally {
+        this.cambiandoEstadoTarea = false
+      }
+    },
+
     /**
      * Abre el detalle de la tarea indicada en la URL (?abrirDetalle=ID, desde la campana
      * o el aviso de «vence hoy»). Si no está en la lista del usuario (p. ej. le han

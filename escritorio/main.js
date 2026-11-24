@@ -1,19 +1,19 @@
-// Workmeeter: widget de escritorio con el cronómetro de tareas de la intranet.
+// Workmeter: widget de escritorio con el cronómetro de tareas de la intranet.
 // Ventana sin marco, siempre encima, que arranca con Windows y recuerda su posición.
-const { app, BrowserWindow, Tray, Menu, ipcMain, screen, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, screen, nativeImage, session } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
-const ANCHO = 330;
+const ANCHO = 340;
 const ALTO_COMPLETO = 460;
-const ALTO_COMPACTO = 118;
+const ALTO_MINIMO = 92; // rectángulo: título, tiempo y un botón
 const MARGEN = 16;
 
 const CONFIG_POR_DEFECTO = {
   // Dirección de la intranet (el widget añade /api). En desarrollo, el servidor de `npm run serve`.
   servidor: 'http://localhost:8080',
   usuario: null, // { id, nombre, nivelAcceso, ... } de la última sesión; la contraseña nunca se guarda
-  compacto: false,
+  modo: 'minimo', // 'minimo' (píldora) o 'completo' (lista de tareas)
   arrancarConWindows: true,
   posicion: null // { x, y }
 };
@@ -50,7 +50,7 @@ function guardarConfig() {
 // ---------- Ventana ----------
 
 function altoActual() {
-  return config.compacto ? ALTO_COMPACTO : ALTO_COMPLETO;
+  return config.modo === 'minimo' ? ALTO_MINIMO : ALTO_COMPLETO;
 }
 
 // Devuelve una posición que cae dentro de alguna pantalla (por si se desconectó el monitor donde estaba).
@@ -126,12 +126,21 @@ function mostrarVentana() {
   ventana.focus();
 }
 
-function ajustarCompacto(compacto) {
-  config.compacto = !!compacto;
-  guardarConfig();
+// Cambia el alto de la ventana sin moverla, salvo para que no se salga por abajo de la pantalla.
+function ponerAlto(alto) {
   if (!ventana) return;
-  const [x, y] = ventana.getPosition();
-  ventana.setBounds({ x, y, width: ANCHO, height: altoActual() });
+  const b = ventana.getBounds();
+  const area = screen.getDisplayMatching(b).workArea;
+  const y = Math.max(area.y, Math.min(b.y, area.y + area.height - alto));
+  ventana.setBounds({ x: b.x, y, width: ANCHO, height: alto });
+}
+
+// persistir=false: cambio temporal (p. ej. se amplía para pedir el login, pero se recuerda la preferencia).
+function ajustarModo(modo, persistir = true) {
+  if (modo !== 'minimo' && modo !== 'completo') return;
+  config.modo = modo;
+  if (persistir) guardarConfig();
+  ponerAlto(altoActual());
 }
 
 // ---------- Arranque con Windows ----------
@@ -149,7 +158,7 @@ function crearBandeja() {
     .createFromPath(path.join(__dirname, 'assets', 'icon.png'))
     .resize({ width: 16, height: 16 });
   bandeja = new Tray(icono);
-  bandeja.setToolTip('Workmeeter');
+  bandeja.setToolTip('Workmeter');
   bandeja.on('click', mostrarVentana);
   actualizarMenuBandeja();
 }
@@ -157,14 +166,15 @@ function crearBandeja() {
 function actualizarMenuBandeja() {
   if (!bandeja) return;
   bandeja.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Mostrar Workmeeter', click: mostrarVentana },
+    { label: 'Mostrar Workmeter', click: mostrarVentana },
     {
-      label: 'Vista compacta',
+      label: 'Vista mínima',
       type: 'checkbox',
-      checked: !!config.compacto,
+      checked: config.modo === 'minimo',
       click: item => {
-        ajustarCompacto(item.checked);
-        ventana && ventana.webContents.send('compacto', item.checked);
+        const modo = item.checked ? 'minimo' : 'completo';
+        ajustarModo(modo);
+        ventana && ventana.webContents.send('modo', modo);
       }
     },
     {
@@ -193,7 +203,7 @@ function salir() {
 ipcMain.handle('config:leer', () => ({
   servidor: config.servidor,
   usuario: config.usuario,
-  compacto: config.compacto,
+  modo: config.modo,
   empaquetada: app.isPackaged,
   version: app.getVersion()
 }));
@@ -213,9 +223,17 @@ ipcMain.handle('sesion:guardar', (_e, usuario) => {
   guardarConfig();
 });
 
-ipcMain.handle('ventana:compacto', (_e, compacto) => {
-  ajustarCompacto(compacto);
+ipcMain.handle('ventana:modo', (_e, modo, persistir) => {
+  ajustarModo(modo, persistir !== false);
   actualizarMenuBandeja();
+});
+
+// Alto temporal de la píldora mientras se despliega el selector de tarea.
+// (libre: también fuera de la vista mínima, para que login y ajustes no dejen espacio vacío)
+ipcMain.handle('ventana:alto', (_e, alto, libre) => {
+  const n = Number(alto);
+  if ((config.modo !== 'minimo' && !libre) || !Number.isFinite(n)) return;
+  ponerAlto(Math.max(ALTO_MINIMO, Math.min(Math.round(n), 400)));
 });
 
 ipcMain.handle('ventana:ocultar', () => ventana && ventana.hide());
@@ -224,7 +242,8 @@ ipcMain.handle('app:salir', salir);
 // Las peticiones a la API van desde el proceso principal: así no hay CORS ni la página
 // del widget necesita hablar con el servidor.
 ipcMain.handle('api:peticion', async (_e, { metodo = 'GET', ruta, cuerpo }) => {
-  const cabeceras = { Accept: 'application/json' };
+  // X-Requested-With: el backend rechaza sin ella cualquier petición que modifique datos (anti-CSRF).
+  const cabeceras = { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
   if (config.usuario && config.usuario.nombre) {
     // Misma cabecera que pone el front de la intranet en todas las peticiones.
     // Como el navegador, va el nombre tal cual si cabe en latin1 (acentos incluidos); si no, codificado.
@@ -237,8 +256,12 @@ ipcMain.handle('api:peticion', async (_e, { metodo = 'GET', ruta, cuerpo }) => {
     opciones.body = JSON.stringify(cuerpo);
   }
   try {
-    const resp = await fetch(`${config.servidor}/api${ruta}`, opciones);
+    // La sesión del backend va en una cookie HttpOnly que fija el login: se usa el fetch de la sesión de
+    // Electron (con su almacén de cookies, que la conserva entre arranques) y no el fetch global.
+    opciones.credentials = 'include';
+    const resp = await session.defaultSession.fetch(`${config.servidor}/api${ruta}`, opciones);
     const texto = await resp.text();
+    if (ruta.startsWith('/usuarios/login')) await session.defaultSession.cookies.flushStore();
     let datos = null;
     try { datos = texto ? JSON.parse(texto) : null; } catch (err) { datos = texto; }
     return { ok: resp.ok, estado: resp.status, datos };

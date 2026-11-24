@@ -314,14 +314,33 @@
 
 /* El título es lo que identifica la tarea: se le reserva un mínimo para que no
    quede en dos palabras cortadas cuando el nombre del cliente es largo. */
-.th-col-titulo { width: 22%; min-width: 155px; }
-.th-col-cliente { width: 19%; }
-.th-col-asignado { width: 12%; }
+.th-col-titulo { width: 21%; min-width: 155px; }
+.th-col-cliente { width: 16%; }
+.th-col-asignado { width: 11%; }
 .th-col-estado { width: 10%; }
-.th-col-prioridad { width: 9%; }
-.th-col-categoria { width: 11%; }
+.th-col-prioridad { width: 8%; }
+.th-col-categoria { width: 10%; }
 .th-col-fecha { width: 9%; }
+.th-col-tiempo { width: 7%; }
 .th-col-acciones { width: 8%; }
+
+/* Columna Tiempo y botón de cronómetro */
+.celda-tiempo { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.celda-tiempo--en-curso { color: var(--color-success); font-weight: 600; }
+.tiempo-punto {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--color-success);
+  animation: tiempoLatido 1.6s ease-in-out infinite;
+}
+@keyframes tiempoLatido { 50% { opacity: .35; } }
+.btn-cronometro { color: var(--color-brand-yellow-hex); border-color: currentColor; }
+.btn-cronometro--en-curso { color: var(--color-success); }
+.btn-cronometro:disabled { opacity: .5; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .tiempo-punto { animation: none; } }
 
 .data-table td {
   padding: 12px 15px;
