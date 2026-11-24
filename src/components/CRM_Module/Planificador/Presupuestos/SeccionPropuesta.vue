@@ -18,13 +18,19 @@
           <span class="tag state" :class="CLASE_PROPUESTA[actual.status]">{{ ETIQUETA[actual.status] }}</span>
         </div>
 
-        <section v-if="!actual.has_logo" class="propuesta-logo" aria-label="Logo del cliente">
-          <button type="button" class="propuesta-logo-caja" :disabled="ocupado" title="Haz clic o arrastra una imagen para subir el logo" @click="$refs.logo.click()" @dragover.prevent @drop.prevent="soltarLogo">
-            <span class="muted">+ Subir logo</span>
+        <section class="propuesta-logo" aria-label="Logo del cliente">
+          <button type="button" class="propuesta-logo-caja" :disabled="ocupado || logoBloqueado" :title="logoBloqueado ? 'Logo de la empresa del cliente' : 'Haz clic o arrastra una imagen para subir el logo'" @click="$refs.logo.click()" @dragover.prevent @drop.prevent="soltarLogo">
+            <img v-if="actual.client_logo" :src="actual.client_logo" alt="Logo de la empresa del cliente">
+            <span v-else class="muted">+ Subir logo</span>
           </button>
           <div>
             <strong>Logo de la empresa del cliente</strong>
-            <p class="muted propuesta-ayuda">Hace falta para descargar la presentación. PNG, JPG, WebP o SVG.</p>
+            <p v-if="!actual.has_logo" class="muted propuesta-ayuda">Hace falta para descargar la presentación. PNG, JPG, WebP o SVG.</p>
+            <p v-else-if="!actual.client_logo" class="muted propuesta-ayuda">Se usa el logo de los parámetros del presupuesto. Si subes otro, será el de esta propuesta.</p>
+            <div v-else-if="!logoBloqueado" class="propuesta-acciones">
+              <button type="button" class="enlace-boton" :disabled="ocupado" @click="$refs.logo.click()">Cambiar el logo</button>
+              <button type="button" class="enlace-boton" :disabled="ocupado" @click="quitarLogo">Quitar el logo</button>
+            </div>
           </div>
           <input ref="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden @change="subirLogo">
         </section>
@@ -116,7 +122,9 @@ export default {
     historial() { return this.lista ? this.lista.slice(1) : [] },
     validador() { return esValidador() },
     enviada() { return !!this.actual && this.actual.status !== 'borrador' },
-    decidida() { return !!this.actual && (this.actual.status === 'aprobada' || this.actual.status === 'rechazada') }
+    decidida() { return !!this.actual && (this.actual.status === 'aprobada' || this.actual.status === 'rechazada') },
+    // El logo de una propuesta ya validada o anulada se ve, pero no se cambia
+    logoBloqueado() { return this.decidida && !!this.actual.client_logo }
   },
   watch: { presupuestoId() { this.lista = null; this.cargar() } },
   mounted() { this.cargar() },
@@ -169,6 +177,9 @@ export default {
     // El logo se reduce en el navegador y se guarda en la propuesta
     guardarLogo(archivo) {
       this.ejecutar(async () => planificadorApi.guardarLogoPropuesta(this.actual.id, await prepararLogo(archivo, 700)))
+    },
+    quitarLogo() {
+      this.ejecutar(() => planificadorApi.borrarLogoPropuesta(this.actual.id))
     },
     eliminarBorrador() {
       if (window.confirm('Se eliminará esta propuesta en borrador. ¿Continuar?')) this.ejecutar(() => planificadorApi.borrarPropuesta(this.actual.id))

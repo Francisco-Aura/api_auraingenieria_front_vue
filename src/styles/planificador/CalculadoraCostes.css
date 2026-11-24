@@ -2098,42 +2098,48 @@ th .orden-boton.on .orden-icon {
 .propuesta-historial ul { margin: 6px 0 0; padding-left: 18px; font-size: 0.9rem; }
 .propuesta-ayuda { margin: 0; font-size: 0.8rem; }
 
-/* Propuesta final de la lista: un botón de verdad (borde, fondo, flecha y relieve al pasar), con un punto del color del estado */
+/* Propuesta final de la lista: píldora clicable con el mismo lenguaje que las etiquetas de estado (fondo tintado + texto del color del estado),
+   ancho fijo para que todas queden alineadas y texto centrado */
 .propuesta-final-boton {
   --estado: #6b7280;
+  --estado-texto: #374151;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-width: 150px;
-  white-space: nowrap;
-  padding: 6px 10px 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
-  color: var(--text-h);
+  justify-content: center;
+  box-sizing: border-box;
+  width: 150px;
+  padding: 5px 12px;
+  border: 1px solid color-mix(in srgb, var(--estado) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--estado) 16%, transparent);
+  color: var(--estado-texto);
   font: inherit;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
   line-height: 1.2;
-  text-align: left;
+  text-align: center;
+  white-space: nowrap;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  box-shadow: none;
+  transition: background 0.15s, border-color 0.15s;
 }
-.propuesta-final-boton::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--estado); }
-.propuesta-final-boton::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 1.25em; line-height: 1; }
 .propuesta-final-boton:hover:not(:disabled) {
   border-color: var(--estado);
-  background: color-mix(in srgb, var(--estado) 10%, var(--bg));
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  background: color-mix(in srgb, var(--estado) 26%, transparent);
+  filter: none;
 }
-.propuesta-final-boton:active:not(:disabled) { box-shadow: none; transform: translateY(1px); }
-.propuesta-final-boton:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.propuesta-final-boton.local { --estado: #6b7280; }
-.propuesta-final-boton.borrador { --estado: #1d4ed8; }
-.propuesta-final-boton.enviado { --estado: #d97706; }
-.propuesta-final-boton.validado { --estado: #15803d; }
-.propuesta-final-boton.descartado { --estado: #b91c1c; }
+.propuesta-final-boton:active:not(:disabled) { transform: translateY(1px); }
+.propuesta-final-boton:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: none; }
+.propuesta-final-boton.local { --estado: #6b7280; --estado-texto: #374151; }
+.propuesta-final-boton.borrador { --estado: #1d4ed8; --estado-texto: #1e3a8a; }
+.propuesta-final-boton.enviado { --estado: #d97706; --estado-texto: #78350f; }
+.propuesta-final-boton.validado { --estado: #15803d; --estado-texto: #14532d; }
+.propuesta-final-boton.descartado { --estado: #b91c1c; --estado-texto: #7f1d1d; }
+html.tema-oscuro .propuesta-final-boton.local { --estado-texto: #c5cbd5; }
+html.tema-oscuro .propuesta-final-boton.borrador { --estado-texto: #7994e2; }
+html.tema-oscuro .propuesta-final-boton.enviado { --estado-texto: #ed9c6e; }
+html.tema-oscuro .propuesta-final-boton.validado { --estado-texto: #7bdfa3; }
+html.tema-oscuro .propuesta-final-boton.descartado { --estado-texto: #e17a7a; }
 .propuesta-pagina { max-width: 720px; display: flex; flex-direction: column; gap: 4px; }
 .propuesta-pagina .propuesta-caja { gap: 12px; }
 .propuesta-pagina .estado-caja { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 8px; padding-top: 12px; border-top: 1px solid #e4e7ec; }
