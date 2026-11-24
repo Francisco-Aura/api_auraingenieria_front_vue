@@ -1,0 +1,2327 @@
+.costes-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 14px;
+}
+
+.costes-titulo h1 {
+  margin: 0;
+}
+
+/* Datos de la instalación */
+.costes-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-alt);
+}
+
+.costes-cabecera label,
+.coste-filtros label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-h);
+}
+
+.costes-cabecera label.grow {
+  flex: 1 1 200px;
+}
+
+.costes-cabecera input {
+  width: 100%;
+  min-width: 0;
+}
+
+.costes-cabecera label:not(.grow) input {
+  width: 130px;
+  padding-right: 20px;
+}
+
+/* Campo numérico con flechitas (sale al pasar el ratón o al escribir en él) */
+.num-campo {
+  position: relative;
+  display: inline-block;
+  /* Tan ancho como su campo: dentro de una columna (flex o rejilla) no se estira, y las flechas quedan dentro del campo */
+  width: fit-content;
+  max-width: 100%;
+}
+
+.num-campo .pasos {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  bottom: 2px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.num-campo:hover .pasos,
+.num-campo:focus-within .pasos {
+  opacity: 1;
+}
+
+.num-campo .pasos button {
+  flex: 1;
+  width: 16px;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1;
+}
+
+.num-campo .pasos button:hover:not(:disabled) {
+  background: var(--bg-alt);
+  color: var(--text-h);
+  filter: none;
+}
+
+.cabecera-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  min-width: 110px;
+}
+
+.cabecera-total strong {
+  font-size: 16px;
+  color: var(--text-h);
+}
+
+.cabecera-acciones {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Catálogo (izquierda) y resumen (derecha) */
+.costes-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(380px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1239px) {
+  .costes-cuerpo {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Categorías agrupadas por partida: una fila por partida, con su nombre a la izquierda y las categorías con icono */
+.coste-pestanas {
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.pestana-grupo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 10px;
+}
+
+.pestana-grupo + .pestana-grupo {
+  border-top: 1px solid var(--border);
+}
+
+.pestana-grupo-etiqueta {
+  flex: none;
+  width: 118px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1.25;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.pestana-grupo-pestanas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+}
+
+.coste-pestanas button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.coste-pestanas button:hover:not(.active) {
+  background: var(--bg-alt);
+  filter: none;
+}
+
+.coste-pestanas button.active {
+  border-bottom-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.coste-pestanas .cat-icon {
+  flex: none;
+  color: var(--muted);
+}
+
+.coste-pestanas button.active .cat-icon {
+  color: var(--text-h);
+}
+
+.coste-pestanas .pestana-total {
+  background: color-mix(in srgb, var(--text) 14%, transparent);
+  color: inherit;
+}
+
+@media (max-width: 700px) {
+  .pestana-grupo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .pestana-grupo-etiqueta {
+    width: auto;
+  }
+}
+
+.coste-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+  margin-bottom: 8px;
+}
+
+.coste-filtros .search {
+  flex: 1 1 180px;
+}
+
+.coste-filtros input,
+.coste-filtros select {
+  width: 100%;
+}
+
+.coste-filtros label:not(.search) {
+  min-width: 140px;
+}
+
+.coste-filtros .clear {
+  align-self: center;
+  margin-top: 18px;
+}
+
+.resultado-total {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+}
+
+.coste-tabla .num,
+.linea-tabla .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.coste-tabla tr.added {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.coste-tabla .nota {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+/* Cabeceras que ordenan: un botón con aspecto de texto y la flecha del orden activo */
+th .orden-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  text-align: inherit;
+}
+
+th .orden-boton:hover:not(:disabled) {
+  filter: none;
+  text-decoration: underline;
+}
+
+th .orden-icon {
+  font-size: 10px;
+  opacity: 0.4;
+}
+
+th .orden-boton.on .orden-icon {
+  opacity: 1;
+}
+
+.tag {
+  display: inline-block;
+  margin: 0 4px 4px 0;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: var(--bg-alt);
+  color: var(--text);
+}
+
+/* «📄 Ficha»: el producto tiene la ficha técnica del fabricante adjunta */
+.tag.ficha {
+  background: color-mix(in srgb, #2563eb 12%, transparent);
+  color: #1d4ed8;
+}
+
+.tag.sample {
+  margin-left: 8px;
+  font-size: 11px;
+  background: color-mix(in srgb, #f59e0b 16%, transparent);
+  color: #b45309;
+}
+
+/* Resumen: se queda a la vista mientras se recorre el catálogo */
+.costes-resumen {
+  position: sticky;
+  top: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: var(--shadow-card);
+}
+
+@media (max-width: 1239px) {
+  .costes-resumen {
+    position: static;
+  }
+}
+
+.costes-resumen h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: var(--text-h);
+}
+
+.partida {
+  margin-bottom: 14px;
+}
+
+.partida-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 4px;
+  border-bottom: 2px solid var(--border);
+}
+
+.partida-cabecera .ratio {
+  margin-right: 10px;
+  font-size: 12px;
+}
+
+.linea-tabla .ratio {
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.partida-cabecera h3 {
+  margin: 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-h);
+}
+
+.linea-tabla {
+  font-size: 13px;
+}
+
+.linea-tabla th,
+.linea-tabla td {
+  padding: 5px 6px;
+}
+
+.linea-tabla th {
+  font-size: 11.5px;
+  border-bottom-width: 1px;
+}
+
+.linea-tabla input {
+  width: 86px;
+  padding: 3px 18px 3px 6px; /* a la derecha, sitio para las flechitas */
+  text-align: right;
+}
+
+.linea-tabla input.qty {
+  width: 68px;
+}
+
+/* Cantidad que sigue al número de módulos */
+.linea-tabla input.auto {
+  border-style: dashed;
+}
+
+.linea-tabla .icon-btn {
+  padding: 0 6px;
+  font-size: 16px;
+}
+
+/* Observaciones internas de un producto: el ojo va encima de la papelera y lleva un punto de aviso cuando hay texto */
+.linea-tabla .linea-iconos { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.linea-tabla .icono-obs { position: relative; }
+.linea-tabla .icono-obs.con-obs { color: var(--text-h); }
+.linea-tabla .icono-obs:hover:not(:disabled) { color: var(--accent); } /* al pasar el ratón, amarillo (el rojo es de la papelera) */
+.linea-tabla .obs-punto { position: absolute; top: 0; right: 3px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1.5px var(--bg); }
+.linea-tabla .obs-fila > td { padding: 0 0 8px; }
+.linea-tabla .obs-texto { width: 100%; resize: vertical; font: inherit; }
+/* En un presupuesto ya enviado o validado no se edita, pero sus observaciones se pueden leer */
+.costes.locked .costes-resumen .icono-obs { pointer-events: auto; opacity: 1; }
+
+.totals {
+  margin: 8px 0 0;
+  padding-top: 10px;
+  border-top: 2px solid var(--border);
+}
+
+.totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+}
+
+.totals dt {
+  color: var(--text-h);
+}
+
+.totals dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.totals .profit {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, #16a34a 12%, var(--bg));
+}
+
+.totals .profit.loss {
+  background: color-mix(in srgb, var(--danger) 12%, var(--bg));
+  color: var(--danger);
+}
+
+.totals .profit dd span {
+  font-weight: 400;
+}
+
+.costes-resumen .guardado {
+  margin: 10px 0 0;
+  font-size: 12px;
+}
+
+/* Botones de salida del título (presupuestador e inventario) */
+.titulo-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ---- Presupuestador por pasos ---- */
+.presupuesto-pasos {
+  min-width: 0;
+}
+
+/* Barra de pasos: etiquetas con el número y el nombre de cada paso, siempre a la vista al desplazarse; en dos filas si hace falta */
+.pasos-nav {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 8px 4px;
+  list-style: none;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.pasos-nav li {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* «›» tras cada paso (menos el último): marca el orden, también al saltar a la segunda fila */
+.pasos-nav li:not(:last-child)::after {
+  content: '›';
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.pasos-nav button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pasos-nav button:hover:not(.actual):not(.locked) {
+  border-color: color-mix(in srgb, var(--text) 40%, var(--border));
+  background: var(--bg-alt);
+}
+
+.pasos-nav button.actual {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.pasos-nav button.done:not(.actual) {
+  border-color: color-mix(in srgb, #15803d 35%, var(--border));
+}
+
+.paso-num {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.pasos-nav button.actual .paso-num {
+  background: var(--accent);
+  color: #1f1f1f;
+}
+
+.pasos-nav button.done:not(.actual) .paso-num {
+  background: color-mix(in srgb, #15803d 22%, transparent);
+  color: #15803d;
+}
+
+.pasos-nav .paso-titulo {
+  min-width: 0;
+}
+
+.pasos-nav .pestana-total {
+  display: none;
+}
+
+.paso-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.paso-cabecera h2 {
+  margin: 2px 0 8px;
+}
+
+.paso-antetitulo {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.paso-ayuda {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.paso-ayuda li + li {
+  margin-top: 3px;
+}
+
+.paso-seccion h3 {
+  margin: 4px 0 8px;
+  font-size: 15px;
+}
+
+.paso-seccion + .paso-seccion {
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+
+.paso-nota {
+  margin: 0;
+  padding: 9px 12px;
+  border-left: 4px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-alt);
+  font-size: 13px;
+}
+
+.paso-nota.ok {
+  border-left-color: #15803d;
+}
+
+.paso-nota.warn {
+  border-left-color: #d97706;
+  background: color-mix(in srgb, #f59e0b 10%, var(--bg));
+}
+
+.preset-alternar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.tag.compat.ok {
+  background: color-mix(in srgb, #15803d 18%, transparent);
+  color: #15803d;
+}
+
+.tag.compat.warn {
+  background: color-mix(in srgb, #f59e0b 22%, transparent);
+  color: #b45309;
+}
+
+.especificacion-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.especificacion-tabla caption {
+  padding-bottom: 4px;
+  text-align: left;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.especificacion-tabla th,
+.especificacion-tabla td {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.especificacion-tabla th {
+  background: var(--bg-alt);
+  font-weight: 600;
+}
+
+.paso-barra {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px -4px 0;
+  padding: 10px 4px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: 0 -8px 14px -10px rgba(0, 0, 0, 0.25);
+}
+
+.paso-barra .paso-nota {
+  margin: 0;
+}
+
+.paso-nav-botones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.paso-total {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.paso-panel {
+  scroll-margin-top: 64px;
+}
+
+/* El presupuesto se queda a la vista mientras se recorren los pasos */
+@media (min-width: 1240px) {
+  .costes-cuerpo > .costes-resumen {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
+}
+
+/* Paso 1: datos de partida */
+.cuestionario {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cuestionario fieldset {
+  margin: 0;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.cuestionario legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+.cuestionario p {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+
+.cuestionario-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+}
+
+.cuestionario-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-h);
+}
+
+.cuestionario-campo input,
+.cuestionario-campo select {
+  min-width: 130px;
+}
+
+/* Tipos de cubierta del presupuesto: casillas en fila, se marcan las que tenga la instalación */
+.cubiertas-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+
+.cubierta-opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cubierta-opcion.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.cuestionario-campo .cubierta-opcion input {
+  min-width: 0;
+  margin: 0;
+}
+
+/* Detalle por cubierta: nombre, coplanar/inclinada y paneles, en filas con las mismas columnas para que cuadren */
+.cubiertas-detalle {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.cubierta-fila {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) auto 170px;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.cubierta-fila .cubierta-nombre {
+  font-weight: 600;
+}
+
+.cubierta-disposicion {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.cubierta-paneles {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  grid-column: 3;
+}
+
+.cubierta-paneles .campo-numerico,
+.cubierta-paneles input {
+  min-width: 0;
+  width: 90px;
+}
+
+@media (max-width: 640px) {
+  .cubierta-fila {
+    grid-template-columns: 1fr;
+  }
+
+  .cubierta-paneles {
+    grid-column: 1;
+  }
+}
+
+.mes-rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px 10px;
+  margin-bottom: 12px;
+}
+
+.mes-rejilla label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mes-rejilla input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.eleccion-fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.eleccion-fila label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.eleccion-fila label.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  font-weight: 600;
+}
+
+.calc-lista {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.usar-sugerido {
+  align-self: flex-end;
+}
+
+.pasos-nav button.locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pasos-nav button.locked:hover {
+  background: var(--bg);
+}
+
+
+/* Aviso de precios que han cambiado en el inventario */
+.precio-aviso {
+  position: relative;
+  margin: 0 0 12px;
+  padding: 10px 34px 10px 12px;
+  border-left: 4px solid #d97706;
+  border-radius: 6px;
+  background: color-mix(in srgb, #f59e0b 10%, var(--bg));
+  font-size: 13px;
+}
+
+.precio-aviso ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.precio-aviso .icon-btn {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+}
+
+.manual-precio {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* Exportar el presupuesto */
+.exportar-caja {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-alt);
+  font-size: 13px;
+}
+
+.exportar-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exportar-caja .error {
+  margin: 0;
+}
+
+/* Precio de venta y beneficio: pegados arriba del presupuesto mientras se recorre la lista. Tres bloques iguales: la
+   etiqueta arriba y el dato debajo, a la misma altura. */
+.venta-barra {
+  /* Se pega al borde de arriba del presupuesto, tapando su margen interior para que nada asome por encima */
+  position: sticky;
+  top: -16px;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: start;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin: 0 -18px 12px;
+  padding: 22px 18px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.venta-celda {
+  display: grid;
+  grid-template-rows: auto 38px;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* La etiqueta del campo no es una caja aparte: su texto y su campo son las dos filas del bloque, como en los otros */
+.venta-celda > label {
+  display: contents;
+}
+
+.venta-celda > span:first-child,
+.venta-celda > label > span:first-child {
+  font-size: 13px;
+  color: var(--text-h);
+}
+
+.venta-celda .venta-valor {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.15;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-h);
+  white-space: nowrap;
+}
+
+.venta-celda .venta-valor small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.venta-celda.profit .venta-valor {
+  color: #15803d;
+}
+
+.venta-celda.profit.loss .venta-valor {
+  color: #b91c1c;
+}
+
+.venta-celda .num-campo,
+.venta-celda input {
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.venta-celda input {
+  width: 110px;
+}
+
+/* Orden de las filas del presupuesto */
+.order-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.order-switch button {
+  padding: 4px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.order-switch button.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+/* Interruptor deslizante: para opciones de sí/no (solo con stock, ver todo, prever baterías…) */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-h);
+  cursor: pointer;
+  user-select: none;
+}
+
+.switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.switch-track {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 22%, transparent);
+  transition: background 0.18s ease;
+}
+
+.switch-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  transition: transform 0.18s ease;
+}
+
+.switch input:checked + .switch-track {
+  background: var(--accent);
+}
+
+.switch input:checked + .switch-track::after {
+  transform: translateX(18px);
+}
+
+.switch input:focus-visible + .switch-track {
+  outline: 2px solid var(--text-h);
+  outline-offset: 2px;
+}
+
+.switch:hover .switch-track {
+  filter: brightness(0.96);
+}
+
+/* Productos sin precio */
+.tag.no-precio {
+  background: color-mix(in srgb, #f59e0b 24%, transparent);
+  color: #b45309;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.no-precio-nota {
+  margin: 0 0 10px;
+}
+
+/* Avisos de compatibilidad: en las filas del presupuesto, en los productos elegidos de cada paso y en la barra de pasos */
+.compat-aviso {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, #dc2626 45%, var(--border));
+  border-left: 4px solid #dc2626;
+  border-radius: 8px;
+  background: color-mix(in srgb, #dc2626 7%, var(--bg));
+  font-size: 13px;
+}
+
+.compat-aviso p {
+  margin: 2px 0 6px;
+}
+
+.compat-aviso ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.compat-aviso li {
+  margin: 3px 0;
+}
+
+.compat-aviso li.warn {
+  color: var(--text);
+}
+
+.incidencia-paso {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--bg-alt);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.linea-tabla tr.has-incidencia.bad td:first-child {
+  box-shadow: inset 3px 0 0 #dc2626;
+}
+
+.linea-tabla tr.has-incidencia.warn td:first-child {
+  box-shadow: inset 3px 0 0 #d97706;
+}
+
+.linea-incidencia,
+.elemento-incidencia {
+  margin-top: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.linea-incidencia.bad,
+.elemento-incidencia.bad {
+  background: color-mix(in srgb, #dc2626 10%, var(--bg));
+  color: #b91c1c;
+}
+
+.linea-incidencia.warn,
+.elemento-incidencia.warn {
+  background: color-mix(in srgb, #f59e0b 14%, var(--bg));
+  color: #92400e;
+}
+
+.tag.issue {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tag.issue.bad {
+  background: color-mix(in srgb, #dc2626 16%, transparent);
+  color: #b91c1c;
+}
+
+.tag.issue.warn {
+  background: color-mix(in srgb, #f59e0b 24%, transparent);
+  color: #92400e;
+}
+
+.paso-incidencias {
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.paso-incidencias.bad {
+  background: #dc2626;
+  color: #fff;
+}
+
+.paso-incidencias.warn {
+  background: #f59e0b;
+  color: #1a1a1a;
+}
+
+/* El aviso de un producto va en su propia fila, a todo el ancho de la tabla, bajo el producto */
+.incidencia-fila td {
+  padding: 0 8px 8px;
+  border-top: none;
+}
+
+.incidencia-fila .linea-incidencia,
+.incidencia-fila .elemento-incidencia {
+  margin-top: 0;
+}
+
+/* Sugeridos: etiqueta de stock (los sugeridos van dentro de la tabla de su categoría) */
+.tag.stock {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tag.stock.in {
+  background: color-mix(in srgb, #15803d 18%, transparent);
+  color: #14532d;
+}
+
+.tag.stock.out {
+  background: color-mix(in srgb, #6b7280 16%, transparent);
+  color: #4b5563;
+}
+
+/* Pestañas de sección de un paso: fijas bajo la barra de pasos; la amarilla es la sección que se está viendo */
+.paso-secciones {
+  position: sticky;
+  top: var(--steps-nav-h, 0px);
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.paso-secciones button {
+  flex: 1 1 0;
+  min-width: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-alt);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.paso-secciones button:hover {
+  border-color: var(--accent);
+}
+
+.paso-secciones button.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.paso-secciones-total {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  font-size: 12px;
+}
+
+.paso-seccion {
+  scroll-margin-top: calc(var(--steps-nav-h, 60px) + var(--section-tabs-h, 0px) + 12px);
+}
+
+/* Grupos dentro de la tabla de una categoría: sugeridos arriba, el resto, e incompatibles al final */
+.coste-tabla .grupo-fila th {
+  padding: 8px 8px 6px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--bg-alt);
+  border-top: 1px solid var(--border);
+}
+
+.coste-tabla .grupo-fila .muted {
+  font-weight: 400;
+  font-size: 12.5px;
+}
+
+.coste-tabla .sugerido-cabecera th {
+  padding: 11px 12px;
+  font-size: 15px;
+  color: #14532d;
+  background: color-mix(in srgb, #15803d 26%, var(--bg));
+  border-top: 2px solid #15803d;
+}
+
+.coste-tabla .sugerido-cabecera .muted {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.coste-tabla tr.sugerido-fila > td {
+  background: color-mix(in srgb, #15803d 11%, var(--bg));
+}
+
+.coste-tabla tr.sugerido-fila > td:first-child {
+  box-shadow: inset 5px 0 0 #15803d;
+}
+
+.coste-tabla tr.sugerido-fila:has(+ .grupo-fila) > td {
+  border-bottom: 2px solid #15803d;
+}
+.coste-tabla .sugerido-motivo {
+  color: #14532d;
+}
+
+.coste-tabla .incompatible-cabecera .enlace-boton {
+  font-weight: 600;
+  font-size: 13px;
+  padding: 0;
+}
+
+/* La fila del aviso continúa el fondo de la fila de su producto (añadido o sugerido): un solo bloque, sin línea entre ambas */
+.coste-tabla tr.added + .incidencia-fila {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.coste-tabla tr.sugerido-fila + .incidencia-fila > td {
+  background: color-mix(in srgb, #15803d 11%, var(--bg));
+}
+
+.coste-tabla tr:has(+ .incidencia-fila) > td {
+  border-bottom: none;
+}
+
+.coste-tabla .incidencia-fila > td {
+  padding: 0 8px 10px;
+}
+
+/* Secciones con título dentro de un paso (inversor, medidor, monitorización…): cada una es una tarjeta, bien separada de la anterior */
+.paso-seccion.titled {
+  padding: 14px 16px 16px;
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--accent);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.paso-seccion.titled + .paso-seccion.titled {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.paso-seccion.titled > h3 {
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 18px;
+}
+
+/* Tabla del presupuesto: el aviso se alinea con el nombre del producto y continúa la barra de color de su fila */
+.linea-tabla .incidencia-fila > td {
+  padding: 0 6px 8px;
+}
+
+.linea-tabla tr.has-incidencia.bad + .incidencia-fila > td {
+  box-shadow: inset 3px 0 0 #dc2626;
+}
+
+.linea-tabla tr.has-incidencia.warn + .incidencia-fila > td {
+  box-shadow: inset 3px 0 0 #d97706;
+}
+
+.linea-tabla tr:has(+ .incidencia-fila) > td {
+  border-bottom: none;
+}
+
+/* ---- Listado de presupuestos y formulario de parámetros ---- */
+.titulo-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alta-intro {
+  margin: 0 0 14px;
+  max-width: 78ch;
+}
+
+.presupuesto-tabla-envoltorio {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.presupuesto-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.presupuesto-tabla th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 12.5px;
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.presupuesto-tabla td {
+  padding: 10px 12px;
+  vertical-align: middle; /* con filas de una y de dos líneas, todo queda centrado en vertical */
+  border-top: 1px solid var(--border);
+}
+
+.presupuesto-tabla tr:first-child td {
+  border-top: none;
+}
+
+.presupuesto-tabla .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.presupuesto-tabla .small {
+  font-size: 12px;
+}
+
+.presupuesto-tabla .fila-acciones {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+
+.presupuesto-tabla .tag {
+  margin-left: 8px;
+}
+
+.tag.state {
+  margin-left: 0;
+  font-weight: 700;
+}
+
+.tag.state.local {
+  background: color-mix(in srgb, #6b7280 18%, transparent);
+  color: #374151;
+}
+
+.tag.state.borrador {
+  background: color-mix(in srgb, #1d4ed8 16%, transparent);
+  color: #1e3a8a;
+}
+
+.tag.state.validado {
+  background: color-mix(in srgb, #15803d 18%, transparent);
+  color: #14532d;
+}
+
+.tag.state.enviado {
+  background: color-mix(in srgb, #d97706 20%, transparent);
+  color: #78350f;
+}
+
+.tag.state.descartado {
+  background: color-mix(in srgb, #b91c1c 14%, transparent);
+  color: #7f1d1d;
+}
+
+.alta-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 860px;
+}
+
+.alta-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--accent);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.alta-tarjeta legend {
+  padding: 0 6px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.cuestionario-campo.wide {
+  flex: 1 1 100%;
+}
+
+.cuestionario-campo.wide input {
+  width: 100%;
+}
+
+.campo-pista {
+  font-size: 12px;
+}
+
+.alta-nota {
+  margin: 0;
+}
+
+.alta-problemas {
+  padding: 10px 14px;
+  border-left: 4px solid #dc2626;
+  border-radius: 6px;
+  background: color-mix(in srgb, #dc2626 8%, var(--bg));
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.alta-problemas p {
+  margin: 2px 0;
+}
+
+/* Anclada abajo (como la barra de pasos): guardar es lo importante y tiene que estar siempre a la vista */
+.alta-acciones {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 6px -4px 0;
+  padding: 10px 4px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: 0 -8px 14px -10px rgba(0, 0, 0, 0.25);
+}
+
+.alta-acciones .alta-problemas {
+  flex: 1 0 100%;
+}
+
+/* Dónde se guarda el presupuesto */
+.guardar-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-left: 5px solid #6b7280;
+  border-radius: var(--radius);
+  background: var(--bg-alt);
+}
+
+.guardar-barra.shared {
+  border-left-color: #1d4ed8;
+}
+
+.guardar-donde {
+  flex: 1 1 320px;
+  font-size: 14px;
+}
+
+.guardar-donde .tag {
+  margin-left: 8px;
+}
+
+.guardar-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.guardar-mensaje,
+.guardar-conflicto {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+.guardar-conflicto {
+  padding: 10px 12px;
+  border-left: 4px solid #d97706;
+  border-radius: 6px;
+  background: color-mix(in srgb, #f59e0b 12%, var(--bg));
+}
+
+.guardar-conflicto p {
+  margin: 0 0 8px;
+}
+
+/* Parámetros fijados al crear el presupuesto */
+.params {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.parametros-cabecera {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.param-lista,
+.fijo-parametros ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.fijo-parametros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  padding: 8px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: var(--bg-alt);
+}
+
+/* Botones de papelera: el icono va centrado y toma el color del texto (rojo al pasar el ratón, como el resto de iconos) */
+.icon-btn.trash {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+/* Volver atrás va siempre arriba a la izquierda, solo: lo que se crea o se guarda va aparte, en la barra de herramientas de cada pantalla */
+.back-fila {
+  margin: 0 0 8px;
+}
+
+.coste-filtros .toolbar-end {
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+/* Los botones de alta (estudio y presupuesto) van juntos, junto al título y con el mismo peso: ninguno manda sobre el otro */
+.costes-titulo .toolbar-altas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* La acción de la cabecera de un proyecto (crear lo que le falta) va al lado de su resumen */
+.presupuesto-tabla .grupo-fila .grupo-crear { margin-left: 10px; padding: 2px 10px; font-size: 12px; }
+
+/* «Volver» como enlace discreto: que no le quite protagonismo al título de la pantalla */
+.back-fila button {
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.back-fila button:hover:not(:disabled) {
+  color: var(--text-h);
+  text-decoration: underline;
+  filter: none;
+}
+
+/* Elegir el cliente de un presupuesto */
+.cliente-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* «Cancelar» al cambiar de cliente: a la izquierda, no centrado */
+.cliente-selector > .enlace-boton {
+  align-self: flex-start;
+}
+
+.cliente-selector.invalid {
+  outline: 2px solid #dc2626;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.cliente-selector.chosen {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-alt);
+}
+
+.cliente-actual {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.cliente-modos {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cliente-modos button {
+  padding: 8px 14px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cliente-modos button.on {
+  color: var(--text-h);
+  border-bottom-color: var(--accent);
+}
+
+.cliente-resultados {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cliente-resultados li + li {
+  border-top: 1px solid var(--border);
+}
+
+.cliente-resultados button {
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--text);
+  text-align: left;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.cliente-resultados button:hover {
+  background: var(--bg-alt);
+}
+
+/* Formulario de parámetros: los campos se alinean por arriba, tengan o no texto de ayuda debajo */
+.alta-tarjeta .cuestionario-fila {
+  align-items: flex-start;
+}
+
+/* Etiquetas de los valores en las columnas de la tabla: si el texto ocupa varias líneas, la caja las abarca bien (esquinas
+   suaves en vez de píldora) y no hereda márgenes de otras pantallas */
+.coste-tabla td > .tag.attr {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: 12px;
+  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: normal; /* solo se salta de línea entre palabras: nunca se parte una palabra, y la columna se ensancha lo necesario */
+  word-break: normal;
+  hyphens: none;
+}
+
+/* Todos los datos sueltos (parámetros del presupuesto, potencia instalada, coste ratio, franjas de cada paso) se ven igual: la
+   etiqueta pequeña encima y el valor debajo, en negrita */
+.param-lista li,
+.fijo-parametros li,
+.cabecera-total {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.param-lista li > .muted,
+.fijo-parametros li > .muted,
+.cabecera-total > .muted {
+  font-size: 12px;
+}
+
+.param-lista li > strong,
+.fijo-parametros li > strong,
+.cabecera-total > strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.param-lista,
+.fijo-parametros ul {
+  gap: 8px 28px;
+}
+
+.fijo-parametros {
+  align-items: flex-end;
+}
+
+/* Las etiquetas dentro de un dato de la cabecera (Potencial, Sin cliente) no añaden altura: así se alinea con el resto */
+.param-lista .tag {
+  margin: 0 0 0 8px;
+  vertical-align: middle;
+}
+
+/* Columna «Estado» del listado de presupuestos: centrada */
+.presupuesto-tabla .center {
+  text-align: center;
+}
+
+.presupuesto-tabla td.center .tag.state {
+  margin: 0;
+}
+
+/* Tarjeta de parámetros: una fila de arriba (título, editar y botones) y una de datos, sin huecos ni filas sueltas */
+.costes-cabecera {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.costes-cabecera .parametros-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.costes-cabecera .cabecera-acciones {
+  margin-left: auto;
+}
+
+/* Lo calculado (potencia instalada, coste ratio) va en la misma fila que los datos, separado por una línea */
+.param-lista li:not(.calc) + li.calc {
+  margin-left: 6px;
+  padding-left: 28px;
+  border-left: 1px solid var(--border);
+}
+
+/* Detalle de cada producto (por qué encaja, características, notas) y sus avisos: filas propias a todo el ancho, alineadas con el
+   nombre y sin líneas entre ellas, para que se lean como un solo bloque */
+.coste-tabla .detalle-fila > td,
+.coste-tabla .incidencia-fila > td {
+  padding: 0 12px 10px;
+  border-top: none;
+}
+
+.coste-tabla tr:has(+ .detalle-fila) > td,
+.coste-tabla tr:has(+ .incidencia-fila) > td {
+  border-bottom: none;
+}
+
+.coste-tabla .detalle-fila .nota {
+  margin: 0;
+}
+
+.coste-tabla .detalle-fila .nota + .nota {
+  margin-top: 3px;
+}
+
+.coste-tabla .grupo-fila th {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* Márgenes laterales más ajustados en las columnas de datos (la del nombre conserva los suyos): así el nombre gana sitio */
+.coste-tabla th,
+.coste-tabla td {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.coste-tabla th:first-child,
+.coste-tabla td:first-child {
+  padding-left: 12px;
+}
+
+.coste-tabla .detalle-fila > td,
+.coste-tabla .incidencia-fila > td {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.coste-tabla .grupo-fila th {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* Diseño de strings: paneles de cada string y su entrada del inversor */
+.string-disenador {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--accent);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+/* En los parámetros del presupuesto ya va dentro de su propia tarjeta («Strings»): sin segundo marco */
+.alta-tarjeta .string-disenador {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.string-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.string-cabecera h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.string-cabecera .tag {
+  margin: 0;
+}
+
+.string-ayuda,
+.string-entradas {
+  margin: 0;
+  font-size: 13px;
+}
+
+.strings-envoltorio {
+  overflow-x: auto;
+}
+
+.strings-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.strings-tabla th {
+  padding: 6px 8px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.strings-tabla td {
+  padding: 8px;
+  vertical-align: middle;
+  border-top: 1px solid var(--border);
+}
+
+.strings-tabla tr:first-child td {
+  border-top: none;
+}
+
+.strings-tabla tr.bad > td {
+  background: color-mix(in srgb, #dc2626 7%, transparent);
+}
+
+.strings-tabla input {
+  width: 86px;
+}
+
+.strings-tabla select {
+  min-width: 170px;
+}
+
+.strings-tabla .tag {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.string-voltios {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.string-pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.string-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.string-total.ok {
+  color: #15803d;
+}
+
+.string-total.bad,
+.string-rango.bad {
+  color: #b91c1c;
+}
+
+.string-rango {
+  margin: -4px 0 10px;
+  font-size: 0.9rem;
+}
+
+.string-problemas {
+  margin: 0;
+  padding: 8px 12px 8px 28px;
+  border-left: 4px solid #dc2626;
+  border-radius: 6px;
+  background: color-mix(in srgb, #dc2626 8%, var(--bg));
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+/* La tabla del catálogo no se sale de su columna: si no cabe, se desplaza dentro de ella (y no pasa por debajo del resumen) */
+.coste-tabla-envoltorio {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* «Añadir» / «Quitar» siempre a la vista: si la tabla no cabe y se desplaza, la última columna se queda fija a la derecha */
+.coste-tabla th.act,
+.coste-tabla td.act {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: var(--bg);
+}
+
+.coste-tabla tr.added > td.act {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+.string-numero { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-weight: 600; }
+
+.locked-fieldset { display: contents; border: 0; padding: 0; margin: 0; min-width: 0; }
+.costes.locked .costes-resumen :is(input, select, textarea, .icon-btn) { pointer-events: none; opacity: 0.6; }
+
+.presupuesto-tabla .estado-accion { margin-top: 4px; }
+.presupuesto-tabla .estado-accion:empty { display: none; }
+
+
+.costes-resumen .estado-caja { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e4e7ec; }
+.costes-resumen .estado-caja button { display: inline-flex; align-items: center; gap: 8px; }
+.costes-resumen .estado-caja .muted { font-size: 0.85rem; }
+
+.propuesta-caja { display: flex; flex-direction: column; gap: 8px; }
+.propuesta-caja h3 { margin: 0; font-size: 1rem; }
+.propuesta-cabecera { display: flex; align-items: center; gap: 8px; }
+.propuesta-fechas { margin: 0; padding-left: 18px; font-size: 0.85rem; }
+.propuesta-nota { margin: 0; font-style: italic; }
+.propuesta-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.propuesta-historial ul { margin: 6px 0 0; padding-left: 18px; font-size: 0.9rem; }
+.propuesta-ayuda { margin: 0; font-size: 0.8rem; }
+
+/* Propuesta final de la lista: un botón de verdad (borde, fondo, flecha y relieve al pasar), con un punto del color del estado */
+.propuesta-final-boton {
+  --estado: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 150px;
+  white-space: nowrap;
+  padding: 6px 10px 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text-h);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.propuesta-final-boton::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--estado); }
+.propuesta-final-boton::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 1.25em; line-height: 1; }
+.propuesta-final-boton:hover:not(:disabled) {
+  border-color: var(--estado);
+  background: color-mix(in srgb, var(--estado) 10%, var(--bg));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+.propuesta-final-boton:active:not(:disabled) { box-shadow: none; transform: translateY(1px); }
+.propuesta-final-boton:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.propuesta-final-boton.local { --estado: #6b7280; }
+.propuesta-final-boton.borrador { --estado: #1d4ed8; }
+.propuesta-final-boton.enviado { --estado: #d97706; }
+.propuesta-final-boton.validado { --estado: #15803d; }
+.propuesta-final-boton.descartado { --estado: #b91c1c; }
+.propuesta-pagina { max-width: 720px; display: flex; flex-direction: column; gap: 4px; }
+.propuesta-pagina .propuesta-caja { gap: 12px; }
+.propuesta-pagina .estado-caja { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 8px; padding-top: 12px; border-top: 1px solid #e4e7ec; }
+.propuesta-pagina .estado-caja .muted { font-size: 0.85rem; }
+
+/* Presupuesto enviado: sin pasos que editar, el desglose ocupa todo el ancho y la barra de validar queda fija abajo */
+.costes-cuerpo.revision { grid-template-columns: minmax(0, 1fr); }
+.costes-cuerpo.revision > .costes-resumen { position: static; max-height: none; overflow: visible; }
+/* Barra de decisión de quien valida: el estado a la izquierda (etiqueta ámbar), la explicación en medio y la acción separada a la derecha,
+   para que no se lea como un interruptor con su rótulo. El .estado-caja se disuelve y sus hijos se ordenan en la propia barra. */
+.revision-barra { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 16px; padding: 12px 18px 12px 16px; border: 1px solid var(--border); border-left: 4px solid #d97706; border-radius: var(--radius); background: var(--bg); box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08); }
+.revision-barra .estado-caja { display: contents; }
+.revision-estado { order: 1; display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 999px; background: color-mix(in srgb, #d97706 18%, transparent); color: var(--text-h); font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+.revision-estado::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: #d97706; }
+.revision-barra .estado-caja .muted { order: 2; flex: 1 1 240px; font-size: 0.85rem; }
+.revision-barra .estado-caja button { order: 3; margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+
+.variante-alternar { background: none; border: 0; padding: 0 8px 0 0; font-size: 1rem; line-height: 1; color: inherit; cursor: pointer; opacity: 0.7; }
+.variante-alternar:hover { opacity: 1; }
+tr.variante-fila > td:first-child { padding-left: 36px; }
+tr.variante-fila { background: color-mix(in srgb, currentColor 4%, transparent); }
+
+.variante-tira { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 14px; }
+.variante-tira-etiqueta { font-size: 0.85rem; }
+.variante-tira-lista { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.variante-chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border, #e4e7ec); border-radius: var(--radius, 8px); background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.variante-abrir { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.variante-papelera { color: #b91c1c; margin-left: -6px; }
+.variante-chip:hover:not(:disabled) { border-color: #1d4ed8; }
+.variante-chip.actual { border-color: #1d4ed8; background: color-mix(in srgb, #1d4ed8 10%, transparent); cursor: default; opacity: 1; }
+
+tr.grupo-fila > td { padding: 10px 12px; }
+tr.grupo-fila .grupo-alternar { background: none; border: 0; padding: 0 10px 0 0; font: inherit; font-weight: 600; color: inherit; cursor: pointer; text-align: left; }
+tr.grupo-fila .grupo-alternar:hover { text-decoration: underline; }
+
+.propuesta-cabecera { display: flex; align-items: center; gap: 10px; }
+.propuesta-cabecera h3 { margin: 0; }
+.propuesta-documento { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 12px 14px; border: 1px solid var(--border, #e4e7ec); border-radius: var(--radius, 8px); }
+.propuesta-documento p { margin: 2px 0 0; }
+.propuesta-pasos { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; }
+.propuesta-pasos li { display: flex; gap: 12px; padding-bottom: 16px; position: relative; }
+.propuesta-pasos li:not(:last-child)::before { content: ''; position: absolute; left: 13px; top: 28px; bottom: 0; width: 2px; background: var(--border, #e4e7ec); }
+.propuesta-pasos .paso-marca { flex: none; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 600; border: 2px solid var(--border, #e4e7ec); }
+.propuesta-pasos li.done .paso-marca { background: #ffdd00; border-color: #ffdd00; color: #1f1f21; }
+.propuesta-pasos li.now .paso-marca { border-color: #ffdd00; }
+.propuesta-pasos li.todo { opacity: 0.6; }
+.propuesta-pasos li p { margin: 2px 0 8px; font-size: 0.9rem; }
+
+/* Última columna de la tabla de strings: lo que se puede ajustar y la papelera, pegados al borde derecho */
+.strings-tabla th:last-child, .strings-tabla td.string-herramientas { width: 1%; }
+.strings-tabla td.string-herramientas { text-align: right; white-space: nowrap; }
+.strings-tabla td.string-herramientas > * { vertical-align: middle; }
+
+/* Columnas de ancho fijo: al desplegar una oferta (o filtrar) las columnas no se mueven */
+.presupuesto-tabla { table-layout: fixed; min-width: 1000px; }
+.presupuesto-tabla td:first-child { overflow-wrap: anywhere; }
+.presupuesto-tabla-envoltorio { overflow-x: auto; }
+
+.variante-chip .variante-renombrar { margin-left: 2px; padding: 2px; opacity: 0.7; }
+.variante-chip .variante-renombrar:hover { opacity: 1; color: var(--text-h); } /* el lápiz no es de borrar: no se pone rojo (el rojo al pasar es del .icon-btn genérico) */
+
+/* Con el desglose a todo el ancho (presupuesto enviado), precio, presupuesto y beneficio van juntos y no repartidos por la pantalla */
+.costes-cuerpo.revision .venta-barra { justify-content: start; column-gap: 56px; }
+
+.strings-tabla .dividido-nota { display: block; font-size: 0.8rem; margin-top: 2px; }
+.string-limites { margin: 10px 0 0; font-size: 0.9rem; }
+
+.propuesta-logo { display: flex; align-items: center; gap: 16px; padding: 12px 14px; border: 1px solid var(--border, #e4e7ec); border-radius: var(--radius, 8px); }
+.propuesta-logo p { margin: 2px 0 8px; }
+.propuesta-logo-caja { cursor: pointer; padding: 0; font: inherit; color: inherit; flex: none; width: 120px; height: 72px; display: grid; place-items: center; border: 1px dashed var(--border, #cfd0d3); border-radius: 8px; background: #fff; overflow: hidden; }
+.propuesta-logo-caja img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.propuesta-encaje-caja { width: 200px; height: 120px; }
+.propuesta-documento .propuesta-faltantes { flex-basis: 100%; margin: 0; }
+
+/* Diseño de strings plegable y sugerencias de inversores con sus unidades */
+.string-alternar { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.string-resumen { font-size: 0.85rem; }
+.inversor-paquetes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.inversor-paquete { padding: 4px 10px; font-size: 0.85rem; }
+
+/* Título del presupuesto del proyecto con «Vaciar filas» a la derecha */
+.resumen-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.resumen-cabecera h2 { margin: 0; }
+.resumen-cabecera button { padding: 4px 10px; font-size: 0.85rem; }
+
+/* Lápiz de la cabecera de la ficha de un producto (se abre desde su nombre en el presupuestador): abre su edición en el inventario */
+.producto-edicion {
+  margin-left: 4px;
+  padding: 2px 4px;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+.producto-edicion:hover,
+.producto-edicion:focus-visible {
+  opacity: 1;
+}
+
+/* Iconos de la barra de estado del presupuesto (bloqueado, compartido, local): dibujados con el color del texto para que se vean en claro y en oscuro */
+.estado-icono {
+  width: 15px;
+  height: 15px;
+  margin-right: 6px;
+  vertical-align: -2px;
+}
+
+/* Diseñador de strings: el string que se ha puesto a mano queda «fijado» y «Repartir» no lo toca */
+.string-paneles { white-space: nowrap; }
+.string-paneles .tag.fijado {
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  margin: 0 0 0 6px;
+  padding: 0 7px;
+  font-size: 11px;
+  background: color-mix(in srgb, var(--brand) 28%, transparent);
+  color: var(--text);
+}
+.string-mas { position: relative; display: inline-block; }
+.string-mas > summary { list-style: none; cursor: pointer; display: inline-block; padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); }
+.string-mas > summary::-webkit-details-marker { display: none; }
+.string-mas-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 260px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  box-shadow: var(--shadow-card);
+}
+
+/* Lista «Presupuestos y estudios»: una fila por proyecto, con su estudio y su presupuesto en columnas fijas */
+.proyectos-tabla td { vertical-align: middle; }
+.proyectos-tabla tr.proyecto-fila > td { padding: 12px; }
+.proyectos-tabla .proyecto-nombre { display: flex; align-items: center; gap: 6px; }
+.proyectos-tabla .proyecto-cliente { font-weight: 600; }
+.proyectos-tabla .grupo-alternar,
+.proyectos-tabla .grupo-alternar-hueco { flex: 0 0 18px; width: 18px; padding: 0; border: 0; background: none; font: inherit; color: inherit; line-height: 1.4; cursor: pointer; text-align: left; }
+.proyectos-tabla .grupo-alternar-hueco { cursor: default; }
+.proyectos-tabla tr.variante-fila > td:first-child { padding-left: 12px; }
+.proyectos-tabla .celda-estado { margin-top: 2px; font-size: 12px; color: var(--muted); }
+.proyectos-tabla .celda-estado.warn { color: #b45309; }
+.proyectos-tabla .mas-chip { margin-left: 6px; padding: 1px 6px; border-radius: 4px; font-size: 11px; color: var(--muted); background: var(--bg-alt); }
+.proyectos-tabla .celda-documento { display: flex; flex-wrap: nowrap; align-items: center; gap: 12px; }
+.proyectos-tabla td:nth-child(2) .celda-documento > :first-child { min-width: 112px; }
+.proyectos-tabla td:nth-child(3) .celda-documento > :first-child { min-width: 140px; }
+.proyectos-tabla .celda-acciones { display: flex; flex-direction: column; align-items: center; flex: none; }
+.proyectos-tabla .celda-acciones .icon-btn { padding: 2px 5px; }
+.proyectos-tabla .celda-acciones .icono-copiar:hover { color: var(--text-h); }
+.proyectos-tabla td.celda-menu { padding-left: 0; padding-right: 8px; text-align: center; }
+.proyectos-tabla .celda-menu .icon-btn { padding: 4px 8px; font-size: 18px; line-height: 1; }
+.proyectos-tabla .ver-todos { padding-left: 36px; }
+.hueco-crear { padding: 3px 10px; font-size: 12px; background: none; color: var(--muted); border: 1px dashed var(--border); border-radius: var(--radius); cursor: pointer; }
+.hueco-crear:hover:not(:disabled) { color: var(--text-h); border-color: var(--text-h); }
+.menu-ancla { position: relative; display: inline-block; }
+.menu-flotante { position: fixed; z-index: 1000; min-width: 190px; display: flex; flex-direction: column; padding: 4px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12); }
+.menu-flotante button { padding: 7px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 4px; }
+.menu-flotante button:hover { background: var(--bg-alt); }
+.menu-flotante button.peligro { color: #b91c1c; }
+/* Los tres puntos de la fila se iluminan en el amarillo de la marca, no en el rojo de borrar que trae .icon-btn */
+.menu-ancla > .icon-btn:hover, .menu-ancla > .icon-btn[aria-expanded="true"] { color: var(--accent); }
+
+/* Alta de un proyecto: cliente y nombre, arriba de la lista */
+.alta-proyecto { display: flex; flex-direction: column; gap: 14px; margin: 0 0 16px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); }
+.alta-proyecto .alta-acciones { display: flex; justify-content: flex-end; gap: 8px; position: static; margin: 8px 0 0; padding: 0; border-top: 0; box-shadow: none; background: none; }
+.datos-empresa { display: flex; flex-direction: column; gap: 14px; }
+.datos-empresa .cuestionario-campo { gap: 6px; }
+.alta-proyecto .cliente-modos { margin-bottom: 10px; }
+
+/* Cliente y proyecto de un documento, fijados por su proyecto: una línea, sin campos */
+.proyecto-fijo { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 2px 0 6px; }
+
+/* Selección de varias propuestas en la lista */
+.fila-marca { width: 16px; height: 16px; margin: 0 8px 0 0; flex: none; cursor: pointer; }
+.seleccion-todas { display: inline-flex; align-items: center; gap: 6px; align-self: flex-end; cursor: pointer; }
+.seleccion-barra { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 10px; padding: 10px 14px; border: 1px solid #dc2626; border-left-width: 5px; border-radius: 8px; background: rgba(220, 38, 38, 0.08); }
+.btn-eliminar-varias, .btn-peligro { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.btn-eliminar-varias { background: transparent; color: #dc2626; border: 1px solid #dc2626; }
+.btn-eliminar-varias:hover:not(:disabled) { background: rgba(220, 38, 38, 0.12); }
+.btn-peligro { background: #dc2626; color: #fff; border: 1px solid #dc2626; }
+.btn-peligro:hover:not(:disabled) { background: #b91c1c; border-color: #b91c1c; }
+.btn-peligro:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.filtros-derecha { margin-left: auto; align-self: flex-end; display: flex; gap: 8px; }

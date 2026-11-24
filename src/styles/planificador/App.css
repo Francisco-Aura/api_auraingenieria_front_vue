@@ -1,0 +1,623 @@
+/* Fondo de página gris azulado con paneles blancos, igual que los módulos de la intranet */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+  align-items: start;
+  min-height: 100svh;
+  padding: 20px;
+}
+
+.sidebar {
+  padding: 20px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+
+.content {
+  min-width: 0; /* permite que el Gantt haga scroll interno en vez de ensanchar la página */
+  padding: 24px 28px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+
+/* Alta de proyecto y presupuestador: sin barra lateral, el contenido ocupa todo el ancho */
+.layout.focus {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Incrustado en la intranet: sin margen alrededor, la barra lateral y el contenido llenan el espacio */
+html.embedded .layout {
+  gap: 0;
+  align-items: stretch;
+  padding: 0;
+}
+
+html.embedded .sidebar,
+html.embedded .content {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html.embedded .sidebar {
+  border-right: 1px solid var(--border);
+}
+
+.proyecto-lista {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.proyecto-lista li {
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+}
+
+.proyecto-lista li.active {
+  background: rgba(var(--brand-rgb), 0.22);
+}
+
+/* Contrato pendiente de generar: etiqueta en la lista de proyectos y aviso en el proyecto */
+.pendiente-etiqueta {
+  margin-left: 4px;
+  padding: 0 6px;
+  border: 1px solid #f59e0b;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #b45309;
+  white-space: nowrap;
+}
+
+/* Separado de los botones de generar */
+.nuevo-proyecto .contrato-caja .hint.contrato-estado {
+  margin: 28px 0 0;
+}
+
+.nuevo-proyecto .contrato-estado.ok {
+  color: #15803d;
+}
+
+/* Borrador de un proyecto a medias: aparece en la lista, con su etiqueta, para seguir con él */
+.borrador-entrada .link {
+  font-style: italic;
+}
+
+.borrador-etiqueta {
+  margin-left: 4px;
+  padding: 0 6px;
+  border: 1px dashed var(--muted);
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: normal;
+  color: var(--muted);
+}
+
+/* «Finalizados»: proyectos con todas sus tareas hechas, plegados bajo la lista */
+.archivado-alternar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 4px 2px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.archivado-alternar:hover:not(:disabled) {
+  color: var(--text-h);
+  filter: none;
+}
+
+.archivado-lista {
+  margin-top: 6px;
+}
+
+.archivado-lista .link {
+  color: var(--muted);
+}
+
+.archivado-lista li.active .link {
+  color: var(--text-h);
+}
+
+.proyecto-terminado {
+  margin: 0 0 14px;
+  padding: 9px 14px;
+  border: 1px solid color-mix(in srgb, #16a34a 45%, var(--border));
+  border-left: 5px solid #16a34a;
+  border-radius: 8px;
+  font-size: 14px;
+  background: color-mix(in srgb, #16a34a 8%, var(--bg));
+}
+
+.sidebar-title {
+  margin: 22px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.link {
+  flex: 1;
+  text-align: left;
+  background: none;
+  color: var(--text-h);
+}
+
+.icon-btn {
+  background: none;
+  color: var(--muted);
+  padding: 2px 8px;
+}
+
+.icon-btn:hover {
+  color: var(--danger);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.row input:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.tarea-formulario {
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Cabecera de tabla como en la intranet: texto oscuro en negrita y línea inferior más gruesa */
+th {
+  color: var(--text-h);
+  font-weight: 600;
+  border-bottom-width: 2px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.wide {
+  width: 100%;
+}
+
+.empty {
+  padding: 6px 8px;
+}
+
+.enlace-boton {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.proyecto-meta {
+  margin: -8px 0 16px;
+}
+
+/* Resumen de retrasos del proyecto */
+.proyecto-alerta {
+  --alert: #f59e0b;
+  margin: 0 0 14px;
+  padding: 9px 14px;
+  border: 1px solid color-mix(in srgb, var(--alert) 60%, transparent);
+  border-left: 5px solid var(--alert);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--alert) 12%, var(--bg));
+}
+
+.proyecto-alerta.level-2 {
+  --alert: #f97316;
+}
+
+.proyecto-alerta.level-3 {
+  --alert: #dc2626;
+  background: color-mix(in srgb, var(--alert) 18%, var(--bg));
+}
+
+.proyecto-alerta strong {
+  color: var(--text-h);
+}
+
+/* Secciones del proyecto: pestañas subrayadas, distintas de los botones de "Ver como" */
+.seccion-pestanas {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.seccion-pestanas button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  margin-bottom: -1px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.seccion-pestanas button:hover {
+  color: var(--text-h);
+}
+
+/* Secciones secundarias (Actividad y Documentos): juntas a la derecha y con menos peso visual */
+.seccion-pestanas .pestana-aside-grupo {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.seccion-pestanas .pestana-aside {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.seccion-pestanas button.active {
+  border-bottom-color: var(--accent);
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.pestana-total {
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg-alt);
+  color: var(--muted);
+}
+
+.seccion-pestanas button.active .pestana-total {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--text-h);
+}
+
+.vista-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+.vista-switch .vista-pestanas {
+  margin-bottom: 0;
+}
+
+.pestana-punto {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #0ea5e9;
+}
+
+.secondary {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Alta de proyecto: con un escaneo cargado, el documento queda al lado del formulario */
+.creator.with-escaneo {
+  display: grid;
+  grid-template-columns: minmax(380px, 520px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.creador-escaneo {
+  position: sticky;
+  top: 16px;
+}
+
+@media (max-width: 1000px) {
+  .creator.with-escaneo {
+    grid-template-columns: 1fr;
+  }
+
+  .creador-escaneo {
+    position: static;
+  }
+
+  .creador-escaneo .escaneo {
+    height: 70svh;
+  }
+}
+
+/* Mientras se lee el presupuesto: los campos se ven «cargando» (esqueleto animado) y no se pueden tocar */
+.nuevo-proyecto.reading > label,
+.nuevo-proyecto.reading fieldset {
+  pointer-events: none;
+}
+
+.nuevo-proyecto.reading > label input,
+.nuevo-proyecto.reading > label textarea,
+.nuevo-proyecto.reading fieldset input:not([type='radio']):not([type='checkbox']),
+.nuevo-proyecto.reading fieldset textarea {
+  border-color: transparent;
+  color: transparent;
+  background: linear-gradient(90deg, var(--bg-alt) 25%, var(--bg) 50%, var(--bg-alt) 75%);
+  background-size: 200% 100%;
+  animation: campo-cargando 1.3s ease-in-out infinite;
+}
+
+.nuevo-proyecto.reading input::placeholder,
+.nuevo-proyecto.reading textarea::placeholder {
+  color: transparent;
+}
+
+@keyframes campo-cargando {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Formulario de nuevo proyecto */
+.nuevo-proyecto {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 520px;
+}
+
+/* Título con los botones de borrador y cancelar también arriba (el formulario es largo) */
+.nuevo-proyecto-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+}
+
+.nuevo-proyecto-cabecera h1 {
+  margin: 0;
+}
+
+.nuevo-proyecto-cabecera .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nuevo-proyecto .borrador-guardado {
+  font-size: 12px;
+}
+
+.nuevo-proyecto .borrador-aviso {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-left: 5px solid var(--accent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  font-size: 13px;
+}
+
+.nuevo-proyecto label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-h);
+}
+
+.nuevo-proyecto textarea,
+.documento-cuerpo {
+  font: inherit;
+  padding: 8px;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  resize: vertical;
+}
+
+/* Sección del contrato al principio del alta */
+.nuevo-proyecto .contrato-primero {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-alt);
+}
+
+.nuevo-proyecto .contrato-primero h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: var(--text-h);
+}
+
+.nuevo-proyecto .contrato-primero .contrato-subida {
+  margin-bottom: 0;
+}
+
+/* Nombre y fecha rellenados desde el contrato */
+.nuevo-proyecto label.from-contrato input {
+  border-color: #16a34a;
+  background: color-mix(in srgb, #16a34a 7%, var(--bg));
+}
+
+.fecha-warning {
+  margin: -6px 0 0;
+  font-size: 13px;
+}
+
+.nuevo-proyecto .contrato-caja .formulario-rejilla {
+  margin-bottom: 0;
+}
+
+.nuevo-proyecto .contrato-caja .hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.nuevo-proyecto fieldset {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.nuevo-proyecto .check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+}
+
+/* Proyecto sin pasos: cargar plantilla */
+.load-plantilla {
+  max-width: 640px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.load-plantilla h2 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  color: var(--text-h);
+}
+
+.load-plantilla .row {
+  margin: 12px 0;
+}
+
+.load-plantilla .check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+/* Documentos del proyecto */
+.documentos {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.documento-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.documento-lista button {
+  width: 100%;
+  padding: 9px 12px;
+  text-align: left;
+  line-height: 1.3;
+  background: none;
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.documento-lista button:hover {
+  background: var(--bg-alt);
+}
+
+.documento-lista button.active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.documento-pagina {
+  min-width: 0;
+  padding: 20px 26px 28px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.documento-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.documento-cabecera h2 {
+  margin: 0;
+  font-size: 19px;
+  line-height: 1.3;
+  color: var(--text-h);
+}
+
+.documento-cuerpo {
+  min-height: 60svh;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.back-inicio {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+

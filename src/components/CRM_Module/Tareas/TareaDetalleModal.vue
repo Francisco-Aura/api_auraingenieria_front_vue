@@ -1,22 +1,32 @@
 <template>
   <Teleport to="body">
-    <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Detalle de tarea" @click="cerrar">
+    <div v-if="value" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tarea-detalle-title" v-cierre-fondo="cerrar">
       <div class="modal-content modal-detalle" @click.stop>
-      <button type="button" class="close-button close-button-floating" @click="cerrar" aria-label="Cerrar detalle de tarea">
-        <i class="fas fa-times"></i>
-      </button>
-      <!-- Body del modal (Sin header separado) -->
+      <!-- Cabecera común de Aura: el título de la tarea hace de título del modal -->
+      <div class="modal-header aura-modal-header">
+        <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-clipboard-check"></i></span>
+        <div class="aura-modal-header__titulos">
+          <h2 id="tarea-detalle-title">{{ tarea.titulo || 'Detalle de la tarea' }}</h2>
+          <span class="aura-modal-header__subtitulo">
+            <span class="aura-dato"><span class="aura-dato__etiqueta">Tarea</span>#{{ tarea.id }}</span>
+            <span v-if="tarea.estadoNombre" class="aura-dato"><span class="aura-dato__etiqueta">Estado</span>{{ formatearEstadoNombre(tarea.estadoNombre) }}</span>
+            <span v-if="tarea.fechaVencimiento" class="aura-dato"><span class="aura-dato__etiqueta">Vence</span>{{ formatearFecha(tarea.fechaVencimiento) }}</span>
+          </span>
+        </div>
+        <button type="button" class="close-button" @click="cerrar" aria-label="Cerrar detalle de tarea">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
       <div class="modal-body">
-          <!-- Título y Descripción ARRIBA - Ancho completo -->
-          <div class="titulo-descripcion-header">
-          <div class="campo-detalle titulo-campo">
-            <label>Título</label>
-            <div class="valor-campo titulo-valor">{{ tarea.titulo }}</div>
-          </div>
-
-          <div class="campo-detalle descripcion-campo" v-if="tarea.descripcion">
+          <!-- Descripción arriba, a todo el ancho -->
+          <div v-if="tarea.descripcion" class="titulo-descripcion-header">
+          <div class="campo-detalle descripcion-campo">
             <label>Descripción</label>
-            <div class="valor-campo descripcion-completa">{{ tarea.descripcion }}</div>
+            <div class="valor-campo descripcion-completa" :class="{ 'descripcion-recortada': descripcionLarga && !descripcionExpandida }">{{ tarea.descripcion }}</div>
+            <button v-if="descripcionLarga" type="button" class="descripcion-toggle" :aria-expanded="descripcionExpandida" @click="descripcionExpandida = !descripcionExpandida">
+              {{ descripcionExpandida ? 'Ver menos' : 'Ver más' }}
+              <i class="fas" :class="descripcionExpandida ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </button>
           </div>
         </div>
 
@@ -158,7 +168,7 @@
               <!-- Actions Row: Status Badge, Change Status Selector, Buttons -->
               <div class="acciones-row-horizontal">
                 <!-- Estado Actual -->
-                <div class="estado-badge-compact" :style="{ backgroundColor: tarea.estadoColor }">
+                <div class="estado-badge-compact" :style="{ backgroundColor: tarea.estadoColor, color: colorTextoSobre(tarea.estadoColor) }">
                   <i :class="getEstadoIcon(tarea.estadoId)"></i>
                   {{ formatearEstadoNombre(tarea.estadoNombre) }}
                 </div>
@@ -172,7 +182,7 @@
                     @change="onEstadoChange"
                     aria-label="Modificar estado de la tarea"
                   >
-                    <option :value="null" disabled>Cambiar estado</option>
+                    <option :value="null">Cambiar estado</option>
                     <option v-for="estado in estadosDisponibles" :key="estado.id" :value="estado.id">
                       {{ formatearEstadoNombre(estado.nombre) }}
                     </option>
@@ -206,34 +216,42 @@
                       v-model="comentarioCambioEstado"
                       class="form-control motivo-input"
                       :placeholder="esEstadoBloqueado ? 'Explica por qué se bloquea la tarea...' : 'Describe brevemente el cambio...'"
+                      :maxlength="esEstadoBloqueado ? 255 : null"
                       rows="2"
                     ></textarea>
                   </div>
-                  <button 
-                    class="btn-aplicar-cambio-estado"
-                    @click="aplicarCambioEstado"
-                    :disabled="!puedeAplicarCambio"
-                  >
-                    <i class="fas fa-check"></i> Aplicar cambio
-                  </button>
+                  <div class="estado-cambio-acciones">
+                    <button type="button" class="btn-cancelar-cambio-estado" @click="cancelarCambioEstado">
+                      <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-aplicar-cambio-estado"
+                      @click="aplicarCambioEstado"
+                      :disabled="!puedeAplicarCambio || guardando"
+                    >
+                      <i class="fas fa-check"></i> Aplicar cambio
+                    </button>
+                  </div>
               </div>
             </div>
 
             <!-- Modal de confirmación de completación -->
-            <div v-if="mostrarConfirmacionCompletacion" class="modal-overlay-confirmacion" @click.self="cerrarConfirmacion">
+            <div v-if="mostrarConfirmacionCompletacion" class="modal-overlay-confirmacion" v-cierre-fondo="cerrarConfirmacion">
               <div class="modal-confirmacion-completar">
-                <div class="modal-header-confirmacion">
-                  <h3>
-                    <i class="fas fa-check-double"></i>
-                    Confirmar Finalización
-                  </h3>
-                  <button type="button" class="close-button btn-close" @click="cerrarConfirmacion" aria-label="Cerrar confirmación"><i class="fas fa-times"></i></button>
+                <div class="modal-header-confirmacion aura-modal-header">
+                  <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-check-double"></i></span>
+                  <div class="aura-modal-header__titulos">
+                    <h3>Confirmar finalización</h3>
+                    <span class="aura-modal-header__subtitulo">Escriba el resultado para completar la tarea</span>
+                  </div>
+                  <button type="button" class="close-button" @click="cerrarConfirmacion" aria-label="Cerrar confirmación"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="modal-body-confirmacion">
                   <p class="titulo-tarea"><strong>{{ tarea.titulo }}</strong></p>
                   <div class="form-group-confirmacion">
                     <label for="comentario-completacion">
-                      Comentario de Finalización <span class="required">*</span>
+                      Comentario de finalización <span class="required">*</span>
                     </label>
                     <textarea 
                       id="comentario-completacion"
@@ -245,13 +263,17 @@
                   </div>
                 </div>
                 <div class="modal-footer-confirmacion">
-                  <button type="button" class="btn btn-cancelar" @click="cerrarConfirmacion">Cancelar</button>
+                  <button type="button" class="btn btn-cancelar" @click="cerrarConfirmacion">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                  </button>
                   <button 
                     type="button"
-                    class="btn btn-confirmar-completar" 
+                    class="btn btn-confirm btn-confirmar-completar"
                     @click.prevent="completarConComentario"
                     :disabled="comentarioCompletacion.trim().length === 0 || completandoTarea"
                   >
+                    <i :class="completandoTarea ? 'fas fa-spinner fa-spin' : 'fas fa-check'"></i>
                     {{ completandoTarea ? 'Procesando...' : 'Confirmar' }}
                   </button>
                 </div>
@@ -356,7 +378,8 @@
                       <span v-if="comentario.fijado" class="fijado-badge" title="Comentario fijado">
                         <i class="fas fa-thumbtack"></i>
                       </span>
-                      <span v-if="comentario.editado" class="editado-badge" title="Comentario editado">
+                      <!-- Con la fecha de edición ya se lee «(Editado: …)»: la etiqueta solo si no la hay -->
+                      <span v-if="comentario.editado && !comentario.fechaEdicion" class="editado-badge" title="Comentario editado">
                         <i class="fas fa-pencil-alt"></i> Editado
                       </span>
                       <span class="comentario-fecha">{{ formatDate(comentario.fechaCreacion) }}</span>
@@ -459,6 +482,7 @@
         </div>
         <div class="footer-actions">
           <button type="button" class="btn btn-secondary" @click="cerrar">
+            <i class="fas fa-times"></i>
             Cerrar
           </button>
           <button v-if="puedeEditarTarea" type="button" class="btn btn-primary" @click="editarTarea">
@@ -481,6 +505,10 @@
 </template>
 
 <script>
+import { textoError } from '@/utils/errores';
+import { fechaHoraES } from '@/utils/fechas'
+import { nombreEstado, textoPrioridad } from '@/utils/tareas'
+import { colorTextoSobre } from '@/utils/colores'
 import TareaAuditoriaModal from './TareaAuditoriaModal.vue'
 import tareasApi from '@/services/tareasApi'
 
@@ -489,7 +517,7 @@ export default {
   components: {
     TareaAuditoriaModal
   },
-  emits: ['actualizar', 'cambiarEstado', 'completarConComentario', 'completar-con-comentario', 'crearComentarioEstado', 'crear-comentario-estado', 'cerrar', 'update:value'],
+  emits: ['actualizar', 'cambiarEstado', 'completarConComentario', 'completar-con-comentario', 'comentario-creado', 'cerrar', 'update:value'],
   props: {
     value: {
       type: Boolean,
@@ -502,12 +530,17 @@ export default {
     estados: {
       type: Array,
       default: () => []
+    },
+    // El padre lo activa mientras guarda el cambio de estado: evita repetirlo con un doble clic
+    guardando: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
     return {
+      descripcionExpandida: false,
       estadoSeleccionado: null,
-      motivoBloqueo: '',
       comentarioCambioEstado: '',
       esEstadoBloqueado: false,
       mostrarAuditoria: false,
@@ -520,10 +553,8 @@ export default {
       guardandoComentario: false,
       archivosSeleccionados: [],
       dragActivoComentario: false,
-      subiendoArchivos: false,
       comentarioEditando: null,
       textoComentarioEditando: '',
-      adjuntoActualizando: null,
       adjuntosDirectos: [],
       adjuntosExpandidos: false,
       adjuntosVisiblesColapsado: 4,
@@ -542,6 +573,11 @@ export default {
     }
   },
   computed: {
+    // Más de ~3 líneas: se recorta y se ofrece «Ver más» (así no quita sitio a los comentarios)
+    descripcionLarga() {
+      const texto = (this.tarea && this.tarea.descripcion) || ''
+      return texto.length > 220 || texto.split('\n').length > 3
+    },
     // Usuario actual logueado
     usuarioActual() {
       return JSON.parse(localStorage.getItem('usuario') || '{}')
@@ -600,9 +636,9 @@ export default {
       handler(val) {
         if (val && this.tarea && this.tarea.id) {
           // Inicializar estado como null para mostrar "Modificar estado"
+          this.descripcionExpandida = false
           this.estadoSeleccionado = null
           // Resetear campos de comentario
-          this.motivoBloqueo = ''
           this.comentarioCambioEstado = ''
           this.esEstadoBloqueado = false
           this.nuevoComentario = ''
@@ -665,6 +701,7 @@ export default {
     }
   },
   methods: {
+    colorTextoSobre,
     toggleAdjuntosPanel() {
       this.adjuntosExpandidos = !this.adjuntosExpandidos
       this.$nextTick(() => {
@@ -706,19 +743,22 @@ export default {
       return 'fas fa-file-download'
     },
 
-    formatearTamanoAdjunto(adjunto) {
-      const bytes = adjunto?.tamanoBytes ?? adjunto?.size ?? adjunto?.tamano ?? null
-      if (!bytes || Number.isNaN(Number(bytes))) return ''
-      return this.formatFileSizeComentario(Number(bytes))
-    },
-
     onEstadoChange() {
       const estado = this.estados.find(e => e.id === this.estadoSeleccionado)
       // Usar campo estadoBloqueo en vez de detectar por nombre
       this.esEstadoBloqueado = estado && estado.estadoBloqueo === true
+      if (!this.estadoSeleccionado) this.comentarioCambioEstado = ''
+    },
+
+    /** Deshace la elección de estado sin tener que cerrar y abrir la tarea. */
+    cancelarCambioEstado() {
+      this.estadoSeleccionado = null
+      this.comentarioCambioEstado = ''
+      this.esEstadoBloqueado = false
     },
 
     async aplicarCambioEstado() {
+      if (this.guardando) return
       if (!this.estadoSeleccionado || this.estadoSeleccionado === this.tarea.estadoId) {
         return
       }
@@ -728,47 +768,16 @@ export default {
         return
       }
 
-      try {
-        // Primero crear el comentario sobre el cambio de estado
-        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
-        await this.$emit('crear-comentario-estado', {
-          tareaId: this.tarea.id,
-          contenido: this.comentarioCambioEstado.trim(),
-          autor: usuario.nombre || 'Usuario'
-        })
-        
-        // Luego cambiar el estado (con motivo si es bloqueo)
-        const motivo = this.esEstadoBloqueado ? this.comentarioCambioEstado.trim() : null
-        this.$emit('cambiar-estado', this.tarea.id, this.estadoSeleccionado, motivo)
-      } catch (error) {
-        console.error('Error cambiando estado:', error)
-        // Revertir la selección en caso de error
-        this.estadoSeleccionado = this.tarea.estadoId
-        this.esEstadoBloqueado = false
-        this.comentarioCambioEstado = ''
-        this.$swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo cambiar el estado de la tarea. Inténtelo de nuevo.'
-        })
-      }
-    },
-
-    async completarRapido() {
-      const estadoCompletado = this.estados.find(e => e.estadoFinal === true)
-      if (!estadoCompletado) {
-        console.error('No se encontró estado de finalización')
-        return
-      }
-
-      try {
-        this.$emit('cambiar-estado', this.tarea.id, estadoCompletado.id)
-      } catch (error) {
-        console.error('Error completando tarea:', error)
-      }
+      // Un solo aviso al padre, que cambia el estado (con motivo si es bloqueo) y, si sale
+      // bien, guarda el comentario. Antes se mandaban a la vez: si fallaba el cambio, el
+      // comentario ya estaba guardado y al reintentar se duplicaba
+      const comentario = this.comentarioCambioEstado.trim()
+      const motivo = this.esEstadoBloqueado ? comentario : null
+      this.$emit('cambiar-estado', this.tarea.id, this.estadoSeleccionado, motivo, comentario)
     },
 
     async completarConComentario() {
+      if (this.completandoTarea || this.guardando) return
       if (!this.comentarioCompletacion.trim()) {
         this.$swal.fire({
           icon: 'warning',
@@ -811,14 +820,15 @@ export default {
         }, 300)
       } catch (error) {
         console.error('Error completando tarea:', error)
+        this.completandoTarea = false
         this.$swal.fire({
           icon: 'error',
           title: 'Error',
           text: 'Error al completar la tarea: ' + error.message
         })
-      } finally {
-        this.completandoTarea = false
       }
+      // completandoTarea sigue activo (botón bloqueado) hasta que cerrarConfirmacion lo
+      // limpia: antes se soltaba al instante y un doble clic completaba la tarea dos veces
     },
 
     cerrarConfirmacion() {
@@ -865,6 +875,8 @@ export default {
           this.insertarMencion(this.mencionDropdown.usuarios[this.mencionDropdown.indice])
         }
       } else if (event.key === 'Escape') {
+        // Esc cierra la lista de menciones, no el detalle de la tarea
+        event.preventDefault()
         this.mencionDropdown.visible = false
       }
     },
@@ -986,35 +998,20 @@ export default {
     },
 
     formatearFecha(fecha) {
-      if (!fecha) return '-'
-      return new Date(fecha).toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      return fechaHoraES(fecha)
     },
 
     formatearEstadoNombre(nombre) {
-      if (!nombre) return ''
-      return nombre.toString().replace(/_/g, ' ').toLowerCase().replace(/(^|\s)\S/g, (t) => t.toUpperCase())
+      return nombreEstado(nombre)
     },
 
     getPrioridadTexto(prioridad) {
-      switch (prioridad) {
-        case 0: return 'Urgente'
-        case 1: return 'Alta'
-        case 2: return 'Media'
-        case 3: return 'Baja'
-        default: return 'Normal'
-      }
+      return textoPrioridad(prioridad)
     },
 
     cerrar() {
       // Resetear campos de cambio de estado
       this.estadoSeleccionado = null
-      this.motivoBloqueo = ''
       this.comentarioCambioEstado = ''
       this.esEstadoBloqueado = false
       this.mostrarAuditoria = false
@@ -1025,28 +1022,12 @@ export default {
       this.mostrarAuditoria = true
     },
 
-    formatearDuracionCorta(segundos) {
-      if (!segundos || segundos <= 0) return '0s'
-      
-      const dias = Math.floor(segundos / 86400)
-      const horas = Math.floor((segundos % 86400) / 3600)
-      const minutos = Math.floor((segundos % 3600) / 60)
-      const segs = segundos % 60
-      
-      const partes = []
-      if (dias > 0) partes.push(`${dias}d`)
-      if (horas > 0) partes.push(`${horas}h`)
-      if (minutos > 0) partes.push(`${minutos}m`)
-      if (segs > 0 && dias === 0) partes.push(`${segs}s`)
-      
-      return partes.slice(0, 2).join(' ') || '0s'
-    },
-
     getEstadoIcon(estadoId) {
       const estado = this.estados.find(e => e.id === estadoId)
       if (!estado) return 'fas fa-circle'
       
-      if (estado.esBloqueo) return 'fas fa-lock'
+      // El servidor manda «estadoBloqueo» (esBloqueo es el nombre en la base de datos)
+      if (estado.estadoBloqueo || estado.esBloqueo) return 'fas fa-lock'
       if (estado.cuentaTiempo) return 'fas fa-play'
       if (estado.estadoFinal) return 'fas fa-check-circle'
       
@@ -1094,22 +1075,7 @@ export default {
     },
 
     formatDate(fecha) {
-      if (!fecha) return '-'
-      return new Date(fecha).toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    },
-
-    formatFileSize(bytes) {
-      if (bytes === 0) return '0 Bytes'
-      const k = 1024
-      const sizes = ['Bytes', 'KB', 'MB', 'GB']
-      const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+      return fechaHoraES(fecha)
     },
 
     async descargarAdjunto(adjunto) {
@@ -1144,7 +1110,6 @@ export default {
         
         // Si hay archivos seleccionados, subirlos
         if (this.archivosSeleccionados.length > 0) {
-          this.subiendoArchivos = true
           
           for (const archivo of this.archivosSeleccionados) {
             try {
@@ -1159,7 +1124,6 @@ export default {
             }
           }
           
-          this.subiendoArchivos = false
         }
         
         // Limpiar campos y recargar comentarios
@@ -1174,11 +1138,10 @@ export default {
         this.$swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Error al guardar el comentario. Por favor, inténtalo de nuevo.'
+          text: textoError(error, 'Error al guardar el comentario. Por favor, inténtalo de nuevo.')
         })
       } finally {
         this.guardandoComentario = false
-        this.subiendoArchivos = false
       }
     },
 
@@ -1249,7 +1212,7 @@ export default {
         this.$swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Error al actualizar el comentario'
+          text: textoError(error, 'Error al actualizar el comentario')
         })
       }
     },
@@ -1308,7 +1271,6 @@ export default {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'
       })
@@ -1363,8 +1325,7 @@ export default {
           text: `Se reemplazará "${adjunto.nombreArchivo}" por "${file.name}"`,
           icon: 'question',
           showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#6c757d',
+          confirmButtonColor: '#fcd700',
           confirmButtonText: 'Sí, actualizar',
           cancelButtonText: 'Cancelar'
         })
@@ -1386,7 +1347,7 @@ export default {
             this.$swal.fire({
               icon: 'error',
               title: 'Error',
-              text: 'Error al actualizar el archivo'
+              text: textoError(error, 'Error al actualizar el archivo')
             })
           }
         }
@@ -1402,7 +1363,6 @@ export default {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'
       })
@@ -1424,7 +1384,7 @@ export default {
           this.$swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Error al eliminar el archivo'
+            text: textoError(error, 'Error al eliminar el archivo')
           })
         }
       }

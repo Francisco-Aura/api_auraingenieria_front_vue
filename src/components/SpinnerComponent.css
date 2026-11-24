@@ -10,18 +10,9 @@
   align-items: center;
   z-index: var(--z-spinner);
   backdrop-filter: blur(8px);
-  animation: overlayFadeIn 0.3s ease;
-}
-
-@keyframes overlayFadeIn {
-  from { 
-    opacity: 0;
-    backdrop-filter: blur(0px);
-  }
-  to { 
-    opacity: 1;
-    backdrop-filter: blur(8px);
-  }
+  /* Solo opacidad (animar el desenfoque obligaba a recalcularlo en cada fotograma) y con
+     un retardo corto: si la carga dura menos, la capa no llega a verse y no parpadea */
+  animation: auraFundido 0.2s ease-out 0.15s backwards;
 }
 
 .spinner-container {
@@ -34,18 +25,8 @@
   box-shadow: 
     0 20px 60px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-  animation: containerFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes containerFadeIn {
-  from { 
-    opacity: 0;
-    transform: translateY(-30px) scale(0.9);
-  }
-  to { 
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  /* La misma entrada que los modales (styles/shared-motion.css), con el retardo de la capa */
+  animation: auraModalEntra 0.2s var(--aura-curva) 0.15s backwards;
 }
 
 /* Spinner Moderno con Anillos */
@@ -110,22 +91,13 @@
   box-shadow: 
     0 4px 15px rgba(var(--color-brand-yellow-rgb), 0.4),
     0 0 0 3px rgba(255, 255, 255, 0.5);
+  /* Late solo con transform: animar la sombra repintaba el círculo en cada fotograma */
   animation: corePulse 1.5s ease-in-out infinite;
 }
 
 @keyframes corePulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 
-      0 4px 15px rgba(var(--color-brand-yellow-rgb), 0.4),
-      0 0 0 3px rgba(255, 255, 255, 0.5);
-  }
-  50% {
-    transform: scale(1.15);
-    box-shadow: 
-      0 6px 25px rgba(var(--color-brand-yellow-rgb), 0.6),
-      0 0 0 5px rgba(255, 255, 255, 0.7);
-  }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
 }
 
 .spinner-core i {

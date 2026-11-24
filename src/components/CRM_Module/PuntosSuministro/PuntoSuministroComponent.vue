@@ -56,13 +56,13 @@
           </button>
         </div>
       </div>
-      <div class="table-responsive">
-        <table class="data-table">
+      <div class="table-responsive" v-desborde-tabla>
+        <table class="data-table data-table--acciones-fijas data-table--compacta">
           <thead>
             <tr>
               <th class="sortable th-col-cliente">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('cliente')">
+                  <div class="column-title" @click="sortBy('cliente')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('cliente')" @keydown.space.prevent="sortBy('cliente')">
                     <i class="fas fa-user mr-2"></i>Cliente
                     <i :class="getSortIcon('cliente')"></i>
                   </div>
@@ -80,7 +80,7 @@
               </th>
               <th class="sortable th-col-direccion">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('direccion')">
+                  <div class="column-title" @click="sortBy('direccion')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('direccion')" @keydown.space.prevent="sortBy('direccion')">
                     <i class="fas fa-map-marker-alt mr-2"></i>Dirección
                     <i :class="getSortIcon('direccion')"></i>
                   </div>
@@ -98,7 +98,7 @@
               </th>
               <th class="sortable th-col-identificacion">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('identificacion')">
+                  <div class="column-title" @click="sortBy('identificacion')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('identificacion')" @keydown.space.prevent="sortBy('identificacion')">
                     <i class="fas fa-id-card mr-2"></i>Identificación
                     <i :class="getSortIcon('identificacion')"></i>
                   </div>
@@ -116,7 +116,7 @@
               </th>
               <th class="sortable th-col-cups">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('cupsluz')">
+                  <div class="column-title" @click="sortBy('cupsluz')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('cupsluz')" @keydown.space.prevent="sortBy('cupsluz')">
                     <i class="fas fa-bolt mr-2"></i>CUPS
                     <i :class="getSortIcon('cupsluz')"></i>
                   </div>
@@ -126,7 +126,7 @@
                       class="column-filter" 
                       v-model="columnFilters.cupsluz" 
                       @input="filterByColumnDebounced('cupsluz', $event.target.value)"
-                      placeholder="Filtrar CUPS..."
+                      placeholder="Filtrar..."
                       @click.stop
                     >
                   </div>
@@ -134,7 +134,7 @@
               </th>
               <th class="th-col-tipo">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('tipo')">
+                  <div class="column-title" @click="sortBy('tipo')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('tipo')" @keydown.space.prevent="sortBy('tipo')">
                     <i class="fas fa-tag mr-2"></i>Tipo
                     <i :class="getSortIcon('tipo')"></i>
                   </div>
@@ -144,7 +144,7 @@
                       class="column-filter" 
                       v-model="columnFilters.tipo" 
                       @input="filterByColumnDebounced('tipo', $event.target.value)"
-                      placeholder="Filtrar tipo..."
+                      placeholder="Filtrar..."
                       @click.stop
                     >
                   </div>
@@ -152,7 +152,7 @@
               </th>
               <th class="th-col-tarifa">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('tarifa')">
+                  <div class="column-title" @click="sortBy('tarifa')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('tarifa')" @keydown.space.prevent="sortBy('tarifa')">
                     <i class="fas fa-tag mr-2"></i>Tarifa
                     <i :class="getSortIcon('tarifa')"></i>
                   </div>
@@ -162,7 +162,7 @@
                       class="column-filter" 
                       v-model="columnFilters.tarifa" 
                       @input="filterByColumnDebounced('tarifa', $event.target.value)"
-                      placeholder="Filtrar tarifa..."
+                      placeholder="Filtrar..."
                       @click.stop
                     >
                   </div>
@@ -170,7 +170,7 @@
               </th>
               <th class="th-col-fincontrato">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('fechaFinUltimoContrato')">
+                  <div class="column-title" @click="sortBy('fechaFinUltimoContrato')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('fechaFinUltimoContrato')" @keydown.space.prevent="sortBy('fechaFinUltimoContrato')">
                     <i class="fas fa-calendar-alt mr-2"></i>Fin Contrato
                     <i :class="getSortIcon('fechaFinUltimoContrato')"></i>
                   </div>
@@ -180,7 +180,7 @@
                       class="column-filter" 
                       v-model="columnFilters.fechaFinUltimoContrato" 
                       @input="filterByColumnDebounced('fechaFinUltimoContrato', $event.target.value)"
-                      placeholder="Filtrar fecha..."
+                      placeholder="Filtrar..."
                       @click.stop
                     >
                   </div>
@@ -188,7 +188,7 @@
               </th>
               <th class="th-col-noswitching">
                 <div class="column-header minimal-header">
-                  <div class="column-title" @click="sortBy('noSwitching')" title="No-Switching - Haz clic para ordenar">
+                  <div class="column-title" @click="sortBy('noSwitching')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('noSwitching')" @keydown.space.prevent="sortBy('noSwitching')" title="No-Switching - Haz clic para ordenar">
                     <i class="fas fa-network-wired"></i>
                     <i :class="getSortIcon('noSwitching')"></i>
                   </div>
@@ -196,7 +196,7 @@
               </th>
               <th class="th-col-acciones-ps">
                 <div class="column-header">
-                  <div class="column-title">
+                  <div class="column-title column-title--sin-orden">
                     <i class="fas fa-cogs mr-2"></i>Acciones
                   </div>
                 </div>
@@ -264,76 +264,78 @@
                   <button class="btn-icon btn-edit" @click="abrirFormularioPSActualizar(suministro)" title="Modificar punto de suministro" aria-label="Modificar punto de suministro">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn-icon btn-view" @click="abrirModalContratos(suministro.id,suministro.idCliente)" title="Ver contratos">
+                  <button class="btn-icon btn-contracts" @click="abrirModalContratos(suministro.id,suministro.idCliente)" title="Gestión de contratos" aria-label="Gestión de contratos">
                     <i class="fas fa-file-contract"></i>
                   </button>
-                  <button class="btn-icon btn-add" v-if="nivelAcceso === 1" @click="abrirModalServicios(suministro.id,suministro.idCliente)" title="Ver servicios">
+                  <button class="btn-icon btn-services" v-if="nivelAcceso === 1" @click="abrirModalServicios(suministro.id,suministro.idCliente)" title="Gestión de servicios" aria-label="Gestión de servicios">
                     <i class="fas fa-tools"></i>
                   </button>
-                  <button class="btn-icon btn-delete" v-if="nivelAcceso === 1" @click="eliminarPuntoSuministro(suministro)" title="Eliminar punto de suministro">
+                  <button class="btn-icon btn-delete" v-if="nivelAcceso === 1" @click="eliminarPuntoSuministro(suministro)" title="Eliminar punto de suministro" aria-label="Eliminar punto de suministro">
                     <i class="fas fa-trash"></i>
                   </button>
                 </div>
               </td>
             </tr>
-            <tr v-if="!loading && paginatedPuntosSuministro.length === 0">
+            <tr v-if="!loading && paginatedPuntosSuministro.length === 0" class="fila-vacia">
               <td colspan="9" class="text-center py-4">
-                <div class="empty-state">
-                  <i class="fas fa-search fa-3x text-muted"></i>
-                  <p class="mt-3">No se encontraron puntos de suministro que coincidan con la búsqueda</p>
+                <div class="empty-state" :class="{ 'empty-state--error': estadoVacio.error }">
+                  <i :class="['fas', estadoVacio.icono, 'fa-3x', 'text-muted']"></i>
+                  <p class="mt-3">{{ estadoVacio.texto }}</p>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
-        <div class="pagination-controls">
-          <div class="records-per-page">
-            <label for="recordsPerPage">Registros por página:</label>
-            <select v-model="recordsPerPage" id="recordsPerPage" class="form-control">
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-          </div>
-          <div class="pagination-info">
-            Mostrando {{ paginationStart }} - {{ paginationEnd }} de {{ filteredPuntosSuministro.length }} registros
-          </div>
-          <div class="pagination-buttons">
-            <button 
-              class="btn btn-outline" 
-              :disabled="currentPage === 1"
-              @click="currentPage = 1"
-              title="Primera página"
-            >
-              <i class="fas fa-angle-double-left"></i>
-            </button>
-            <button 
-              class="btn btn-outline" 
-              :disabled="currentPage === 1"
-              @click="currentPage--"
-              title="Página anterior"
-            >
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
-            <button 
-              class="btn btn-outline" 
-              :disabled="currentPage === totalPages"
-              @click="currentPage++"
-              title="Página siguiente"
-            >
-              <i class="fas fa-chevron-right"></i>
-            </button>
-            <button 
-              class="btn btn-outline" 
-              :disabled="currentPage === totalPages"
-              @click="currentPage = totalPages"
-              title="Última página"
-            >
-              <i class="fas fa-angle-double-right"></i>
-            </button>
-          </div>
+      </div>
+      <!-- La paginación va fuera del contenedor que se desplaza en horizontal: si la
+           tabla no cabe, «Registros por página» no se corta al moverla -->
+      <div class="pagination-controls">
+        <div class="records-per-page">
+          <label for="recordsPerPage">Registros por página:</label>
+          <select v-model.number="recordsPerPage" id="recordsPerPage" class="form-control">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <div class="pagination-info">
+          Mostrando {{ filteredPuntosSuministro.length ? paginationStart : 0 }} - {{ paginationEnd }} de {{ filteredPuntosSuministro.length }} registros
+        </div>
+        <div class="pagination-buttons">
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === 1"
+            @click="currentPage = 1"
+            title="Primera página"
+          >
+            <i class="fas fa-angle-double-left"></i>
+          </button>
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage === 1"
+            @click="currentPage--"
+            title="Página anterior"
+          >
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <span class="page-info">Página {{ currentPage }} de {{ totalPages || 1 }}</span>
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage >= totalPages"
+            @click="currentPage++"
+            title="Página siguiente"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          <button 
+            class="btn btn-outline" 
+            :disabled="currentPage >= totalPages"
+            @click="currentPage = totalPages"
+            title="Última página"
+          >
+            <i class="fas fa-angle-double-right"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -343,6 +345,7 @@
       v-if="formularioVisible" 
       :modificarPunto="modificarPunto" 
       :modoConsulta="modoConsulta"
+      :isSubmitting="guardandoPunto"
       @cerrar-modal="cerrarModal"
       @actualizar-punto-suministro="handleUpdate"
     />
@@ -363,6 +366,7 @@
       @contrato-actualizado="handleContratoActualizado"
       @contrato-renovado="handleContratoRenovado"
       @recargar-contratos="recargarContratosDelPuntoSuministro"
+      @contrato-eliminado="fetchPuntosSuministro"
       @update:tarifasGas="tarifasGas = $event"
       @update:tarifasLuz="tarifasLuz = $event"
     />
@@ -387,15 +391,20 @@
 
 <script>
 // Importamos los componentes y librerías necesarias
+import { ordenTabla } from '@/mixins/ordenTabla';
+import { compararValores } from '@/utils/orden';
 import ModalActualizarPuntoSuministro from './ActualizarPuntoSuministro.vue';
 import ModalContratos from './ModalContratos.vue';
 import ModalServicios from './ModalServicios.vue';
 import axios from "axios"; // Librería para hacer peticiones HTTP
-import ExcelJS from 'exceljs';
+import { cargarExcelJS, descargarLibroExcel } from '@/utils/excel';
+import { fechaLocalISO, enVigorHoy, terminadoHoy, fechaES } from '@/utils/fechas';
+import { cupsVisible, tipoCups } from '@/utils/cups';
 
 
 export default {
   name: "PuntosSuministro", // Nombre del componente
+  mixins: [ordenTabla],
   components: {
     ModalActualizarPuntoSuministro,
     ModalContratos,
@@ -443,49 +452,15 @@ export default {
 
       // Datos CONTRATOS
       mostrarModalContratos: false, // Control de visibilidad del modal de contratos
+      guardandoPunto: false, // Guardado del punto en curso (evita el doble clic)
       contratos: [], // Lista de contratos asociados al punto de suministro
-      nuevoContrato: {
-        idCliente:"",
-        idPuntoSuministro:"",        
-        fecha:"",
-        fechaEnvio:"",
-        fechaInicio: "",
-        fechaFin: "",
-        contrato: "",
-        idTarifaGas:"",
-        idTarifaLuz:"",
-        potencia1:0,        
-        potencia2:0,
-        potencia3:0,
-        potencia4:0,
-        potencia5:0,
-        potencia6:0,
-        consumoAnual:0,
-        exencionImpuestoElectricidad:0,
-        idComercializadoraActual:0,
-        idComercializadoraAnterior:0,
-        autoconsumo:0,
-        denunciaContrato:0,
-        fechaDenunciaContrato:"",
-        observaciones: "",
-      },
       comercializadoras: [],
       tarifasGas: [],
       tarifasLuz: [],
-      todosLosContratos: [], // Todos los contratos para calcular tarifas
 
       // Datos SERVICIO
       mostrarModalServicios: false, // Control de visibilidad del modal de servicios
       servicios: [], // Lista de servicios asociados al punto de suministro
-      nuevoServicio: {
-        id: "",
-        fecha: "",
-        fechaInicioServicio: "",
-        fechaFinServicio: "",
-        descripcion: "",
-        idGestora:0,
-        idProducto:0,
-      },
       modalCliente: null, // Cliente actual para el modal
       modalPuntoSuministro: null, // Punto de suministro actual para el modal
       gestoras: [],
@@ -505,6 +480,7 @@ export default {
       currentContratosRequestId: null, // ID de la solicitud actual para evitar race conditions
       puntosConServiciosNoSwitching: new Set(), // Cachea puntos con servicios no-switching
       totalServiciosActivosReal: 0, // Conteo real de servicios activos obtenido del backend
+      errorCargaPuntos: false, // La última carga de la tabla falló (el aviso de tabla vacía lo explica)
     };
   },
 
@@ -593,10 +569,8 @@ export default {
       }
       
       // Si no, calculamos como antes
-      const ahora = new Date();
       return this.contratos.find(
-        (contrato) => new Date(contrato.fechaFin) > ahora && 
-                      new Date(contrato.fechaInicio) <= ahora
+        (contrato) => enVigorHoy(contrato.fechaInicio, contrato.fechaFin)
       ) || {};
     },
 
@@ -608,25 +582,24 @@ export default {
       }
       
       // Si no, calculamos como antes
-      const ahora = new Date();
       return this.contratos.filter(
-        (contrato) => new Date(contrato.fechaFin) <= ahora
+        (contrato) => terminadoHoy(contrato.fechaFin)
       );
     },
 
-    // Obtiene el servicio actual (vigente)
+    // Obtiene el servicio actual (vigente): el mismo que la tabla marca como VIGENTE.
+    // Antes bastaba con que no hubiera terminado y «Modificar/Renovar actual» podían
+    // abrir uno que empieza más adelante
     servicioActual() {
-      const ahora = new Date();
       return this.servicios.find(
-        (servicio) => new Date(servicio.fechaFinServicio) > ahora
+        (servicio) => enVigorHoy(servicio.fechaInicioServicio, servicio.fechaFinServicio)
       );
     },
 
     // Obtiene los servicios históricos (finalizados)
     serviciosHistoricos() {
-      const ahora = new Date();
       return this.servicios.filter(
-        (servicio) => new Date(servicio.fechaFinServicio) <= ahora
+        (servicio) => terminadoHoy(servicio.fechaFinServicio)
       );
     },
 
@@ -651,54 +624,49 @@ export default {
 
     sortedPuntosSuministro() {
       if (!this.sortKey || !this.sortOrder) return this.filteredPuntosSuministro;
-      
-      const sorted = [...this.filteredPuntosSuministro].sort((a, b) => {
-        let aValue, bValue;
-        
-        if (this.sortKey === 'tipo') {
-          // Primero ordenamos por tipo (Gas o Luz)
-          const aTipo = this.getTipoCups(a);
-          const bTipo = this.getTipoCups(b);
-          
-          if (aTipo !== bTipo) {
-            return this.sortOrder === 'asc' 
-              ? aTipo.localeCompare(bTipo)
-              : bTipo.localeCompare(aTipo);
-          }
-          
-          // Si son del mismo tipo, ordenamos por el valor del CUPS
-          aValue = this.getCupsValue(a);
-          bValue = this.getCupsValue(b);
-        } else if (this.sortKey === 'noSwitching') {
-          // Ordenar por si tienen servicios no-switching
-          const aHasNoSwitching = this.tieneServiciosNoSwitching(a.id) ? 1 : 0;
-          const bHasNoSwitching = this.tieneServiciosNoSwitching(b.id) ? 1 : 0;
-          
-          if (this.sortOrder === 'asc') {
-            return aHasNoSwitching - bHasNoSwitching;
-          } else {
-            return bHasNoSwitching - aHasNoSwitching;
-          }
-        } else {
-          aValue = a[this.sortKey];
-          bValue = b[this.sortKey];
+      const signo = this.sortOrder === 'asc' ? 1 : -1;
+
+      // Dos columnas no salen de un campo de la fila: el tipo se deduce del CUPS
+      // (y, a igualdad de tipo, ordena por el propio CUPS) y «no switching» de si
+      // el punto tiene servicios de ese tipo.
+      // La tarifa y el CUPS, como se ven en la tabla (el CUPS de gas cuando no hay de luz)
+      const valor = (fila) => {
+        if (this.sortKey === 'tipo') return this.getTipoCups(fila);
+        if (this.sortKey === 'noSwitching') return this.tieneServiciosNoSwitching(fila.id) ? 1 : 0;
+        if (this.sortKey === 'tarifa') {
+          const tarifa = this.getTarifa(fila);
+          return tarifa === '-' ? null : tarifa;
         }
-        
-        if (this.sortKey !== 'noSwitching') {
-          aValue = aValue ?? '';
-          bValue = bValue ?? '';
-          
-          if (this.sortOrder === 'asc') {
-            return aValue > bValue ? 1 : -1;
-          } else {
-            return aValue < bValue ? 1 : -1;
-          }
-        }
+        if (this.sortKey === 'cupsluz') return this.getCupsValue(fila) || null;
+        return fila[this.sortKey];
+      };
+
+      return [...this.filteredPuntosSuministro].sort((a, b) => {
+        const comparacion = compararValores(valor(a), valor(b));
+        if (comparacion !== 0) return comparacion * signo;
+        if (this.sortKey === 'tipo') return compararValores(this.getCupsValue(a), this.getCupsValue(b)) * signo;
+        return 0;
       });
-      
-      return sorted;
     },
-    
+    // Texto de la tabla vacía: no es lo mismo que la carga falle, que no haya puntos
+    // o que los filtros no dejen ninguno (antes siempre decía «que coincidan con la búsqueda»)
+    estadoVacio() {
+      if (this.errorCargaPuntos) {
+        return { error: true, icono: 'fa-exclamation-triangle', texto: 'No se pudieron cargar los puntos de suministro. Pulse «Actualizar» para volver a intentarlo.' };
+      }
+      if (!this.puntosSuministro.length) {
+        return { error: false, icono: 'fa-bolt', texto: 'Todavía no hay puntos de suministro.' };
+      }
+      const hayFiltros = Object.values(this.columnFilters).some(valor => valor && String(valor).trim()) || !!this.filter.trim();
+      if (!hayFiltros) {
+        return {
+          error: false,
+          icono: 'fa-ban',
+          texto: this.mostrarDadosDeBaja ? 'No hay puntos de suministro dados de baja.' : 'Todos los puntos de suministro están dados de baja.'
+        };
+      }
+      return { error: false, icono: 'fa-search', texto: 'Ningún punto de suministro coincide con los filtros.' };
+    },
     paginatedPuntosSuministro() {
       const start = (this.currentPage - 1) * parseInt(this.recordsPerPage);
       const end = start + parseInt(this.recordsPerPage);
@@ -746,9 +714,14 @@ export default {
     },
     // Carga todos los puntos de suministro desde la API
     async fetchPuntosSuministro() {
+      // Tras guardar se recarga la tabla sin esperar; si coincide con otro refresco,
+      // la respuesta más antigua no pisa a la más reciente
+      const peticion = this.peticionPuntos = (this.peticionPuntos || 0) + 1;
       try {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/puntos-suministro/all`);
-        
+        if (peticion !== this.peticionPuntos) return;
+        this.errorCargaPuntos = false;
+
         this.puntosSuministro = response.data.map(punto => {
           const newPunto = { ...punto };
           
@@ -773,6 +746,8 @@ export default {
         });
 
       } catch (error) {
+        if (peticion !== this.peticionPuntos) return;
+        this.errorCargaPuntos = true;
         console.error("Error al cargar los puntos de suministro:", error);
         this.$swal.fire({
           icon: 'error',
@@ -793,65 +768,10 @@ export default {
         return
       }
       try {
-        // Cargar datos detallados del punto de suministro
+        // Cargar datos detallados del punto de suministro. Las potencias del contrato
+        // vigente ya vienen en la fila de la tabla (misma consulta de cartera).
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/puntos-suministro/${ps.id}`);
-        
-        // Intentar cargar las potencias desde el endpoint de cartera
-        let puntoConPotencias = { ...response.data };
-        
-        // Si tenemos idCliente, intentar cargar desde cartera
-        if (ps.idCliente) {
-          try {
-            const responseCartera = await axios.get(`${process.env.VUE_APP_API_URL}/puntos-suministro/cliente/${ps.idCliente}/cartera`);
-            const puntoCartera = responseCartera.data.find(punto => punto.id === ps.id);
-            
-            if (puntoCartera) {
-              
-              // Combinar datos del endpoint detallado con las potencias del endpoint de cartera
-              puntoConPotencias = {
-                ...puntoConPotencias,
-                potencia1: puntoCartera.potencia1 || 0,
-                potencia2: puntoCartera.potencia2 || 0,
-                potencia3: puntoCartera.potencia3 || 0,
-                potencia4: puntoCartera.potencia4 || 0,
-                potencia5: puntoCartera.potencia5 || 0,
-                potencia6: puntoCartera.potencia6 || 0
-              };
-            } else {// Establecer potencias en 0
-              puntoConPotencias = {
-                ...puntoConPotencias,
-                potencia1: 0,
-                potencia2: 0,
-                potencia3: 0,
-                potencia4: 0,
-                potencia5: 0,
-                potencia6: 0
-              };
-            }
-          } catch (carteraError) {// Si falla la carga de cartera, usar valores por defecto
-            puntoConPotencias = {
-              ...puntoConPotencias,
-              potencia1: 0,
-              potencia2: 0,
-              potencia3: 0,
-              potencia4: 0,
-              potencia5: 0,
-              potencia6: 0
-            };
-          }
-        } else {// Si no tenemos ID de cliente, establecer potencias en 0
-          puntoConPotencias = {
-            ...puntoConPotencias,
-            potencia1: 0,
-            potencia2: 0,
-            potencia3: 0,
-            potencia4: 0,
-            potencia5: 0,
-            potencia6: 0
-          };
-        }
-        
-        this.modificarPunto = puntoConPotencias;
+        this.modificarPunto = { ...response.data, ...this.potenciasDeFila(ps) };
         this.modoConsulta = false;
         this.formularioVisible = true;
       } catch (error) {
@@ -866,6 +786,18 @@ export default {
       }
     },
 
+    // Potencias P1-P6 del contrato vigente tal como vienen en la fila de la tabla
+    potenciasDeFila(ps) {
+      return {
+        potencia1: ps.potencia1 || 0,
+        potencia2: ps.potencia2 || 0,
+        potencia3: ps.potencia3 || 0,
+        potencia4: ps.potencia4 || 0,
+        potencia5: ps.potencia5 || 0,
+        potencia6: ps.potencia6 || 0
+      };
+    },
+
     // Cierra el formulario de actualización
     cerrarModal() {
       this.formularioVisible = false;
@@ -874,6 +806,8 @@ export default {
 
     // Actualiza un punto de suministro en la API
     async handleUpdate(datosAdaptados) {
+      if (this.guardandoPunto) return;
+      this.guardandoPunto = true;
       try {
         await axios.post(`${process.env.VUE_APP_API_URL}/puntos-suministro`, datosAdaptados);
         const esReactivacion = datosAdaptados.fechaBaja === null && this.modificarPunto.fechaBaja;
@@ -894,6 +828,8 @@ export default {
           title: 'Error',
           text: 'Error al actualizar el punto de suministro: ' + (error.response?.data?.mensaje || error.response?.data?.error || error.message)
         });
+      } finally {
+        this.guardandoPunto = false;
       }
     },
 
@@ -902,6 +838,9 @@ export default {
       // Generar un ID único para esta solicitud para evitar race conditions
       const requestId = Date.now() + '_' + idPuntoSuministro;
       this.currentContratosRequestId = requestId;
+      // Una carga de servicios que siga en curso ya no puede pisar el cliente ni el punto
+      this.nuevaPeticionServicios();
+      this.cargandoServicios = false;
       
       this.loading = true;
       
@@ -909,7 +848,6 @@ export default {
       this.contratos = [];
       this.contratoActualData = null;
       this.contratosHistoricosData = null;
-      this.todosLosContratos = [];
       this.modalCliente = null;
       this.modalPuntoSuministro = null;
       
@@ -944,18 +882,9 @@ export default {
         this.tarifasGas = tarifasGasResponse.data;
         this.tarifasLuz = tarifasLuzResponse.data;
         
-        // Asignar contratos específicos del punto de suministro
-        this.contratos = responseContratos.data || [];
-        
-        // Calcular el contrato actual y los históricos
-        const ahora = new Date();
-        this.contratoActualData = this.contratos.find(contrato => 
-          new Date(contrato.fechaInicio) <= ahora && new Date(contrato.fechaFin) > ahora
-        ) || {};
-        this.contratosHistoricosData = this.contratos.filter(contrato => 
-          new Date(contrato.fechaFin) <= ahora
-        );
-        
+        // Asignar contratos específicos del punto de suministro (y el vigente/históricos)
+        this.asignarContratosModal(responseContratos.data || []);
+
         // VERIFICAR una vez más antes de mostrar el modal
         if (this.currentContratosRequestId !== requestId) {
           return;
@@ -973,12 +902,16 @@ export default {
           this.tarifasGas = this.tarifasGas || [];
           this.tarifasLuz = this.tarifasLuz || [];
           this.contratos = [];
-          this.todosLosContratos = [];
           this.contratoActualData = null;
           this.contratosHistoricosData = [];
-          
-          // Mostrar el modal vacío con mensaje de error si es necesario
-          this.mostrarModalContratos = true;
+
+          // El modal no se puede abrir sin el cliente (v-if): antes no pasaba nada
+          // y el usuario no sabía por qué
+          this.$swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudieron cargar los contratos del punto de suministro'
+          });
         }
       } finally {
         // Solo desactivar loading si esta solicitud sigue siendo la actual
@@ -986,6 +919,17 @@ export default {
           this.loading = false;
         }
       }
+    },
+
+    // Contratos del modal: el vigente (inicio <= hoy < fin) y los históricos (fin <= hoy)
+    asignarContratosModal(contratos) {
+      this.contratos = contratos;
+      this.contratoActualData = contratos.find(contrato =>
+        enVigorHoy(contrato.fechaInicio, contrato.fechaFin)
+      ) || {};
+      this.contratosHistoricosData = contratos.filter(contrato =>
+        terminadoHoy(contrato.fechaFin)
+      );
     },
 
     // Cierra el modal de contratos
@@ -997,7 +941,6 @@ export default {
       this.contratos = [];
       this.contratoActualData = null;
       this.contratosHistoricosData = null;
-      this.todosLosContratos = [];
       this.modalCliente = null;
       this.modalPuntoSuministro = null;
     },
@@ -1007,11 +950,10 @@ export default {
       try {
         const result = await this.$swal.fire({
           title: '¿Estás seguro?',
-          text: `¿Deseas eliminar el punto de suministro ${puntoSuministro.CUPSluz || puntoSuministro.CUPSgas || 'sin CUPS'}?`,
+          text: `¿Deseas eliminar el punto de suministro ${this.getCupsValue(puntoSuministro) || 'sin CUPS'}?`,
           icon: 'warning',
           showCancelButton: true,
           confirmButtonColor: '#d33',
-          cancelButtonColor: '#3085d6',
           confirmButtonText: 'Sí, eliminar',
           cancelButtonText: 'Cancelar'
         });
@@ -1036,7 +978,7 @@ export default {
             title: 'Eliminado',
             text: 'El punto de suministro ha sido eliminado correctamente.',
             icon: 'success',
-            confirmButtonColor: 'rgba(252, 215, 0)',
+            confirmButtonColor: '#fcd700',
             confirmButtonText: 'Aceptar',
             timer: 2000,
             timerProgressBar: true
@@ -1047,11 +989,13 @@ export default {
         }
       } catch (error) {
         console.error('Error al eliminar punto de suministro:', error);
+        // El servidor explica el motivo (p. ej. el punto tiene contratos o servicios)
+        const motivo = error.response?.data?.error;
         this.$swal.fire({
           title: 'Error',
-          text: 'No se pudo eliminar el punto de suministro. Por favor, inténtalo de nuevo.',
+          text: motivo ? `No se pudo eliminar el punto de suministro: ${motivo}` : 'No se pudo eliminar el punto de suministro. Por favor, inténtalo de nuevo.',
           icon: 'error',
-          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonColor: '#fcd700',
           confirmButtonText: 'Aceptar'
         });
       }
@@ -1061,28 +1005,26 @@ export default {
     async refreshData() {
       this.loading = true;
       try {
-        await this.fetchPuntosSuministro();
+        // También la columna/filtro «No-Switching» y el total de servicios activos, que
+        // solo se cargaban al entrar en la pantalla
+        await Promise.all([
+          this.fetchPuntosSuministro(),
+          this.cargarPuntosConServiciosNoSwitching(),
+          this.cargarTotalServiciosActivos()
+        ]);
       } finally {
         this.loading = false;
       }
     },
 
+    // Tras crear, actualizar o renovar un contrato: el propio formulario ya ha
+    // mostrado el aviso de éxito (con el resultado MCAS); aquí solo se refresca.
     // Maneja la creación de un nuevo contrato
     async handleContratoCreado() {
       // Recargar automáticamente los contratos del modal y la tabla principal
       // (tarifaActual/fechaFinUltimoContrato dependen del contrato recién creado)
       await this.recargarContratosDelPuntoSuministro();
       await this.fetchPuntosSuministro();
-
-      this.$swal.fire({
-        title: 'Contrato creado',
-        text: 'El contrato se ha creado correctamente y la lista se ha refrescado.',
-        icon: 'success',
-        confirmButtonColor: 'rgba(252, 215, 0)',
-        confirmButtonText: 'Entendido',
-        timer: 3000,
-        timerProgressBar: true
-      });
     },
 
     // Maneja la actualización de un contrato existente
@@ -1091,17 +1033,6 @@ export default {
       // Recargar automáticamente los contratos para reflejar los cambios
       await this.recargarContratosDelPuntoSuministro();
       await this.fetchPuntosSuministro();
-      
-      // Mostrar mensaje de confirmación
-      this.$swal.fire({
-        title: 'Contrato actualizado',
-        text: 'El contrato se ha actualizado correctamente y la lista se ha refrescado.',
-        icon: 'success',
-        confirmButtonColor: 'rgba(252, 215, 0)',
-        confirmButtonText: 'Entendido',
-        timer: 2000,
-        timerProgressBar: true
-      });
     },
 
     // Maneja la renovación de un contrato
@@ -1109,17 +1040,6 @@ export default {
       // Recargar automáticamente los contratos para reflejar los cambios
       await this.recargarContratosDelPuntoSuministro();
       await this.fetchPuntosSuministro();
-      
-      // Mostrar mensaje de confirmación
-      this.$swal.fire({
-        title: 'Contrato renovado',
-        text: 'El contrato se ha renovado correctamente y la lista se ha refrescado.',
-        icon: 'success',
-        confirmButtonColor: 'rgba(252, 215, 0)',
-        confirmButtonText: 'Entendido',
-        timer: 2000,
-        timerProgressBar: true
-      });
     },
 
     // Método para recargar específicamente los contratos del punto de suministro actual
@@ -1129,85 +1049,125 @@ export default {
       }
 
       try {
-        
-        // Recargar contratos del punto de suministro actual
+        // Recargar contratos del punto de suministro actual. El vigente y los
+        // históricos se recalculan: el modal edita/renueva siempre el vigente.
         const responseContratos = await axios.get(
           `${process.env.VUE_APP_API_URL}/contratos/punto-suministro/${this.modalPuntoSuministro.id}`
         );
-        this.contratos = responseContratos.data;
-
-        // Recalcular el contrato actual
-        const ahora = new Date();
-        this.contratoActual = this.contratos.find(contrato => {
-          const fechaFin = new Date(contrato.fechaFin);
-          const fechaInicio = new Date(contrato.fechaInicio);
-          return fechaInicio <= ahora && fechaFin > ahora;
-        }) || null;
-
-        // Separar contratos históricos (los que no están vigentes)
-        this.contratosHistoricos = this.contratos.filter(contrato => {
-          const fechaFin = new Date(contrato.fechaFin);
-          const fechaInicio = new Date(contrato.fechaInicio);
-          return !(fechaInicio <= ahora && fechaFin > ahora);
-        });
-
+        this.asignarContratosModal(responseContratos.data || []);
       } catch (error) {
         console.error('Error al recargar contratos:', error);
         this.$swal.fire({
           title: 'Error',
           text: 'No se pudieron recargar los contratos. Por favor, inténtalo de nuevo.',
           icon: 'error',
-          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonColor: '#fcd700',
           confirmButtonText: 'Aceptar'
         });
       }
     },
 
+    // Número de la última carga de servicios: si el usuario abre otro punto antes de
+    // que termine la anterior, la respuesta vieja no sustituye a la del punto abierto
+    nuevaPeticionServicios() {
+      this.peticionServicios = (this.peticionServicios || 0) + 1;
+      const peticion = this.peticionServicios;
+      return () => peticion === this.peticionServicios;
+    },
+
     // Abre el modal de servicios con los datos del punto de suministro seleccionado
     async abrirModalServicios(idPuntoSuministro, idCliente) {
+      const vigente = this.nuevaPeticionServicios();
       try {
         // Activar loading
         this.cargandoServicios = true;
+        // Sin los servicios del punto abierto antes: si esta carga falla no pueden
+        // quedarse a la vista (ni usarse para crear o renovar sobre el punto anterior)
+        this.servicios = [];
         this.mostrarModalServicios = true; // Mostrar modal inmediatamente con loading
-        
+
+        // Las cuatro peticiones son independientes: salen a la vez (antes, una tras
+        // otra) y sus respuestas se aplican en el mismo orden de siempre
+        const api = process.env.VUE_APP_API_URL;
+        const enParalelo = (peticion) => {
+          if (peticion) peticion.catch(() => {}); // el error se trata al esperarla
+          return peticion;
+        };
+        const productosPeticion = enParalelo(this.productos.length ? null : axios.get(`${api}/productos`));
+        const gestorasPeticion = enParalelo(this.gestoras.length ? null : axios.get(`${api}/gestoras`));
+        const clientePeticion = enParalelo(axios.get(`${api}/clientes/${idCliente}`));
+        const serviciosPeticion = enParalelo(axios.get(`${api}/servicios/punto-suministro/${idPuntoSuministro}`));
+
         // Esperar a que productos y gestoras estén cargados
-        if (!this.productos.length) {
-          const productosResp = await axios.get(`${process.env.VUE_APP_API_URL}/productos`);
+        if (productosPeticion) {
+          const productosResp = await productosPeticion;
+          if (!vigente()) return;
           this.productos = productosResp.data;
         }
-        if (!this.gestoras.length) {
-          const gestorasResp = await axios.get(`${process.env.VUE_APP_API_URL}/gestoras`);
+        if (gestorasPeticion) {
+          const gestorasResp = await gestorasPeticion;
+          if (!vigente()) return;
           this.gestoras = gestorasResp.data;
         }
-        
-        // Cargar datos básicos del cliente primero
-        const responseCliente = await axios.get(`${process.env.VUE_APP_API_URL}/clientes/${idCliente}`);
+
+        // Datos básicos del cliente
+        const responseCliente = await clientePeticion;
+        if (!vigente()) return;
         this.modalCliente = responseCliente.data;
         this.modalCliente.id = idCliente;
         this.modalPuntoSuministro = idPuntoSuministro;
-        
-        // Ahora cargar servicios (la parte más lenta)
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/servicios/punto-suministro/${idPuntoSuministro}`);
-        
+
+        // Servicios (la parte más lenta)
+        const response = await serviciosPeticion;
+        if (!vigente()) return;
+
         // Cargar datos de pagos para cada servicio
         const serviciosConPagos = await this.cargarDatosDePagosParaServicios(response.data);
+        if (!vigente()) return;
         this.servicios = serviciosConPagos;
-        
+
         // Desactivar loading
         this.cargandoServicios = false;
       } catch (error) {
+        if (!vigente()) return;
         console.error("Error al cargar servicios/productos/gestoras:", error);
         this.cargandoServicios = false; // Asegurar que se desactive en caso de error
+        // Sin datos del punto no se deja el modal abierto (mostraría los del anterior)
+        this.mostrarModalServicios = false;
+        this.$swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar los servicios del punto de suministro'
+        });
       }
     },
 
-    // Cierra el modal de contratos
+    // Cierra el modal de servicios
     cerrarModalServicios() {
       this.mostrarModalServicios = false;
+      // Si aún estaba cargando, su respuesta ya no se aplica (ni al abrir otro modal)
+      this.nuevaPeticionServicios();
+      this.cargandoServicios = false;
     },
 
     // Carga los datos de pagos para una lista de servicios
     async cargarDatosDePagosParaServicios(servicios) {
+      if (!servicios || servicios.length === 0) return [];
+      // Todos los planes en una sola petición (antes, una por servicio: con 12 servicios,
+      // 12 viajes al servidor al abrir la ventana y otros 12 tras cada guardado)
+      try {
+        const respuesta = await axios.get(`${process.env.VUE_APP_API_URL}/servicios-pagos/servicios`, {
+          params: { ids: servicios.map(servicio => servicio.id).join(',') }
+        });
+        const planPorServicio = new Map((respuesta.data || [])
+          .filter(plan => plan?.id && plan.servicio?.id != null)
+          .map(plan => [plan.servicio.id, plan]));
+        return servicios.map(servicio => ({ ...servicio, pagos: planPorServicio.get(servicio.id) || null }));
+      } catch (error) {
+        // Servidor anterior sin esta ruta (durante el despliegue): uno por servicio, como antes
+        console.warn('Planes de pagos de uno en uno:', error?.response?.status || error?.message);
+      }
+
       // Crear promesas para cargar datos de pagos en paralelo
       const promesasPagos = servicios.map(async (servicio) => {
         try {
@@ -1217,7 +1177,8 @@ export default {
           // Crear una copia del servicio con los datos de pagos
           return {
             ...servicio,
-            pagos: responsePagos.data
+            // Sin plan de pagos el servidor devuelve un objeto vacío (sin id): eso no es un plan
+            pagos: responsePagos.data?.id ? responsePagos.data : null
           };
         } catch (error) {
           // Si no hay datos de pagos para este servicio, mantenerlo sin pagos
@@ -1240,47 +1201,32 @@ export default {
         return;
       }
       
+      // Se ha creado, cambiado o borrado un servicio: la columna «No-Switching» y el
+      // total de servicios activos de la pantalla también pueden haber cambiado (se
+      // refrescan aunque se cierre el modal antes de que llegue la lista)
+      this.cargarPuntosConServiciosNoSwitching();
+      this.cargarTotalServiciosActivos();
+
+      const vigente = this.nuevaPeticionServicios();
       try {
         // Activar loading durante la recarga
         this.cargandoServicios = true;
-        
+
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/servicios/punto-suministro/${this.modalPuntoSuministro}`);
-        
+        if (!vigente()) return;
+
         // Cargar datos de pagos para cada servicio
         const serviciosConPagos = await this.cargarDatosDePagosParaServicios(response.data);
+        if (!vigente()) return;
         this.servicios = serviciosConPagos;
-        
+
         // Desactivar loading
         this.cargandoServicios = false;
       } catch (error) {
+        if (!vigente()) return;
         console.error('Error al recargar servicios:', error);
         this.cargandoServicios = false; // Asegurar que se desactive en caso de error
       }
-    },
-
-    sortBy(key) {
-      if (this.sortKey === key) {
-        // Ciclo: asc -> desc -> null
-        if (this.sortOrder === 'asc') {
-          this.sortOrder = 'desc';
-        } else if (this.sortOrder === 'desc') {
-          this.sortKey = null;
-          this.sortOrder = null;
-        }
-      } else {
-        this.sortKey = key;
-        this.sortOrder = 'asc';
-      }
-    },
-    
-    getSortIcon(key) {
-      if (this.sortKey !== key) return 'fas fa-sort';
-      if (!this.sortOrder) return 'fas fa-sort';
-      return this.sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
-    },
-
-    filterByColumn(column, value) {
-      this.columnFilters[column] = value;
     },
 
     // Método con debounce para filtrar por columna
@@ -1307,15 +1253,7 @@ export default {
     },
 
     getCupsValue(suministro) {
-      // Si tiene CUPS de luz y no está vacío, lo mostramos
-      if (suministro.cupsluz && suministro.cupsluz.trim() !== '') {
-        return suministro.cupsluz;
-      }
-      // Si tiene CUPS de gas y no está vacío, lo mostramos
-      if (suministro.cupsgas && suministro.cupsgas.trim() !== '') {
-        return suministro.cupsgas;
-      }
-      return '';
+      return cupsVisible(suministro.cupsluz, suministro.cupsgas);
     },
 
     // Método mejorado para obtener el CUPS que se debe mostrar en la tabla
@@ -1328,26 +1266,11 @@ export default {
       }
       
       // Fallback: mostrar el que tenga valor
-      if (suministro.cupsluz && suministro.cupsluz.trim() !== '') {
-        return suministro.cupsluz;
-      }
-      if (suministro.cupsgas && suministro.cupsgas.trim() !== '') {
-        return suministro.cupsgas;
-      }
-      
-      return '';
+      return cupsVisible(suministro.cupsluz, suministro.cupsgas);
     },
 
     getTipoCups(suministro) {
-      // Primero verificamos si tiene CUPS de luz válido
-      if (suministro.cupsluz && suministro.cupsluz.trim() !== '') {
-        return 'Luz';
-      }
-      // Luego verificamos si tiene CUPS de gas válido
-      if (suministro.cupsgas && suministro.cupsgas.trim() !== '') {
-        return 'Gas';
-      }
-      return '';
+      return tipoCups(suministro.cupsluz, suministro.cupsgas);
     },
 
     getTarifa(suministro) {
@@ -1361,129 +1284,10 @@ export default {
     },
 
     getFechaFinUltimoContrato(suministro) {
-      // Verificar si tiene fecha fin del último contrato
-      if (suministro.fechaFinUltimoContrato && suministro.fechaFinUltimoContrato !== null) {
-        // Formatear la fecha para mostrar
-        const fecha = new Date(suministro.fechaFinUltimoContrato);
-        return fecha.toLocaleDateString('es-ES', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        });
-      }
-      
-      // Si no hay fecha disponible, mostrar guión
-      return '-';
+      // dd/mm/aaaa; sin fecha, un guion
+      return fechaES(suministro.fechaFinUltimoContrato);
     },
 
-
-
-
-    // Método inteligente para corregir solo las tarifas que realmente están incorrectas
-    async corregirTarifasIncorrectasInteligente() {
-      
-      // Identificar puntos que necesitan corrección de tarifa
-      const puntosSinTarifa = this.puntosSuministro.filter(punto => 
-        punto.tarifaActual === null ||
-        punto.tarifaActual === undefined ||
-        !punto.tarifaActual || 
-        punto.tarifaActual === 'Sin Tarifa' || 
-        punto.tarifaActual.trim() === ''
-      );
-      if (puntosSinTarifa.length === 0) {
-        return; // No hay puntos que corregir
-      }
-      
-      // Priorizar el punto específico problemático (ID 44413)
-      const puntoProblematico = puntosSinTarifa.find(p => p.id === 44413);
-      let puntosACorregir;
-      
-      if (puntoProblematico) {
-        // Si encontramos el punto problemático, procesarlo primero
-        puntosACorregir = [puntoProblematico, ...puntosSinTarifa.filter(p => p.id !== 44413).slice(0, 4)];
-      } else {
-        // Procesar hasta 5 puntos sin tarifa para no sobrecargar
-        puntosACorregir = puntosSinTarifa.slice(0, 5);
-      }
-      
-      // Ejecutar correcciones en paralelo para mayor velocidad
-      const promesasCorreccion = puntosACorregir.map(async (punto) => {
-        try {
-          const tarifaCorregida = await this.calcularTarifaActual(punto);
-          if (tarifaCorregida) {
-            return true;
-          }
-        } catch (error) {
-          console.warn(`Error al corregir punto ${punto.id}:`, error.message);
-        }
-        return false;
-      });
-      
-      // Esperar a que se completen todas las correcciones
-      const resultados = await Promise.all(promesasCorreccion);
-      const puntosCorregidos = resultados.filter(r => r).length;
-      
-      if (puntosCorregidos > 0) {
-        this.$forceUpdate(); // Actualizar vista solo si hubo cambios
-      } else {
-        // No hacer nada
-      }
-    },
-
-    // Función de fallback para calcular la tarifa actual cuando el backend no la proporciona correctamente
-    async calcularTarifaActual(suministro) {
-      try {
-        // Hacer una consulta específica para obtener la tarifa del contrato vigente
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/contratos/punto-suministro/${suministro.id}`);
-        const contratos = response.data;
-        
-        if (!contratos || contratos.length === 0) {
-          return null;
-        }
-        
-        // Encontrar el contrato vigente (fechaFin > hoy)
-        const ahora = new Date();
-        const contratosVigentes = contratos.filter(contrato => {
-          const fechaFin = new Date(contrato.fechaFin);
-          const fechaInicio = new Date(contrato.fechaInicio);
-          return fechaInicio <= ahora && fechaFin > ahora;
-        });
-        
-        if (contratosVigentes.length === 0) {
-          return null;
-        }
-        
-        // Si hay múltiples contratos vigentes, tomar el más reciente (mayor ID)
-        const contratoVigente = contratosVigentes.reduce((masReciente, actual) => {
-          return actual.id > masReciente.id ? actual : masReciente;
-        });
-        
-        // Obtener la tarifa del contrato vigente
-        let tarifa = null;
-        
-        // Buscar tarifa de luz primero, luego gas
-        if (contratoVigente.idTarifaLuz && contratoVigente.tarifaLuz) {
-          tarifa = contratoVigente.tarifaLuz.nombre;
-        } else if (contratoVigente.idTarifaGas && contratoVigente.tarifaGas) {
-          tarifa = contratoVigente.tarifaGas.nombre;
-        }
-        
-        // Si encontramos una tarifa válida, actualizar el punto en memoria
-        if (tarifa && tarifa !== 'Sin Tarifa' && tarifa.trim() !== '') {
-          // Actualizar el punto en el array para futuras consultas
-          const puntoIndex = this.puntosSuministro.findIndex(p => p.id === suministro.id);
-          if (puntoIndex !== -1) {
-            this.puntosSuministro[puntoIndex].tarifaActual = tarifa;
-          }
-          return tarifa;
-        }
-        
-        return null;
-      } catch (error) {
-        console.warn('Error al calcular tarifa actual para punto', suministro.id, ':', error.message);
-        return null;
-      }
-    },
 
     // Abre un modal para consultar los detalles de un punto de suministro
     async abrirModalPSConsulta(ps) {
@@ -1500,17 +1304,7 @@ export default {
         const response = await axios.get(`${process.env.VUE_APP_API_URL}/puntos-suministro/${ps.id}`);
         
         // Combinar datos del endpoint con las potencias del punto original (igual que en PuntosSuministroClienteComponent)
-        this.modificarPunto = { 
-          ...response.data,
-          // Agregar las potencias desde el punto original que ya las tiene
-          potencia1: ps.potencia1 || 0,
-          potencia2: ps.potencia2 || 0,
-          potencia3: ps.potencia3 || 0,
-          potencia4: ps.potencia4 || 0,
-          potencia5: ps.potencia5 || 0,
-          potencia6: ps.potencia6 || 0
-        };
-        
+        this.modificarPunto = { ...response.data, ...this.potenciasDeFila(ps) };
         this.modoConsulta = true;
         this.formularioVisible = true;
       } catch (error) {
@@ -1528,7 +1322,7 @@ export default {
     async exportarExcel() {
       try {
         // Verificar si hay datos para exportar
-        if (!this.filteredPuntosSuministro || this.filteredPuntosSuministro.length === 0) {
+        if (!this.sortedPuntosSuministro || this.sortedPuntosSuministro.length === 0) {
           this.$swal.fire({
             icon: 'warning',
             title: 'Sin datos',
@@ -1537,8 +1331,8 @@ export default {
           return;
         }
 
-        // Preparar los datos para la exportación con solo las columnas visibles
-        const data = this.filteredPuntosSuministro.map(punto => ({
+        // Las columnas visibles, en el orden en que se ven en pantalla
+        const data = this.sortedPuntosSuministro.map(punto => ({
           'Cliente': punto.cliente || '-',
           'Dirección': `${punto.direccion}, ${punto.codigoPostal}, ${punto.poblacion}, ${punto.provincia}`,
           'Identificación': punto.identificacion,
@@ -1551,6 +1345,7 @@ export default {
         }));
 
         // Crear el libro de Excel
+        const ExcelJS = await cargarExcelJS();
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('PuntosSuministro');
 
@@ -1578,19 +1373,8 @@ export default {
           fgColor: { argb: 'FFE0E0E0' }
         };
 
-        // Generar nombre de archivo con fecha
-        const fecha = new Date().toISOString().split('T')[0];
-        const nombreArchivo = `Puntos_Suministro_${fecha}.xlsx`;
-
-        // Generar buffer y descargar
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = nombreArchivo;
-        link.click();
-        window.URL.revokeObjectURL(url);
+        // Descargar con la fecha del día en el nombre
+        await descargarLibroExcel(workbook, `Puntos_Suministro_${fechaLocalISO()}.xlsx`);
 
       } catch (error) {
         console.error('Error al exportar a Excel:', error);
@@ -1608,11 +1392,6 @@ export default {
 
     // Verifica si un punto de suministro está dado de baja
     estaDadoDeBaja(suministro) {
-      // Debug: mostrar información del punto para verificar los campos
-      if (this.mostrarDadosDeBaja && Math.random() < 0.01) { // Solo 1% de las veces para no saturar
-          // No hacer nada
-      }
-      
       // Un punto está dado de baja si tiene fechaBaja y no es null
       // También verificar si viene como fecha_baja (snake_case)
       return (suministro.fechaBaja && suministro.fechaBaja !== null && suministro.fechaBaja !== '') ||
@@ -1671,11 +1450,6 @@ export default {
       }
     },
 
-    // Maneja el cambio en el filtro de dados de baja
-    handleFilterChange() {
-      this.currentPage = 1; // Resetear a la primera página cuando cambie el filtro
-    },
-
     // Alterna la visualización de puntos dados de baja
     toggleMostrarDadosDeBaja() {
       this.mostrarDadosDeBaja = !this.mostrarDadosDeBaja;
@@ -1689,6 +1463,12 @@ export default {
     this.loading = true;
     
     // Precargamos los arrays de los combos y datos necesarios
+    // La tabla y el total de servicios no dependen de los datos de configuración:
+    // se piden ya, a la vez que ellos (antes esperaban uno detrás de otro). Ninguna
+    // de las dos rechaza: cada una trata su propio error.
+    const cargaPuntos = this.fetchPuntosSuministro();
+    const cargaTotalServicios = this.cargarTotalServiciosActivos();
+    let cargaNoSwitching = null;
     try {
       // Cargar datos de configuración en paralelo
       const [comercializadoras, tarifasGas, tarifasLuz, gestoras, productos] = await Promise.all([
@@ -1704,17 +1484,31 @@ export default {
       this.tarifasLuz = tarifasLuz.data;
       this.gestoras = gestoras.data;
       this.productos = productos.data;
-      
-      // Ya no necesitamos cargar todos los contratos aquí
-      // La información de contratos activos viene en el campo tarifaActual de los puntos de suministro
-      this.todosLosContratos = [];
-      
-      // Esperar a que se carguen los puntos de suministro antes de desactivar el loading
-      await this.fetchPuntosSuministro();
 
-      // Aplicar filtro CUPS si viene de navegación desde ficha de cliente
+      // «No switching» necesita los productos; sale ya, sin esperar a la tabla
+      cargaNoSwitching = this.cargarPuntosConServiciosNoSwitching();
+    } catch (error) {
+      console.error("Error al cargar datos iniciales:", error);
+      this.$swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudieron cargar las listas de comercializadoras, tarifas, gestoras o productos. Recargue la página antes de crear o editar.'
+      });
+    }
+
+    // La tabla, el filtro que llega desde la ficha del cliente y la renovación pendiente
+    // desde Informes no dependen de esas listas: antes, si una fallaba, se perdían
+    try {
+      // Esperar a que se carguen los puntos de suministro antes de desactivar el loading
+      await cargaPuntos;
+
+      // Aplicar filtro CUPS si viene de navegación desde ficha de cliente (con los dados
+      // de baja a la vista si el punto lo está)
       if (this.$route.query.cupsluz) {
         this.columnFilters.cupsluz = this.$route.query.cupsluz;
+        if (this.$route.query.bajas === '1') {
+          this.mostrarDadosDeBaja = true;
+        }
       }
       
       // Detectar si hay una renovación pendiente desde Informes
@@ -1731,23 +1525,23 @@ export default {
         }
       }
       
-      // Cargar información de puntos con servicios no-switching
-      await this.cargarPuntosConServiciosNoSwitching();
+      // Información de puntos con servicios no-switching
+      await cargaNoSwitching;
 
-      // Cargar el conteo real de servicios activos (sustituye la estimación anterior)
-      await this.cargarTotalServiciosActivos();
+      // Conteo real de servicios activos (sustituye la estimación anterior)
+      await cargaTotalServicios;
       
       // Forzar una actualización de la vista para que se apliquen bien los datos de tarifa
       this.$nextTick(() => {
         this.$forceUpdate();
       });
-    } catch (error) {
-      console.error("Error al cargar datos iniciales:", error);
-      // En caso de error, inicializar arrays vacíos para evitar errores
-      this.todosLosContratos = [];
     } finally {
       this.loading = false;
     }
+  },
+
+  beforeUnmount() {
+    clearTimeout(this.filtrosTimer);
   },
 
   watch: {

@@ -95,6 +95,21 @@
   /* Anillo de foco unico (antes 0.1/0.15/0.22 de alpha y 2px/3px/4px de spread). */
   --focus-ring: 0 0 0 3px rgba(252, 215, 0, 0.25);
 
+  /* Movimiento: una sola duracion y curva para hovers, entradas y desplegables.
+     --aura-transicion sustituye a los «transition: all 0.2s/0.3s» que habia
+     repartidos: solo anima propiedades de pintado (color, fondo, borde, sombra)
+     y de composicion (transform, opacity), nunca medidas que recalculan el
+     layout de la pagina en cada fotograma. */
+  --aura-curva: cubic-bezier(0.2, 0, 0, 1);
+  --aura-transicion: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease, transform 0.18s cubic-bezier(0.2, 0, 0, 1), opacity 0.18s ease;
+
+  /* Capa oscura de detras de los modales, la misma en toda la app (antes cada
+     pantalla tenia la suya: negro 0.5/0.6/0.75, azul marino 0.4/0.45/0.48 y
+     desenfoque de 0, 4 u 8 px). Es la que ya usaban la mayoria de modales. */
+  --backdrop-color: rgba(0, 0, 0, 0.5);
+  --backdrop-blur: blur(4px);
+
   /* Texto secundario/muted con mas contraste sobre blanco que los valores
      anteriores (#7f8c8d / #95a5a6), que rondaban el limite de WCAG AA. */
   --color-text-secondary: #5b6b79;

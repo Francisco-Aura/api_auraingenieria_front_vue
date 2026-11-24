@@ -1,94 +1,83 @@
+
 .notificaciones-container {
   position: relative;
-  --color-notification-orange: #fcd700;
-  --color-notification-orange-light: #ffe44d;
-  --color-notification-orange-rgb: 252, 215, 0;
 }
-
-.btn-link { color: #2c3e50; }
-.notification-badge { color: #000; }
 
 /* Trigger de notificaciones */
 .notificaciones-trigger {
   position: relative;
 }
 
-.notification-btn {
-  background: #2c3e50 !important;
-  color: #fcd700 !important;
-  border: none;
-  border-radius: 50% !important;
+/* Campana: botón redondo de 40 px en el gris pizarra del texto. Al pasar el ratón o con el
+   panel abierto solo cambia el fondo; ni late ni cambia de color (la urgencia la lleva el
+   contador). Con .btn-icon para ganar a su tamaño y su borde de los botones del panel. */
+.notification-btn.btn-icon {
+  position: relative;
   width: 40px;
   height: 40px;
   padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-text-dark, #2c3e50);
   cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
+  transition: var(--aura-transicion);
 }
 
-.notification-btn:hover {
-  background: #1f2d3d !important;
+.notification-btn.btn-icon:hover:not(:disabled),
+.notification-btn.btn-icon[aria-expanded="true"] {
+  background-color: rgba(44, 62, 80, 0.08);
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--color-text-dark, #2c3e50);
 }
 
-.notification-btn:focus-visible {
+/* El mismo foco que el resto de botones de la aplicación */
+.notification-btn.btn-icon:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #2c3e50;
+  box-shadow: var(--aura-btn-foco);
 }
 
+/* Un solo contador, arriba a la derecha y por fuera de la campana: con «99+» crece hacia la
+   derecha y no la tapa. Naranja oscuro (el blanco encima pasa de 4,5:1) y sin halo. */
 .notification-badge {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  background: linear-gradient(135deg, var(--color-notification-orange) 0%, var(--color-notification-orange-light) 100%);
-  color: white;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  font-size: 0.7rem;
+  top: 3px;
+  left: 52%;
+  right: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 9px;
+  border: 2px solid var(--color-surface, #fff);
+  background: #c2410c;
+  color: #fff;
+  font-size: 11px;
   font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: pulse-scale-bell 2s infinite;
-  box-shadow: 0 2px 8px rgba(var(--color-notification-orange-rgb), 0.3);
-  border: 2px solid white;
+  pointer-events: none;
 }
 
-@keyframes pulse-scale-bell {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-  100% { transform: scale(1); }
+/* Alguna tarea vence hoy: contador en rojo con tres aros que se abren al aparecer y luego
+   quieto (un aviso que no para acaba siendo ruido) */
+.notification-badge--urgente {
+  background: #dc2626;
+  animation: aviso-urgente 1.6s ease-out 3;
 }
 
-@keyframes pulse-urgente {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
-  50% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+@keyframes aviso-urgente {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55); }
+  100% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
 }
 
-.campana-urgente {
-  animation: pulse-urgente 1.5s infinite !important;
-  color: #ef4444 !important;
-}
-
-.vencimiento-badge-urgente {
-  position: absolute;
-  bottom: -4px;
-  right: -4px;
-  background: #ef4444;
-  color: white;
-  border-radius: 50%;
-  width: 16px;
-  height: 16px;
-  font-size: 0.65rem;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid white;
+@media (prefers-reduced-motion: reduce) {
+  .notification-badge--urgente { animation: none; }
 }
 
 .vencimiento-hoy-banner {
@@ -172,7 +161,20 @@
   transition: background 0.15s ease;
   white-space: nowrap;
   overflow: hidden;
+  min-width: 0;
+}
+
+.vencimiento-tareas-lista li i {
+  flex-shrink: 0;
+}
+
+/* El recorte con puntos suspensivos va en el texto: en el <li> (flex) se cortaba
+   en seco; el título completo sale al pasar el ratón */
+.vencimiento-tarea-titulo {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .vencimiento-tareas-lista li:hover {
@@ -198,14 +200,12 @@
   overflow: hidden;
 }
 
-.fa-bell {
-  color: #fcd700 !important;
-}
-
+/* Misma cabecera que los modales de Aura (azul del menú y línea amarilla de
+   marca); antes era un bloque naranja que no se parecía a ninguna otra. */
 .notificaciones-header {
-  background: linear-gradient(135deg, #2c3e50, #1f2d3d);
-  color: #fff;
-  font-weight: 600;
+  background: linear-gradient(135deg, var(--color-text-dark) 0%, #1a252f 100%);
+  border-bottom: 3px solid var(--color-brand-yellow-hex);
+  color: white;
   padding: 1rem 1.2rem;
   border-radius: 12px 12px 0 0;
   display: flex;
@@ -213,7 +213,6 @@
   align-items: center;
   font-weight: 600;
   font-size: 0.95rem;
-  box-shadow: 0 2px 8px rgba(var(--color-notification-orange-rgb), 0.2);
   flex-wrap: wrap;
   gap: 0.8rem;
 }
@@ -230,18 +229,23 @@
 }
 
 .filtro-select {
-  background: #fff;
-  color: #2c3e50;
-  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  padding: 0.5rem 0.8rem;
   border-radius: 8px;
-  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
   font-weight: 500;
+  transition: var(--aura-transicion);
+  min-width: 100px;
 }
 
 .filtro-select:focus {
   outline: none;
-  border-color: #fcd700;
-  box-shadow: 0 0 0 3px rgba(252, 215, 0, 0.25);
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
 }
 
 .filtro-select:hover {
@@ -255,13 +259,13 @@
 }
 
 .btn-icon {
-  background: #fcd700;
-  border: 1px solid transparent;
-  color: #000;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: inherit;
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -269,20 +273,22 @@
   height: 32px;
 }
 
+/* Sin subir 1 px al pasar el ratón, como el resto de botones (y sin el desenfoque de
+   fondo, que sobre la cabecera opaca no se veía y obligaba a recomponer la capa) */
 .btn-icon:hover:not(:disabled) {
-  background-color: #fcd700;
-  filter: brightness(0.94);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-icon:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
-  background: #fcd700;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.loading {
+/* Al actualizar gira solo el icono, no el botón cuadrado entero */
+.loading i {
   animation: spin 0.8s linear infinite;
 }
 
@@ -324,9 +330,38 @@
 
 .sin-notificaciones i {
   margin-bottom: 0.6rem;
-  opacity: 0.9;
+  opacity: 0.6;
   font-size: 2rem;
-  color: #fcd700;
+  color: var(--color-notification-orange);
+}
+
+/* Fallo al cargar: aviso en rojo con botón para reintentar */
+.error-carga i {
+  color: var(--color-danger);
+}
+
+.btn-reintentar {
+  margin-top: 0.6rem;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--aura-btn-neutro-borde, #c9d1db);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-reintentar:hover {
+  background: var(--aura-btn-neutro-hover, #f4f6f9);
+  border-color: var(--aura-btn-neutro-borde-hover, #aab4c0);
+}
+
+.btn-reintentar:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .lista-notificaciones {
@@ -334,11 +369,12 @@
 }
 
 .notificacion-item {
+  position: relative;
   display: flex;
   align-items: flex-start;
   padding: 0.8rem 1rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   background: white;
 }
@@ -405,25 +441,39 @@
 
 .notificacion-meta {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
+  align-items: baseline;
   font-size: 0.75rem;
   color: var(--text-secondary);
-  gap: 0.4rem;
+  gap: 0.6rem;
+  min-width: 0;
 }
 
 .notificacion-tiempo {
   font-weight: 500;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .notificacion-tarea {
-  max-width: 120px;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Acciones flotando arriba a la derecha: ocultas ya no reservan un hueco que hacía
+   partir el mensaje antes de tiempo. Se ven al pasar el ratón y también al llegar
+   con el teclado. */
 .notificacion-acciones {
-  margin-left: 0.6rem;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  padding: 2px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
   opacity: 0;
   transition: opacity 0.2s ease;
   display: flex;
@@ -431,8 +481,26 @@
   flex-shrink: 0;
 }
 
-.notificacion-item:hover .notificacion-acciones {
+.notificacion-item:hover .notificacion-acciones,
+.notificacion-item:focus-within .notificacion-acciones {
   opacity: 1;
+}
+
+/* Botones de las tarjetas (fondo blanco): con el estilo de la cabecera oscura
+   (blanco translúcido) no tenían borde ni cambio al pasar el ratón */
+.notificacion-acciones .btn-icon {
+  background: #fff;
+  border: 1px solid #d5dbe3;
+  color: var(--text-secondary);
+  backdrop-filter: none;
+}
+
+.notificacion-acciones .btn-icon:hover:not(:disabled) {
+  background: #eef1f5;
+  border-color: #aab4c0;
+  color: var(--text-primary);
+  transform: none;
+  box-shadow: none;
 }
 
 .notificaciones-footer {
@@ -442,10 +510,11 @@
   border-radius: 0 0 12px 12px;
 }
 
+/* Naranja oscuro: el de la campana sobre el gris del pie se quedaba en 2,7:1 */
 .btn-link {
   background: none;
   border: none;
-  color: var(--color-notification-orange);
+  color: #c2410c;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;
@@ -454,7 +523,7 @@
   text-align: center;
   padding: 0.5rem;
   border-radius: 6px;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -472,7 +541,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--backdrop-color);
+  backdrop-filter: var(--backdrop-blur);
   z-index: var(--z-overlay);
   display: flex;
   align-items: center;
@@ -493,44 +563,7 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.modal-header {
-  background: linear-gradient(135deg, var(--color-notification-orange) 0%, var(--color-notification-orange-light) 100%);
-  color: white;
-  padding: 1.2rem 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 8px rgba(var(--color-notification-orange-rgb), 0.2);
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-.close-button {
-  background-color: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  font-size: 1rem;
-  cursor: pointer;
-  color: white;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  z-index: 10;
-}
-
-.close-button:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-  border-color: white;
-  transform: rotate(90deg);
-}
+/* Cabecera y botón de cierre del modal: styles/shared-modal-header.css (.aura-modal-header) */
 
 .modal-body {
   flex: 1;
@@ -551,7 +584,7 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 8px;
   background-color: white;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
@@ -605,14 +638,22 @@
   margin-bottom: 0.4rem;
 }
 
+/* En columna: con «align-items: baseline» heredado cada línea medía lo que su
+   texto y el título largo de la tarea se salía de la tarjeta; con stretch ocupa
+   el ancho de la tarjeta y se recorta con puntos suspensivos */
 .notificacion-item-completa .notificacion-meta {
   font-size: 0.8rem;
   color: var(--text-secondary);
   flex-direction: column;
+  align-items: stretch;
   gap: 0.2rem;
 }
 
 .notificacion-item-completa .notificacion-acciones {
+  position: static;
+  padding: 0;
+  background: none;
+  box-shadow: none;
   opacity: 1;
   display: flex;
   gap: 0.4rem;
@@ -620,42 +661,27 @@
 }
 
 .notification-btn i {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
 }
 
-.notification-badge {
-  top: -3px;
-  right: -3px;
-  box-sizing: border-box;
-  width: auto;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 9px;
-  border-color: #2c3e50;
-  color: #2c3e50;
-  font-size: 0.7rem;
-  line-height: 1;
-  white-space: nowrap;
-}
-
+/* Estilos para botón de sonido */
 .sonido-activo {
-  color: #000;
+  color: white;
+  transition: var(--aura-transicion);
 }
 
 .sonido-activo:hover {
-  color: #2c3e50;
-  transform: scale(1.1);
+  color: var(--color-brand-yellow-hex);
 }
 
 .sonido-inactivo {
-  color: var(--color-secondary-gray);
+  color: rgba(255, 255, 255, 0.55);
   opacity: 1;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
 }
 
 .sonido-inactivo:hover {
-  color: var(--color-notification-orange);
+  color: var(--color-brand-yellow-hex);
   opacity: 1;
 }
 
@@ -672,21 +698,23 @@
   align-items: center;
   gap: 0.8rem;
   z-index: var(--z-snackbar);
-  animation: slideIn 0.3s ease;
+  /* Entrada común: styles/shared-motion.css */
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   font-size: 0.9rem;
 }
 
+/* Tonos oscuros para que el texto blanco se lea (los anteriores, verde y rojo
+   claros, se quedaban por debajo de 3:1) */
 .snackbar.success {
-  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  background: linear-gradient(135deg, #2e7d32 0%, #276b2b 100%);
 }
 
 .snackbar.error {
-  background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+  background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);
 }
 
 .snackbar.warning {
-  background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+  background: linear-gradient(135deg, #b45309 0%, #9a4508 100%);
 }
 
 .snackbar-close {
@@ -699,22 +727,13 @@
   margin: 0;
   display: flex;
   align-items: center;
-  transition: transform 0.2s ease;
+  /* Como la X del aviso de Tareas: se aclara al pasar el ratón, sin crecer */
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
 }
 
 .snackbar-close:hover {
-  transform: scale(1.1);
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(400px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  opacity: 1;
 }
 
 /* Responsive */
@@ -737,22 +756,10 @@
     gap: 0.8rem;
   }
   
-  .header-actions button {
-  background: #fcd700;
-  color: #000;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  transition: filter 0.2s ease;
-}
-
-.header-actions button:hover:not(:disabled) {
-  filter: brightness(0.94);
-}
-
-.header-actions button:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
+  .header-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
   
   .filtro-select {
     min-width: 80px;

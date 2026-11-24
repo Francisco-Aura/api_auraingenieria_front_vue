@@ -5,29 +5,23 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "build:analyze": "vue-cli-service build && ANALYZE=true vue-cli-service build",
+    "build:analyze": "vue-cli-service build --report",
+    "test": "node --test tests/unit/*.spec.js",
+    "test:planificador": "node --test tests/planificador/*.test.mjs",
+    "test:registro-horario": "node --test tests/registro-horario/*.test.mjs",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.7.2",
-    "@fortawesome/free-solid-svg-icons": "^6.7.2",
-    "@fortawesome/vue-fontawesome": "^3.1.2",
     "@stomp/stompjs": "^7.1.1",
-    "aurafront_vue": "file:",
+    "@vuepic/vue-datepicker": "14.0.0",
     "axios": "^1.16.0",
-    "chart.js": "^4.4.9",
     "core-js": "^3.8.3",
+    "date-fns": "4.4.0",
     "exceljs": "^4.4.0",
-    "jspdf": "^3.0.3",
-    "jspdf-autotable": "^5.0.2",
-    "primevue": "^3.52.0",
     "sockjs-client": "^1.6.1",
     "sweetalert2": "^11.21.2",
     "vue": "^3.2.13",
-    "vue-chartjs": "^5.3.2",
-    "vue-router": "^4.4.5",
-    "vuedraggable": "^4.1.0",
-    "wcwidth": "^1.0.1"
+    "vue-router": "^4.4.5"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
@@ -61,11 +55,6 @@
     "not dead",
     "not ie 11"
   ],
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
-  },
   "overrides": {
     "cross-spawn": "^7.0.3",
     "postcss": "^8.4.31",

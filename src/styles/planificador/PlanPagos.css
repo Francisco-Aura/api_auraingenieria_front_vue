@@ -1,0 +1,111 @@
+.pago-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-modo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.plan-modo label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.plan-modo label.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+}
+
+.plan-modo label span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.plan-modo small {
+  color: var(--muted);
+}
+
+.plan-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.plan-tabla th,
+.plan-tabla td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.plan-tabla .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.plan-tabla td input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.plan-tabla td input.pct {
+  width: 72px;
+  text-align: right;
+}
+
+/* Pago que se ajusta solo para sumar 100 % */
+.plan-tabla td input.pct.auto {
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.plan-pista {
+  font-size: 13px;
+}
+
+.plan-tabla tfoot td {
+  font-weight: 600;
+  border-bottom: none;
+}
+
+.plan-tabla tfoot .good td:nth-child(2) {
+  color: #15803d;
+}
+
+.plan-tabla tfoot .bad td:nth-child(2) {
+  color: var(--danger);
+}
+
+.plan-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.plan-problema {
+  color: var(--danger);
+  font-size: 13px;
+}
+
+@media (max-width: 560px) {
+  .plan-modo {
+    grid-template-columns: 1fr;
+  }
+}

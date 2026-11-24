@@ -1,0 +1,142 @@
+/*
+ * Movimiento común de Aura: entrada de pantallas, modales y desplegables, filas
+ * de tabla y respuesta al pulsar los botones.
+ *
+ * - Solo se animan transform y opacity (los hovers cambian además color, fondo,
+ *   borde y sombra con --aura-transicion, ver tokens.css). Nada de width, height,
+ *   top o left, que obligan a recalcular el layout en cada fotograma.
+ * - Duraciones de 120 a 220 ms y sin repeticiones infinitas.
+ * - Las animaciones de entrada no se quedan aplicadas al terminar (sin «both» ni
+ *   «forwards»): un transform que se queda puesto convierte al modal en el
+ *   contenedor de sus elementos fijos y anula position: sticky.
+ * - Todo se desactiva con la preferencia del sistema «reducir movimiento».
+ *
+ * Cada modal traía su propia entrada scoped (300 ms con desplazamientos de 20 a
+ * 30 px, otros ninguna): :not(#aura-mov) da peso de id para que esta sea la única.
+ */
+
+@keyframes auraFundido {
+  from { opacity: 0; }
+}
+
+@keyframes auraModalEntra {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+}
+
+@keyframes auraModalSale {
+  to { opacity: 0; transform: scale(0.985); }
+}
+
+@keyframes auraDesplegar {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+/* Pantalla de cada sección del menú (la raíz de la vista del router). Solo
+   opacidad: un transform aquí haría de contenedor de los modales de la pantalla. */
+.content-container > * {
+  animation: auraFundido 0.18s ease-out;
+}
+
+/* ---------------------------------------------------------------------------
+ * Modales: el fondo oscuro aparece con un fundido y la ventana sube un poco
+ * mientras aparece.
+ * ------------------------------------------------------------------------- */
+
+:is(.modal-overlay, .mcas-modal-overlay, .tareas-panel-overlay, .modal-overlay-confirmacion):not(#aura-mov) {
+  animation: auraFundido 0.16s ease-out;
+}
+
+:is(.modal-overlay, .mcas-modal-overlay, .tareas-panel-overlay, .modal-overlay-confirmacion)
+  > :is(.modal-content, .mcas-modal, .tareas-panel, .modal-auditoria, .modal-confirmacion-completar,
+    .modal-comentario-renovacion):not(#aura-mov) {
+  animation: auraModalEntra 0.2s var(--aura-curva);
+}
+
+/* Diálogos de SweetAlert: la misma entrada que los modales, en vez del rebote
+   de la librería (0.7 → 1.05 → 0.95 → 1). Los avisos tipo toast no cambian. */
+.swal2-popup.swal2-show:not(.swal2-toast) {
+  animation: auraModalEntra 0.2s var(--aura-curva);
+}
+
+.swal2-popup.swal2-hide:not(.swal2-toast) {
+  animation: auraModalSale 0.14s ease-in forwards;
+}
+
+/* ---------------------------------------------------------------------------
+ * Desplegables: notificaciones, «Más acciones» de MCAS, filtro de Sector,
+ * sugerencias de cliente y menciones.
+ * ------------------------------------------------------------------------- */
+
+:is(.notificaciones-menu, .menu-acciones, .sector-filter-dropdown .dropdown-menu, .dropdown-clientes,
+  .mencion-dropdown):not(#aura-mov) {
+  animation: auraDesplegar 0.16s var(--aura-curva);
+}
+
+/* Avisos propios de Tareas y de Notificaciones (snackbar, abajo a la derecha): suben un
+   poco al aparecer. Antes uno subía 100 px y el otro entraba 400 px desde la derecha. */
+@keyframes auraAvisoEntra {
+  from { opacity: 0; transform: translateY(12px); }
+}
+
+.snackbar:not(#aura-mov) {
+  animation: auraAvisoEntra 0.2s var(--aura-curva);
+}
+
+/* ---------------------------------------------------------------------------
+ * Tablas: el resaltado de la fila al pasar el ratón entra suave. La celda fija
+ * de acciones tiene fondo propio y cambia a la vez que la fila.
+ * ------------------------------------------------------------------------- */
+
+tbody tr,
+.data-table--acciones-fijas tbody td:last-child {
+  transition: background-color 0.12s ease;
+}
+
+/* ---------------------------------------------------------------------------
+ * Botones: respuesta al pulsar (se hunden un poco). Al pasar el ratón no se
+ * mueven, solo cambian de color y sombra (ver shared-buttons.css).
+ * ------------------------------------------------------------------------- */
+
+:is(.btn, .btn-modern, .btn-compact):is(.btn-primary, .btn-save, .btn-create, .btn-confirm,
+  .btn-cancel, .btn-cancelar, .btn-secondary, .btn-back, .btn-toggle-baja, .btn-toggle-completed,
+  .btn-danger, .btn-danger-soft, .btn-success, .btn-warning, .btn-info, .btn-refresh, .btn-excel):not(#aura-boton):active:not(:disabled),
+.btn-action-compact:not(#aura-boton):active:not(:disabled) {
+  transform: scale(0.97) !important;
+}
+
+.btn-icon:is(.btn-edit, .btn-view, .btn-view-details, .btn-add, .btn-renew, .btn-delete, .btn-reject,
+  .btn-download, .btn-payment, .btn-archive, .btn-approve, .btn-contracts, .btn-services):not(#aura-boton):active:not(:disabled),
+.pagination-controls .pagination-buttons :is(.btn-outline, .btn-pagination):not(#aura-pag):active:not(:disabled) {
+  transform: scale(0.92) !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Reducir movimiento: sin entradas, deslizamientos ni pulsos. Los cambios de
+ * color se mantienen pero son inmediatos.
+ * ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Dos :not de id: los botones y modales llevan uno (:not(#aura-boton)...) y con él sus
+     transiciones !important ganaban a un simple «*» */
+  :not(#aura-reducir):not(#aura-sin-movimiento),
+  :not(#aura-reducir):not(#aura-sin-movimiento)::before,
+  :not(#aura-reducir):not(#aura-sin-movimiento)::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Sin el «hundirse» al pulsar (mismos selectores que arriba: al ir después, ganan) */
+  :is(.btn, .btn-modern, .btn-compact):is(.btn-primary, .btn-save, .btn-create, .btn-confirm,
+    .btn-cancel, .btn-cancelar, .btn-secondary, .btn-back, .btn-toggle-baja, .btn-toggle-completed,
+    .btn-danger, .btn-danger-soft, .btn-success, .btn-warning, .btn-info, .btn-refresh, .btn-excel):not(#aura-boton):active:not(:disabled),
+  .btn-action-compact:not(#aura-boton):active:not(:disabled),
+  .btn-icon:is(.btn-edit, .btn-view, .btn-view-details, .btn-add, .btn-renew, .btn-delete, .btn-reject,
+    .btn-download, .btn-payment, .btn-archive, .btn-approve, .btn-contracts, .btn-services):not(#aura-boton):active:not(:disabled),
+  .pagination-controls .pagination-buttons :is(.btn-outline, .btn-pagination):not(#aura-pag):active:not(:disabled) {
+    transform: none !important;
+  }
+}

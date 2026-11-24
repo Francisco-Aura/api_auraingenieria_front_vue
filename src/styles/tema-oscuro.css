@@ -84,17 +84,43 @@ html.tema-oscuro .loading-text-main {
 }
 
 /* ===== Campana de notificaciones =====
-   El botón es #2c3e50 con !important: sobre la cabecera oscura casi no se distingue, así que se aclara y lleva un aro.
+   Mismo diseño que en claro (botón redondo sin fondo ni aro; solo el fondo cambia al pasar el ratón o con el panel abierto),
+   con la campana en blanco para que se vea sobre la cabecera oscura.
    El número del distintivo va sobre amarillo: texto negro (su color y su fondo están en reglas distintas y el generador
    lo había pasado a claro). */
-html.tema-oscuro .notification-btn {
-  background: #34465a !important;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+html.tema-oscuro .notification-btn.btn-icon {
+  background: transparent !important;
+  box-shadow: none;
+  border-color: transparent;
+  color: #fff !important;
 }
-html.tema-oscuro .notification-btn:hover { background: #3f536a !important; }
+html.tema-oscuro .notification-btn.btn-icon:hover:not(:disabled),
+html.tema-oscuro .notification-btn.btn-icon[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+}
 html.tema-oscuro .notification-btn:focus-visible { box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 5px #fcd700; }
 html.tema-oscuro .notification-badge { color: #000; border-color: var(--color-surface); }
 html.tema-oscuro .vencimiento-badge-urgente { border-color: var(--color-surface); }
+
+/* ===== Botones de la cabecera del menú de notificaciones (sonido, ver leídas, marcar todas, actualizar) =====
+   En claro son amarillos con icono negro; el desactivado es ese amarillo al 45 % de opacidad, que sobre la cabecera oscura
+   queda como un cuadrado mostaza con el icono apagado. Aquí los cuatro llevan el mismo estilo y el desactivado solo se atenúa. */
+html.tema-oscuro .notificaciones-header .btn-icon {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f4f7fa;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+html.tema-oscuro .notificaciones-header .btn-icon:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  filter: none;
+}
+html.tema-oscuro .notificaciones-header .btn-icon:disabled {
+  background: rgba(255, 255, 255, 0.05);
+  color: #a7b4c1;
+  border-color: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+}
 
 /* ===== Paneles flotantes: sobre fondo oscuro la sombra no se ve, la elevación la dan el borde y la sombra fuerte ===== */
 html.tema-oscuro .notificaciones-menu,

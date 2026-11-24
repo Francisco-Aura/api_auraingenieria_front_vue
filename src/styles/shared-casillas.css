@@ -1,0 +1,146 @@
+/*
+ * Casillas (checkbox) de toda la aplicación, con el mismo diseño:
+ *  - cuadrado de 18px con esquinas suaves y borde gris azulado;
+ *  - marcada, se rellena con el amarillo de la marca y la señal va en azul oscuro
+ *    (el mismo par de colores que el número de las pestañas);
+ *  - foco de teclado con un halo amarillo suave; deshabilitada, apagada.
+ * Hay dos tipos: las nativas (<input type="checkbox"> a secas) y las que se hacen con un
+ * <span> (.checkmark de Servicios del cliente y de los filtros, .denuncia-checkmark del
+ * contrato). Los interruptores (.toggle-switch) no se tocan.
+ * Las filas con casilla y borde (Servicios del cliente, Ejecutado por Aura) se resaltan
+ * con el tinte crema de las cabeceras de sección cuando están marcadas.
+ */
+
+/* ---------- Casillas nativas ---------- */
+input[type="checkbox"]:not(.toggle-switch > input):not(.service-checkbox > input):not(.checkbox-label > input):not(.denuncia-input) {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  flex: 0 0 18px;
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  padding: 0;
+  border: 1.5px solid #9aa7b5;
+  border-radius: 5px;
+  background: #fff center / 14px 14px no-repeat;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="checkbox"]:not(.toggle-switch > input):not(.service-checkbox > input):not(.checkbox-label > input):not(.denuncia-input):hover:not(:disabled) {
+  border-color: #6b7785;
+}
+
+input[type="checkbox"]:not(.toggle-switch > input):not(.service-checkbox > input):not(.checkbox-label > input):not(.denuncia-input):checked {
+  background-color: var(--color-brand-yellow-hex, #fcd700);
+  border-color: #d9b800;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-6.5' fill='none' stroke='%231f2a37' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+input[type="checkbox"]:not(.toggle-switch > input):not(.service-checkbox > input):not(.checkbox-label > input):not(.denuncia-input):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--color-brand-yellow-rgb), 0.45);
+}
+
+input[type="checkbox"]:not(.toggle-switch > input):not(.service-checkbox > input):not(.checkbox-label > input):not(.denuncia-input):disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  background-color: #f1f4f8;
+}
+
+input[type="checkbox"]:not(.toggle-switch > input):not(.service-checkbox > input):not(.checkbox-label > input):not(.denuncia-input):checked:disabled {
+  background-color: var(--color-brand-yellow-hex, #fcd700);
+}
+
+/* ---------- Casillas hechas con <span> ---------- */
+/* (la clase va repetida porque los estilos «scoped» de cada pantalla pesan algo más) */
+.service-checkbox .checkmark.checkmark.checkmark,
+.checkbox-label .checkmark.checkmark.checkmark,
+.denuncia-checkmark.denuncia-checkmark.denuncia-checkmark {
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1.5px solid #9aa7b5;
+  border-radius: 5px;
+  background-color: #fff;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.service-checkbox:hover .checkmark.checkmark.checkmark,
+.checkbox-label:hover .checkmark.checkmark.checkmark {
+  border-color: #6b7785;
+}
+
+.service-checkbox input[type="checkbox"]:checked + .checkmark.checkmark.checkmark,
+.checkbox-label input:checked ~ .checkmark.checkmark.checkmark {
+  background-color: var(--color-brand-yellow-hex, #fcd700);
+  border-color: #d9b800;
+}
+
+.service-checkbox input[type="checkbox"]:focus-visible + .checkmark.checkmark.checkmark,
+.checkbox-label input:focus-visible ~ .checkmark.checkmark.checkmark,
+.denuncia-input:focus-visible ~ .denuncia-checkmark.denuncia-checkmark.denuncia-checkmark {
+  box-shadow: 0 0 0 3px rgba(var(--color-brand-yellow-rgb), 0.45);
+}
+
+/* La señal: se dibuja centrada, sea cual sea el tamaño de la casilla */
+.service-checkbox input[type="checkbox"]:checked + .checkmark.checkmark.checkmark::after,
+.checkbox-label input:checked ~ .checkmark.checkmark.checkmark::after,
+.denuncia-input:checked ~ .denuncia-checkmark.denuncia-checkmark.denuncia-checkmark::after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 5px;
+  height: 9px;
+  margin: 0;
+  border: solid #1f2a37;
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -55%) rotate(45deg);
+}
+
+/* Denuncia realizada: aviso, así que se queda en rojo (con la misma forma que las demás) */
+.denuncia-input:checked ~ .denuncia-checkmark.denuncia-checkmark.denuncia-checkmark {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+.denuncia-input:checked ~ .denuncia-checkmark.denuncia-checkmark.denuncia-checkmark::after {
+  border-color: #fff;
+}
+
+/* ---------- Filas con casilla y borde ---------- */
+.service-checkbox.service-checkbox,
+.checkbox-label-fv.checkbox-label-fv {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-sizing: border-box;
+  min-height: 38px;
+  margin: 0;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid #d3dbe4;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.service-checkbox.service-checkbox:hover,
+.checkbox-label-fv.checkbox-label-fv:hover {
+  border-color: #b4bfcc;
+  background: #fafbfc;
+}
+
+.service-checkbox.service-checkbox:has(input:checked),
+.checkbox-label-fv.checkbox-label-fv:has(input:checked) {
+  border-color: #e6d26a;
+  background: #fffcee;
+}

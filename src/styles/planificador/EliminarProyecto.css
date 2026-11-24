@@ -1,0 +1,22 @@
+.danger-boton {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.check-fila {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.confirmar-nombre {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg-alt);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}

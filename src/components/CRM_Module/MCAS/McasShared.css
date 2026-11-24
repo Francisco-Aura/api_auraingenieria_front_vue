@@ -1,0 +1,1226 @@
+/*
+ * Estilos compartidos por las dos pantallas MCAS (Configuración y Comisiones).
+ * Replican el patrón visual de Cartera de Clientes / Puntos de Suministro
+ * (stat-cards, panel de tabla, cabeceras con orden y filtro, paginación) y el
+ * modal de Administración, para que MCAS no desentone del resto del CRM.
+ * Se incluye como <style scoped src>, igual que el resto de módulos.
+ */
+
+/* ===== Contenedor de página (mismo grid que ClientesComponent) ===== */
+.mcas-container {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 20px;
+  padding: 20px;
+  width: 100%;
+}
+
+/* ===== Panel de estadísticas ===== */
+.stats-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 20px;
+}
+
+.stats-container {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+  min-width: 0;
+}
+
+.stat-card {
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  padding: 0.7rem 1rem;
+  display: flex;
+  align-items: center;
+  transition: var(--aura-transicion);
+  flex: 1;
+  min-width: 0;
+  animation: statCardEntrance 0.22s var(--aura-curva) backwards;
+}
+
+.stats-container > :nth-child(2) { animation-delay: 0.05s; }
+.stats-container > :nth-child(3) { animation-delay: 0.1s; }
+.stats-container > :nth-child(4) { animation-delay: 0.15s; }
+.stats-container > :nth-child(5) { animation-delay: 0.2s; }
+
+/* Elevación suave al pasar el ratón (antes no se veía: la animación de entrada
+   se quedaba aplicada con «both» y su transform tapaba el del hover) */
+/* Solo se elevan las tarjetas que se pulsan (filtros de Comisiones); las de resumen de
+   Configuración no hacen nada al pulsarlas y parecían botones */
+.stat-card--filtro:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Tarjeta clicable (filtro rápido): mismo aspecto, con estado activo de marca */
+.stat-card--filtro {
+  border: 0;
+  margin: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.stat-card--filtro:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring), var(--card-shadow);
+}
+
+.stat-card--activa,
+.stat-card--activa:hover {
+  box-shadow: 0 0 0 2px var(--primary-color), 0 8px 15px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon {
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.7rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  margin-right: 0.8rem;
+  flex-shrink: 0;
+}
+
+.stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== Panel de tabla ===== */
+.table-panel {
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table-actions-horizontal {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: auto;
+}
+
+/* Selector segmentado (mismo control que Tabla/Calendario en Gestión de Tareas) */
+.vista-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 6px;
+  background-color: white;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.btn-view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  background-color: transparent;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Anula el "levantar al pasar el ratón" global de <button> en un control segmentado */
+.btn-view-toggle:hover {
+  background-color: rgba(var(--color-brand-yellow-rgb), 0.1);
+  color: var(--text-primary);
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-view-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.btn-view-toggle.active {
+  background-color: var(--color-brand-yellow);
+  color: black;
+  font-weight: 600;
+}
+
+.toggle-count {
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.07);
+  color: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.btn-view-toggle.active .toggle-count {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* Select a la altura de los botones de la barra (neutraliza width/margin globales) */
+.toolbar-select {
+  width: auto;
+  min-width: 240px;
+  max-width: 100%;
+  min-height: var(--ui-button-height);
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--ui-button-radius);
+  background-color: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toolbar-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: var(--focus-ring);
+}
+
+.toolbar-select:disabled {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* ===== Tabla (idéntica a Cartera de Clientes) ===== */
+.table-responsive {
+  overflow-x: auto;
+  background-color: white;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 0;
+}
+
+.data-table th {
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 12px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+
+.data-table th i {
+  margin-left: 4px;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+.data-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+  height: 52px;
+}
+
+.data-table tbody tr {
+  animation: rowFadeIn 0.2s ease-out backwards;
+}
+.data-table tbody tr:nth-child(1) { animation-delay: 0s; }
+.data-table tbody tr:nth-child(2) { animation-delay: 0.03s; }
+.data-table tbody tr:nth-child(3) { animation-delay: 0.06s; }
+.data-table tbody tr:nth-child(4) { animation-delay: 0.09s; }
+.data-table tbody tr:nth-child(5) { animation-delay: 0.12s; }
+.data-table tbody tr:nth-child(n+6) { animation-delay: 0.15s; }
+
+/* Sin «to» ni relleno final: la fila termina con sus propios estilos (las dadas de
+   baja vuelven a su opacidad atenuada) y sin un transform que se quede puesto */
+@keyframes rowFadeIn {
+  from { opacity: 0; transform: translateX(-6px); }
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* El efecto del ratón en las cabeceras es común a todas las tablas: shared-ui.css */
+
+.column-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.column-title {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+
+/* width:0 + min-width:100%: el filtro ocupa la columna sin imponer su ancho
+   intrínseco (un <select> mediría su opción más larga y desbordaría la tabla) */
+.column-filter-container {
+  position: relative;
+  width: 0;
+  min-width: 100%;
+}
+
+.column-filter {
+  width: 100%;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: white;
+  transition: var(--aura-transicion);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+select.column-filter {
+  cursor: pointer;
+  padding-right: 6px;
+}
+
+.column-filter:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: var(--focus-ring);
+}
+
+.column-filter::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.text-truncate {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-end,
+.data-table th.text-end { text-align: right; }
+.text-center { text-align: center; }
+
+.fila-clicable {
+  cursor: pointer;
+}
+
+.data-table tbody tr.fila-seleccionada td {
+  background-color: rgba(var(--color-brand-yellow-rgb), 0.12);
+}
+
+.data-table tbody tr.fila-seleccionada td:first-child {
+  box-shadow: inset 3px 0 0 var(--primary-color);
+}
+
+/* Alineadas a la izquierda: el número de acciones varía según el estado de la fila */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
+.celda-importe {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.btn-icon i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Colores de acción por icono: mismos tonos que el resto de tablas */
+.btn-icon.btn-view-details { color: var(--color-action-view); }
+.btn-icon.btn-view-details:hover:not(:disabled) { background-color: rgba(33, 150, 243, 0.12); }
+.btn-icon.btn-approve { color: var(--color-success); }
+.btn-icon.btn-approve:hover:not(:disabled) { background-color: rgba(40, 167, 69, 0.12); }
+.btn-icon.btn-reject { color: var(--color-danger); }
+.btn-icon.btn-reject:hover:not(:disabled) { background-color: rgba(220, 53, 69, 0.12); }
+.btn-icon.btn-archive { color: var(--color-secondary-gray); }
+.btn-icon.btn-archive:hover:not(:disabled) { background-color: rgba(108, 117, 125, 0.12); }
+
+/* Texto de celda */
+.celda-codigo {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.celda-secundaria {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.celda-vacia {
+  color: var(--text-muted);
+}
+
+.celda-nowrap {
+  white-space: nowrap;
+}
+
+/* ===== Badges de estado (mismo estilo que Informes: .badge-activo / .badge-baja) ===== */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.badge--success {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.badge--danger {
+  background-color: rgba(220, 53, 69, 0.12);
+  color: #b91c1c;
+  border-color: rgba(220, 53, 69, 0.3);
+}
+
+.badge--warning {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.badge--primary {
+  background-color: rgba(var(--color-brand-yellow-rgb), 0.2);
+  color: #6b5800;
+  border-color: rgba(var(--color-brand-yellow-rgb), 0.55);
+}
+
+.badge--info {
+  background-color: rgba(33, 150, 243, 0.1);
+  color: #1565c0;
+  border-color: rgba(33, 150, 243, 0.3);
+}
+
+.badge--neutral {
+  background-color: rgba(107, 114, 128, 0.1);
+  color: #4b5563;
+  border-color: rgba(107, 114, 128, 0.28);
+}
+
+/* Indicador en píldora con icono (mismo patrón que Tipo/Tarifa en Puntos de Suministro) */
+.tipo-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #000;
+  white-space: nowrap;
+}
+
+.tipo-indicator i {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.tipo-indicator.is-luz,
+.tipo-indicator.is-nuevo {
+  background-color: rgba(255, 235, 59, 0.2);
+}
+
+.tipo-indicator.is-luz i,
+.tipo-indicator.is-nuevo i {
+  color: #f9a825;
+}
+
+.tipo-indicator.is-gas,
+.tipo-indicator.is-renovacion {
+  background-color: rgba(255, 152, 0, 0.1);
+}
+
+.tipo-indicator.is-gas i,
+.tipo-indicator.is-renovacion i {
+  color: #ff9800;
+}
+
+/* ===== Estado vacío (idéntico a Clientes; con botón opcional como Administración) ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--color-text-secondary);
+}
+
+.empty-state > i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55em;
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-brand-yellow-rgb), 0.14);
+  color: var(--primary-dark);
+  margin-bottom: 1rem;
+}
+
+.empty-state--error > i {
+  background: rgba(220, 53, 69, 0.1);
+  color: var(--color-danger);
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+}
+
+.empty-state .empty-state-detalle {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.empty-state .btn {
+  margin-top: 1rem;
+}
+
+/* ===== Paginación (mismas reglas locales que Clientes) ===== */
+.records-per-page {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.records-per-page label {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.records-per-page select {
+  width: auto;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: white;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.page-info {
+  color: var(--text-primary);
+  font-weight: 500;
+  padding: 0 10px;
+}
+
+.btn-outline {
+  background: white;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--aura-transicion);
+  font-weight: 500;
+  min-width: 40px;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+}
+
+/* Botones de texto «outline» (Ocultar detalle, Nueva versión, Ver tabla, Editar
+   como JSON, Vista avanzada…): misma altura, letra y aspecto que los botones
+   neutros comunes (shared-buttons.css). Salían más altos, con letra mayor y, al
+   pasar el ratón, en amarillo con texto blanco. Los de la paginación (hijos de
+   .pagination-buttons) no se tocan: tienen su estilo en shared-pagination.css. */
+:not(.pagination-buttons) > .btn.btn-outline {
+  gap: 8px;
+  height: var(--aura-btn-alto);
+  min-height: var(--aura-btn-alto);
+  padding: 0 16px;
+  border: 1px solid var(--aura-btn-neutro-borde);
+  border-radius: var(--aura-btn-radio);
+  background: var(--aura-btn-neutro-fondo);
+  color: var(--aura-btn-neutro-texto);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: var(--aura-btn-sombra);
+}
+
+:not(.pagination-buttons) > .btn.btn-outline i {
+  font-size: 1rem;
+}
+
+:not(.pagination-buttons) > .btn.btn-outline:hover:not(:disabled) {
+  background: var(--aura-btn-neutro-hover);
+  border-color: var(--aura-btn-neutro-borde-hover);
+  color: var(--aura-btn-neutro-texto);
+  transform: none;
+  box-shadow: var(--aura-btn-sombra-hover);
+}
+
+:not(.pagination-buttons) > .btn.btn-outline:focus-visible {
+  outline: none;
+  box-shadow: var(--aura-btn-foco);
+}
+
+:not(.pagination-buttons) > .btn.btn-outline:disabled {
+  background: var(--aura-btn-neutro-fondo);
+  box-shadow: none;
+}
+
+/* Acción de estado "suave" (mismo estilo que Dar de Baja en Puntos de Suministro) */
+.btn-danger-soft {
+  background-color: #f5b2b2;
+  color: black;
+  border-color: #f5b2b2;
+}
+
+.btn-danger-soft:hover:not(:disabled) {
+  background-color: #f19999;
+  border-color: #f19999;
+  color: black;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(245, 178, 178, 0.4);
+}
+
+/* ===== Modal (patrón del modal de Administración) ===== */
+.mcas-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--backdrop-color);
+  backdrop-filter: var(--backdrop-blur);
+  z-index: var(--z-overlay-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.mcas-modal {
+  background-color: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 92vh;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: mcasModalIn 0.2s ease both;
+}
+
+.mcas-modal--ancho {
+  max-width: 920px;
+}
+
+@keyframes mcasModalIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.mcas-modal-header {
+  background-color: #f8f9fa;
+  padding: 20px 25px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.mcas-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
+}
+
+.mcas-modal-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  box-shadow: 0 4px 10px rgba(255, 196, 12, 0.3);
+  flex-shrink: 0;
+}
+
+.mcas-modal-title .title-text {
+  min-width: 0;
+}
+
+.mcas-modal-title h2 {
+  margin: 0 0 5px 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.mcas-modal-title p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.mcas-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.mcas-modal-body {
+  padding: 25px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  background-color: #fff;
+}
+
+.mcas-modal-footer {
+  background-color: #f8f9fa;
+  padding: 15px 25px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.footer-note {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.footer-note--success {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ===== Formularios del modal ===== */
+.form-section + .form-section {
+  margin-top: 22px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.section-header i {
+  color: black;
+  font-size: 0.9rem;
+  width: 16px;
+  text-align: center;
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 20px;
+}
+
+.form-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.form-group--completo {
+  grid-column: 1 / -1;
+}
+
+.mcas-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.required-asterisk {
+  color: #f44336;
+}
+
+.help-icon {
+  color: var(--text-muted);
+  font-size: 0.85em;
+  cursor: help;
+}
+
+.mcas-input {
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Fechas (CampoFecha): mismas medidas que .mcas-input */
+.form-group .campo-fecha {
+  --campo-fecha-alto: 40px;
+  --campo-fecha-letra: 0.9rem;
+  --campo-fecha-borde: var(--border-color);
+  --campo-fecha-radio: 8px;
+}
+
+.mcas-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: var(--focus-ring);
+}
+
+.mcas-input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+textarea.mcas-input {
+  min-height: 80px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.input-error,
+.input-error:focus {
+  border-color: var(--color-danger-alt);
+  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.15);
+}
+
+.error-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  color: var(--color-danger-alt);
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.form-hint-inline {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* Ayuda bajo un campo (mismo tamaño que .error-text, en gris) */
+.campo-ayuda {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+/* Interruptor (mismo control que el campo "activo" de Administración) */
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  min-height: 40px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: normal;
+}
+
+/* Oculto a la vista pero accesible por teclado (Administración usa display:none) */
+.toggle-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toggle-switch input:focus-visible + .toggle-slider {
+  box-shadow: var(--focus-ring);
+}
+
+.toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #ccc;
+  border-radius: 24px;
+  transition: var(--aura-transicion);
+  flex-shrink: 0;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: var(--aura-transicion);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: linear-gradient(135deg, #4caf50, var(--color-action-edit));
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.toggle-switch input:disabled + .toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle-label {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ===== Avisos en línea (tonos del aviso de validación de Administración) ===== */
+.mcas-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.mcas-alert > i {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.mcas-alert ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.mcas-alert--warning {
+  background: rgba(255, 152, 0, 0.1);
+  border-color: rgba(255, 152, 0, 0.3);
+  color: #9a3412;
+}
+
+.mcas-alert--warning > i { color: #ff9800; }
+
+.mcas-alert--danger {
+  background: rgba(220, 53, 69, 0.08);
+  border-color: rgba(220, 53, 69, 0.28);
+  color: #991b1b;
+}
+
+.mcas-alert--danger > i { color: var(--color-danger); }
+
+.mcas-alert--info {
+  background: #f8fafc;
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.mcas-alert--info > i { color: var(--text-primary); }
+
+.mcas-alert + .mcas-alert,
+.mcas-alert + .form-section,
+.form-section + .mcas-alert {
+  margin-top: 16px;
+}
+
+/* ===== Bloques de detalle (propuesta y prueba de conjunto) ===== */
+.detalle-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detalle-stack > .form-section,
+.detalle-stack > .mcas-alert {
+  margin: 0;
+}
+
+.detalle-resumen {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.resumen-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #f8fafc;
+  min-width: 0;
+}
+
+.resumen-item--destacado {
+  background: rgba(var(--color-brand-yellow-rgb), 0.1);
+  border-color: rgba(var(--color-brand-yellow-rgb), 0.6);
+}
+
+.resumen-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.resumen-valor {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detalle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 20px;
+}
+
+.detalle-grid dt {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.detalle-grid dd {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.tabla-detalle {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+.data-table--compacta th {
+  position: static;
+  padding: 9px 12px;
+  font-size: 0.82rem;
+  vertical-align: middle;
+}
+
+.data-table--compacta td {
+  height: auto;
+  padding: 9px 12px;
+  font-size: 0.85rem;
+}
+
+.data-table--compacta tbody tr:last-child td {
+  border-bottom: none;
+}
+
+@media (max-width: 900px) {
+  .detalle-resumen {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .detalle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1200px) {
+  .stats-panel,
+  .stats-container {
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    flex: 1 1 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .mcas-container {
+    padding: 15px;
+  }
+
+  .stats-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 10px;
+  }
+
+  .form-grid,
+  .form-grid--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mcas-modal-header,
+  .mcas-modal-body,
+  .mcas-modal-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .toolbar-select {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-card,
+  .data-table tbody tr,
+  .mcas-modal {
+    animation: none;
+  }
+}

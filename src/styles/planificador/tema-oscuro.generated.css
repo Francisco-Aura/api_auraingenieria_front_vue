@@ -1,0 +1,247 @@
+/*
+ * GENERADO por scripts/generar-tema-oscuro.js: no se edita a mano.
+ * Colores claros/oscuros escritos a mano en los CSS, convertidos para el modo oscuro (html.tema-oscuro).
+ * Para regenerarlo:  node scripts/generar-tema-oscuro.js
+ */
+
+/* ---- App.css ---- */
+html.tema-oscuro .pendiente-etiqueta {
+  color: #f3a468;
+}
+html.tema-oscuro .nuevo-proyecto .contrato-estado.ok {
+  color: #73e89f;
+}
+
+/* ---- comun/Chips.css ---- */
+html.tema-oscuro .revision-insignia {
+  color: color-mix(in srgb, #99daf7 75%, var(--text-h));
+}
+html.tema-oscuro .revision-marca {
+  color: #99daf7;
+}
+
+/* ---- comun/Dialog.css ---- */
+html.tema-oscuro .pie-pista {
+  color: #f3a468;
+}
+html.tema-oscuro .entreg.ok .entreg-marca {
+  color: #6fec9d;
+}
+
+/* ---- contratos/SubidaContrato.css ---- */
+html.tema-oscuro .conf.alta {
+  color: #73e89f;
+}
+html.tema-oscuro .conf.media,
+html.tema-oscuro .conf.baja {
+  color: #f3a468;
+}
+html.tema-oscuro .checks li.ok .check-icon {
+  color: #6fec9d;
+}
+html.tema-oscuro .checks li.warn .check-icon {
+  color: #f5c083;
+}
+
+/* ---- contratos/PlanPagos.css ---- */
+html.tema-oscuro .plan-tabla tfoot .good td:nth-child(2) {
+  color: #73e89f;
+}
+
+/* ---- contratos/VisorEscaneo.css ---- */
+html.tema-oscuro .escaneo-cuerpo iframe {
+  background: #1b2127;
+}
+
+/* ---- inventario/Inventario.css ---- */
+html.tema-oscuro .tag.revision {
+  color: #f3a468;
+}
+html.tema-oscuro .inv-stock.con {
+  color: #73e89f;
+}
+html.tema-oscuro .tag.cheapest {
+  color: #73e89f;
+}
+html.tema-oscuro .tag.no-precio {
+  color: #f3a468;
+}
+html.tema-oscuro .prot-insignia {
+  background: #282b2f;
+  color: #b9c1cb;
+}
+html.tema-oscuro .prot-insignia.tone-cc {
+  background: #4a4020;
+  color: #f39b68;
+}
+html.tema-oscuro .prot-insignia.tone-ac {
+  background: #1e3245;
+  color: #90b4f3;
+}
+html.tema-oscuro .prot-insignia.tone-panel {
+  background: #2d3036;
+  color: #c3cad6;
+}
+html.tema-oscuro .prot-insignia.tone-trafo {
+  background: #1c193a;
+  color: #c6b7e9;
+}
+html.tema-oscuro .marca-logo {
+  background: #1b2127;
+  border: 1px solid #515760;
+  color: #b9c1cb;
+}
+html.tema-oscuro .lists-manager {
+  border: 1px solid var(--border, #444951);
+}
+html.tema-oscuro .lists-col li {
+  border-top: 1px solid var(--border, #444951);
+}
+html.tema-oscuro .lists-quitar {
+  color: #ec8282;
+}
+
+/* ---- inventario/PanelHistorialPrecios.css ---- */
+html.tema-oscuro .ph-tabla .down {
+  color: #78e397;
+}
+
+/* ---- presupuestos/CambiosPresupuesto.css ---- */
+html.tema-oscuro .bd-plus {
+  color: #9cb3f2;
+}
+html.tema-oscuro .bd-minus {
+  color: #ec8282;
+}
+
+/* ---- presupuestos/CalculadoraCostes.css ---- */
+html.tema-oscuro .tag.sample {
+  color: #f3a468;
+}
+html.tema-oscuro .pasos-nav button.done:not(.actual) .paso-num {
+  color: #73e89f;
+}
+html.tema-oscuro .tag.compat.ok {
+  color: #73e89f;
+}
+html.tema-oscuro .tag.compat.warn {
+  color: #f3a468;
+}
+html.tema-oscuro .venta-celda.profit .venta-valor {
+  color: #73e89f;
+}
+html.tema-oscuro .venta-celda.profit.loss .venta-valor {
+  color: #ec8282;
+}
+html.tema-oscuro .switch-track::after {
+  background: #1b2127;
+}
+html.tema-oscuro .tag.no-precio {
+  color: #f3a468;
+}
+html.tema-oscuro .linea-incidencia.bad,
+html.tema-oscuro .elemento-incidencia.bad {
+  color: #ec8282;
+}
+html.tema-oscuro .linea-incidencia.warn,
+html.tema-oscuro .elemento-incidencia.warn {
+  color: #f19d6a;
+}
+html.tema-oscuro .tag.issue.bad {
+  color: #ec8282;
+}
+html.tema-oscuro .tag.issue.warn {
+  color: #f19d6a;
+}
+html.tema-oscuro .tag.stock.in {
+  color: #7bdfa3;
+}
+html.tema-oscuro .tag.stock.out {
+  color: #bcc1c9;
+}
+html.tema-oscuro .coste-tabla .sugerido-cabecera th {
+  color: #7bdfa3;
+}
+html.tema-oscuro .coste-tabla .sugerido-motivo {
+  color: #7bdfa3;
+}
+html.tema-oscuro .tag.state.local {
+  color: #c5cbd5;
+}
+html.tema-oscuro .tag.state.borrador {
+  color: #7994e2;
+}
+html.tema-oscuro .tag.state.validado {
+  color: #7bdfa3;
+}
+html.tema-oscuro .tag.state.enviado {
+  color: #ed9c6e;
+}
+html.tema-oscuro .tag.state.descartado {
+  color: #e17a7a;
+}
+html.tema-oscuro .alta-problemas {
+  color: #ec8282;
+}
+html.tema-oscuro .string-total.ok {
+  color: #73e89f;
+}
+html.tema-oscuro .string-total.bad,
+html.tema-oscuro .string-rango.bad {
+  color: #ec8282;
+}
+html.tema-oscuro .string-problemas {
+  color: #ec8282;
+}
+html.tema-oscuro .costes-resumen .estado-caja {
+  border-top: 1px solid #444951;
+}
+html.tema-oscuro .propuesta-pagina .estado-caja {
+  border-top: 1px solid #444951;
+}
+html.tema-oscuro .variante-chip {
+  border: 1px solid var(--border, #444951);
+}
+html.tema-oscuro .variante-papelera {
+  color: #ec8282;
+}
+html.tema-oscuro .propuesta-documento {
+  border: 1px solid var(--border, #444951);
+}
+html.tema-oscuro .propuesta-pasos li:not(:last-child)::before {
+  background: var(--border, #2d3036);
+}
+html.tema-oscuro .propuesta-pasos .paso-marca {
+  border: 2px solid var(--border, #444951);
+}
+html.tema-oscuro .propuesta-logo {
+  border: 1px solid var(--border, #444951);
+}
+html.tema-oscuro .propuesta-logo-caja {
+  background: #1b2127;
+  border: 1px dashed var(--border, #4e5b6c);
+}
+
+/* ---- proyectos/VistaCambios.css ---- */
+html.tema-oscuro .up {
+  color: #f3a468;
+}
+html.tema-oscuro .down {
+  color: #73e89f;
+}
+html.tema-oscuro .ok-text {
+  color: #73e89f;
+}
+html.tema-oscuro .aviso-text {
+  color: #f3a468;
+}
+
+/* ---- proyectos/CarpetaDropbox.css ---- */
+html.tema-oscuro .dbx-ok {
+  color: #7be092;
+}
+
+/* ---- tareas/TableroTareas.css ---- */
+html.tema-oscuro .tarjeta-waiting {
+  color: #f3a468;
+}

@@ -1,5 +1,12 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
+  // No publicar los mapas de código fuente en producción
+  productionSourceMap: false,
+  // Dos páginas: la intranet y el Planificador (/planificador/, que la intranet enseña en un marco para no mezclar estilos)
+  pages: {
+    index: { entry: 'src/main.js', template: 'public/index.html', filename: 'index.html' },
+    planificador: { entry: 'src/planificador/main.js', template: 'public/planificador.html', filename: 'planificador/index.html', title: 'Planificador de proyectos' }
+  },
   devServer: {
     headers: {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -28,11 +35,11 @@ module.exports = defineConfig({
         pathRewrite: { '^/registro-horario': '' }
       },
       '/api': {
-        target: 'http://localhost:8986',
+        target: 'http://127.0.0.1:8986',
         changeOrigin: true
       },
       '/ws': {
-        target: 'http://localhost:8986',
+        target: 'http://127.0.0.1:8986',
         changeOrigin: true,
         ws: true
       }
@@ -57,7 +64,9 @@ module.exports = defineConfig({
       config.optimization.minimizer('terser').tap((args) => {
         args[0].terserOptions = args[0].terserOptions || {}
         args[0].terserOptions.compress = args[0].terserOptions.compress || {}
-        args[0].terserOptions.compress.drop_console = true
+        // Fuera los console.log/info/debug; console.error y console.warn se quedan para
+        // poder diagnosticar un fallo en producción (antes se quitaban también)
+        args[0].terserOptions.compress.pure_funcs = ['console.log', 'console.info', 'console.debug']
         args[0].terserOptions.compress.drop_debugger = true
         return args
       })

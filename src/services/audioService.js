@@ -4,15 +4,20 @@ class AudioService {
   constructor() {
     this.sonidosPermitidos = localStorage.getItem('sonidos_notificaciones_enabled') !== 'false'
     this.volumen = parseFloat(localStorage.getItem('sonidos_notificaciones_volumen') || '0.3')
-    this.inicializarAudio()
+    this.contextoAudio = null
   }
 
-  inicializarAudio() {
-    try {
-      // Inicialización reservada para futuras implementaciones de audio
-    } catch (error) {
-      console.error('Error inicializando audio:', error)
+  // Un único contexto de audio para toda la sesión: el navegador limita cuántos
+  // puede haber abiertos y cada uno reserva recursos de sonido hasta que se cierra.
+  obtenerContexto() {
+    if (!this.contextoAudio) {
+      const Contexto = window.AudioContext || window.webkitAudioContext
+      this.contextoAudio = new Contexto()
     }
+    if (this.contextoAudio.state === 'suspended') {
+      this.contextoAudio.resume().catch(() => {})
+    }
+    return this.contextoAudio
   }
 
   // Reproducir sonido de notificación
@@ -33,7 +38,7 @@ class AudioService {
   // Crear sonido de notificación usando Web Audio API
   crearYReproducirSonidoNotificacion() {
     try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      const audioContext = this.obtenerContexto()
       
       // Crear un sonido muy discreto y suave (como un "ding" suave)
       const ahora = audioContext.currentTime
@@ -73,15 +78,12 @@ class AudioService {
   cambiarVolumen(valor) {
     this.volumen = Math.max(0, Math.min(1, valor))
     localStorage.setItem('sonidos_notificaciones_volumen', this.volumen.toString())
-    if (this.audioNotificacion) {
-      this.audioNotificacion.volume = this.volumen
-    }
   }
 
   // Sonido de error
   reproducirError() {
     try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      const audioContext = this.obtenerContexto()
       const ahora = audioContext.currentTime
       
       const osc = audioContext.createOscillator()
@@ -104,7 +106,7 @@ class AudioService {
   // Sonido de éxito
   reproducirExito() {
     try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      const audioContext = this.obtenerContexto()
       const ahora = audioContext.currentTime
       
       // Tono ascendente

@@ -1,0 +1,281 @@
+/* ---- Ventana modal ---------------------------------------------------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6vh 16px;
+  overflow-y: auto;
+  background: rgb(0 0 0 / 0.5);
+}
+
+.modal {
+  width: min(520px, 100%);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.4);
+}
+
+.modal.wide {
+  width: min(720px, 100%);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-head h2 {
+  margin: 0;
+  font-size: 17px;
+  color: var(--text-h);
+}
+
+.modal-close {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+  border: none;
+  background: none;
+  color: var(--muted);
+}
+
+.modal-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.pie-pista {
+  margin-right: auto;
+  font-size: 13px;
+  color: #b45309;
+}
+
+.finish-boton {
+  background: #16a34a;
+  color: #fff;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-h);
+}
+
+.field textarea,
+.att-formulario textarea,
+.anadir-req input,
+.att-formulario input {
+  font: inherit;
+  padding: 7px 9px;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.field textarea,
+.att-formulario textarea {
+  resize: vertical;
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* ---- Elementos requeridos y lo aportado ------------------------------- */
+
+.entregables {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.entreg {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid #8b93a1;
+  border-radius: 8px;
+}
+
+.entreg.ok {
+  border-left-color: #16a34a;
+  background: color-mix(in srgb, #16a34a 7%, transparent);
+}
+
+.entreg.na {
+  border-left-color: var(--muted);
+  opacity: 0.85;
+}
+
+.entreg.pendiente {
+  border-left-color: #f59e0b;
+}
+
+.entreg.extra {
+  border-left-color: var(--border);
+}
+
+.entreg > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.entreg > header strong {
+  flex: 1;
+  color: var(--text-h);
+  font-size: 13.5px;
+}
+
+.entreg-marca {
+  width: 18px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.entreg.ok .entreg-marca {
+  color: #16a34a;
+}
+
+.entreg-bloqueo {
+  padding: 0 6px;
+  font-size: 12px;
+  opacity: 0.7;
+  cursor: help;
+}
+
+.entreg-estado {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.na-motivo {
+  margin: 6px 0 0 26px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.enlace-boton {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent-text);
+  text-decoration: underline;
+}
+
+.att-lista {
+  list-style: none;
+  margin: 8px 0 0 26px;
+  padding: 0;
+}
+
+.att {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 13px;
+}
+
+.att-main {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.att-main a {
+  color: var(--accent-text);
+}
+
+.att-size {
+  color: var(--muted);
+}
+
+.att-nota {
+  white-space: pre-wrap;
+}
+
+.att-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0 26px;
+}
+
+/* Lo usan botones y una etiqueta (Subir archivo): la tipografía se fija aquí para que se vean idénticos */
+.btn-ish {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  cursor: pointer;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.btn-ish:hover {
+  border-color: var(--accent);
+  color: var(--text-h);
+  filter: brightness(0.94);
+}
+
+.btn-ish.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.muted-boton {
+  color: var(--muted);
+}
+
+.att-formulario {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.anadir-req {
+  display: flex;
+  gap: 8px;
+}
+
+.anadir-req input {
+  flex: 1;
+  min-width: 0;
+}

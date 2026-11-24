@@ -1,0 +1,16 @@
+.planificador-envoltorio { padding: 0; }
+.planificador-error { color: #b00020; }
+
+.planificador-pestanas { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+.planificador-pestanas button {
+  background: none; border: 0; border-bottom: 3px solid transparent; border-radius: 0; padding: 8px 14px;
+  color: var(--muted); font-weight: 600; cursor: pointer;
+}
+.planificador-pestanas button.active { color: var(--text-h); border-bottom-color: var(--brand); }
+
+.presupuesto-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 16px 0; }
+.presupuesto-datos div { background: var(--bg-alt); border-radius: var(--radius-sm); padding: 10px 12px; }
+.presupuesto-datos dt { font-size: 12px; color: var(--muted); }
+.presupuesto-datos dd { margin: 2px 0 0; font-weight: 600; }
+.presupuesto-propuesta { margin-top: 24px; }
+.presupuesto-propuesta h2 { font-size: 18px; margin-bottom: 8px; }
