@@ -71,11 +71,11 @@
     <div v-else class="presupuesto-tabla-envoltorio">
       <table class="presupuesto-tabla proyectos-tabla">
         <colgroup>
-          <col><col style="width: 22%"><col style="width: 26%"><col style="width: 150px"><col style="width: 120px">
+          <col><col style="width: 22%"><col style="width: 26%"><col style="width: 200px"><col style="width: 110px"><col style="width: 56px">
         </colgroup>
         <thead>
           <tr>
-            <th v-for="c in COLUMNAS" :key="c.etiqueta" :aria-sort="c.clave ? ariaOrden(c.clave) : null">
+            <th v-for="c in COLUMNAS" :key="c.etiqueta || c.oculta" :aria-sort="c.clave ? ariaOrden(c.clave) : null" :aria-label="c.oculta || null">
               <button v-if="c.clave" type="button" class="orden-boton" :class="{ on: orden && orden.key === c.clave }" title="Ordenar por esta columna" @click="orden = nextSort(orden, c.clave)">
                 {{ c.etiqueta }}
                 <span class="orden-icon" aria-hidden="true">{{ iconoOrden(c.clave) }}</span>
@@ -86,7 +86,7 @@
         </thead>
         <tbody>
           <tr v-for="r in renglones" :key="r.clave" :class="{ 'proyecto-fila': r.tipo === 'proyecto', 'variante-fila': r.tipo !== 'proyecto' }">
-            <td v-if="r.tipo === 'mas' || r.tipo === 'menos'" colspan="5" class="ver-todos">
+            <td v-if="r.tipo === 'mas' || r.tipo === 'menos'" colspan="6" class="ver-todos">
               <button type="button" class="enlace-boton" @click="alternarTodos(r.p.clave)">
                 {{ r.tipo === 'mas' ? 'Ver ' + r.mas + (r.mas === 1 ? ' anterior' : ' anteriores') : 'Ver menos' }}
               </button>
@@ -161,20 +161,18 @@
                 <span v-else class="muted">—</span>
               </td>
               <td>
-                <button v-if="r.tipo === 'proyecto' && r.p.final" type="button" class="tag state propuesta-final-boton" :class="r.p.final.etiqueta.cls" :title="'Propuesta final para el cliente · ' + r.p.final.etiqueta.label.toLowerCase()"
+                <button v-if="r.tipo === 'proyecto' && r.p.final" type="button" class="propuesta-final-boton" :class="r.p.final.etiqueta.cls" :title="'Propuesta final para el cliente · ' + r.p.final.etiqueta.label.toLowerCase()"
                         @click="propuestaFinal = r.p">{{ r.p.final.etiqueta.label === 'Falta propuesta' ? 'Propuesta final' : r.p.final.etiqueta.label }}</button>
               </td>
-              <td class="muted small">
-                <div class="celda-fecha">
-                  <span>{{ fecha(r.tipo === 'proyecto' ? r.p.updatedAt : fechaDe(r.linea)) }}</span>
-                  <div v-if="r.tipo === 'proyecto'" class="menu-ancla">
-                    <button type="button" class="icon-btn" aria-haspopup="menu" :aria-expanded="menuFila === r.p.clave" :aria-label="'Más acciones de ' + r.p.cliente + ' · ' + r.p.proyecto"
-                            :disabled="ocupado === r.p.clave" @click.stop="abrirMenuFila(r.p.clave, $event)">⋯</button>
-                    <div v-if="menuFila === r.p.clave" class="menu-flotante" role="menu" :style="menuEstilo" @click.stop>
-                      <button v-if="r.p.registro" type="button" role="menuitem" @click="editarPropuesta(r.p)">Editar propuesta</button>
-                      <button type="button" role="menuitem" title="Copia la propuesta con todos sus estudios y presupuestos" @click="duplicarPropuesta(r.p)">Duplicar propuesta</button>
-                      <button type="button" role="menuitem" class="peligro" title="Elimina la fila entera, con sus estudios y presupuestos" @click="eliminarPropuesta(r.p)">Eliminar propuesta</button>
-                    </div>
+              <td class="muted small">{{ fecha(r.tipo === 'proyecto' ? r.p.updatedAt : fechaDe(r.linea)) }}</td>
+              <td class="celda-menu">
+                <div v-if="r.tipo === 'proyecto'" class="menu-ancla">
+                  <button type="button" class="icon-btn" aria-haspopup="menu" :aria-expanded="menuFila === r.p.clave" :aria-label="'Más acciones de ' + r.p.cliente + ' · ' + r.p.proyecto"
+                          :disabled="ocupado === r.p.clave" @click.stop="abrirMenuFila(r.p.clave, $event)">⋯</button>
+                  <div v-if="menuFila === r.p.clave" class="menu-flotante" role="menu" :style="menuEstilo" @click.stop>
+                    <button v-if="r.p.registro" type="button" role="menuitem" @click="editarPropuesta(r.p)">Editar propuesta</button>
+                    <button type="button" role="menuitem" title="Copia la propuesta con todos sus estudios y presupuestos" @click="duplicarPropuesta(r.p)">Duplicar propuesta</button>
+                    <button type="button" role="menuitem" class="peligro" title="Elimina la fila entera, con sus estudios y presupuestos" @click="eliminarPropuesta(r.p)">Eliminar propuesta</button>
                   </div>
                 </div>
               </td>
@@ -214,7 +212,8 @@ const COLUMNAS = [
   { clave: '', etiqueta: 'Estudio' },
   { clave: '', etiqueta: 'Presupuesto' },
   { clave: '', etiqueta: 'Propuesta final' },
-  { clave: 'updated', etiqueta: 'Modificado' }
+  { clave: 'updated', etiqueta: 'Modificado' },
+  { clave: '', etiqueta: '', oculta: 'Acciones' } // los tres puntos de cada propuesta: columna propia, sin título visible
 ]
 
 // El panel de alta y de edición de una propuesta: cliente y nombre (solo al crearla) y lo de la empresa que heredan sus presupuestos
