@@ -2311,6 +2311,7 @@ tr.grupo-fila .grupo-alternar:hover { text-decoration: underline; }
 .proyectos-tabla .celda-estado.warn { color: #b45309; }
 .proyectos-tabla .mas-chip { margin-left: 6px; padding: 1px 6px; border-radius: 4px; font-size: 11px; color: var(--muted); background: var(--bg-alt); }
 .proyectos-tabla .celda-documento { display: flex; flex-wrap: nowrap; align-items: center; gap: 12px; }
+.proyectos-tabla .celda-documento > :first-child { flex: 1 1 auto; min-width: 0; }
 .proyectos-tabla td:nth-child(2) .celda-documento > :first-child { min-width: 112px; }
 .proyectos-tabla td:nth-child(3) .celda-documento > :first-child { min-width: 140px; }
 .proyectos-tabla .celda-acciones { display: flex; flex-direction: column; align-items: center; flex: none; }
