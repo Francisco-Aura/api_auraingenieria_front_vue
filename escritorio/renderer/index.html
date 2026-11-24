@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workmeeter</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <div class="widget" id="widget">
+
+    <!-- Cabecera: se arrastra desde aquí -->
+    <header class="cabecera">
+      <span class="marca"><span class="punto" id="punto"></span>Workmeeter</span>
+      <span class="usuario" id="usuario"></span>
+      <button class="icono" id="btn-compacto" title="Vista compacta" aria-label="Vista compacta">▭</button>
+      <button class="icono" id="btn-ajustes" title="Ajustes" aria-label="Ajustes">⚙</button>
+      <button class="icono" id="btn-ocultar" title="Ocultar (sigue en la bandeja)" aria-label="Ocultar">–</button>
+    </header>
+
+    <!-- Aviso de errores -->
+    <div class="aviso" id="aviso" hidden></div>
+
+    <!-- Inicio de sesión -->
+    <section class="vista" id="vista-login" hidden>
+      <form id="form-login" autocomplete="off">
+        <label>Usuario<input id="login-usuario" type="text" required></label>
+        <label>Contraseña<input id="login-clave" type="password" required></label>
+        <button class="primario" type="submit" id="login-enviar">Entrar</button>
+      </form>
+      <p class="servidor-pie">Servidor: <span id="login-servidor"></span> · <a href="#" id="login-cambiar">cambiar</a></p>
+    </section>
+
+    <!-- Principal -->
+    <section class="vista" id="vista-principal" hidden>
+      <div class="actual" id="actual">
+        <div class="actual-info">
+          <div class="actual-etiqueta" id="actual-etiqueta">Sin tarea en curso</div>
+          <div class="actual-titulo" id="actual-titulo">Pulsa ▶ en una tarea para empezar</div>
+        </div>
+        <div class="cronometro" id="cronometro">00:00:00</div>
+        <div class="actual-botones" id="actual-botones" hidden>
+          <button class="secundario" id="btn-pausar">Pausar</button>
+          <button class="secundario peligro" id="btn-finalizar">Finalizar</button>
+        </div>
+      </div>
+
+      <div class="lista-cabecera">
+        <input id="filtro" type="search" placeholder="Buscar tarea…" aria-label="Buscar tarea">
+        <button class="icono" id="btn-refrescar" title="Actualizar" aria-label="Actualizar">↻</button>
+      </div>
+      <ul class="lista" id="lista"></ul>
+    </section>
+
+    <!-- Ajustes -->
+    <section class="vista" id="vista-ajustes" hidden>
+      <form id="form-ajustes">
+        <label>Dirección de la intranet
+          <input id="ajustes-servidor" type="url" placeholder="http://intranet.ejemplo.es" required>
+        </label>
+        <p class="ayuda">La misma dirección con la que entras a la intranet desde el navegador.</p>
+        <div class="fila">
+          <button class="primario" type="submit">Guardar</button>
+          <button class="secundario" type="button" id="ajustes-volver">Volver</button>
+        </div>
+      </form>
+      <div class="fila ajustes-pie">
+        <button class="secundario" type="button" id="btn-cerrar-sesion">Cerrar sesión</button>
+        <button class="secundario peligro" type="button" id="btn-salir">Salir de Workmeeter</button>
+      </div>
+      <p class="servidor-pie" id="version"></p>
+    </section>
+
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

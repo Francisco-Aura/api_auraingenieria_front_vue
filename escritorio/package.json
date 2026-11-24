@@ -1,0 +1,36 @@
+{
+  "name": "workmeeter",
+  "productName": "Workmeeter",
+  "version": "1.0.0",
+  "description": "Cronómetro de tareas de la intranet Aura, siempre visible en el escritorio",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "icono": "node scripts/generar-icono.js",
+    "dist": "electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "es.auraingenieria.workmeeter",
+    "productName": "Workmeeter",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*"
+    ],
+    "win": {
+      "icon": "assets/icon.png",
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0"
+  }
+}

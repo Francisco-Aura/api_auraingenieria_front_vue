@@ -1,0 +1,218 @@
+:root {
+  --fondo: #ffffff;
+  --fondo-2: #f3f6fa;
+  --borde: #dde3ec;
+  --texto: #1d2733;
+  --texto-2: #6b7a8c;
+  --acento: #2980b9;
+  --acento-2: #1f6896;
+  --ok: #27ae60;
+  --peligro: #c0392b;
+  --aviso-fondo: #fdecea;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo: #1b2230;
+    --fondo-2: #242d3e;
+    --borde: #33405a;
+    --texto: #e6ebf2;
+    --texto-2: #93a1b5;
+    --acento: #4aa3df;
+    --acento-2: #6cb7ea;
+    --aviso-fondo: #4a2a2a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font: 13px/1.35 "Segoe UI", system-ui, sans-serif;
+  color: var(--texto);
+  user-select: none;
+}
+
+/* La ventana es transparente: el widget dibuja sus propias esquinas redondeadas. */
+.widget {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+[hidden] { display: none !important; }
+
+/* ---------- Cabecera ---------- */
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 8px 12px;
+  background: var(--fondo-2);
+  border-bottom: 1px solid var(--borde);
+  -webkit-app-region: drag;
+  flex: none;
+}
+.cabecera button { -webkit-app-region: no-drag; }
+
+.marca { font-weight: 700; display: flex; align-items: center; gap: 7px; }
+.punto { width: 9px; height: 9px; border-radius: 50%; background: var(--texto-2); }
+.punto.activo { background: var(--ok); box-shadow: 0 0 0 3px rgba(39, 174, 96, .25); animation: latido 1.6s infinite; }
+@keyframes latido { 50% { box-shadow: 0 0 0 5px rgba(39, 174, 96, 0); } }
+
+.usuario {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  color: var(--texto-2);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icono {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--texto-2);
+  font-size: 15px;
+  line-height: 1;
+}
+.icono:hover { background: var(--borde); color: var(--texto); }
+
+/* ---------- Aviso ---------- */
+.aviso {
+  flex: none;
+  margin: 8px 10px 0;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--aviso-fondo);
+  color: var(--peligro);
+  font-size: 12px;
+  user-select: text;
+}
+
+/* ---------- Vistas ---------- */
+.vista { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px; }
+
+label { display: block; margin-bottom: 10px; color: var(--texto-2); font-size: 12px; }
+input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: var(--fondo-2);
+  color: var(--texto);
+  user-select: text;
+}
+input:focus { outline: 2px solid var(--acento); outline-offset: -1px; }
+
+.primario, .secundario {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+.primario { background: var(--acento); color: #fff; width: 100%; }
+.primario:hover { background: var(--acento-2); }
+.primario:disabled { opacity: .6; cursor: default; }
+.secundario { background: var(--fondo-2); border-color: var(--borde); }
+.secundario:hover { border-color: var(--acento); }
+.secundario.peligro { color: var(--peligro); }
+.secundario.peligro:hover { border-color: var(--peligro); }
+.fila { display: flex; gap: 8px; }
+.fila > button { flex: 1; width: auto; }
+
+.servidor-pie, .ayuda { margin: 10px 0 0; color: var(--texto-2); font-size: 11.5px; }
+.servidor-pie a { color: var(--acento); }
+.ayuda { margin-top: -4px; margin-bottom: 12px; }
+.ajustes-pie { margin-top: 18px; }
+
+/* ---------- Tarea en curso ---------- */
+.actual {
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--fondo-2);
+  border: 1px solid var(--borde);
+}
+.actual.corriendo { border-color: var(--ok); }
+.actual-info { min-width: 0; }
+.actual-etiqueta { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-2); }
+.actual-titulo { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cronometro {
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+}
+.actual.corriendo .cronometro { color: var(--ok); }
+.actual-botones { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 4px; }
+.actual-botones button { flex: 1; padding: 6px 10px; }
+
+/* ---------- Lista ---------- */
+.lista-cabecera { display: flex; align-items: center; gap: 6px; margin: 10px 0 6px; }
+.lista-cabecera input { margin: 0; }
+
+.lista { list-style: none; margin: 0; padding: 0 2px 0 0; flex: 1; overflow-y: auto; }
+.lista::-webkit-scrollbar { width: 6px; }
+.lista::-webkit-scrollbar-thumb { background: var(--borde); border-radius: 3px; }
+
+.tarea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 4px 7px 8px;
+  border-radius: 8px;
+  border-left: 3px solid var(--color, var(--borde));
+}
+.tarea:hover { background: var(--fondo-2); }
+.tarea.corriendo { background: var(--fondo-2); }
+.tarea-info { flex: 1; min-width: 0; }
+.tarea-titulo { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tarea-meta { font-size: 11.5px; color: var(--texto-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tarea-meta .vencida { color: var(--peligro); font-weight: 600; }
+.tarea-tiempo { font-size: 12px; color: var(--texto-2); font-variant-numeric: tabular-nums; }
+
+.btn-play {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--acento);
+  color: #fff;
+  font-size: 11px;
+  padding-left: 2px;
+}
+.btn-play:hover { background: var(--acento-2); }
+.btn-play:disabled { opacity: .5; cursor: default; }
+.btn-play.parar { background: var(--fondo); border: 2px solid var(--ok); color: var(--ok); padding: 0; }
+
+.vacio { padding: 18px 8px; text-align: center; color: var(--texto-2); }
+
+/* ---------- Vista compacta (ventana de ~78 px): solo cabecera + tarea en curso ---------- */
+.widget.compacto .lista-cabecera,
+.widget.compacto .lista,
+.widget.compacto .actual-botones { display: none; }
+.widget.compacto .vista { padding: 8px 10px; }
+.widget.compacto .actual { padding: 6px 10px; }
+.widget.compacto .cronometro { font-size: 20px; }
