@@ -1,11 +1,11 @@
 import { effectiveQty, isPerModule, lineName, newLine } from './costes.js';
 import { fuseKind, fuseNeed, fuseReason } from './protecciones.js';
-import { analyzeStrings, autoStrings, clampTotals, effectiveStrings, fitStrings, reportProblems, spreadPanels, spreadStrings, summarizeStrings } from './strings.js';
-import { batteryCompat, COLD_VOC, ROOF_ITEM_VALUES, ROOF_LABEL, stringPlan } from './pasosConfig.js';
+import { analyzeStrings, assignInputs, autoStrings, clampTotals, effectiveStrings, fitStrings, isValidDesign, reportProblems, spreadPanels, spreadStrings, summarizeStrings, totalInputs } from './strings.js';
+import { batteryCompat, COLD_VOC, ROOF_ITEM_VALUES, ROOF_LABEL, ROOF_STRUCTURE_TYPES, STRUCTURE_TYPE_LABEL, layoutOf, panelsOnRoofs, roofItemValues, roofsOf, roofText, stringPlan, structureTypesFor } from './pasosConfig.js';
 /** Reglas cuyo error es una incompatibilidad de fondo (el resto depende de cantidades o de la potencia y solo avisa). */
 const HARD_RULES = new Set([
     'strings-imposible', 'optimizador-marca', 'medidor-fases', 'suministro', 'bateria', 'estructura-marco',
-    'prot-tension', 'prot-corriente', 'cable-dc-seccion', 'cable-ac-seccion', 'ac-calibre', 'ac-polos',
+    'prot-tension', 'prot-corriente', 'ac-calibre', 'ac-polos',
 ]);
 // ---- Ayudas ----------------------------------------------------------------------------------------------------------
 const num = (v) => {
@@ -15,6 +15,28 @@ const num = (v) => {
 const txt = (v) => String(v ?? '').trim();
 const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const has = (v, fragment) => norm(txt(v)).includes(fragment);
+/**
+ * El tipo de estructura de un producto según su «Tipo de montaje» (coplanar, perfil corrido, micro rail, inclinada, hormigón, hincada o
+ * metálica), o null si no se reconoce. «Coplanar chapa» es el perfil corrido de la chapa; cualquier otro coplanar es el de teja.
+ */
+export function structureType(item) {
+    const m = norm(txt(item.attrs.montaje));
+    if (m.includes('hincad'))
+        return 'hincada';
+    if (m.includes('micro') && m.includes('rail'))
+        return 'micro rail';
+    if (m.includes('metal'))
+        return 'metálica';
+    if (m.includes('hormig') || m.includes('bloque'))
+        return 'hormigón';
+    if (m.includes('inclinad'))
+        return 'inclinada';
+    if (m.includes('perfil corrido'))
+        return 'perfil corrido';
+    if (m.includes('coplanar'))
+        return m.includes('chapa') ? 'perfil corrido' : 'coplanar';
+    return null;
+}
 const fmt = (n, digits = 1) => n.toLocaleString('es-ES', { maximumFractionDigits: digits });
 /** Fases de un inversor o medidor: 1 (monofásico), 3 (trifásico) o null si no se sabe. */
 function phasesOf(item) {
@@ -73,7 +95,19 @@ export function stringContext(state, catalog) {
     if (!panel || !inverter)
         return null;
     const units = Math.max(1, central.filter((e) => e.item.id === inverter.id).reduce((s, e) => s + e.qty, 0));
-    return { panel, inverter, units, moduleCount: state.moduleCount };
+    return { panel, inverter, units, groups: inverterGroupsOf(central), moduleCount: state.moduleCount };
+}
+/** Los modelos de inversor de strings del presupuesto con sus unidades, en el orden de las filas (varios modelos = entradas seguidas). */
+function inverterGroupsOf(central) {
+    const groups = [];
+    for (const e of central) {
+        const g = groups.find((x) => x.item.id === e.item.id);
+        if (g)
+            g.units += e.qty;
+        else
+            groups.push({ item: e.item, units: e.qty });
+    }
+    return groups.map((g) => ({ item: g.item, units: Math.max(1, g.units) }));
 }
 /**
  * Con strings repartidos y un inversor de strings con su panel: si las entradas de los inversores que hay no bastan, sube las
@@ -84,8 +118,21 @@ export function sizeInverters(state, catalog) {
     const ctx = stringContext(state, catalog);
     if (!ctx || !state.strings || state.strings.length === 0 || state.moduleCount <= 0)
         return null;
+    // Con varios modelos de inversor ya elegidos a mano, no se ajustan unidades solas: es una combinación decidida por quien presupuesta
+    if (ctx.groups.length > 1)
+        return null;
     const fit = fitStrings(state.strings, ctx.panel, ctx.inverter, state.moduleCount);
-    if (!fit || fit.units <= ctx.units)
+    if (fit && fit.units <= ctx.units) {
+        // Hay entradas de sobra: si los strings siguen en las entradas de cuando había menos inversores (dos por entrada en las primeras
+        // y las otras libres) y repartidos entre todas valen, se reasignan solos. Un diseño que ya vale no se toca.
+        if (!isValidDesign(state.strings, ctx)) {
+            const reasignado = assignInputs(state.strings, totalInputs(ctx));
+            if (isValidDesign(reasignado, ctx))
+                return { ...state, strings: reasignado };
+        }
+        return null;
+    }
+    if (!fit)
         return null;
     const first = state.lines.find((l) => l.itemId === ctx.inverter.id);
     if (!first)
@@ -149,10 +196,20 @@ export function checkCompatibility(state, catalog) {
         else if (panel && inverter) {
             // Se comprueba el diseño que se ha creado (si todavía no hay strings, no hay nada que comprobar): tensiones, entradas,
             // corrientes y que sumen los paneles
-            const ctx = { panel, inverter, units: inverterUnits, moduleCount: n };
+            // Con varios modelos de inversor, las entradas se cuentan entre todos y cada string se comprueba con el de su entrada
+            const groups = inverterGroupsOf(central);
+            for (const g of groups.slice(1)) {
+                const other = stringPlan(panel, g.item, n, g.units);
+                if (other && other.length === null) {
+                    const e = central.find((c) => c.item.id === g.item.id);
+                    for (const p of other.problems)
+                        add('error', `strings-imposible|${p}`, 'inversor', `${names(modules)} con ${name(e)}: ${p}`, modules, [e]);
+                }
+            }
+            const ctx = { panel, inverter, units: inverterUnits, groups, moduleCount: n };
             const report = state.strings ? analyzeStrings(state.strings, ctx) : null;
             for (const p of report ? reportProblems(report) : [])
-                add('error', `strings-diseno|${p}`, 'inversor', `${names(modules)} con ${name(central[0])}: ${p}`, modules, [central[0]]);
+                add('error', `strings-diseno|${p}`, 'inversor', `${names(modules)} con ${groups.length > 1 ? names(central) : name(central[0])}: ${p}`, modules, groups.length > 1 ? central : [central[0]]);
         }
     }
     // Potencia: la de los paneles frente a la del inversor
@@ -268,14 +325,55 @@ export function checkCompatibility(state, catalog) {
             add('warn', 'futuro-bateria', 'inversor', `Se prevén baterías más adelante y ${name(central[0])} no es híbrido.`, [central[0]]);
     }
     // --- Estructura
-    const roof = ROOF_ITEM_VALUES[survey.roof];
+    // El presupuesto puede tener varias cubiertas: una estructura vale si es de alguna de ellas
+    const roof = roofItemValues(survey);
     for (const e of cat('estructura')) {
         const roofOf = txt(e.item.attrs.cubierta) || 'Todas';
         if (!roof.includes(roofOf)) {
-            add('error', 'cubierta', 'estructura', `${name(e)} es para cubierta ${roofOf.toLowerCase()} y el presupuesto está en cubierta ${ROOF_LABEL[survey.roof].toLowerCase()}.`, [e]);
+            add('error', 'cubierta', 'estructura', `${name(e)} es para cubierta ${roofOf.toLowerCase()} y el presupuesto está en cubierta ${roofText(survey)}.`, [e]);
         }
     }
+    // Cada cubierta admite unos tipos de estructura (hoja de reglas de Ingeniería). Solo se mira lo que es de esa cubierta (si no, ya avisa
+    // «cubierta») y no lo genérico («Todas»: perfiles, grapas…) ni lo de un tipo que no se reconoce; flotante y pérgola no tienen regla.
+    // Con varias cubiertas se miran las del presupuesto a las que pertenece la estructura: vale cualquier tipo que admita alguna de ellas.
+    for (const e of cat('estructura')) {
+        const roofOf = txt(e.item.attrs.cubierta) || 'Todas';
+        if (roofOf === 'Todas')
+            continue;
+        const suyas = roofsOf(survey).filter((r) => ROOF_ITEM_VALUES[r].includes(roofOf));
+        if (suyas.length === 0 || suyas.some((r) => !ROOF_STRUCTURE_TYPES[r]))
+            continue;
+        // Si se ha elegido coplanar o inclinada para una cubierta, solo valen los tipos de esa disposición
+        const allowedTypes = [...new Set(suyas.flatMap((r) => structureTypesFor(r, layoutOf(survey, r))))];
+        const type = structureType(e.item);
+        if (type && !allowedTypes.includes(type)) {
+            add('error', 'estructura-tipo', 'estructura', `${name(e)} es una estructura ${STRUCTURE_TYPE_LABEL[type]} y en cubierta ${suyas.map((r) => ROOF_LABEL[r].toLowerCase()).join(' o ')} solo se admiten: ${allowedTypes.map((t) => STRUCTURE_TYPE_LABEL[t]).join(', ')}.`, [e]);
+        }
+    }
+    // Varias filas «por módulo» de una misma categoría que se reparten los paneles (247 coplanares + 24 inclinados = 271) suman el
+    // total: es correcto y no hace falta avisar de cada una por separado. Valen también varias vueltas completas (dos repartos de 271).
+    const repartidas = new Set();
+    if (n > 0) {
+        for (const categoria of ['estructura', 'mano_obra']) {
+            const filas = cat(categoria).filter((e) => !(num(e.item.attrs.modulos_por_kit) > 0) && isPerModule(e.item.unit) && !e.line.auto && e.qty !== n);
+            const suma = filas.reduce((total, e) => total + e.qty, 0);
+            if (filas.length > 1 && suma > 0 && suma % n === 0)
+                filas.forEach((e) => repartidas.add(e.line.id));
+        }
+    }
+    // Con varias cubiertas y un reparto de paneles, una estructura solo cubre los paneles de las cubiertas a las que sirve (las de su
+    // cubierta y con una disposición que admita su tipo): a ellos se compara su cantidad, no al total.
+    const reparto = panelsOnRoofs(survey, n);
+    const paneles = (e) => {
+        const roofOf = txt(e.item.attrs.cubierta) || 'Todas';
+        const type = structureType(e.item);
+        if (!reparto || roofOf === 'Todas' || !type)
+            return n;
+        const suyas = roofsOf(survey).filter((r) => ROOF_ITEM_VALUES[r].includes(roofOf) && structureTypesFor(r, layoutOf(survey, r)).includes(type));
+        return suyas.length > 0 ? suyas.reduce((s, r) => s + reparto[r], 0) : n;
+    };
     for (const e of [...cat('estructura'), ...cat('mano_obra')]) {
+        const n = paneles(e);
         const perKit = num(e.item.attrs.modulos_por_kit);
         const perPanel = num(e.item.attrs.uds_por_panel);
         if (perKit !== null && perKit > 0 && n > 0) {
@@ -285,7 +383,7 @@ export function checkCompatibility(state, catalog) {
             else if (covers - n >= perKit)
                 add('warn', 'estructura-kits', 'estructura', `${name(e)} cubre ${fmt(covers, 0)} paneles y solo hay ${n}: sobra algún kit.`, [e]);
         }
-        else if (isPerModule(e.item.unit) && n > 0 && e.qty !== n && !e.line.auto) {
+        else if (isPerModule(e.item.unit) && n > 0 && e.qty !== n && !e.line.auto && !repartidas.has(e.line.id)) {
             add('warn', 'estructura-modulos', 'estructura', `${name(e)} se calcula por módulo: tiene ${fmt(e.qty, 0)} y el presupuesto lleva ${n} paneles.`, [e]);
         }
         if (perPanel !== null && perPanel > 0 && n > 0 && e.qty < Math.ceil(n * perPanel)) {
@@ -340,7 +438,7 @@ export function checkCompatibility(state, catalog) {
             const section = num(e.item.attrs.seccion_mm2);
             const cap = section !== null ? ampacity(AMPACITY_DC, section) : null;
             if (cap !== null && isc * 1.25 > cap) {
-                add('error', 'cable-dc-seccion', 'cableado_cc', `${name(e)} (${fmt(section ?? 0)} mm²) aguanta unos ${cap} A y el string da ${fmt(isc * 1.25, 1)} A (1,25 × Isc).`, [e]);
+                add('warn', 'cable-dc-seccion', 'cableado_cc', `Recomendación: ${name(e)} (${fmt(section ?? 0)} mm²) aguanta unos ${cap} A (según el montaje: al aire, en bandeja, enterrado…) y el string da ${fmt(isc * 1.25, 1)} A (1,25 × Isc). Revisa la sección.`, [e]);
             }
         }
     }
@@ -372,12 +470,28 @@ export function checkCompatibility(state, catalog) {
         : acKw > 0 && phases !== null
             ? (acKw * 1000) / (phases === 3 ? Math.sqrt(3) * 400 : 230)
             : null;
+    // La intensidad que aguanta un cable depende del montaje (enterrado, sobre bandeja…): se recomienda revisarlo, no es una incompatibilidad.
+    // Se comprueba con la intensidad de toda la instalación y, si hay varios inversores, también con la de cada uno.
     if (iNom !== null) {
+        const unidades = central.reduce((s, e) => s + e.qty, 0);
         for (const e of cableAc) {
             const section = num(e.item.attrs.seccion_mm2);
             const cap = section !== null ? ampacity(AMPACITY_AC, section) : null;
-            if (cap !== null && iNom * 1.25 > cap) {
-                add('error', 'cable-ac-seccion', 'alterna', `${name(e)} (${fmt(section ?? 0)} mm²) aguanta unos ${cap} A y el inversor da ${fmt(iNom, 1)} A (hay que dejar un 25 % de margen).`, [e]);
+            if (cap === null)
+                continue;
+            if (iNom * 1.25 > cap) {
+                add('warn', 'cable-ac-seccion', 'alterna', `Recomendación: ${name(e)} (${fmt(section ?? 0)} mm²) aguanta unos ${cap} A (según el montaje: enterrado, sobre bandeja…) y ${unidades > 1 ? 'la instalación da en total' : 'el inversor da'} ${fmt(iNom, 1)} A (hay que dejar un 25 % de margen). Revisa la sección.`, [e]);
+            }
+            if (unidades > 1) {
+                for (const inv of central) {
+                    const salida = num(inv.item.attrs['x:Corriente máx. de salida (A)']);
+                    const kw = num(inv.item.attrs.potencia_kw);
+                    const fasesInv = phasesOf(inv.item) ?? phases;
+                    const porUnidad = salida !== null ? salida : kw !== null && fasesInv !== null ? (kw * 1000) / (fasesInv === 3 ? Math.sqrt(3) * 400 : 230) : null;
+                    if (porUnidad !== null && porUnidad * 1.25 > cap) {
+                        add('warn', `cable-ac-seccion|inv`, 'alterna', `Recomendación: ${name(e)} (${fmt(section ?? 0)} mm²) aguanta unos ${cap} A (según el montaje: enterrado, sobre bandeja…) y cada ${name(inv)} da ${fmt(porUnidad, 1)} A (hay que dejar un 25 % de margen). Revisa la sección.`, [e], [inv]);
+                    }
+                }
             }
         }
     }
@@ -549,8 +663,8 @@ export function fitReasons(item, state, catalog) {
         }
         case 'estructura': {
             const roofOf = txt(item.attrs.cubierta) || 'Todas';
-            if (roofOf !== 'Todas' && ROOF_ITEM_VALUES[survey.roof].includes(roofOf))
-                out.push(`para cubierta ${ROOF_LABEL[survey.roof].toLowerCase()}`);
+            if (roofOf !== 'Todas' && roofItemValues(survey).includes(roofOf))
+                out.push(`para cubierta ${roofsOf(survey).filter((r) => ROOF_ITEM_VALUES[r].includes(roofOf)).map((r) => ROOF_LABEL[r].toLowerCase()).join(' o ')}`);
             const perKit = num(item.attrs.modulos_por_kit);
             if (perKit && n > 0 && n % perKit === 0)
                 out.push(`${n / perKit} kit${n / perKit === 1 ? '' : 's'} cubren exactamente los ${n} paneles`);

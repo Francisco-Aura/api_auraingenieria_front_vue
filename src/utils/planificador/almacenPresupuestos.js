@@ -40,11 +40,14 @@ function sanitize(raw) {
         }
         : null;
     const fallback = numbersOf(state);
+    const updatedAt = text(b.updatedAt) || new Date().toISOString();
     return {
         id: b.id,
         state,
         numbers: { kwp: nonNegative(b.numbers?.kwp) || fallback.kwp, panels: nonNegative(b.numbers?.panels) || fallback.panels, total: nonNegative(b.numbers?.total) },
-        updatedAt: text(b.updatedAt) || new Date().toISOString(),
+        updatedAt,
+        // Cuándo se creó (da el orden de versiones del mismo proyecto); los guardados antes de este campo, la última modificación
+        createdAt: text(b.createdAt) || updatedAt,
         remote,
     };
 }
@@ -80,28 +83,16 @@ function write(store) {
 }
 /** Una copia de trabajo nueva, solo local (todavía sin guardar en ningún sitio). */
 export function newLocal(state) {
-    return { id: newId(), state, numbers: numbersOf(state), updatedAt: new Date().toISOString(), remote: null };
+    const now = new Date().toISOString();
+    return { id: newId(), state, numbers: numbersOf(state), updatedAt: now, createdAt: now, remote: null };
 }
-/** Quita de una referencia su número de versión («Nave 3 v2» → «Nave 3») o el «(copia)» de las copias antiguas. */
-const baseReference = (reference) => reference.trim().replace(/\s*(\(copia\)|v\d+)$/i, '').trim();
 /**
- * La referencia de la versión siguiente de un presupuesto: «Nave 3» pasa a «Nave 3 v2» y esa a «Nave 3 v3»… Sigue al número más
- * alto que ya exista con ese cliente y esa referencia (`takenNames` son los nombres de los presupuestos que ya hay), así no se repite.
+ * Una copia de otro presupuesto, local: una versión propia sin tocar la original. Conserva el cliente y el nombre del proyecto; el
+ * listado la junta con las demás del mismo proyecto y le da su número (v2, v3…) por orden de creación, ya no va en el nombre.
+ * Con `newClient` la copia sale sin cliente (es para otro cliente: se elige al abrirla) y con el mismo nombre de proyecto.
  */
-export function nextVersionReference(state, takenNames) {
-    const base = baseReference(state.reference);
-    const taken = new Set(takenNames.map((n) => n.toLowerCase()));
-    const label = (n) => (base ? `${base} v${n}` : `v${n}`);
-    const exists = (n) => taken.has(budgetName({ ...state, reference: label(n) }).toLowerCase());
-    let highest = Number(/\s*v(\d+)$/i.exec(state.reference.trim())?.[1] ?? 1);
-    for (let n = 2; n <= 200; n++)
-        if (exists(n))
-            highest = Math.max(highest, n);
-    return label(highest + 1);
-}
-/** Una copia de otro presupuesto, local y con el número de versión siguiente (v2, v3…): una versión propia sin tocar la original. */
-export function copyOf(state, takenNames = []) {
-    return newLocal({ ...state, reference: nextVersionReference(state, takenNames) });
+export function copyOf(state, newClient = false) {
+    return newLocal(newClient ? { ...state, client: '', customer: null } : { ...state });
 }
 /** La copia de trabajo de un borrador del servidor, tal cual está allí (sin cambios sin guardar). */
 export function fromServer(full) {

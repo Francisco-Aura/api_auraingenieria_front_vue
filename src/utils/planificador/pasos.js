@@ -1,7 +1,7 @@
 // Lógica de los pasos guiados del presupuestador, sin pantalla (equivale a lo que hay dentro de BudgetSteps.tsx del Planificador
 // actual): qué se ha elegido en cada paso, cuándo se puede avanzar, qué se oculta por incompatible y qué se sugiere.
 
-import { ROOF_ITEM_VALUES, ROOF_LABEL, STEPS, batteryCompat, stepRank } from './motor/pasosConfig.js'
+import { STEPS, batteryCompat, roofItemValues, roofText, stepRank } from './motor/pasosConfig.js'
 import { effectiveQty } from './motor/costes.js'
 import { hardConflicts, suggestions } from './motor/compatibilidad.js'
 import { fitStrings, summarizeStrings } from './motor/strings.js'
@@ -69,14 +69,15 @@ export function pasoHecho(paso, state, catalogo) {
 export function motivoBloqueo(indice, state, catalogo) {
   // Hasta el último paso en el que hay algo elegido todo está abierto (aunque se hayan vaciado pasos anteriores); a partir de ahí solo se
   // puede dejar un paso sin elegir
-  const ultimoElegido = STEPS.reduce((ultimo, s, i) => (pasoHecho(s, state, catalogo) ? i : ultimo), -1)
+  const ultimoElegido = STEPS.reduce((ultimo, s, i) => (!s.libre && pasoHecho(s, state, catalogo) ? i : ultimo), -1)
   if (indice <= ultimoElegido) return null
   const destino = STEPS[indice]
+  if (destino.libre) return null
   const requerido = destino.requires ? STEPS.find((s) => s.key === destino.requires) : undefined
   if (requerido && !pasoHecho(requerido, state, catalogo)) {
     return `«${destino.title}» depende de «${requerido.title}»: elige antes algo allí para poder comprobar la compatibilidad.`
   }
-  const faltan = STEPS.slice(ultimoElegido + 1, indice)
+  const faltan = STEPS.slice(ultimoElegido + 1, indice).filter((s) => !s.libre)
   if (faltan.length > 1) return `Solo se puede saltar un paso y faltan por elegir: ${faltan.map((s) => `«${s.title}»`).join(', ')}.`
   return null
 }
@@ -123,8 +124,8 @@ export function conflictosDelPaso(state, catalogo, indice) {
 /** El filtro por defecto de una sección según lo elegido antes (cubierta, o híbridos si se prevén baterías), o null. */
 export function filtroPorDefecto(seccion, survey) {
   if (seccion.id === 'estructura') {
-    const valores = ROOF_ITEM_VALUES[survey.roof]
-    return { label: `cubierta ${ROOF_LABEL[survey.roof].toLowerCase()}`, test: (i) => valores.includes(String(i.attrs.cubierta ?? 'Todas')) }
+    const valores = roofItemValues(survey)
+    return { label: `cubierta ${roofText(survey)}`, test: (i) => valores.includes(String(i.attrs.cubierta ?? 'Todas')) }
   }
   if (seccion.id === 'inversores' && survey.futureBattery) {
     return {

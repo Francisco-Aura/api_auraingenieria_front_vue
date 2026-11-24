@@ -1,19 +1,19 @@
 <template>
   <p v-if="!vista" :class="error ? 'mat-error' : 'muted'" :role="error ? 'alert' : undefined">{{ error || 'Cargando el material del proyecto…' }}</p>
   <div v-else class="mat">
-    <p class="muted mat-help">Solo puede sobrar material de los productos que lleva el presupuesto del proyecto, y como máximo lo que se ha empleado. Lo que registres se suma al stock del producto en el inventario.</p>
+    <p class="muted mat-ayuda">Solo puede sobrar material de los productos que lleva el presupuesto del proyecto, y como máximo lo que se ha empleado. Lo que registres se suma al stock del producto en el inventario.</p>
     <p v-if="error" class="mat-error" role="alert">{{ error }}</p>
 
-    <p v-if="vista.products.length === 0" class="mat-empty">
+    <p v-if="vista.products.length === 0" class="mat-vacio">
       {{ vista.configured ? 'El presupuesto del proyecto no lleva material que pueda sobrar (solo trabajos o gestión).' : 'Este proyecto no tiene presupuesto guardado: sin él no se sabe qué material se ha empleado. Guárdalo desde los ajustes del proyecto.' }}
     </p>
-    <ul v-else class="mat-list">
-      <li v-for="p in vista.products" :key="p.id" class="mat-item">
+    <ul v-else class="mat-lista">
+      <li v-for="p in vista.products" :key="p.id" class="mat-elemento">
         <div class="mat-info">
-          <strong class="mat-name">{{ nombreDe(p) }}</strong>
+          <strong class="mat-nombre">{{ nombreDe(p) }}</strong>
           <span class="mat-nums">Lleva <b>{{ formato(p.used) }}</b><template v-if="p.returned > 0"> · devuelto <b>{{ formato(p.returned) }}</b></template> · puede sobrar <b>{{ formato(p.available) }}</b> · en almacén <b>{{ formato(p.stock) }}</b></span>
         </div>
-        <div class="mat-add">
+        <div class="mat-anadir">
           <campo-numerico :etiqueta="'Sobrante de ' + nombreDe(p)" :model-value="cantidades[p.id] || 0" @update:model-value="cantidades[p.id] = $event" />
           <span class="mat-unit">{{ p.unit }}</span>
           <button type="button" :disabled="p.available <= 0 || ocupado !== null" :title="p.available <= 0 ? 'Ya se ha devuelto todo lo que llevaba' : 'Sumar al stock del producto'" @click="anadir(p)">{{ ocupado === p.id ? 'Guardando…' : 'Añadir al stock' }}</button>
@@ -26,11 +26,11 @@
       <ul class="mat-returns">
         <li v-for="r in vista.returns" :key="r.id">
           <span class="mat-ret-text"><b>+{{ formato(r.qty) }} {{ r.unit }}</b> {{ r.label }}<span class="muted"> · {{ r.by ? r.by + ', ' : '' }}{{ cuando(r.at) }}</span></span>
-          <span v-if="deshaciendo === r.id" class="mat-confirm">¿Restar del stock?
-            <button type="button" class="link-btn" :disabled="ocupado !== null" @click="deshacer(r)">Sí</button>
-            <button type="button" class="link-btn" @click="deshaciendo = null">No</button>
+          <span v-if="deshaciendo === r.id" class="mat-confirmar">¿Restar del stock?
+            <button type="button" class="enlace-boton" :disabled="ocupado !== null" @click="deshacer(r)">Sí</button>
+            <button type="button" class="enlace-boton" @click="deshaciendo = null">No</button>
           </span>
-          <button v-else type="button" class="link-btn" @click="deshaciendo = r.id">Deshacer</button>
+          <button v-else type="button" class="enlace-boton" @click="deshaciendo = r.id">Deshacer</button>
         </li>
       </ul>
     </template>

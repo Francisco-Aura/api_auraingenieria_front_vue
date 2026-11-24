@@ -1,0 +1,61 @@
+.contrato-generador {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.party-rejilla {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+
+.party-rejilla label {
+  display: flex;
+  flex-direction: column;
+  /* Etiqueta y campo pegados abajo: si la etiqueta de un campo ocupa dos líneas, la del vecino queda en su
+     última línea y los dos campos en la misma altura */
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.party-rejilla .wide-campo {
+  grid-column: 1 / -1;
+}
+
+.party-rejilla input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+/* Dato obligatorio sin rellenar */
+.party-rejilla input.obligatorio-vacio {
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+}
+
+.faltantes-lista {
+  margin: 0;
+  font-size: 13px;
+}
+
+.generar-acciones {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (max-width: 560px) {
+  .party-rejilla {
+    grid-template-columns: 1fr;
+  }
+}

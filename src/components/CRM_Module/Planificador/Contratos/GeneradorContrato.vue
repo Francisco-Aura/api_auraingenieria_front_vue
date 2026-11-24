@@ -1,18 +1,18 @@
 <template>
-  <div class="contract-generator">
+  <div class="contrato-generador">
     <p class="hint">Se genera con el modelo de contrato, los datos de instalación y la forma de pago elegida. El contrato se entrega solo en PDF.</p>
-    <div class="party-grid">
-      <label v-for="clave in claves" :key="clave" :class="clave === 'domicilio' || clave === 'instalacion' ? 'wide-field' : undefined">
+    <div class="party-rejilla">
+      <label v-for="clave in claves" :key="clave" :class="clave === 'domicilio' || clave === 'instalacion' ? 'wide-campo' : undefined">
         {{ ETIQUETAS_PARTE[clave] }}
-        <input :class="{ 'required-empty': intentado && !valorDe(clave).trim() }" :value="parte[clave]" :placeholder="clave === 'empresa' ? 'Con su forma jurídica (S.L., S.A.…)' : clave === 'kw_nominal' ? sugeridos : ''"
+        <input :class="{ 'obligatorio-vacio': intentado && !valorDe(clave).trim() }" :value="parte[clave]" :placeholder="clave === 'empresa' ? 'Con su forma jurídica (S.L., S.A.…)' : clave === 'kw_nominal' ? sugeridos : ''"
                @input="$emit('update:parte', { ...parte, [clave]: $event.target.value })">
       </label>
     </div>
-    <div class="generate-actions">
+    <div class="generar-acciones">
       <button type="button" :disabled="ocupado" @click="generar">{{ ocupado ? 'Generando…' : 'Generar contrato (PDF)' }}</button>
-      <span v-if="problemaPlan" class="plan-problem">Revisa la forma de pago: {{ problemaPlan }}</span>
+      <span v-if="problemaPlan" class="plan-problema">Revisa la forma de pago: {{ problemaPlan }}</span>
     </div>
-    <p v-if="intentado && faltan.length > 0" class="plan-problem missing-list" role="alert">Faltan por rellenar: {{ faltan.join(', ') }}.</p>
+    <p v-if="intentado && faltan.length > 0" class="plan-problema faltantes-lista" role="alert">Faltan por rellenar: {{ faltan.join(', ') }}.</p>
     <p v-if="error" class="error">{{ error }}</p>
   </div>
 </template>

@@ -1,27 +1,29 @@
 <template>
-  <datos-presupuesto-component v-if="vista === 'nuevo'" modo="nuevo" @cancelar="volverALista" @enviar="crearLocal" />
+  <datos-presupuesto-component v-if="vista === 'nuevo'" modo="nuevo" :base="baseNuevo" :hereda="!!(desde && desde.empresa)" @cancelar="volverALista" @enviar="crearLocal" />
   <datos-presupuesto-component v-else-if="vista === 'parametros' && trabajo" modo="editar" :base="trabajo.state" @cancelar="vista = 'editar'" @enviar="cambiarParametros" />
   <editor-presupuesto-component
     v-else-if="vista === 'editar' && trabajo" :key="trabajo.id" :con-inventario="conInventario" @abrir-inventario="$emit('abrir-inventario')" :presupuesto="trabajo" :guardando="guardando" :error-guardar="errorGuardar" :conflicto="conflicto"
     @cambiar="actualizar" @numeros="actualizarNumeros" @volver="volverALista" @editar-parametros="vista = 'parametros'" @guardar="guardar()" @descartar="descartar"
-    @duplicar="duplicarActual" @abrir-variante="abrirVariante" @variante-eliminada="varianteEliminada" @estado="cambiarEstado" @resolver="resolver"
+    @duplicar="duplicarActual" @abrir-variante="abrirVariante" @variante-eliminada="varianteEliminada" @estado="cambiarEstado" @resolver="resolver" @crear-estudio="crearEstudioDesde" @abrir-estudio="abrirEstudioDesde"
   />
   <div v-else>
-    <p v-if="aviso" class="step-note warn" role="alert">{{ aviso }}</p>
-    <lista-presupuestos-component :con-volver="conVolver" @cerrar="$emit('cerrar')" @nuevo="vista = 'nuevo'" @abrir="(id) => abrir(id, true)" @abrir-local="(id) => abrir(id, false)" @duplicar-local="duplicarDesdeLista" />
+    <p v-if="aviso" class="paso-nota warn" role="alert">{{ aviso }}</p>
+    <lista-presupuestos-component ref="lista" :con-volver="conVolver" @cerrar="$emit('cerrar')" @abrir-estudio="$emit('abrir-estudio', $event)" @crear-estudio="$emit('crear-estudio', $event)" @abrir-boe="$emit('abrir-boe')" @crear-presupuesto="nuevoDesdeEstudio" @abrir="(id) => abrir(id, true)" @abrir-local="(id) => abrir(id, false)" @duplicar="pedirDuplicado" />
   </div>
+  <duplicar-presupuesto-modal v-if="duplicando" :nombre="duplicando.nombre" :variante="duplicando.variante" @cerrar="duplicando = null" @confirmar="duplicar" />
 </template>
 
 <script>
 import ListaPresupuestosComponent from './ListaPresupuestosComponent.vue'
 import DatosPresupuestoComponent from './DatosPresupuestoComponent.vue'
 import EditorPresupuestoComponent from './EditorPresupuestoComponent.vue'
+import DuplicarPresupuestoModal from './DuplicarPresupuestoModal.vue'
 import { planificadorApi, mensajeError } from '@/services/planificadorApi'
-import { parseCosts } from '@/utils/planificador/motor/costes'
+import { parseCosts, EMPTY_COSTS, EMPTY_SURVEY } from '@/utils/planificador/motor/costes'
 import {
-  budgetName, canonical, copyOf, fromServer, getLocal, isDirty, listLocal, newLocal, putLocal, removeLocal
+  budgetName, canonical, copyOf, fromServer, getLocal, isDirty, newLocal, putLocal, removeLocal
 } from '@/utils/planificador/almacenPresupuestos'
-import { cuerpoParaServidor, sincronizado } from '@/utils/planificador/datosPresupuesto'
+import { conEmpresaDePropuesta, cuerpoParaServidor, propuestaDelPresupuesto, sincronizado } from '@/utils/planificador/datosPresupuesto'
 
 const estadoHttp = (e) => (e && e.response ? e.response.status : null)
 
@@ -30,19 +32,45 @@ const estadoHttp = (e) => (e && e.response ? e.response.status : null)
 // servidor cuando se pulsa «Guardar».
 export default {
   name: 'Asistente-Presupuesto-Component',
-  props: { conVolver: { type: Boolean, default: false }, conInventario: { type: Boolean, default: false } },
-  emits: ['cerrar', 'abrir-inventario'],
-  components: { ListaPresupuestosComponent, DatosPresupuestoComponent, EditorPresupuestoComponent },
+  props: {
+    conVolver: { type: Boolean, default: false },
+    conInventario: { type: Boolean, default: false },
+    // Al abrirlo desde un estudio: { tipo: 'presupuesto', estudioId, customer, proyecto, kwp }. El presupuesto nuevo arranca con su cliente,
+    // proyecto y potencia y, al guardarlo y compartirlo, nace asociado a ese estudio.
+    traspaso: { type: Object, default: null }
+  },
+  emits: ['cerrar', 'abrir-inventario', 'crear-estudio', 'abrir-estudio', 'abrir-boe'],
+  components: { ListaPresupuestosComponent, DatosPresupuestoComponent, EditorPresupuestoComponent, DuplicarPresupuestoModal },
   data() {
-    return { vista: 'lista', trabajo: null, guardando: false, errorGuardar: null, conflicto: null, aviso: '' }
+    // duplicando: el presupuesto que se está duplicando mientras se elige el cliente de la copia
+    const desde = this.traspaso && this.traspaso.tipo === 'presupuesto' ? this.traspaso : null
+    return { desde, vista: desde ? 'nuevo' : 'lista', trabajo: null, guardando: false, errorGuardar: null, conflicto: null, aviso: '', duplicando: null }
+  },
+  computed: {
+    /** Los datos de partida de un presupuesto nuevo: vacíos, o con lo que trae el estudio del que se viene. */
+    baseNuevo() {
+      const d = this.desde
+      if (!d) return null
+      const customer = d.customer ? JSON.parse(JSON.stringify(d.customer)) : null
+      return {
+        ...EMPTY_COSTS, survey: { ...EMPTY_SURVEY, targetKwp: d.kwp > 0 ? d.kwp : EMPTY_SURVEY.targetKwp, futureBattery: d.bateria === true }, // un estudio con batería: inversor híbrido
+        customer, client: (customer && customer.name) || '', reference: d.proyecto || '',
+        ...(d.empresa ? { cif: d.empresa.cif || '', clientLogo: d.empresa.logo || '', encaje: d.empresa.encaje || '' } : {})
+      }
+    }
   },
   mounted() {
+    // 'abrir-presupuesto': desde la pestaña «Presupuesto» de un estudio, directo al presupuesto elegido
+    if (this.traspaso && this.traspaso.tipo === 'abrir-presupuesto') this.abrir(this.traspaso.id, true)
     this.temporizador = null
     this.pendiente = null
+    this.guardarTras = null // espera para guardar en el servidor los parámetros recién cambiados
+    this.guardarTrasId = null // el presupuesto al que pertenecen
     window.addEventListener('pagehide', this.volcar)
   },
   beforeUnmount() {
     window.removeEventListener('pagehide', this.volcar)
+    window.clearTimeout(this.guardarTras)
     this.volcar()
   },
   methods: {
@@ -56,8 +84,29 @@ export default {
       window.clearTimeout(this.temporizador)
       if (this.pendiente) { putLocal(this.pendiente); this.pendiente = null }
     },
+    nuevo() {
+      this.desde = null
+      this.vista = 'nuevo'
+    },
+    // Desde la lista: un presupuesto nuevo con el cliente, el proyecto y la potencia de un estudio (asociado a él si está compartido)
+    nuevoDesdeEstudio(datos) {
+      this.desde = { tipo: 'presupuesto', ...datos }
+      this.vista = 'nuevo'
+    },
+    // El estudio que se crea desde el editor de un presupuesto parte de su coste (su importe y sus kWp de ahora)
+    crearEstudioDesde(datos) {
+      const n = this.trabajo && this.trabajo.id === datos.presupuestoId ? this.trabajo.numbers : null
+      this.$emit('crear-estudio', { ...datos, presupuesto: n && n.total > 0 && n.kwp > 0 ? { id: datos.presupuestoId, total: n.total, kwp: n.kwp } : null })
+    },
+    // La pestaña «Estudio» del presupuesto: el estudio se abre con el coste de este presupuesto (su importe y sus kWp de ahora)
+    abrirEstudioDesde(datos) {
+      const n = this.trabajo && this.trabajo.id === datos.presupuestoId ? this.trabajo.numbers : null
+      this.$emit('abrir-estudio', { id: datos.id, kind: 'compartido', presupuesto: n && n.total > 0 && n.kwp > 0 ? { id: datos.presupuestoId, total: n.total, kwp: n.kwp } : null })
+    },
     volverALista() {
+      this.desde = null
       this.volcar()
+      this.cancelarGuardadoDeParametros()
       this.trabajo = null
       this.conflicto = null
       this.errorGuardar = null
@@ -65,11 +114,25 @@ export default {
     },
     entrar(b) {
       this.volcar()
+      this.cancelarGuardadoDeParametros()
       putLocal(b)
       this.trabajo = b
       this.errorGuardar = null
       this.conflicto = null
       this.vista = 'editar'
+      this.completarEmpresa(b)
+    },
+    // El CIF, el logo y el encaje son de la propuesta: un borrador que no los tiene los toma de ella al abrirlo (uno enviado o aprobado no cambia)
+    async completarEmpresa(b) {
+      const s = b.state
+      if ((b.remote && b.remote.status !== 'borrador') || (s.cif && s.clientLogo && s.encaje)) return
+      try {
+        const registro = propuestaDelPresupuesto(s, await planificadorApi.proyectosComerciales())
+        if (!registro) return
+        const propuesta = await planificadorApi.proyectoComercial(registro.id)
+        if (!this.trabajo || this.trabajo.id !== b.id) return
+        this.actualizar(conEmpresaDePropuesta(this.trabajo.state, propuesta))
+      } catch (e) { /* sin propuesta que leer: el presupuesto se queda como está */ }
     },
     actualizar(estado) {
       if (!this.trabajo || estado === this.trabajo.state) return
@@ -82,11 +145,38 @@ export default {
         this.trabajo = { ...w, numbers: n }
         this.programarVolcado()
       }
+      // Tras cambiar los parámetros, el editor recalcula (catálogo, inversores…) y va mandando los números: se guarda cuando se calma
+      if (this.guardarTrasId) this.programarGuardadoDeParametros(800)
     },
-    crearLocal(estado) { this.entrar(newLocal(estado)) },
+    crearLocal(estado) {
+      const nuevo = newLocal({ ...estado, tramitesPendientes: true }) // el editor le pone las partidas de proyecto y trámites por defecto
+      if (this.desde) nuevo.estudioOrigen = this.desde.estudioId // nace asociado a este estudio al compartirlo
+      this.entrar(nuevo)
+    },
     cambiarParametros(estado) {
       this.actualizar(estado)
       this.vista = 'editar'
+      // En un borrador ya guardado en el servidor, «Guardar parámetros» ya lo guarda: no hay que confirmarlo otra vez con «Guardar cambios».
+      // (Un presupuesto solo local no se comparte sin que se pida, y el guardado de verdad lo hace «Guardar y compartir».)
+      const w = this.trabajo
+      if (w && w.remote && w.remote.status === 'borrador') {
+        this.guardarTrasId = w.id
+        this.programarGuardadoDeParametros(5000) // si el editor no llegase a mandar números, se guarda igualmente pasado este tiempo
+      }
+    },
+    // Espera a que el editor haya recalculado el resumen (potencia, paneles e importe que enseña la lista) antes de guardar
+    programarGuardadoDeParametros(espera) {
+      window.clearTimeout(this.guardarTras)
+      this.guardarTras = window.setTimeout(() => {
+        const w = this.trabajo
+        const id = this.guardarTrasId
+        this.guardarTrasId = null
+        if (w && w.id === id && isDirty(w) && !this.guardando) this.guardar()
+      }, espera)
+    },
+    cancelarGuardadoDeParametros() {
+      window.clearTimeout(this.guardarTras)
+      this.guardarTrasId = null
     },
 
     // ---- Abrir y copiar ----------------------------------------------------------------------------------------------
@@ -127,45 +217,59 @@ export default {
     abrirVariante(id) {
       this.abrirPresupuesto(id, true).then((p) => { if (p) this.errorGuardar = p })
     },
-    // Los nombres de los presupuestos que ya hay (de este navegador y del servidor), para numerar la versión siguiente sin repetir
-    async nombresTomados() {
-      const nombres = listLocal().map((l) => budgetName(l.state))
-      try { nombres.push(...(await planificadorApi.presupuestos()).map((b) => b.name)) } catch (e) { /* sin servidor: solo los de este navegador */ }
-      return nombres
-    },
-    async duplicarDesdeLista({ id, compartido }) {
+    // Duplicar (desde la lista o desde el editor): primero se pregunta si la copia lleva el mismo cliente o uno nuevo
+    pedirDuplicado(datos) {
       this.volcar()
-      let estado
-      if (compartido) {
-        try { estado = parseCosts((await planificadorApi.presupuesto(id)).data) } catch (e) { this.aviso = 'No se ha podido duplicar: ' + mensajeError(e); return }
-      } else {
-        const local = getLocal(id)
-        if (!local) { this.aviso = 'Este presupuesto ya no está en este navegador.'; return }
-        estado = local.state
-      }
-      putLocal(copyOf(estado, await this.nombresTomados()))
-      this.$forceUpdate()
-      this.vista = 'lista'
+      this.duplicando = { ...datos, desdeEditor: false }
     },
-    // Un presupuesto compartido se duplica como variante de su oferta (en el servidor); uno local, como copia local
-    async duplicarActual() {
+    duplicarActual() {
       const w = this.trabajo
       if (!w) return
       this.volcar()
-      if (w.remote && w.remote.status !== 'descartado') {
-        // El nombre es opcional: vacío = «Versión N»; cancelar no crea nada
-        const nombre = window.prompt('Nombre de la nueva variante (opcional).\nSi lo dejas vacío se llamará «Versión N».')
-        if (nombre === null) return
-        try {
-          const v = await planificadorApi.variantePresupuesto(w.id, nombre.trim())
-          const problema = await this.abrirPresupuesto(v.id, true)
-          if (problema) this.errorGuardar = problema
-        } catch (e) {
-          this.errorGuardar = 'No se ha podido crear la variante: ' + mensajeError(e)
-        }
-        return
+      this.duplicando = {
+        id: w.id, compartido: !!w.remote, variante: !!w.remote && w.remote.status !== 'descartado', nombre: budgetName(w.state), desdeEditor: true
       }
-      this.entrar(copyOf(w.state, await this.nombresTomados()))
+    },
+    // El estado del presupuesto que se duplica: el de la copia abierta, el de este navegador o el del servidor
+    async estadoParaDuplicar({ id, compartido, desdeEditor }) {
+      if (desdeEditor && this.trabajo) return this.trabajo.state
+      if (compartido) return parseCosts((await planificadorApi.presupuesto(id)).data)
+      const local = getLocal(id)
+      if (!local) throw new Error('Este presupuesto ya no está en este navegador.')
+      return local.state
+    },
+    // Con el mismo cliente es otra versión del mismo proyecto: un presupuesto compartido se guarda ya en el servidor como variante de
+    // su oferta y uno local es una copia local (el listado las junta por cliente y proyecto). Con otro cliente es una copia local
+    // sin cliente, que se abre en «Parámetros» para elegirlo.
+    async duplicar({ cliente, nombre }) {
+      const d = this.duplicando
+      this.duplicando = null
+      if (!d) return
+      const problema = (texto) => { if (d.desdeEditor) this.errorGuardar = texto; else this.aviso = texto }
+      this.aviso = ''
+      try {
+        if (cliente === 'mismo' && d.variante) {
+          const v = await planificadorApi.variantePresupuesto(d.id, nombre)
+          const fallo = await this.abrirPresupuesto(v.id, true)
+          if (fallo) problema(fallo)
+          return
+        }
+        const estado = await this.estadoParaDuplicar(d)
+        const copia = copyOf(estado, cliente === 'otro')
+        if (cliente === 'otro') {
+          this.entrar(copia)
+          this.vista = 'parametros'
+        } else if (d.desdeEditor) {
+          this.entrar(copia)
+        } else {
+          putLocal(copia)
+          this.volverALista()
+          // La lista ya está montada: hay que decirle que vuelva a leer (si no, la copia no sale hasta recargar la página)
+          this.$nextTick(() => { if (this.$refs.lista) this.$refs.lista.refrescar() })
+        }
+      } catch (e) {
+        problema('No se ha podido duplicar: ' + mensajeError(e))
+      }
     },
     // Elimina la variante abierta (la tira ya la ha borrado en el servidor) y abre otra de su oferta
     async varianteEliminada(siguienteId) {
@@ -199,6 +303,10 @@ export default {
         this.errorGuardar = 'Este presupuesto no tiene cliente: elígelo en «Editar parámetros» antes de guardarlo y compartirlo.'
         return
       }
+      if (!w.state.reference.trim()) {
+        this.errorGuardar = 'Este presupuesto no tiene nombre de proyecto: ponlo en «Editar parámetros» antes de guardarlo y compartirlo.'
+        return
+      }
       this.guardando = true
       this.errorGuardar = null
       this.conflicto = null
@@ -206,7 +314,7 @@ export default {
         const cuerpo = cuerpoParaServidor(w, budgetName(w.state), cliente)
         const completo = w.remote && !recrear
           ? await planificadorApi.guardarPresupuesto(w.id, { ...cuerpo, version: w.remote.version, force: forzar })
-          : await planificadorApi.crearPresupuesto({ ...cuerpo, id: w.id })
+          : await planificadorApi.crearPresupuesto({ ...cuerpo, id: w.id, study_id: w.estudioOrigen || undefined })
         this.trabajo = sincronizado(this.trabajo, completo, w.state, canonical)
         this.programarVolcado()
       } catch (e) {
@@ -245,7 +353,7 @@ export default {
         await this.guardar(true)
       } else if (como === 'copia') {
         // Los cambios propios quedan en una copia local y el original vuelve a ser lo que hay en el servidor
-        const copia = copyOf(w.state, await this.nombresTomados())
+        const copia = copyOf(w.state)
         putLocal(copia)
         try { putLocal(fromServer(await planificadorApi.presupuesto(w.id))) } catch (e) { /* si no se puede leer, el original se queda como estaba */ }
         this.entrar(copia)

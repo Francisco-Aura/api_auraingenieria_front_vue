@@ -2,8 +2,16 @@
   <div v-if="visible" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="contratos-modal-title">
     <div class="modal-content">
       <!-- Encabezado del modal -->
-      <div class="modal-header">
-        <h1 id="contratos-modal-title" class="modal-title">Gestión de Contratos</h1>
+      <div class="modal-header aura-modal-header">
+        <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-file-contract"></i></span>
+        <div class="aura-modal-header__titulos">
+          <h1 id="contratos-modal-title" class="modal-title">{{ tituloModal }}</h1>
+          <span class="aura-modal-header__subtitulo">
+            <span><strong>{{ cliente?.nombre || 'Cliente no disponible' }}</strong></span>
+            <span class="aura-dato"><span class="aura-dato__etiqueta">DNI/CIF</span>{{ dniClienteActual || 'No disponible' }}</span>
+            <span class="aura-dato"><span class="aura-dato__etiqueta">CUPS</span>{{ obtenerCupsDelPuntoSuministro() || 'No disponible' }}</span>
+          </span>
+        </div>
         <button type="button" @click="cerrarModal" class="close-button" aria-label="Cerrar gestión de contratos">
           <i class="fas fa-times"></i>
         </button>
@@ -11,11 +19,6 @@
 
       <!-- Contenido principal sin pestañas -->
       <div v-if="cargandoDatos" class="main-content-container main-content-skeleton">
-        <div class="client-banner">
-          <div class="client-info">
-            <div class="skeleton-line skeleton-line--lg"></div>
-          </div>
-        </div>
         <div class="contracts-history">
           <div class="history-table-container">
             <table class="history-table">
@@ -33,35 +36,22 @@
         
         <!-- Vista principal: Histórico de contratos con formulario de edición/creación cuando sea necesario -->
         <div v-if="!mostrandoFormulario" class="main-content">
-          <!-- Banner del cliente -->
-          <div class="client-banner">
-            <div class="client-info">
-              <div class="client-header">
-                <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'No disponible' }}</h4>
-                <div class="client-details">
-                  <span><strong>DNI/CIF:</strong> {{ dniClienteActual || 'No disponible' }}</span>
-                  <span><strong>CUPS:</strong> {{ obtenerCupsDelPuntoSuministro() || 'No disponible' }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Botones de acción principales -->
           <div class="action-buttons-main">
             <button @click="crearNuevoContrato" class="btn-modern btn-primary">
-              <i class="fas fa-plus"></i> Crear Contrato
+              <i class="fas fa-plus"></i> Crear contrato
             </button>
             <button @click="modificarContratoActual" class="btn-modern btn-warning" v-if="tieneContratoVigente">
-              <i class="fas fa-edit"></i> Modificar Actual
+              <i class="fas fa-edit"></i> Modificar actual
             </button>
             <button @click="renovarContratoActual" class="btn-modern btn-success" v-if="tieneContratoVigente">
-              <i class="fas fa-sync-alt"></i> Renovar Actual
+              <i class="fas fa-sync-alt"></i> Renovar actual
             </button>
           </div>
 
           <!-- Histórico de contratos -->
           <div class="contracts-history">
-            <h3><i class="fas fa-history"></i> Histórico de Contratos</h3>
+            <h3><i class="fas fa-history"></i> Histórico de contratos</h3>
             <div v-if="todosLosContratosOrdenados.length" class="history-table-container">
               <table class="history-table">
                 <thead>
@@ -86,6 +76,9 @@
                       <span v-if="esContratoVigente(contrato)" class="status-vigente">
                         <i class="fas fa-circle"></i> VIGENTE
                       </span>
+                      <span v-else-if="esContratoProximo(contrato)" class="status-proximo" :title="'Empieza el ' + formatDate(contrato.fechaInicio)">
+                        <i class="fas fa-clock"></i> PRÓXIMO
+                      </span>
                       <span v-else class="status-historico">
                         <i class="fas fa-circle"></i> HISTÓRICO
                       </span>
@@ -97,7 +90,7 @@
                     <td>{{ getTarifaGasNombre(contrato.idTarifaGas) }}</td>
                     <td>{{ getComercializadoraNombre(contrato.idComercializadoraActual) }}</td>
                     <td>{{ getComercializadoraNombre(contrato.idComercializadoraAnterior) }}</td>
-                    <td>{{ contrato.consumoAnual || 0 }} kW</td>
+                    <td class="celda-numero">{{ formatearConsumo(contrato.consumoAnual) }}</td>
                     <td>
                       <div class="status-indicators">
                         <span v-if="contrato.autoconsumo" class="status-badge autoconsumo">
@@ -121,7 +114,7 @@
                       <button @click="renovarContratoGenerico(contrato)" class="btn-icon btn-renew" title="Renovar contrato" aria-label="Renovar contrato">
                         <i class="fas fa-sync-alt"></i>
                       </button>
-                      <button @click="verDetalleContrato(contrato)" class="btn-icon btn-view" title="Ver Detalle">
+                      <button @click="verDetalleContrato(contrato)" class="btn-icon btn-view" title="Ver detalle" aria-label="Ver detalle del contrato">
                         <i class="fas fa-eye"></i>
                       </button>
                       <button
@@ -135,7 +128,7 @@
                       >
                         <i :class="descargandoPdfId === contrato.id ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
                       </button>
-                      <button @click="eliminarContrato(contrato)" class="btn-icon btn-delete" title="Eliminar contrato" v-if="nivelAcceso === 1">
+                      <button @click="eliminarContrato(contrato)" class="btn-icon btn-delete" title="Eliminar contrato" aria-label="Eliminar contrato" v-if="nivelAcceso === 1">
                         <i class="fas fa-trash"></i>
                       </button>
                     </td>
@@ -153,313 +146,289 @@
 
         <!-- Formulario de creación/edición de contratos -->
         <div v-if="mostrandoFormulario" class="form-content">
-          <!-- Banner del cliente -->
-          <div class="client-banner">
-            <div class="client-info">
-              <div class="client-header">
-                <h4><i class="fas fa-user"></i> {{ cliente?.nombre || 'No disponible' }}</h4>
-                <div class="client-details">
-                  <span><strong>DNI/CIF:</strong> {{ dniClienteActual || 'No disponible' }}</span>
-                  <span><strong>CUPS:</strong> {{ obtenerCupsDelPuntoSuministro() || 'No disponible' }}</span>
-                </div>
-              </div>
+          <form @submit.prevent="guardarContrato" class="modern-form formulario-contrato" novalidate>
+            <div class="aura-pestanas" role="tablist" aria-label="Secciones del contrato">
+              <button
+                v-for="(p, indice) in pestanasContrato"
+                :key="p.id"
+                type="button"
+                role="tab"
+                class="aura-pestana"
+                :class="{ 'aura-pestana--activa': pestanaContrato === p.id, 'aura-pestana--error': pestanaConErrores(p.id) }"
+                :aria-selected="pestanaContrato === p.id ? 'true' : 'false'"
+                @click="pestanaContrato = p.id"
+              >
+                <span class="aura-pestana__numero">{{ indice + 1 }}</span>
+                <span>{{ p.label }}</span>
+                <span
+                  v-if="p.id === 'mcas'"
+                  class="aura-pestana__marca"
+                  :class="'aura-pestana__marca--' + marcaMcas"
+                  :title="tituloMarcaMcas"
+                ></span>
+              </button>
             </div>
-          </div>
 
-          <form @submit.prevent="guardarContrato" class="modern-form" novalidate>
-            <div class="form-grid-modern">
-              <!-- Sección de Fechas -->
-              <div class="form-section-modern">
-                <div class="section-header-modern">
-                  <i class="fas fa-calendar-alt"></i>
-                  <h3>Fechas del Contrato / Informacion de la Comercializadora</h3>
-                </div>
-                
-                <div class="form-group-modern">
-                  <label for="fechaEnvioContrato">Fecha Envío <span class="required">*</span></label>
-                  <div class="input-with-icon-modern">
-                    <i class="fas fa-paper-plane icon-prefix"></i>
-                    <input 
-                      type="date" 
-                      id="fechaEnvioContrato" 
-                      v-model="nuevoContrato.fechaEnvio" 
-                      class="form-control-modern" :class="{ 'input-error': errores.fechaEnvio }"
-                      @change="errores.fechaEnvio = ''"
-                      required 
-                    />
+            <div class="pestana-contrato-cuerpo">
+              <!-- 1 · Contrato -->
+              <div v-show="pestanaContrato === 'contrato'" class="rejilla-contrato" role="tabpanel">
+                <div class="columna-contrato">
+                <section class="form-section-modern">
+                  <div class="section-header-modern">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h3>Fechas y comercializadora</h3>
                   </div>
-                  <small v-if="errores.fechaEnvio" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaEnvio }}</small>
-                </div>
-
-                <div class="form-group-modern">
-                  <label for="fechaInicioContrato">Fecha Inicio <span class="required">*</span></label>
-                  <div class="input-with-icon-modern">
-                    <i class="fas fa-play icon-prefix"></i>
-                    <input 
-                      type="date" 
-                      id="fechaInicioContrato" 
-                      v-model="nuevoContrato.fechaInicio" 
-                      class="form-control-modern" :class="{ 'input-error': errores.fechaInicio }"
-                      @change="errores.fechaInicio = ''"
-                      required 
-                    />
+                  <div class="fila-campos fila-campos--3">
+                    <div class="form-group-modern">
+                      <label for="fechaEnvioContrato">Fecha envío <span class="required">*</span></label>
+                      <CampoFecha id="fechaEnvioContrato" v-model="nuevoContrato.fechaEnvio" required
+                                  :error="!!errores.fechaEnvio" @change="errores.fechaEnvio = ''" />
+                      <small v-if="errores.fechaEnvio" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaEnvio }}</small>
+                    </div>
+                    <div class="form-group-modern">
+                      <label for="fechaInicioContrato">Fecha inicio <span class="required">*</span></label>
+                      <CampoFecha id="fechaInicioContrato" v-model="nuevoContrato.fechaInicio" required
+                                  :error="!!errores.fechaInicio" :atajos="atajosInicioContrato"
+                                  @change="alCambiarInicioContrato" />
+                      <small v-if="errores.fechaInicio" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaInicio }}</small>
+                    </div>
+                    <div class="form-group-modern">
+                      <!-- La duración va en la línea de la etiqueta: debajo movía todo el formulario -->
+                      <div class="etiqueta-fecha">
+                        <label for="fechaFinContrato">Fecha fin <span class="required">*</span></label>
+                        <span v-if="duracionContrato" class="ayuda-fecha">Duración: {{ duracionContrato }}</span>
+                      </div>
+                      <CampoFecha id="fechaFinContrato" v-model="nuevoContrato.fechaFin" required
+                                  :error="!!errores.fechaFin" :hoy="false" :min="nuevoContrato.fechaInicio || ''"
+                                  :abrir-en="finUnAnioContrato" :atajos="atajosFinContrato" :marcas="marcasFinContrato"
+                                  @change="alCambiarFinContrato" />
+                      <small v-if="errores.fechaFin" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaFin }}</small>
+                    </div>
                   </div>
-                  <small v-if="errores.fechaInicio" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaInicio }}</small>
-                </div>
-
-                <div class="form-group-modern">
-                  <label for="fechaFinContrato">Fecha Fin <span class="required">*</span></label>
-                  <div class="input-with-icon-modern">
-                    <i class="fas fa-stop icon-prefix"></i>
-                    <input 
-                      type="date" 
-                      id="fechaFinContrato" 
-                      v-model="nuevoContrato.fechaFin" 
-                      class="form-control-modern" :class="{ 'input-error': errores.fechaFin }"
-                      @change="errores.fechaFin = ''"
-                      required 
-                    />
-                  </div>
-                  <small v-if="errores.fechaFin" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.fechaFin }}</small>
-                </div>
-
-                <div class="form-group-modern">
-                  <label for="comercializadoraActual">
-                    <i class="fas fa-building"></i>
-                    Comercializadora Actual <span class="required">*</span>
-                  </label>
-                  <div class="select-container-modern" :class="{ 'select-error': errores.idComercializadoraActual }">
-                    <select 
-                      id="comercializadoraActual" 
-                      v-model="nuevoContrato.idComercializadoraActual" 
-                      class="form-select-modern" 
-                      @change="errores.idComercializadoraActual = ''"
-                      required
-                    >
-                      <option value="">Seleccione una comercializadora...</option>
-                      <option v-for="comercializadora in comercializadorasList" :value="comercializadora.id" :key="comercializadora.id">
-                        {{ comercializadora.nombre }}
-                      </option>
-                    </select>
-                  </div>
-                  <small v-if="errores.idComercializadoraActual" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.idComercializadoraActual }}</small>
-                </div>
-
-                <div class="form-group-modern">
-                  <label for="comercializadoraAnterior">
-                    <i class="fas fa-history"></i>
-                    Comercializadora Anterior
-                  </label>
-                  <div class="select-container-modern">
-                    <select 
-                      id="comercializadoraAnterior" 
-                      v-model="nuevoContrato.idComercializadoraAnterior" 
-                      class="form-select-modern"
-                    >
-                      <option value="">Seleccione una comercializadora...</option>
-                      <option v-for="comercializadora in comercializadorasList" :value="comercializadora.id" :key="comercializadora.id">
-                        {{ comercializadora.nombre }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-              </div>
-
-              <!-- Sección de Información del Contrato -->
-              <div class="form-section-modern">
-                <div class="section-header-modern">
-                  <i class="fas fa-file-contract"></i>
-                  <h3>Información del Contrato</h3>
-                </div>
-                
-                <div class="form-group-modern">
-                  <label for="contrato">Número de Contrato <span class="required">*</span></label>
-                  <div class="input-with-icon-modern">
-                    <i class="fas fa-hashtag icon-prefix"></i>
-                    <input 
-                      type="text" 
-                      id="contrato" 
-                      v-model="nuevoContrato.contrato" 
-                      class="form-control-modern" :class="{ 'input-error': errores.contrato }"
-                      @input="errores.contrato = ''"
-                      maxlength="100"
-                      required 
-                    />
-                  </div>
-                  <small v-if="errores.contrato" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.contrato }}</small>
-                </div>
-
-                <div class="form-group-modern">
-                  <label for="tarifaGas">
-                    <i class="fas fa-fire" :class="{ 'text-active': esGas, 'text-disabled': !esGas }"></i>
-                    Tarifa Gas <span v-if="esGas" class="required">*</span>
-                  </label>
-                  <div class="select-container-modern">
-                    <select 
-                      id="tarifaGas" 
-                      v-model="nuevoContrato.idTarifaGas" 
-                      class="form-select-modern" 
-                      :disabled="!esGas"
-                      :required="esGas"
-                    >
-                      <option v-if="esGas" value="">Seleccione...</option>
-                      <option v-for="tarifa in tarifasGas" :value="tarifa.id" :key="tarifa.id">
-                        {{ tarifa.nombre }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="form-group-modern">
-                  <label for="tarifaLuz">
-                    <i class="fas fa-bolt" :class="{ 'text-active': esLuz, 'text-disabled': !esLuz }"></i>
-                    Tarifa Luz <span v-if="esLuz" class="required">*</span>
-                  </label>
-                  <div class="select-container-modern">
-                    <select 
-                      id="tarifaLuz" 
-                      v-model="nuevoContrato.idTarifaLuz" 
-                      class="form-select-modern" 
-                      :disabled="!esLuz"
-                      :required="esLuz"
-                    >
-                      <option v-if="esLuz" value="">Seleccione...</option>
-                      <option v-for="tarifa in tarifasLuz" :value="tarifa.id" :key="tarifa.id">
-                        {{ tarifa.nombre }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Consumo Anual -->
-                <div class="form-group-modern">
-                  <label for="consumoAnual">
-                    <i class="fas fa-chart-line"></i>
-                    Consumo Anual (kW) <span class="required">*</span>
-                  </label>
-                  <div class="input-with-icon-modern">
-                    <i class="fas fa-bolt icon-prefix"></i>
-                    <input 
-                      type="number" 
-                      id="consumoAnual" 
-                      v-model="nuevoContrato.consumoAnual" 
-                      class="form-control-modern" 
-                      step="0.0001" 
-                      min="0" 
-                      required 
-                      placeholder="0.0000"
-                    />
-                  </div>
-                </div>
-
-                <!-- Usuario para Facturación Online -->
-                <div class="form-group-modern">
-                  <label for="userFO">
-                    <i class="fas fa-user"></i>
-                    Usuario Facturación Online
-                  </label>
-                  <div class="input-with-icon-modern">
-                    <i class="fas fa-user icon-prefix"></i>
-                    <input 
-                      type="text" 
-                      id="userFO" 
-                      v-model="nuevoContrato.userFO" 
-                      class="form-control-modern" 
-                      maxlength="200"
-                      placeholder="Usuario para facturación online"
-                    />
-                  </div>
-                </div>
-
-                <!-- Contraseña para Facturación Online -->
-                <div class="form-group-modern">
-                  <label for="passwordFO">
-                    <i class="fas fa-lock"></i>
-                    Contraseña Facturación Online
-                  </label>
-                  <div class="input-with-icon-modern">
-                    <i class="fas fa-lock icon-prefix"></i>
-                    <input 
-                      type="text" 
-                      id="passwordFO" 
-                      v-model="nuevoContrato.passwordFO" 
-                      class="form-control-modern" 
-                      maxlength="200"
-                      placeholder="Contraseña para facturación online"
-                    />
-                  </div>
-                </div>
-
-                <!-- Potencias Contratadas (compactas) -->
-                <div class="form-group-modern">
-                  <label class="potencias-label">
-                    <i class="fas fa-bolt"></i>
-                    Potencias Contratadas (kW)
-                  </label>
-                  <div class="potencias-contratadas-compactas">
-                    <div class="potencias-grid-compacta">
-                      <div class="potencia-item-compacta" v-for="n in 6" :key="n">
-                        <label :for="'pot' + n" class="potencia-label-compacta">P{{ n }}</label>
-                        <input 
-                          :id="'pot' + n" 
-                          v-model="nuevoContrato['pot' + n]" 
-                          type="number" 
-                          step="0.0001" 
-                          min="0" 
-                          class="potencia-input-compacta"
-                          placeholder="0"
-                        />
+                  <div class="fila-campos fila-campos--2">
+                    <div class="form-group-modern">
+                      <label for="comercializadoraActual">Comercializadora actual <span class="required">*</span></label>
+                      <div class="select-container-modern" :class="{ 'select-error': errores.idComercializadoraActual }">
+                        <select id="comercializadoraActual" v-model="nuevoContrato.idComercializadoraActual"
+                                class="form-select-modern" @change="errores.idComercializadoraActual = ''" required>
+                          <option value="">Seleccione...</option>
+                          <option v-for="comercializadora in comercializadorasList" :value="comercializadora.id" :key="comercializadora.id">
+                            {{ comercializadora.nombre }}
+                          </option>
+                        </select>
+                      </div>
+                      <small v-if="errores.idComercializadoraActual" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.idComercializadoraActual }}</small>
+                    </div>
+                    <div class="form-group-modern">
+                      <label for="comercializadoraAnterior">Comercializadora anterior</label>
+                      <div class="select-container-modern">
+                        <select id="comercializadoraAnterior" v-model="nuevoContrato.idComercializadoraAnterior" class="form-select-modern">
+                          <option value="">Seleccione...</option>
+                          <option v-for="comercializadora in comercializadorasList" :value="comercializadora.id" :key="comercializadora.id">
+                            {{ comercializadora.nombre }}
+                          </option>
+                        </select>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-              
-              <!-- Sección compartida de Observaciones y Comentario de Renovación -->
-              <div class="form-section-modern section-observaciones-compartidas">
-                <div class="section-header-modern">
-                  <i class="fas fa-comment-alt"></i>
-                  <h3>Observaciones y Renovación</h3>
-                </div>
-
-                <div class="observaciones-compartidas">
-                  <div class="campo-compartido campo-observaciones">
-                    <label for="observaciones">Observaciones Generales</label>
-                    <textarea 
-                      id="observaciones" 
-                      v-model="nuevoContrato.observaciones" 
-                      class="form-control-modern textarea-modern textarea-observaciones-compartida" 
-                      rows="1"
-                      maxlength="10000"
-                      placeholder="Añada aquí cualquier observación relevante sobre el contrato..."
-                    ></textarea>
+                  <!-- Seguidos (reunión del 04/11/2026): comercializadora, tipo de precio y producto.
+                       El desplegable de productos solo trae los de esa comercializadora y ese tipo de precio. -->
+                  <div class="fila-campos fila-campos--2">
+                    <div class="form-group-modern" :class="claseCampoMcas('mcasTipoPrecio')">
+                      <label for="mcasTipoPrecio">Tipo de precio</label>
+                      <div class="select-container-modern">
+                        <select id="mcasTipoPrecio" v-model="nuevoContrato.mcasTipoPrecio" class="form-select-modern"
+                                title="Fijo: precio pactado. Indexado: sigue al mercado. Sin comisión automática: el contrato no comisiona.">
+                          <option :value="null">Sin comisión automática</option>
+                          <option value="FIJO">FIJO</option>
+                          <option value="INDEXADO">INDEXADO</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group-modern" :class="claseCampoMcas('mcasIdProductoComercial')">
+                      <label for="mcasIdProductoComercial">Tarifa de precios (producto)</label>
+                      <div class="select-container-modern">
+                        <select id="mcasIdProductoComercial" v-model="nuevoContrato.mcasIdProductoComercial" class="form-select-modern"
+                                :disabled="!!textoSinProductoMcas"
+                                title="Oferta contratada con la comercializadora (por ejemplo, Plan Personalizado)">
+                          <option :value="null">{{ textoSinProductoMcas || 'Sin producto' }}</option>
+                          <option v-for="p in productosComercializesFiltrados" :key="p.id" :value="p.id">
+                            {{ etiquetaProductoMcas(p) }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
+                </section>
 
-                  <div class="campo-compartido campo-renovacion">
-                    <label for="comentarioRenovacion">
-                      <i class="fas fa-sync-alt"></i>
-                      Comentario de Renovación
-                    </label>
-                    <textarea
-                      id="comentarioRenovacion"
-                      v-model="nuevoContrato.comentarioRenovacion"
-                      class="form-control-modern textarea-modern textarea-comentario-renovacion"
-                      rows="1"
-                      maxlength="10000"
-                      placeholder="Notas breves sobre la renovación..."
-                    ></textarea>
+                <section class="form-section-modern">
+                  <div class="section-header-modern">
+                    <i class="fas fa-globe"></i>
+                    <h3>Facturación online</h3>
+                  </div>
+                  <div class="fila-campos fila-campos--2">
+                    <div class="form-group-modern">
+                      <label for="userFO">Usuario</label>
+                      <input type="text" id="userFO" v-model="nuevoContrato.userFO" class="form-control-modern"
+                             maxlength="200" placeholder="Usuario de la web de la comercializadora" />
+                    </div>
+                    <div class="form-group-modern">
+                      <label for="passwordFO">Contraseña</label>
+                      <input type="text" id="passwordFO" v-model="nuevoContrato.passwordFO" class="form-control-modern"
+                             maxlength="200" placeholder="Contraseña de la web" />
+                    </div>
+                  </div>
+                </section>
+
+                <section class="form-section-modern">
+                  <div class="section-header-modern">
+                    <i class="fas fa-comment-alt"></i>
+                    <h3>Observaciones y renovación</h3>
+                  </div>
+                  <div class="form-group-modern">
+                    <label for="observaciones">Observaciones generales</label>
+                    <textarea id="observaciones" v-model="nuevoContrato.observaciones"
+                              class="form-control-modern textarea-modern textarea-contrato" rows="4" maxlength="10000"
+                              placeholder="Añada aquí cualquier observación relevante sobre el contrato..."></textarea>
+                  </div>
+                  <div class="form-group-modern">
+                    <label for="comentarioRenovacion">Comentario de renovación</label>
+                    <textarea id="comentarioRenovacion" v-model="nuevoContrato.comentarioRenovacion"
+                              class="form-control-modern textarea-modern textarea-contrato textarea-contrato--corta" rows="2" maxlength="10000"
+                              placeholder="Notas breves sobre la renovación..."></textarea>
+                  </div>
+                </section>
+
+                </div>
+                <div class="columna-contrato">
+                <section class="form-section-modern">
+                  <div class="section-header-modern">
+                    <i class="fas fa-file-contract"></i>
+                    <h3>Datos del contrato</h3>
+                  </div>
+                  <div class="fila-campos fila-campos--2">
+                    <div class="form-group-modern">
+                      <label for="contrato">Número de contrato <span class="required">*</span></label>
+                      <input type="text" id="contrato" v-model="nuevoContrato.contrato"
+                             class="form-control-modern" :class="{ 'input-error': errores.contrato }"
+                             @input="errores.contrato = ''" maxlength="100" required />
+                      <small v-if="errores.contrato" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.contrato }}</small>
+                    </div>
+                    <div class="form-group-modern">
+                      <label for="consumoAnual">Consumo anual (kWh) <span class="required">*</span></label>
+                      <input type="number" id="consumoAnual" v-model="nuevoContrato.consumoAnual"
+                             class="form-control-modern" step="0.0001" min="0" required placeholder="0" />
+                    </div>
+                  </div>
+                  <div class="fila-campos fila-campos--2">
+                    <div class="form-group-modern">
+                      <label for="tarifaLuz">
+                        <i class="fas fa-bolt" :class="{ 'text-active': esLuz, 'text-disabled': !esLuz }"></i>
+                        Tarifa luz <span v-if="esLuz" class="required">*</span>
+                      </label>
+                      <div class="select-container-modern">
+                        <select id="tarifaLuz" v-model="nuevoContrato.idTarifaLuz" class="form-select-modern" :disabled="!esLuz" :required="esLuz">
+                          <option v-if="esLuz" value="">Seleccione...</option>
+                          <option v-for="tarifa in tarifasLuz" :value="tarifa.id" :key="tarifa.id">{{ tarifa.nombre }}</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group-modern">
+                      <label for="tarifaGas">
+                        <i class="fas fa-fire" :class="{ 'text-active': esGas, 'text-disabled': !esGas }"></i>
+                        Tarifa gas <span v-if="esGas" class="required">*</span>
+                      </label>
+                      <div class="select-container-modern">
+                        <select id="tarifaGas" v-model="nuevoContrato.idTarifaGas" class="form-select-modern" :disabled="!esGas" :required="esGas">
+                          <option v-if="esGas" value="">Seleccione...</option>
+                          <option v-for="tarifa in tarifasGas" :value="tarifa.id" :key="tarifa.id">{{ tarifa.nombre }}</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group-modern">
+                    <label class="potencias-label">Potencias contratadas (kW)</label>
+                    <div class="potencias-grid-compacta">
+                      <div class="potencia-item-compacta" v-for="n in 6" :key="n">
+                        <label :for="'pot' + n" class="potencia-label-compacta">P{{ n }}</label>
+                        <input :id="'pot' + n" v-model="nuevoContrato['pot' + n]" type="number" step="0.0001" min="0"
+                               class="potencia-input-compacta" placeholder="0" />
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="form-section-modern">
+                  <div class="section-header-modern">
+                    <i class="fas fa-solar-panel"></i>
+                    <h3>Autoconsumo, exenciones y denuncia</h3>
+                  </div>
+                <div class="form-group-modern">
+                  <!-- Indicador de Autoconsumo -->
+                  <div v-if="tieneAutoconsumo" class="info-badge-modern success">
+                    <i class="fas fa-solar-panel"></i>
+                    <div class="badge-content">
+                      <span class="badge-title">Autoconsumo:</span>
+                      <strong>{{ puntoSuministroData?.autoconsumo }}</strong>
+                    </div>
+                  </div>
+                  <div v-else class="info-badge-modern neutral">
+                    <i class="fas fa-solar-panel"></i>
+                    <div class="badge-content">
+                      <span class="badge-title">Autoconsumo:</span>
+                      <span>No configurado</span>
+                    </div>
+                  </div>
+                  
+                  <!-- Indicador de Exención Impuesto Eléctrico -->
+                  <div v-if="tieneExencionImpuestoElectrico" class="info-badge-modern success margen-reducido">
+                    <i class="fas fa-bolt"></i>
+                    <div class="badge-content">
+                      <span class="badge-title">Exención Impuesto Eléctrico:</span>
+                      <strong>Sí</strong>
+                    </div>
+                  </div>
+                  <div v-else class="info-badge-modern neutral margen-reducido">
+                    <i class="fas fa-bolt"></i>
+                    <div class="badge-content">
+                      <span class="badge-title">Exención Impuesto Eléctrico:</span>
+                      <span>No</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+                <div class="form-group-modern">
+                  <!-- Contenedor compacto para denuncia -->
+                  <div class="denuncia-compacta" :class="{ 'denuncia-compacta--activa': denunciaRealizada }">
+                    <div class="denuncia-checkbox-compacta">
+                      <label class="denuncia-label-compacta">
+                        <input 
+                          type="checkbox" 
+                          v-model="denunciaRealizada"
+                          class="denuncia-input"
+                          @change="actualizarDenuncia"
+                        />
+                        <span class="denuncia-checkmark"></span>
+                        <span class="denuncia-text">Denuncia realizada</span>
+                      </label>
+                    </div>
 
-              <!-- Sección de Documento PDF -->
-              <div class="form-section-modern">
-                <div class="section-header-modern">
-                  <i class="fas fa-file-pdf"></i>
-                  <h3>Documento del Contrato</h3>
+                    <!-- Selector de fecha inline -->
+                    <div v-if="denunciaRealizada" class="fecha-denuncia-inline">
+                      <label for="fechaDenunciaContrato" class="fecha-label-compacta">
+                        <i class="fas fa-calendar-alt"></i>
+                        Fecha de gestión <span class="required">*</span>
+                      </label>
+                      <CampoFecha id="fechaDenunciaContrato" v-model="nuevoContrato.fechaDenunciaContrato"
+                                  compacto :required="denunciaRealizada" />
+                    </div>
+                  </div>
                 </div>
-                
+                </section>
+                <section class="form-section-modern">
+                  <div class="section-header-modern">
+                    <i class="fas fa-file-pdf"></i>
+                    <h3>Documento del contrato</h3>
+                  </div>
                 <!-- La zona de arrastre/selección solo se muestra si no hay ningún
                      archivo activo (ni uno recién elegido, ni uno ya guardado en el
                      contrato). Evita poder seleccionar un archivo nuevo "encima" de
@@ -510,7 +479,7 @@
                 <div v-if="selectedFile" class="file-selected">
                   <div class="file-selected-icon"><i class="fas fa-file-pdf"></i></div>
                   <div class="file-selected-info">
-                    <strong>{{ selectedFile.name }}</strong>
+                    <strong :title="selectedFile.name">{{ selectedFile.name }}</strong>
                     <span>{{ formatearTamanoArchivo(selectedFile.size) }} · se guardará al pulsar "{{ textoBotonGuardar }}"</span>
                   </div>
                   <div class="file-selected-actions">
@@ -526,7 +495,7 @@
                 <div v-else-if="contratoTieneArchivo" class="file-selected file-uploaded-from-backend">
                   <div class="file-selected-icon"><i class="fas fa-file-pdf"></i></div>
                   <div class="file-selected-info">
-                    <strong>{{ nombreArchivoExistente || 'Documento del contrato' }}</strong>
+                    <strong :title="nombreArchivoExistente || 'Documento del contrato'">{{ nombreArchivoExistente || 'Documento del contrato' }}</strong>
                     <span>Ya guardado en el contrato</span>
                   </div>
                   <div class="file-selected-actions">
@@ -548,91 +517,175 @@
                     </button>
                   </div>
                 </div>
-              </div>
-
-              <!-- Sección de Autoconsumo y Exenciones -->
-              <div class="form-section-modern">
-                <div class="section-header-modern">
-                  <i class="fas fa-solar-panel"></i>
-                  <h3>Autoconsumo y Exenciones</h3>
-                </div>
-                
-                <div class="form-group-modern">
-                  <!-- Indicador de Autoconsumo -->
-                  <div v-if="tieneAutoconsumo" class="info-badge-modern success">
-                    <i class="fas fa-solar-panel"></i>
-                    <div class="badge-content">
-                      <span class="badge-title">Autoconsumo:</span>
-                      <strong>{{ puntoSuministroData?.autoconsumo }}</strong>
-                    </div>
-                  </div>
-                  <div v-else class="info-badge-modern neutral">
-                    <i class="fas fa-solar-panel"></i>
-                    <div class="badge-content">
-                      <span class="badge-title">Autoconsumo:</span>
-                      <span>No configurado</span>
-                    </div>
-                  </div>
-                  
-                  <!-- Indicador de Exención Impuesto Eléctrico -->
-                  <div v-if="tieneExencionImpuestoElectrico" class="info-badge-modern success margen-reducido">
-                    <i class="fas fa-bolt"></i>
-                    <div class="badge-content">
-                      <span class="badge-title">Exención Impuesto Eléctrico:</span>
-                      <strong>Sí</strong>
-                    </div>
-                  </div>
-                  <div v-else class="info-badge-modern neutral margen-reducido">
-                    <i class="fas fa-bolt"></i>
-                    <div class="badge-content">
-                      <span class="badge-title">Exención Impuesto Eléctrico:</span>
-                      <span>No</span>
-                    </div>
-                  </div>
+                </section>
                 </div>
               </div>
 
-              <!-- Sección de Gestión de Denuncia -->
-              <div class="form-section-modern">
-                <div class="section-header-modern">
-                  <i class="fas fa-exclamation-triangle"></i>
-                  <h3>Gestión de Denuncia</h3>
+              <!-- 2 · Otros datos (comisión MCAS) -->
+              <div v-show="pestanaContrato === 'mcas'" class="pestana-mcas" role="tabpanel">
+                <!-- Al modificar un contrato guardado: lo que hay hoy de su comisión -->
+                <div v-if="modoEdicion && textoComisionActual" class="mcas-actual" role="note">
+                  <i class="fas fa-receipt" aria-hidden="true"></i>
+                  <span><strong>Comisión actual:</strong> {{ textoComisionActual }}</span>
                 </div>
-                
-                <div class="form-group-modern">
-                  <!-- Contenedor compacto para denuncia -->
-                  <div class="denuncia-compacta">
-                    <div class="denuncia-checkbox-compacta">
-                      <label class="denuncia-label-compacta">
-                        <input 
-                          type="checkbox" 
-                          v-model="denunciaRealizada"
-                          class="denuncia-input"
-                          @change="actualizarDenuncia"
-                        />
-                        <span class="denuncia-checkmark"></span>
-                        <span class="denuncia-text">Denuncia realizada</span>
-                      </label>
-                    </div>
 
-                    <!-- Selector de fecha inline -->
-                    <div v-if="denunciaRealizada" class="fecha-denuncia-inline">
-                      <label for="fechaDenunciaContrato" class="fecha-label-compacta">
-                        <i class="fas fa-calendar-alt"></i>
-                        Fecha de gestión <span class="required">*</span>
-                      </label>
-                      <input 
-                        type="date" 
-                        id="fechaDenunciaContrato" 
-                        v-model="nuevoContrato.fechaDenunciaContrato" 
-                        class="fecha-input-compacta" 
-                        :required="denunciaRealizada"
-                      />
+                <!-- Comisión estimada (vista previa del servidor) o lo que falta para calcularla -->
+                <div class="mcas-estado" :class="'mcas-estado--' + cabeceraMcas.tono" role="status" aria-live="polite">
+                  <i :class="cabeceraMcas.icono" aria-hidden="true"></i>
+                  <div class="mcas-estado-texto">
+                    <div class="mcas-estado-titulo">
+                      <strong>{{ cabeceraMcas.titulo }}</strong>
+                      <span v-if="cabeceraMcas.estimacion" class="mcas-estimacion-marca">
+                        Estimación
+                      </span>
                     </div>
+                    <ul v-if="cabeceraMcas.faltan.length" class="mcas-faltan">
+                      <li v-for="f in cabeceraMcas.faltan" :key="f.campo">
+                        <span v-if="f.calculado">{{ f.etiqueta }}</span>
+                        <button v-else type="button" class="mcas-enlace" @click="irACampoMcas(f.campo)">{{ f.etiqueta }}</button>
+                      </li>
+                    </ul>
+                    <ul v-if="cabeceraMcas.avisos.length" class="mcas-avisos">
+                      <li v-for="(aviso, indiceAviso) in cabeceraMcas.avisos" :key="indiceAviso">{{ aviso }}</li>
+                    </ul>
+                    <span v-if="cabeceraMcas.detalle">{{ cabeceraMcas.detalle }}</span>
+                    <span v-if="cargandoVistaPrevia && vistaPreviaMcasValida" class="mcas-estado-cargando">
+                      <i class="fas fa-spinner fa-spin" aria-hidden="true"></i> {{ esAdminMcas ? 'Actualizando la estimación…' : 'Comprobando los datos…' }}
+                    </span>
                   </div>
                 </div>
-              </div>
+                <div v-if="avisoRecomendadoMcas" class="mcas-recomendado" role="note">
+                  <i class="fas fa-lightbulb" aria-hidden="true"></i>
+                  <span>{{ avisoRecomendadoMcas }}</span>
+                </div>
 
+                <section class="form-section-modern mcas-section">
+                  <!-- Datos de la pestaña Contrato que usa la comisión: aquí solo se enseñan -->
+                  <div v-if="filasSoloLecturaMcas.length" class="mcas-solo-lectura">
+                    <div v-for="fila in filasSoloLecturaMcas" :key="fila.campo" class="mcas-solo-lectura__fila"
+                         :class="{ 'mcas-solo-lectura__fila--falta': fila.falta }">
+                      <span class="mcas-solo-lectura__etiqueta">{{ fila.etiqueta }}</span>
+                      <span class="mcas-solo-lectura__valor">{{ fila.valor }}</span>
+                      <span v-if="fila.calculado" class="mcas-solo-lectura__nota">Sale de la provincia del punto de suministro</span>
+                      <button v-else type="button" class="mcas-enlace" @click="irACampoMcas(fila.campo)">
+                        Cambiar en pestaña «Contrato»
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Cada campo se dibuja una vez: a la vista o plegado en «Más datos» (nunca se borra su valor) -->
+                  <template v-for="grupo in gruposCamposMcas" :key="grupo.id">
+                    <component :is="grupo.plegado ? 'details' : 'div'" :class="grupo.plegado ? 'mcas-otros' : 'mcas-grupo'">
+                      <summary v-if="grupo.plegado" class="mcas-otros__titulo">
+                        Más datos ({{ camposMcas.otrosConValor }} con valor)
+                      </summary>
+                      <p v-if="grupo.plegado" class="mcas-otros__ayuda">
+                        No intervienen en la comisión estimada de este contrato. Lo que ya tengan escrito se conserva.
+                      </p>
+                      <div class="mcas-form-row">
+                        <template v-for="campo in grupo.campos" :key="campo">
+                          <div v-if="campo === 'mcasTipoSuministro'" class="form-group-modern" :class="claseCampoMcas(campo)">
+                            <label for="mcasTipoSuministro"><i class="fas fa-fire-alt"></i> Tipo de suministro</label>
+                            <div class="select-container-modern">
+                              <select id="mcasTipoSuministro" v-model="nuevoContrato.mcasTipoSuministro" class="form-select-modern"
+                                      :class="{ 'input-error': errores.mcasTipoSuministro }" @change="errores.mcasTipoSuministro = ''">
+                                <option :value="null">Seleccione...</option>
+                                <option value="LUZ">LUZ</option>
+                                <option value="GAS">GAS</option>
+                              </select>
+                            </div>
+                            <small v-if="errores.mcasTipoSuministro" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.mcasTipoSuministro }}</small>
+                          </div>
+
+                          <div v-else-if="campo === 'mcasEsRenovacion'" class="form-group-modern" :class="claseCampoMcas(campo)">
+                            <label for="mcasEsRenovacion"><i class="fas fa-sync-alt"></i> ¿Es renovación?</label>
+                            <div class="select-container-modern">
+                              <select id="mcasEsRenovacion" v-model="nuevoContrato.mcasEsRenovacion" class="form-select-modern"
+                                      :disabled="modoRenovacion">
+                                <option :value="null">No especificado</option>
+                                <option :value="false">No (nuevo contrato)</option>
+                                <option :value="true">Sí (renovación)</option>
+                              </select>
+                            </div>
+                            <!-- Al renovar, el servidor la calcula siempre como renovación -->
+                            <small class="mcas-campo-ayuda">{{ modoRenovacion ? 'Las renovaciones siempre se calculan como renovación.' : 'Las renovaciones pueden tener otra comisión.' }}</small>
+                          </div>
+
+                          <div v-else-if="campo === 'mcasTipoRenovacion'" class="form-group-modern" :class="claseCampoMcas(campo)">
+                            <label for="mcasTipoRenovacion"><i class="fas fa-file-signature"></i> Tipo de renovación</label>
+                            <div class="select-container-modern">
+                              <select id="mcasTipoRenovacion" v-model="nuevoContrato.mcasTipoRenovacion" class="form-select-modern">
+                                <option :value="null">Seleccione...</option>
+                                <option value="FIRMADA">FIRMADA</option>
+                                <option value="TACITA">TÁCITA</option>
+                                <option value="OTRA">OTRA</option>
+                              </select>
+                            </div>
+                            <small class="mcas-campo-ayuda">Firmada si el cliente firmó la renovación; tácita si se renovó sola.</small>
+                          </div>
+
+                          <div v-else-if="campo === 'mcasSegmento'" class="form-group-modern" :class="claseCampoMcas(campo)">
+                            <label for="mcasSegmento"><i class="fas fa-users"></i> Segmento</label>
+                            <div class="select-container-modern">
+                              <select id="mcasSegmento" v-model="nuevoContrato.mcasSegmento" class="form-select-modern">
+                                <option :value="null">Seleccione...</option>
+                                <option value="RESIDENCIAL">RESIDENCIAL</option>
+                                <option value="PYME">PYME</option>
+                              </select>
+                            </div>
+                            <small class="mcas-campo-ayuda">Residencial para particulares; pyme para empresas y autónomos.</small>
+                          </div>
+
+                          <div v-else-if="campo === 'mcasAltaNueva'" class="form-group-modern" :class="claseCampoMcas(campo)">
+                            <label for="mcasAltaNueva"><i class="fas fa-star"></i> Alta nueva</label>
+                            <div class="select-container-modern">
+                              <select id="mcasAltaNueva" v-model="nuevoContrato.mcasAltaNueva" class="form-select-modern">
+                                <option :value="null">No especificado</option>
+                                <option :value="true">Sí (primera alta)</option>
+                                <option :value="false">No</option>
+                              </select>
+                            </div>
+                            <small class="mcas-campo-ayuda">Sí, si el cliente contrata por primera vez con esta comercializadora.</small>
+                          </div>
+
+                          <div v-else-if="campo === 'mcasIdGestora'" class="form-group-modern" :class="claseCampoMcas(campo)">
+                            <label for="mcasIdGestora"><i class="fas fa-building"></i> Gestora</label>
+                            <div class="select-container-modern">
+                              <select id="mcasIdGestora" v-model="nuevoContrato.mcasIdGestora" class="form-select-modern">
+                                <option :value="null">Sin gestora específica</option>
+                                <option v-for="g in gestorasList" :key="g.id" :value="g.id">{{ g.nombre }}</option>
+                              </select>
+                            </div>
+                            <small class="mcas-campo-ayuda">Canal por el que se gestiona el contrato, si la comisión depende de él.</small>
+                          </div>
+
+                          <div v-else-if="campo === 'mcasFeeEurMwh'" class="form-group-modern" :class="claseCampoMcas(campo)">
+                            <label for="mcasFeeEurMwh"><i class="fas fa-euro-sign"></i> FEE del contrato</label>
+                            <div class="input-with-icon-modern">
+                              <i class="fas fa-euro-sign icon-prefix"></i>
+                              <input id="mcasFeeEurMwh" type="text" inputmode="decimal"
+                                     v-model="nuevoContrato.mcasFeeEurMwh"
+                                     class="form-control-modern" :class="{ 'input-error': errores.mcasFeeEurMwh }"
+                                     @input="errores.mcasFeeEurMwh = ''" placeholder="ej.: 7,5"/>
+                              <span class="mcas-sufijo">€/MWh</span>
+                            </div>
+                            <small v-if="errores.mcasFeeEurMwh" class="error-text"><i class="fas fa-exclamation-circle"></i> {{ errores.mcasFeeEurMwh }}</small>
+                            <small v-else class="mcas-campo-ayuda">Importe negociado con el cliente. Solo hace falta si la comisión se calcula sobre el FEE.</small>
+                          </div>
+
+                        </template>
+                      </div>
+                    </component>
+                  </template>
+
+                  <!-- Aviso retrocesión -->
+                  <div class="mcas-retro-note">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>La <strong>política de retrocesión</strong> publicada de la comercializadora se muestra en la propuesta
+                    como retrocesión potencial: <em>no se descuenta en el alta</em> y solo se aplicaría si el contrato causa baja anticipada.</span>
+                  </div>
+                </section>
+              </div>
 
             </div>
 
@@ -654,10 +707,14 @@
     </div>
 
     <!-- MODAL DETALLE CONTRATO - FUERA DEL MODAL PRINCIPAL -->
-    <div v-if="mostrarModalDetalleContrato" class="modal-overlay detalle-contrato-modal" @click.self="cerrarModalDetalleContrato">
+    <div v-if="mostrarModalDetalleContrato" class="modal-overlay detalle-contrato-modal" v-cierre-fondo="cerrarModalDetalleContrato">
       <div class="modal-content detalle-contrato-content">
-        <div class="modal-header">
-          <h2><i class="fas fa-file-contract"></i> Detalle del Contrato</h2>
+        <div class="modal-header aura-modal-header">
+          <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-file-contract"></i></span>
+          <div class="aura-modal-header__titulos">
+            <h2>Detalle del contrato</h2>
+            <span class="aura-modal-header__subtitulo"><span class="aura-dato"><span class="aura-dato__etiqueta">Contrato</span>{{ contratoDetalle?.contrato || '—' }}</span></span>
+          </div>
           <button type="button" @click="cerrarModalDetalleContrato" class="close-button" aria-label="Cerrar detalle del contrato">
             <i class="fas fa-times"></i>
           </button>
@@ -758,7 +815,7 @@
               <div class="info-row">
                 <span class="info-label">Consumo Anual:</span>
                 <span class="info-value">
-                  <i class="fas fa-bolt"></i> {{ contratoDetalle?.consumoAnual || 0 }} kW
+                  <i class="fas fa-bolt"></i> {{ formatearConsumo(contratoDetalle?.consumoAnual) }}
                 </span>
               </div>
             </div>
@@ -807,13 +864,38 @@
 </template>
 
 <script>
+import { descargarBlob } from '@/utils/descargas';
 import axios from "axios";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { fechaLocalISO, enVigorHoy, fechaES, finDePeriodo, mesesExactos, sumarDias, textoDuracion, atajoPrimeroDelMes, atajosDuracion } from "@/utils/fechas";
+import CampoFecha from '@/components/comun/CampoFecha.vue';
+import { cupsRecortado } from "@/utils/cups";
+import { leerDecimal } from "@/utils/numeros";
+import { nombreComercializadora } from "@/utils/maestros";
+import { escaparHtml } from "@/utils/html";
+import { CAMPO_ZONA, cabeceraVistaPrevia, faltantesVistaPrevia, organizarCamposMcas, textoResumenMcas } from './mcasCamposContrato';
+
+// Pestañas del formulario y campos validados en cada una
+// Miles siempre con punto (es-ES no los pone en números de cuatro cifras)
+const FORMATO_CONSUMO = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2, useGrouping: 'always' });
+
+const PESTANAS_CONTRATO = [
+  { id: 'contrato', label: 'Contrato', campos: ['fechaEnvio', 'fechaInicio', 'fechaFin', 'idComercializadoraActual', 'contrato'] },
+  { id: 'mcas', label: 'Otros datos', campos: ['mcasTipoSuministro', 'mcasFeeEurMwh'] },
+];
+
+// Vista previa de la comisión: espera tras el último cambio antes de pedirla.
+const ESPERA_VISTA_PREVIA_MS = 600;
+// No influyen en la comisión: no viajan a la vista previa ni provocan otra petición al escribirlos.
+const CAMPOS_FUERA_VISTA_PREVIA = ['userFO', 'passwordFO', 'observaciones', 'comentarioRenovacion', 'eliminarArchivoContrato'];
+// Campos que se rellenan en la pestaña Contrato y el id de su control (el resto usa el nombre del campo).
+const CAMPOS_EN_PESTANA_CONTRATO = ['contrato', 'fechaInicio', 'idComercializadoraActual', 'consumoAnual', 'idTarifaLuz', 'idTarifaGas',
+  'mcasTipoPrecio', 'mcasIdProductoComercial', 'potenciaContratada'];
+const ID_CAMPO_FORMULARIO = { fechaInicio: 'fechaInicioContrato', idComercializadoraActual: 'comercializadoraActual', idTarifaLuz: 'tarifaLuz', idTarifaGas: 'tarifaGas',
+  potenciaContratada: 'pot1' };
 
 export default {
   name: "ModalContratos",
-  components: {},
+  components: { CampoFecha },
   props: {
     visible: {
       type: Boolean,
@@ -914,14 +996,41 @@ export default {
         userFO: "",
         passwordFO: "",
         comentarioRenovacion: "",
+        // Campos MCAS
+        mcasTipoPrecio: null,
+        mcasTipoSuministro: null,
+        mcasSegmento: null,
+        mcasEsRenovacion: null,
+        mcasTipoRenovacion: null,
+        mcasAmbito: null,
+        mcasIdGestora: null,
+        mcasIdProductoComercial: null,
+        mcasZonaComision: null,
+        mcasFeeEurMwh: null,
+        mcasFeeUnidad: 'EUR_MWH',
+        mcasPotenciaCalculo: null,
+        mcasNumeroPagos: null,
+        mcasFechaPrimeraAplicacion: null,
+        mcasAltaNueva: null,
+        mcasFechaUltimaRelacionComercializadora: null,
       },
       comercializadorasList: [],
+      // Petición de gestoras/productos MCAS en curso, compartida por todas las llamadas.
+      cargaGestorasProductos: null,
+      gestorasList: [],
+      productosComerciales: [],
+      // Pestaña visible del formulario: contrato · mcas
+      pestanaContrato: 'contrato',
+      pestanasContrato: PESTANAS_CONTRATO,
       nivelAcceso: null,
       errores: {},
       contratoTieneArchivo: false,
       nombreArchivoExistente: '',
       eliminarArchivoExistente: false,
       contratoOriginalIdRenovar: null,
+      // Fecha fin puesta por la aplicación ({ de: contrato del formulario, fin, meses }): mientras
+      // nadie la cambie a mano, sigue a la fecha de inicio manteniendo la duración.
+      finPropuesta: null,
       selectedFile: null,
       arrastrandoPdf: false,
       errorArchivoContrato: '',
@@ -930,6 +1039,14 @@ export default {
       clienteDetalle: null,
       descargandoPdfId: null,
       descargandoPdfModal: false,
+      // Comisión MCAS: vista previa mientras se rellena y resumen del contrato guardado
+      vistaPrevia: null,
+      cargandoVistaPrevia: false,
+      errorVistaPrevia: false,
+      // Número de la última petición: descarta las respuestas que llegan tarde
+      solicitudVistaPrevia: 0,
+      temporizadorVistaPrevia: null,
+      resumenMcas: null,
     };
   },
 
@@ -996,7 +1113,7 @@ export default {
         icon: 'warning',
         title: 'PDF no válido',
         text: mensaje,
-        confirmButtonColor: 'rgba(252, 215, 0)'
+        confirmButtonColor: '#fcd700'
       });
     },
 
@@ -1038,7 +1155,220 @@ export default {
         this.errores.contrato = 'Número de contrato es obligatorio';
         valido = false;
       }
+      if (this.nuevoContrato.mcasTipoPrecio) {
+        // Campo no informado (null, vacío o ausente en contratos antiguos)
+        const informado = (valor) => valor !== null && valor !== undefined && String(valor).trim() !== '';
+        if (!this.nuevoContrato.mcasTipoSuministro) {
+          this.errores.mcasTipoSuministro = 'Indique si el suministro es de luz o de gas';
+          valido = false;
+        }
+        const fee = this.normalizarDecimalMcas(this.nuevoContrato.mcasFeeEurMwh);
+        if (informado(this.nuevoContrato.mcasFeeEurMwh) && fee === null) {
+          this.errores.mcasFeeEurMwh = 'El FEE debe ser un número no negativo';
+          valido = false;
+        }
+      }
       return valido;
+    },
+
+    normalizarDecimalMcas(valor) {
+      // Como en Comisiones MCAS, pero aquí un negativo no vale
+      const numero = leerDecimal(valor);
+      return numero !== null && numero >= 0 ? numero : null;
+    },
+
+    /**
+     * Deja un contrato listo para enviarlo al servidor: normaliza el FEE (con coma o
+     * punto), copia los huecos pot1…pot6 a potencia1…potencia6 y fija el id al
+     * modificar. La potencia de cálculo (siempre la mayor), la primera aplicación (la
+     * fecha de inicio) y la última relación con la comercializadora (la calcula el
+     * servidor) ya no se rellenan a mano. Lo usan el guardado (sobre el propio
+     * formulario) y la vista previa (sobre una copia).
+     */
+    payloadContrato(contrato = this.nuevoContrato) {
+      contrato.mcasFeeEurMwh = this.normalizarDecimalMcas(contrato.mcasFeeEurMwh);
+      contrato.mcasPotenciaCalculo = null;
+      // Los pagos y el primer cobro son de la comercializadora (Configuración MCAS > Cobros y cuotas)
+      contrato.mcasNumeroPagos = null;
+      contrato.mcasFechaPrimeraAplicacion = null;
+      contrato.mcasFechaUltimaRelacionComercializadora = null;
+      if (contrato.mcasFeeEurMwh !== null) contrato.mcasFeeUnidad = 'EUR_MWH';
+      for (let i = 1; i <= 6; i++) {
+        if (contrato['pot' + i] !== undefined) contrato['potencia' + i] = contrato['pot' + i];
+      }
+      if (this.modoEdicion && this.contratoEditandoId) contrato.id = this.contratoEditandoId;
+      return contrato;
+    },
+
+    // Cuerpo de la vista previa: una copia del formulario, sin tocar lo que el usuario escribe.
+    cuerpoVistaPrevia() {
+      const copia = JSON.parse(JSON.stringify(this.nuevoContrato || {}));
+      CAMPOS_FUERA_VISTA_PREVIA.forEach((campo) => { delete copia[campo]; });
+      // Al renovar, el servidor guarda siempre la comisión como renovación: la estimación también.
+      if (this.modoRenovacion) copia.mcasEsRenovacion = true;
+      return this.payloadContrato(copia);
+    },
+
+    // Pide la vista previa 600 ms después del último cambio (sin firma, la olvida).
+    programarVistaPrevia(firma) {
+      clearTimeout(this.temporizadorVistaPrevia);
+      this.temporizadorVistaPrevia = null;
+      // Cualquier respuesta en camino corresponde a un formulario que ya ha cambiado.
+      this.solicitudVistaPrevia += 1;
+      if (!firma) {
+        this.vistaPrevia = null;
+        this.errorVistaPrevia = false;
+        this.cargandoVistaPrevia = false;
+        return;
+      }
+      this.cargandoVistaPrevia = true;
+      this.temporizadorVistaPrevia = setTimeout(() => {
+        this.temporizadorVistaPrevia = null;
+        this.pedirVistaPrevia();
+      }, ESPERA_VISTA_PREVIA_MS);
+    },
+
+    // Comisión estimada del contrato tal como está en el formulario. No guarda nada.
+    async pedirVistaPrevia() {
+      const solicitud = ++this.solicitudVistaPrevia;
+      this.cargandoVistaPrevia = true;
+      try {
+        const { data } = await axios.post('/mcas/vista-previa', this.cuerpoVistaPrevia(),
+          { headers: { 'Content-Type': 'application/json' } });
+        if (solicitud !== this.solicitudVistaPrevia) return;
+        this.vistaPrevia = data && typeof data === 'object' && typeof data.estado === 'string' ? data : null;
+        this.errorVistaPrevia = !this.vistaPrevia;
+      } catch (error) {
+        if (solicitud !== this.solicitudVistaPrevia) return;
+        console.warn('No se pudo calcular la comisión estimada:', error);
+        this.vistaPrevia = null;
+        this.errorVistaPrevia = true;
+      } finally {
+        if (solicitud === this.solicitudVistaPrevia) this.cargandoVistaPrevia = false;
+      }
+    },
+
+    // Lleva a la pestaña del campo y le da el foco (desplegando «Más datos» si hace falta).
+    async irACampoMcas(campo) {
+      this.pestanaContrato = CAMPOS_EN_PESTANA_CONTRATO.includes(campo) ? 'contrato' : 'mcas';
+      await this.$nextTick();
+      if (typeof document === 'undefined') return;
+      const elemento = document.getElementById(ID_CAMPO_FORMULARIO[campo] || campo);
+      const plegado = elemento?.closest?.('details');
+      if (plegado && !plegado.open) plegado.open = true;
+      elemento?.focus?.();
+    },
+
+    // El producto elegido solo se quita si ya no encaja (otra comercializadora, otro tipo de
+    // precio...). Sin la lista de productos todavía cargada no se puede saber: se deja.
+    descartarProductoIncompatibleMcas() {
+      this.$nextTick(() => {
+        const id = this.nuevoContrato?.mcasIdProductoComercial;
+        if (id === null || id === undefined || id === '' || !this.productosComerciales.length) return;
+        if (!this.productosComercializesFiltrados.some(p => String(p.id) === String(id))) {
+          this.nuevoContrato.mcasIdProductoComercial = null;
+        }
+      });
+    },
+
+    // Nombre del producto en el desplegable; si es de una gestora y el contrato aún no tiene, cuál.
+    etiquetaProductoMcas(producto) {
+      const conGestora = producto?.idGestora !== null && producto?.idGestora !== undefined;
+      const sinGestora = !this.nuevoContrato?.mcasIdGestora;
+      if (!conGestora || !sinGestora) return producto?.nombre;
+      const gestora = this.gestorasList.find(g => String(g.id) === String(producto.idGestora));
+      return `${producto.nombre} (gestora ${gestora ? gestora.nombre : producto.idGestora})`;
+    },
+
+    // Con tipo de precio, no se guarda si la tabla de comisiones pide datos que faltan
+    // (reunión del 04/11/2026). Solo en «Faltan datos»: sin tabla que encaje (p. ej. solo
+    // hay tablas de una gestora y el contrato no es de ninguna) la comisión se completa a
+    // mano y el contrato se guarda. Se pide la vista previa en ese momento para no fiarse
+    // de una vieja; si el servidor no responde, deja guardar (la comisión se revisa después).
+    async datosMcasCompletos() {
+      if (this.sinComisionMcas) return true;
+      if (this.temporizadorVistaPrevia || this.cargandoVistaPrevia || !this.vistaPreviaMcasValida) {
+        clearTimeout(this.temporizadorVistaPrevia);
+        this.temporizadorVistaPrevia = null;
+        await this.pedirVistaPrevia();
+      }
+      if (!this.vistaPreviaMcasValida || this.vistaPrevia.estado !== 'REQUIERE_DATOS') return true;
+      const faltan = faltantesVistaPrevia(this.vistaPrevia, this.nuevoContrato);
+      if (!faltan.length) return true;
+      // Lo que se rellena aquí lleva a su campo; la zona de comisión no se escribe en el
+      // contrato (sale de la provincia del punto): se dice el motivo que da el servidor
+      const editables = faltan.filter(f => !f.calculado);
+      if (editables.length) await this.irACampoMcas(editables[0].campo);
+      else this.pestanaContrato = 'mcas';
+      const motivoZona = faltan.some(f => f.calculado)
+        ? `<p>${escaparHtml(editables.length || !this.vistaPrevia.mensaje
+          ? 'La zona de comisión sale de la provincia del punto de suministro: revise que el punto la tenga elegida de la lista.'
+          : this.vistaPrevia.mensaje)}</p>`
+        : '';
+      this.$swal.fire({
+        icon: 'warning',
+        title: 'Faltan datos de la comisión',
+        html: (editables.length
+          ? `<p>Complete estos datos antes de guardar el contrato:</p><p><strong>${editables.map(f => escaparHtml(f.etiqueta)).join(', ')}</strong></p>`
+          : '') + motivoZona,
+        confirmButtonColor: '#fcd700',
+        confirmButtonText: 'Entendido'
+      });
+      return false;
+    },
+
+    claseCampoMcas(campo) {
+      return { 'mcas-campo--falta': this.camposFaltanMcas.includes(campo) };
+    },
+
+    // ---- Fechas del contrato ----
+    // ¿La fecha fin actual la puso la aplicación (y nadie la ha tocado)? Va atada al objeto del
+    // formulario: al abrir otro contrato (nuevo, editar, renovar) deja de valer sola.
+    finPropuestaVigente() {
+      const p = this.finPropuesta;
+      return p && p.de === this.nuevoContrato && p.fin === this.nuevoContrato.fechaFin ? p : null;
+    },
+    proponerFin(inicio, meses) {
+      const fin = finDePeriodo(inicio, meses);
+      this.nuevoContrato.fechaFin = fin;
+      this.finPropuesta = fin ? { de: this.nuevoContrato, fin, meses } : null;
+    },
+    // Al poner la fecha de inicio: si la fecha fin está vacía (o la puso la aplicación), se
+    // propone la que toca (un año, o la duración elegida con los atajos) y se ve la duración.
+    alCambiarInicioContrato(inicio) {
+      this.errores.fechaInicio = '';
+      const propuesta = this.finPropuestaVigente();
+      if (!inicio) {
+        if (propuesta) this.nuevoContrato.fechaFin = '';
+        this.finPropuesta = null;
+      } else if (!this.nuevoContrato.fechaFin || propuesta) {
+        this.proponerFin(inicio, propuesta?.meses || 12);
+      }
+      this.comprobarOrdenFechasContrato();
+    },
+    alCambiarFinContrato(fin) {
+      const inicio = this.nuevoContrato.fechaInicio;
+      // Elegida con un atajo («2 años»): se recuerda la duración por si luego cambia el inicio
+      const meses = [12, 24, 36].find((m) => inicio && finDePeriodo(inicio, m) === fin);
+      this.finPropuesta = meses ? { de: this.nuevoContrato, fin, meses } : null;
+      this.errores.fechaFin = '';
+      this.comprobarOrdenFechasContrato();
+    },
+    // Aviso en el momento (antes salía solo al guardar)
+    comprobarOrdenFechasContrato() {
+      const { fechaInicio, fechaFin } = this.nuevoContrato;
+      if (fechaInicio && fechaFin && fechaFin < fechaInicio) {
+        this.errores.fechaFin = 'La fecha de fin no puede ser anterior a la fecha de inicio';
+      }
+    },
+    // Al renovar, el nuevo contrato empieza al día siguiente de acabar el anterior y dura lo
+    // mismo (un año si no eran meses justos). Antes salían las fechas del anterior.
+    proponerFechasRenovacion(anterior) {
+      const finAnterior = this.formatDateForInput(anterior?.fechaFin);
+      if (!finAnterior) return;
+      const meses = mesesExactos(this.formatDateForInput(anterior.fechaInicio), finAnterior) || 12;
+      this.nuevoContrato.fechaInicio = sumarDias(finAnterior, 1);
+      this.proponerFin(this.nuevoContrato.fechaInicio, meses);
     },
 
     // Método para actualizar el estado de denuncia
@@ -1052,16 +1382,20 @@ export default {
       }
     },
 
+    // «05/03/2026», como la columna «Fin Contrato» de la lista (antes «5/3/2026»)
     formatDate(date) {
-      if (!date) return '';
-      return new Date(date).toLocaleDateString('es-ES');
+      return fechaES(date, '');
+    },
+
+    // «1.250.000,5 kWh»: miles con punto y decimales con coma (antes «1250000.5 kWh»)
+    formatearConsumo(valor) {
+      const numero = Number(valor);
+      return `${FORMATO_CONSUMO.format(Number.isFinite(numero) ? numero : 0)} kWh`;
     },
 
     // Helper para obtener el CUPS correcto del punto de suministro
     obtenerCupsDelPuntoSuministro() {
-      const cupsluz = this.puntoSuministroData?.cupsluz?.trim() || "";
-      const cupsgas = this.puntoSuministroData?.cupsgas?.trim() || "";
-      return cupsluz || cupsgas || "";
+      return cupsRecortado(this.puntoSuministroData);
     },
 
     // Método auxiliar para formatear fechas para inputs tipo date
@@ -1083,8 +1417,8 @@ export default {
           return '';
         }
         
-        // Formatear a YYYY-MM-DD para input date
-        return date.toISOString().split('T')[0];
+        // Formatear a YYYY-MM-DD para input date (día local, sin pasar a UTC)
+        return fechaLocalISO(date);
       } catch (error) {
         console.error('Error formateando fecha:', error, dateString);
         return '';
@@ -1130,36 +1464,19 @@ export default {
     },
 
     getComercializadoraNombre(id) {
-      if (!id || id === '') return 'Sin Comercializadora';
-      
-      // Priorizar las comercializadoras del prop, luego las cargadas internamente
-      let lista = this.comercializadoras;
-      if (!lista || !lista.length) {
-        lista = this.comercializadorasList;
-      }
-      
-      if (!lista || !lista.length) {
-        console.warn("No se han cargado las comercializadoras aún");
-        return 'Comercializadora Desconocida';
-      }
-      
-      const comercializadora = lista.find(c => c.id == id);
-      
-      if (!comercializadora) {
-        console.warn(`No se encontró la comercializadora con ID: ${id}`, {id, lista});
-        return 'Comercializadora Desconocida';
-      }
-      
-      return comercializadora.nombre;
+      // Primero las comercializadoras del prop y, si no hay, las cargadas por la ventana
+      return nombreComercializadora(id, this.comercializadoras, this.comercializadorasList);
     },
 
     // Nuevos métodos para manejar la nueva interfaz
-    crearNuevoContrato() {
+    async crearNuevoContrato() {
       this.cerrarModalDetalleContrato();
+      await this.asegurarComercializadorasCargadas();
       this.mostrandoFormulario = true;
       this.modoEdicion = false;
       this.modoRenovacion = false;
       this.contratoEditandoId = null;
+      this.resumenMcas = null;
       this.inicializarNuevoContrato();
       this.selectedFile = null;
     },
@@ -1197,12 +1514,14 @@ export default {
       await this.$nextTick();
       this.nuevoContrato.idComercializadoraActual = this.contratoVigente.idComercializadoraActual || "";
       this.nuevoContrato.idComercializadoraAnterior = this.contratoVigente.idComercializadoraAnterior || "";
+      this.nuevoContrato.mcasIdProductoComercial = this.contratoVigente.mcasIdProductoComercial || null;
       
       // Detectar si el contrato vigente trae un archivo ya subido desde el backend
       this.contratoTieneArchivo = !!(this.contratoVigente.rutaArchivoContrato);
       this.nombreArchivoExistente = this.contratoVigente.nombreArchivo || '';
       this.eliminarArchivoExistente = false;
       this.selectedFile = null;
+      this.cargarResumenMcas(this.contratoEditandoId);
     },
 
     async renovarContratoActual() {
@@ -1216,6 +1535,7 @@ export default {
       this.modoEdicion = false;
       this.modoRenovacion = true;
       this.contratoEditandoId = null;
+      this.resumenMcas = null;
       this.contratoOriginalIdRenovar = this.contratoVigente.id;
       
       // Usar $nextTick para asegurar que el DOM está listo
@@ -1238,6 +1558,9 @@ export default {
         // SINCRONIZAR con el punto de suministro actual
         exencionImpuestoElectricidad: this.tieneExencionImpuestoElectrico ? 1 : 0,
         autoconsumo: this.tieneAutoconsumo ? 1 : 0,
+        // MCAS: en renovación siempre marcar como renovación y limpiar datos de fecha
+        mcasEsRenovacion: true,
+        mcasFechaPrimeraAplicacion: null,
       };
       // Sincronizar potencias para los inputs
       for (let i = 1; i <= 6; i++) {
@@ -1248,6 +1571,9 @@ export default {
       await this.$nextTick();
       this.nuevoContrato.idComercializadoraActual = this.contratoVigente.idComercializadoraActual || "";
       this.nuevoContrato.idComercializadoraAnterior = this.contratoVigente.idComercializadoraAnterior || "";
+      this.nuevoContrato.mcasIdProductoComercial = this.contratoVigente.mcasIdProductoComercial || null;
+      this.completarDatosMcas();
+      this.proponerFechasRenovacion(this.contratoVigente);
       
       // Una renovación siempre parte sin archivo (el usuario puede adjuntar uno nuevo)
       this.contratoTieneArchivo = false;
@@ -1303,12 +1629,14 @@ export default {
       await this.$nextTick();
       this.nuevoContrato.idComercializadoraActual = contrato.idComercializadoraActual || "";
       this.nuevoContrato.idComercializadoraAnterior = contrato.idComercializadoraAnterior || "";
+      this.nuevoContrato.mcasIdProductoComercial = contrato.mcasIdProductoComercial || null;
       
       // Detectar si el contrato trae un archivo ya subido desde el backend
       this.contratoTieneArchivo = !!(contrato.rutaArchivoContrato);
       this.nombreArchivoExistente = contrato.nombreArchivo || '';
       this.eliminarArchivoExistente = false;
       this.selectedFile = null;
+      this.cargarResumenMcas(contrato.id);
     },
 
     async renovarContratoGenerico(contrato) {
@@ -1320,10 +1648,13 @@ export default {
       this.modoEdicion = false;
       this.modoRenovacion = true;
       this.contratoEditandoId = null;
-      
+      this.resumenMcas = null;
+      // Igual que «Renovar actual»: el contrato de origen queda vencido al guardar
+      this.contratoOriginalIdRenovar = contrato.id;
+
       // Usar $nextTick para asegurar que el DOM está listo
       await this.$nextTick();
-      
+
       // Precargar TODOS los valores incluyendo las fechas
       this.nuevoContrato = {
         ...contrato,
@@ -1341,6 +1672,9 @@ export default {
         // SINCRONIZAR con el punto de suministro actual
         exencionImpuestoElectricidad: this.tieneExencionImpuestoElectrico ? 1 : 0,
         autoconsumo: this.tieneAutoconsumo ? 1 : 0,
+        // MCAS: en renovación siempre marcar como renovación y limpiar datos de fecha
+        mcasEsRenovacion: true,
+        mcasFechaPrimeraAplicacion: null,
       };
       
       // Sincronizar potencias para los inputs
@@ -1352,6 +1686,9 @@ export default {
       await this.$nextTick();
       this.nuevoContrato.idComercializadoraActual = contrato.idComercializadoraActual || "";
       this.nuevoContrato.idComercializadoraAnterior = contrato.idComercializadoraAnterior || "";
+      this.nuevoContrato.mcasIdProductoComercial = contrato.mcasIdProductoComercial || null;
+      this.completarDatosMcas();
+      this.proponerFechasRenovacion(contrato);
       
       this.contratoTieneArchivo = false;
       this.nombreArchivoExistente = '';
@@ -1371,6 +1708,19 @@ export default {
       this.contratoTieneArchivo = false;
       this.nombreArchivoExistente = '';
       this.eliminarArchivoExistente = false;
+      this.resumenMcas = null;
+    },
+
+    // Lleva a la vista el primer campo en rojo de la pestaña abierta: con el formulario
+    // desplazado hacia abajo, el aviso pedía revisar campos que no se veían
+    irAlPrimerError() {
+      this.$nextTick(() => {
+        this.$nextTick(() => {
+          const campo = [...(this.$el?.querySelectorAll?.('.pestana-contrato-cuerpo [role="tabpanel"] :is(.input-error, .select-error)') || [])]
+            .find(el => el.offsetParent !== null);
+          if (campo && campo.scrollIntoView) campo.scrollIntoView({ block: 'center' });
+        });
+      });
     },
 
     async guardarContrato() {
@@ -1379,27 +1729,28 @@ export default {
       }
 
       if (!this.validarContrato()) {
+        // Mostrar la pestaña donde está el primer campo con error
+        const conError = PESTANAS_CONTRATO.find(p => this.pestanaConErrores(p.id));
+        if (conError) this.pestanaContrato = conError.id;
+        this.irAlPrimerError();
         this.$swal.fire({
           icon: 'warning',
           title: 'Campos obligatorios',
           text: 'Revise los campos marcados en rojo antes de guardar.',
-          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonColor: '#fcd700',
           confirmButtonText: 'Entendido'
         });
         return;
       }
 
       this.guardando = true;
+      // Con tipo de precio, el servidor calcula (o intenta calcular) la comisión al guardar:
+      // después se le pregunta qué ha pasado, para contarlo tal cual.
+      const consultaMcas = Boolean(this.nuevoContrato.mcasTipoPrecio);
       try {
-        // Copiar los valores de los inputs pot1...pot6 a potencia1...potencia6 antes de enviar
-        for (let i = 1; i <= 6; i++) {
-          this.nuevoContrato['potencia' + i] = this.nuevoContrato['pot' + i];
-        }
-        
-        // Asegurar que el ID está presente en modo edición
-        if (this.modoEdicion && this.contratoEditandoId) {
-          this.nuevoContrato.id = this.contratoEditandoId;
-        }
+        if (!(await this.datosMcasCompletos())) return;
+        // Decimales normalizados, potencias copiadas e id en modo edición (igual que la vista previa)
+        this.payloadContrato(this.nuevoContrato);
 
         // Indicar al backend si hay que borrar el PDF ya guardado (el usuario
         // pulsó "Quitar" sobre el documento existente y no seleccionó uno nuevo).
@@ -1471,17 +1822,23 @@ export default {
           }
         }
 
-        // Mostrar mensaje de éxito
+        // Mostrar mensaje de éxito (con lo que ha pasado con la comisión MCAS)
+        const mensajeExito = this.modoEdicion
+          ? 'El contrato ha sido actualizado correctamente.'
+          : (this.modoRenovacion ? 'El contrato ha sido renovado correctamente.' : 'El nuevo contrato ha sido creado correctamente.');
+        // Comisiones MCAS actualiza su contador de pendientes
+        this.avisarPropuestasCambiadas();
+        const resultadoMcas = consultaMcas
+          ? await this.consultarResultadoMcas(response?.data?.id ?? this.contratoEditandoId)
+          : null;
         await this.$swal.fire({
           title: this.modoEdicion ? 'Contrato actualizado' : (this.modoRenovacion ? 'Contrato renovado' : 'Contrato creado'),
-          text: this.modoEdicion 
-            ? 'El contrato ha sido actualizado correctamente.' 
-            : (this.modoRenovacion ? 'El contrato ha sido renovado correctamente.' : 'El nuevo contrato ha sido creado correctamente.'),
+          ...(resultadoMcas
+            ? { html: `<p>${escaparHtml(mensajeExito)}</p><p class="swal-resultado-mcas"><i class="fas fa-calculator"></i> ${escaparHtml(resultadoMcas)}</p>` }
+            : { text: mensajeExito, timer: 2000, timerProgressBar: true }),
           icon: 'success',
-          confirmButtonColor: 'rgba(252, 215, 0)',
-          confirmButtonText: 'Aceptar',
-          timer: 2000,
-          timerProgressBar: true
+          confirmButtonColor: '#fcd700',
+          confirmButtonText: 'Aceptar'
         });
         
         // Emitir eventos específicos según el tipo de operación
@@ -1508,7 +1865,7 @@ export default {
           title: 'Error',
           text: `No se pudo ${this.modoEdicion ? 'actualizar' : (this.modoRenovacion ? 'renovar' : 'crear')} el contrato.${detalle ? ' ' + detalle : ' Por favor, verifica los datos e inténtalo de nuevo.'}`,
           icon: 'error',
-          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonColor: '#fcd700',
           confirmButtonText: 'Aceptar'
         });
       } finally {
@@ -1516,11 +1873,50 @@ export default {
       }
     },
 
+    pestanaConErrores(idPestana) {
+      const pestana = PESTANAS_CONTRATO.find(p => p.id === idPestana);
+      return !!pestana && pestana.campos.some(campo => this.errores[campo]);
+    },
+
+    // Resumen de la comisión de un contrato guardado (cualquier usuario puede pedirlo).
+    async pedirResumenMcas(idContrato) {
+      if (idContrato === null || idContrato === undefined || idContrato === '') return null;
+      try {
+        const { data } = await axios.get(`/mcas/propuestas/contrato/${idContrato}/resumen`);
+        return data && typeof data === 'object' ? data : null;
+      } catch (error) {
+        console.warn('No se pudo consultar la comisión del contrato:', error);
+        return null;
+      }
+    },
+
+    // Qué ha pasado con la comisión del contrato recién guardado, contado por el servidor.
+    async consultarResultadoMcas(idContrato) {
+      return textoResumenMcas(await this.pedirResumenMcas(idContrato));
+    },
+
+    // «Comisión actual» del contrato que se está modificando.
+    async cargarResumenMcas(idContrato) {
+      this.resumenMcas = null;
+      const resumen = await this.pedirResumenMcas(idContrato);
+      if (this.modoEdicion && String(this.contratoEditandoId) === String(idContrato)) this.resumenMcas = resumen;
+    },
+
+    // Evento de ventana que escucha Comisiones MCAS para refrescar sus pendientes.
+    avisarPropuestasCambiadas() {
+      if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function' || typeof CustomEvent !== 'function') return;
+      window.dispatchEvent(new CustomEvent('mcas:propuestas-cambiadas'));
+    },
+
     esContratoVigente(contrato) {
-      const ahora = new Date();
-      const fechaFin = new Date(contrato.fechaFin);
-      const fechaInicio = new Date(contrato.fechaInicio);
-      return fechaInicio <= ahora && fechaFin > ahora;
+      return enVigorHoy(contrato.fechaInicio, contrato.fechaFin);
+    },
+
+    // Solo para la etiqueta de la tabla: un contrato que aún no ha empezado no es
+    // «histórico». No cambia cuál cuenta como vigente para Modificar/Renovar actual.
+    esContratoProximo(contrato) {
+      const inicio = fechaLocalISO(contrato?.fechaInicio);
+      return inicio !== '' && inicio > fechaLocalISO();
     },
 
     async descargarPDF(contrato) {
@@ -1540,14 +1936,7 @@ export default {
           { responseType: 'blob' }
         );
 
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const filename = contrato.nombreArchivo ? contrato.nombreArchivo : `contrato_${contrato.id}.pdf`;
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+        descargarBlob(response.data, contrato.nombreArchivo || `contrato_${contrato.id}.pdf`);
       } catch (error) {
         console.error("Error al descargar el PDF:", error);
         this.$swal.fire({
@@ -1577,14 +1966,7 @@ export default {
           { responseType: 'blob' }
         );
 
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const filename = contrato.nombreArchivo ? contrato.nombreArchivo : `contrato_${contrato.id}.pdf`;
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+        descargarBlob(response.data, contrato.nombreArchivo || `contrato_${contrato.id}.pdf`);
       } catch (error) {
         console.error("Error al descargar el PDF existente:", error);
         this.$swal.fire({
@@ -1659,6 +2041,23 @@ export default {
         comentarioRenovacion: "",
         userFO: "",
         passwordFO: "",
+        // MCAS se activa en todo contrato nuevo: precio FIJO y el suministro del CUPS
+        mcasTipoPrecio: 'FIJO',
+        mcasTipoSuministro: tieneLuz ? 'LUZ' : (tieneGas ? 'GAS' : null),
+        mcasSegmento: null,
+        mcasEsRenovacion: false,
+        mcasTipoRenovacion: null,
+        mcasAmbito: null,
+        mcasIdGestora: null,
+        mcasIdProductoComercial: null,
+        mcasZonaComision: null,
+        mcasFeeEurMwh: null,
+        mcasFeeUnidad: 'EUR_MWH',
+        mcasPotenciaCalculo: null,
+        mcasNumeroPagos: null,
+        mcasFechaPrimeraAplicacion: null,
+        mcasAltaNueva: null,
+        mcasFechaUltimaRelacionComercializadora: null,
       };
       // Sincronizar potencias para los inputs
       for (let i = 1; i <= 6; i++) {
@@ -1690,42 +2089,19 @@ export default {
       this.cargandoDatos = false;
     },
 
+    // Completa (sin pisar) los datos MCAS mínimos para que el contrato genere su propuesta
+    completarDatosMcas() {
+      if (!this.nuevoContrato.mcasTipoPrecio) this.nuevoContrato.mcasTipoPrecio = 'FIJO';
+      if (!this.nuevoContrato.mcasTipoSuministro) {
+        this.nuevoContrato.mcasTipoSuministro = this.esLuz ? 'LUZ' : (this.esGas ? 'GAS' : null);
+      }
+    },
+
     cerrarModalDetalleContrato() {
       this.mostrarModalDetalleContrato = false;
       this.contratoDetalle = null;
       this.clienteDetalle = null;
     },
-
-    generarPDFContrato(contrato) {
-      // Genera un PDF visual con los datos del contrato
-      const doc = new jsPDF();
-      doc.setFontSize(18);
-      doc.text("Detalle del Contrato", 14, 18);
-      doc.setFontSize(12);
-      doc.text(`Cliente: ${this.cliente?.nombre || ''}`, 14, 30);
-      doc.text(`DNI: ${this.dniClienteActual || ''}`, 14, 38);
-      doc.text(`Nº Contrato: ${contrato.contrato || ''}`, 14, 46);
-      doc.text(`Vigencia: ${this.formatDate(contrato.fechaInicio)} - ${this.formatDate(contrato.fechaFin)}`, 14, 54);
-      doc.autoTable({
-        startY: 62,
-        head: [["Campo", "Valor"]],
-        body: [
-          ["Tarifa Luz", this.getTarifaLuzNombre(contrato.idTarifaLuz)],
-          ["Tarifa Gas", this.getTarifaGasNombre(contrato.idTarifaGas)],
-          ["Comercializadora Actual", this.getComercializadoraNombre(contrato.idComercializadoraActual)],
-          ["Comercializadora Anterior", this.getComercializadoraNombre(contrato.idComercializadoraAnterior)],
-          ["Autoconsumo", contrato.autoconsumo ? "Sí" : "No"],
-          ["Exención Impuesto Eléctrico", contrato.exencionImpuestoElectricidad === 1 ? "Sí" : "No"],
-          ["Denuncia Contrato", contrato.denunciaContrato ? `Sí (${this.formatDate(contrato.fechaDenunciaContrato)})` : "No"],
-          ["Observaciones", contrato.observaciones || "Ninguna"],
-        ],
-        theme: 'grid',
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [252, 215, 0] },
-      });
-      doc.save(`contrato_${contrato.contrato || 'detalle'}.pdf`);
-    },
-
 
     async cargarComercializadoras() {
       try {
@@ -1735,10 +2111,37 @@ export default {
         console.error('Error al cargar comercializadoras:', error);
         this.comercializadorasList = [];
       }
+      // Cargar también gestoras y productos MCAS en paralelo
+      this.cargarGestorasYProductos();
+    },
+
+    /**
+     * Gestoras y productos comerciales MCAS. Se piden una sola vez mientras el modal
+     * vive: `asegurarComercializadorasCargadas` entra desde los cinco puntos del
+     * formulario y antes repetía las dos peticiones en cada uno. Si alguna falla se
+     * olvida la carga para poder reintentarla.
+     */
+    cargarGestorasYProductos() {
+      if (this.cargaGestorasProductos) return this.cargaGestorasProductos;
+
+      this.cargaGestorasProductos = Promise.all([
+        axios.get('/gestoras').catch(() => null),
+        axios.get('/mcas/productos-comerciales').catch(() => null),
+      ]).then(([ges, prod]) => {
+        this.gestorasList = ges ? (ges.data || []) : [];
+        this.productosComerciales = prod ? (prod.data || []) : [];
+        if (!ges || !prod) {
+          console.warn('No se pudieron cargar gestoras/productos MCAS');
+          this.cargaGestorasProductos = null;
+        }
+      });
+
+      return this.cargaGestorasProductos;
     },
 
     // Método auxiliar para asegurar que las comercializadoras estén cargadas
     async asegurarComercializadorasCargadas() {
+      await this.cargarGestorasYProductos();
       // Si ya están cargadas, no hacer nada
       if (this.comercializadorasList && this.comercializadorasList.length > 0) {
         return;
@@ -1761,12 +2164,13 @@ export default {
     async eliminarContrato(contrato) {
       try {
         const result = await this.$swal.fire({
-          title: '¿Estás seguro?',
-          text: `¿Deseas eliminar el contrato #${contrato.contrato}?`,
+          title: '¿Eliminar el contrato?',
+          // Borrarlo es que no llegó a hacerse: el servidor borra también su comisión MCAS
+          text: `Se eliminará el contrato #${contrato.contrato}. Si tiene comisión MCAS, también se eliminan su propuesta `
+            + 'y su servicio de comisión. No se puede deshacer.',
           icon: 'warning',
           showCancelButton: true,
           confirmButtonColor: '#d33',
-          cancelButtonColor: '#3085d6',
           confirmButtonText: 'Sí, eliminar',
           cancelButtonText: 'Cancelar'
         });
@@ -1791,7 +2195,7 @@ export default {
             title: 'Eliminado',
             text: 'El contrato ha sido eliminado correctamente.',
             icon: 'success',
-            confirmButtonColor: 'rgba(252, 215, 0)',
+            confirmButtonColor: '#fcd700',
             confirmButtonText: 'Aceptar',
             timer: 2000,
             timerProgressBar: true
@@ -1799,14 +2203,19 @@ export default {
 
           // Emitir evento para recargar contratos
           this.$emit("recargar-contratos");
+          // Y la tabla de puntos (tarifa, fin de contrato, contratos activos), como al
+          // crear, modificar o renovar
+          this.$emit("contrato-eliminado");
         }
       } catch (error) {
         console.error('Error al eliminar contrato:', error);
+        // El servidor explica el motivo cuando lo hay (p. ej. datos asociados)
+        const motivo = error.response?.data?.error;
         this.$swal.fire({
           title: 'Error',
-          text: 'No se pudo eliminar el contrato. Por favor, inténtalo de nuevo.',
+          text: motivo ? `No se pudo eliminar el contrato: ${motivo}` : 'No se pudo eliminar el contrato. Por favor, inténtalo de nuevo.',
           icon: 'error',
-          confirmButtonColor: 'rgba(252, 215, 0)',
+          confirmButtonColor: '#fcd700',
           confirmButtonText: 'Aceptar'
         });
       }
@@ -1866,19 +2275,215 @@ export default {
       });
     },
 
-    // Texto dinámico para el botón de guardar
-    textoBotonGuardar() {
-      if (this.modoEdicion) return 'Guardar Cambios';
-      if (this.modoRenovacion) return 'Guardar y Renovar';
-      return 'Guardar Contrato';
+    tituloModal() {
+      if (!this.mostrandoFormulario) return 'Gestión de contratos';
+      if (this.modoEdicion) return 'Modificar contrato';
+      if (this.modoRenovacion) return 'Renovar contrato';
+      return 'Nuevo contrato';
     },
 
-    contratosHistoricosOrdenados() {
-      return [...this.contratosHistoricos].sort((a, b) => {
-        return new Date(b.fechaInicio) - new Date(a.fechaInicio);
+    // Datos mínimos que el servidor exige para calcular la comisión MCAS al guardar.
+    // Sin vista previa (sin red o aún sin respuesta) son el respaldo de la pestaña.
+    mcasFaltanCampos() {
+      const c = this.nuevoContrato || {};
+      // «Sin comisión automática» es una elección, no un dato que falta.
+      if (this.sinComisionMcas) return [];
+      const vacio = (v) => v === null || v === undefined || String(v).trim() === '';
+      const requisitos = [
+        ['Tipo de precio', 'mcasTipoPrecio'],
+        ['Tipo de suministro', 'mcasTipoSuministro'],
+        ['Número de contrato', 'contrato'],
+        ['Fecha de inicio', 'fechaInicio'],
+        ['Comercializadora actual', 'idComercializadoraActual'],
+      ];
+      // El servidor exige el tipo de renovación en toda comisión de renovación:
+      // sin él la propuesta nace en «Faltan datos» y no se calcula el importe.
+      if (this.esRenovacionMcas) requisitos.push(['Tipo de renovación', 'mcasTipoRenovacion']);
+      return requisitos.filter(([, campo]) => vacio(c[campo])).map(([etiqueta, campo]) => ({ etiqueta, campo }));
+    },
+
+    mcasFaltan() {
+      return this.mcasFaltanCampos.map(f => f.etiqueta);
+    },
+
+    // Al renovar, el servidor marca la comisión como renovación aunque el
+    // desplegable del formulario se haya quedado sin elegir.
+    esRenovacionMcas() {
+      return this.modoRenovacion || this.nuevoContrato?.mcasEsRenovacion === true;
+    },
+
+    vistaPreviaMcasValida() {
+      const vista = this.vistaPrevia;
+      return !!vista && typeof vista === 'object' && typeof vista.estado === 'string';
+    },
+
+    // Tipo de precio en «Sin comisión automática»: el contrato no genera propuesta y no hay nada que pedir.
+    sinComisionMcas() {
+      const tipo = this.nuevoContrato?.mcasTipoPrecio;
+      return tipo === null || tipo === undefined || String(tipo).trim() === '';
+    },
+
+    // Color de la marca de la pestaña: gris sin comisión, verde lista, naranja si falta algo.
+    marcaMcas() {
+      if (this.sinComisionMcas) return 'neutro';
+      return this.mcasListo ? 'ok' : 'aviso';
+    },
+
+    // Marca de la pestaña: la decide la vista previa; sin ella, los datos mínimos.
+    mcasListo() {
+      if (this.vistaPreviaMcasValida) return this.vistaPrevia.estado === 'CALCULADO';
+      return this.mcasFaltan.length === 0;
+    },
+
+    // Datos que el servidor no exige, pero que casi todas las reglas usan: solo se avisan.
+    // No cuentan para «mcasListo». Con vista previa sobran: ya dice qué usa la comercializadora.
+    mcasRecomendados() {
+      const c = this.nuevoContrato || {};
+      const vacio = (v) => v === null || v === undefined || String(v).trim() === '';
+      if (vacio(c.mcasTipoPrecio)) return [];
+      return [['Segmento', c.mcasSegmento]].filter(([, valor]) => vacio(valor)).map(([nombre]) => nombre);
+    },
+
+    avisoRecomendadoMcas() {
+      if (this.vistaPreviaMcasValida) return '';
+      return this.mcasRecomendados.length
+        ? `Recomendado: ${this.mcasRecomendados.join(', ')} (casi todas las reglas lo usan)`
+        : '';
+    },
+
+    // Cambia cuando cambia algo que influye en la comisión; null si no hay que pedir vista previa.
+    firmaVistaPrevia() {
+      if (!this.visible || !this.mostrandoFormulario || !this.nuevoContrato?.mcasTipoPrecio) return null;
+      return JSON.stringify(this.cuerpoVistaPrevia());
+    },
+
+    camposMcas() {
+      return organizarCamposMcas({
+        vistaPrevia: this.vistaPrevia, contrato: this.nuevoContrato, esRenovacion: this.esRenovacionMcas, errores: this.errores,
       });
     },
-    
+
+    // Campos a la vista y, si los hay, los plegados en «Más datos».
+    gruposCamposMcas() {
+      const { principales, otros } = this.camposMcas;
+      const grupos = [{ id: 'principal', plegado: false, campos: principales }];
+      if (otros.length) grupos.push({ id: 'otros', plegado: true, campos: otros });
+      return grupos;
+    },
+
+    camposFaltanMcas() {
+      return this.vistaPreviaMcasValida
+        ? faltantesVistaPrevia(this.vistaPrevia, this.nuevoContrato).map(f => f.campo)
+        : this.mcasFaltanCampos.map(f => f.campo);
+    },
+
+    // Consumo y tarifa: se cambian en la pestaña Contrato; aquí se enseña su valor. La zona
+    // de comisión la calcula el servidor por la provincia del punto de suministro.
+    filasSoloLecturaMcas() {
+      const c = this.nuevoContrato || {};
+      return this.camposMcas.soloLectura.map((fila) => {
+        let valor;
+        if (fila.campo === CAMPO_ZONA) {
+          valor = String(this.vistaPrevia?.zonaComision || '').trim() || 'Sin determinar';
+        } else if (fila.campo === 'consumoAnual') {
+          const consumo = this.normalizarDecimalMcas(c.consumoAnual);
+          valor = consumo ? `${consumo.toLocaleString('es-ES', { maximumFractionDigits: 4 })} kWh` : 'Sin indicar';
+        } else if (fila.campo === 'mcasTipoPrecio') {
+          valor = c.mcasTipoPrecio || 'Sin comisión automática';
+        } else if (fila.campo === 'mcasIdProductoComercial') {
+          const producto = this.productosComerciales.find(p => String(p.id) === String(c.mcasIdProductoComercial));
+          valor = producto ? producto.nombre : 'Sin producto';
+        } else if (fila.campo === 'potenciaContratada') {
+          valor = this.mayorPotenciaMcas === null ? 'Sin indicar'
+            : `${this.mayorPotenciaMcas.toLocaleString('es-ES', { maximumFractionDigits: 4 })} kW`;
+        } else {
+          valor = fila.campo === 'idTarifaGas' ? this.getTarifaGasNombre(c.idTarifaGas) : this.getTarifaLuzNombre(c.idTarifaLuz);
+        }
+        return { ...fila, valor };
+      });
+    },
+
+    // Cabecera de la pestaña: comisión estimada o lo que falta; sin vista previa, el respaldo.
+    cabeceraMcas() {
+      if (this.sinComisionMcas) {
+        return {
+          tono: 'neutro', icono: 'fas fa-info-circle', faltan: [], avisos: [], estimacion: false,
+          titulo: 'Sin comisión automática: este contrato no generará propuesta de comisión',
+          detalle: 'Si el contrato debe comisionar, elija FIJO o INDEXADO en «Tipo de precio» (pestaña Contrato).',
+        };
+      }
+      if (this.vistaPreviaMcasValida) return cabeceraVistaPrevia(this.vistaPrevia, this.nuevoContrato, { verImporte: this.esAdminMcas });
+      const faltan = this.mcasFaltanCampos;
+      let detalle = 'Al guardar, se aplica la tabla de comisiones de la comercializadora y la propuesta queda en Comisiones MCAS; '
+        + 'cuando un administrador la aprueba, se crea el servicio de comisión en este punto de suministro. '
+        + 'Si el contrato no debe comisionar, elija «Sin comisión automática» en «Tipo de precio».';
+      if (this.cargandoVistaPrevia) detalle = this.esAdminMcas ? 'Calculando la comisión estimada…' : 'Comprobando los datos de la comisión…';
+      else if (this.errorVistaPrevia) detalle = 'No se ha podido calcular la estimación ahora mismo; al guardar el contrato se calculará igualmente.';
+      return faltan.length
+        ? { tono: 'aviso', icono: 'fas fa-exclamation-triangle', titulo: 'Para calcular la comisión falta:', detalle, faltan, avisos: [], estimacion: false }
+        : { tono: 'ok', icono: 'fas fa-check-circle', titulo: 'Al guardar se calculará la comisión de este contrato', detalle, faltan: [], avisos: [], estimacion: false };
+    },
+
+    tituloMarcaMcas() {
+      const { titulo, faltan } = this.cabeceraMcas;
+      const estado = [titulo, faltan.map(f => f.etiqueta).join(', ')].filter(Boolean).join(' ');
+      return [estado, this.avisoRecomendadoMcas].filter(Boolean).join('. ');
+    },
+
+    textoComisionActual() {
+      return textoResumenMcas(this.resumenMcas);
+    },
+
+    // Mayor de las potencias contratadas P1…P6 (null si ninguna es mayor que 0).
+    mayorPotenciaMcas() {
+      const c = this.nuevoContrato || {};
+      const potencias = [1, 2, 3, 4, 5, 6]
+        .map(n => this.normalizarDecimalMcas(c['pot' + n] !== undefined ? c['pot' + n] : c['potencia' + n]))
+        .filter(p => p !== null && p > 0);
+      return potencias.length ? Math.max(...potencias) : null;
+    },
+
+    // La comisión (importe, pagos y avisos del cálculo) solo la ven los administradores.
+    // Atajos del calendario de las fechas del contrato
+    atajosInicioContrato() {
+      return [atajoPrimeroDelMes()];
+    },
+    finUnAnioContrato() {
+      return finDePeriodo(this.nuevoContrato?.fechaInicio, 12);
+    },
+    atajosFinContrato() {
+      return atajosDuracion(this.nuevoContrato?.fechaInicio);
+    },
+    // En el calendario de la fecha fin, un punto en el día de inicio
+    marcasFinContrato() {
+      const inicio = this.nuevoContrato?.fechaInicio;
+      return inicio ? [{ fecha: inicio, texto: 'Inicio del contrato' }] : [];
+    },
+    duracionContrato() {
+      return textoDuracion(this.nuevoContrato?.fechaInicio, this.nuevoContrato?.fechaFin);
+    },
+    esAdminMcas() {
+      try {
+        return Number(JSON.parse(localStorage.getItem('usuario') || '{}')?.nivelAcceso) === 1;
+      } catch (e) {
+        return false;
+      }
+    },
+
+    // Por qué el desplegable de productos aún no se puede usar ('' si se puede).
+    textoSinProductoMcas() {
+      if (!this.nuevoContrato?.idComercializadoraActual) return 'Elija antes la comercializadora';
+      if (!this.nuevoContrato?.mcasTipoPrecio) return 'Elija antes el tipo de precio';
+      return '';
+    },
+
+    // Texto dinámico para el botón de guardar
+    textoBotonGuardar() {
+      if (this.modoEdicion) return 'Guardar cambios';
+      if (this.modoRenovacion) return 'Guardar y Renovar';
+      return 'Guardar contrato';
+    },
+
     // Obtener los datos del punto de suministro
     puntoSuministroData() {
       // El puntoSuministro ahora siempre será un objeto completo
@@ -1912,24 +2517,26 @@ export default {
       const cupsLuz = this.puntoSuministroData?.CUPSluz || this.puntoSuministroData?.cupsluz;
       return cupsLuz && cupsLuz.trim() !== '';
     },
-    
-    // Obtener el tipo de punto de suministro
-    tipoPuntoSuministro() {
-      if (this.esLuz) return 'Luz';
-      if (this.esGas) return 'Gas';
-      return '';
-    },
-    
-    // Obtener el ID de "Sin Tarifa" para gas
-    idSinTarifaGas() {
-      const sinTarifa = this.tarifasGas.find(t => t.nombre === 'Sin Tarifa');
-      return sinTarifa ? sinTarifa.id : '';
-    },
-    
-    // Obtener el ID de "Sin Tarifa" para luz
-    idSinTarifaLuz() {
-      const sinTarifa = this.tarifasLuz.find(t => t.nombre === 'Sin Tarifa');
-      return sinTarifa ? sinTarifa.id : '';
+
+    // Productos comerciales filtrados por la comercializadora seleccionada
+    productosComercializesFiltrados() {
+      const idComercializadora = this.nuevoContrato?.idComercializadoraActual
+      const tipoPrecio = this.nuevoContrato?.mcasTipoPrecio
+      const tipoSuministro = this.nuevoContrato?.mcasTipoSuministro
+      const idGestora = this.nuevoContrato?.mcasIdGestora
+      const fechaContrato = this.nuevoContrato?.fechaInicio || fechaLocalISO()
+      return this.productosComerciales.filter(p => {
+        if (p.activo === false) return false
+        if (idComercializadora && Number(p.idComercializadora) !== Number(idComercializadora)) return false
+        if (tipoPrecio && p.tipoPrecio !== tipoPrecio) return false
+        if (tipoSuministro && p.tipoSuministro !== tipoSuministro) return false
+        // Los de una gestora salen también sin gestora elegida: al escoger uno se pone la suya
+        if (p.idGestora != null && idGestora !== null && idGestora !== undefined && idGestora !== ''
+          && Number(p.idGestora) !== Number(idGestora)) return false
+        if (p.activoDesde && p.activoDesde > fechaContrato) return false
+        if (p.activoHasta && p.activoHasta < fechaContrato) return false
+        return true
+      })
     },
     
 
@@ -1940,13 +2547,8 @@ export default {
         return null;
       }
       
-      const ahora = new Date();
       const contratoVigente = this.contratos.find(
-        (contrato) => {
-          const fechaFin = new Date(contrato.fechaFin);
-          const fechaInicio = new Date(contrato.fechaInicio);
-          return fechaInicio <= ahora && fechaFin > ahora;
-        }
+        (contrato) => enVigorHoy(contrato.fechaInicio, contrato.fechaFin)
       );
       
       return contratoVigente || null;
@@ -1967,6 +2569,21 @@ export default {
     }
   },
   watch: {
+    // Las dos pestañas comparten el contenedor que se desplaza: sin esto, «Otros datos»
+    // se abría a media altura y tapaba la comisión actual y lo que falta para calcularla
+    pestanaContrato() {
+      this.$nextTick(() => {
+        const cuerpo = this.$el?.querySelector?.('.pestana-contrato-cuerpo');
+        if (cuerpo) cuerpo.scrollTop = 0;
+      });
+    },
+    mostrandoFormulario(abierto) {
+      if (abierto) {
+        this.pestanaContrato = 'contrato';
+        // Los avisos en rojo de un intento anterior no se arrastran al volver a abrir
+        this.errores = {};
+      }
+    },
     // Cuando se abre el modal, configurar el estado inicial
     visible: {
       immediate: true, // Ejecutar inmediatamente cuando se crea el componente
@@ -2008,7 +2625,7 @@ export default {
           this.$nextTick(() => {
             try {
               // SIEMPRE mostrar la vista principal (histórico) primero
-              // El usuario puede hacer clic en "Crear Contrato" si quiere añadir uno
+              // El usuario puede hacer clic en "Crear contrato" si quiere añadir uno
               // No hacer nada aquí, dejar que la vista principal se muestre por defecto
             } catch (error) {
               console.error("Error al inicializar vista del modal:", error);
@@ -2147,7 +2764,45 @@ export default {
         }
       },
       immediate: true
+    },
+
+    // Cuando cambia la comercializadora, limpiar el producto comercial MCAS
+    // (el producto del contrato anterior puede no corresponder a la nueva comercializadora)
+    // La zona sugerida se propone al llegar la vista previa (pedirVistaPrevia), que es
+    // quien sabe si la tabla de comisiones de la nueva comercializadora la usa.
+    'nuevoContrato.idComercializadoraActual'(newVal, oldVal) {
+      if (newVal !== oldVal && oldVal !== undefined) this.descartarProductoIncompatibleMcas()
+    },
+    'nuevoContrato.mcasTipoPrecio'(newVal, oldVal) {
+      if (newVal !== oldVal && oldVal !== undefined) this.descartarProductoIncompatibleMcas()
+    },
+    'nuevoContrato.mcasTipoSuministro'(newVal, oldVal) {
+      if (newVal !== oldVal && oldVal !== undefined) this.descartarProductoIncompatibleMcas()
+    },
+    // Un producto de una gestora trae su gestora si el contrato aún no tiene ninguna
+    'nuevoContrato.mcasIdProductoComercial'(id) {
+      if (id === null || id === undefined || id === '' || this.nuevoContrato?.mcasIdGestora) return
+      const producto = this.productosComerciales.find(p => String(p.id) === String(id))
+      if (producto && producto.idGestora !== null && producto.idGestora !== undefined) {
+        this.nuevoContrato.mcasIdGestora = producto.idGestora
+      }
+    },
+    'nuevoContrato.mcasIdGestora'(newVal, oldVal) {
+      if (newVal !== oldVal && oldVal !== undefined) this.descartarProductoIncompatibleMcas()
+    },
+    'nuevoContrato.fechaInicio'(newVal, oldVal) {
+      if (newVal !== oldVal && oldVal !== undefined) this.descartarProductoIncompatibleMcas()
+    },
+    // Vista previa de la comisión: se pide 600 ms después del último cambio que influye en ella
+    firmaVistaPrevia(firma) {
+      this.programarVistaPrevia(firma)
     }
+  },
+  beforeUnmount() {
+    clearTimeout(this.temporizadorVistaPrevia);
+    this.temporizadorVistaPrevia = null;
+    // Una respuesta que llegue después ya no se aplica
+    this.solicitudVistaPrevia += 1;
   },
   async mounted() {
     // Inicializar como NO cargando
@@ -2198,8 +2853,9 @@ export default {
           );
         }
         
-        // Cargar comercializadoras
-        promises.push(this.cargarComercializadoras());
+        if (needsComercializadoras) {
+          promises.push(this.cargarComercializadoras());
+        }
         
         // Esperar a que se carguen todas las tarifas necesarias
         try {

@@ -1,11 +1,11 @@
 <template>
   <modal-component :ancho="true" :titulo="inicial ? 'Editar cambio' : 'Registrar cambio'" @cerrar="$emit('cerrar')">
-    <div class="form-grid">
+    <div class="formulario-rejilla">
       <label class="field">Fecha <input v-model="fecha" type="date"></label>
       <label class="field">Impacto económico (+ / − €) <input v-model="impacto" type="number" step="any" placeholder="Ej.: 1200 o -150"></label>
     </div>
 
-    <fieldset v-if="sube" class="price-box payment-mode">
+    <fieldset v-if="sube" class="precio-caja pago-modo">
       <legend>Cómo se cobra este aumento</legend>
       <label class="radio">
         <input v-model="modoPago" type="radio" name="modo-cobro" value="split">
@@ -19,10 +19,10 @@
 
     <label class="field">Motivo <textarea v-model="motivo" rows="3" /></label>
 
-    <fieldset class="price-box">
+    <fieldset class="precio-caja">
       <legend>Datos del contrato que modifica (opcional)</legend>
       <p class="hint">Si cambias equipos o potencia, las tareas que los usan (pedidos, entregas, montaje…) mostrarán el valor nuevo y se marcarán para revisar.</p>
-      <div v-for="(s, i) in cambios" :key="s.field" class="set-row">
+      <div v-for="(s, i) in cambios" :key="s.field" class="conjunto-fila">
         <span>{{ campo(s.field) ? campo(s.field).label : s.field }}</span>
         <input v-model="s.value" :type="campo(s.field) && campo(s.field).type !== 'text' ? 'number' : 'text'" :step="campo(s.field) && campo(s.field).type === 'int' ? 1 : 'any'"
                :min="campo(s.field) && campo(s.field).type !== 'text' ? 0 : undefined" :placeholder="'Ahora: ' + formatoValor(campo(s.field), contrato.current[s.field])">

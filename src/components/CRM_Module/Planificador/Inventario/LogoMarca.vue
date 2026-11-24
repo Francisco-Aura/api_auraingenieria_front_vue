@@ -1,5 +1,5 @@
 <template>
-  <span class="brand-logo" :style="{ height: tamano + 'px', minWidth: tamano + 'px' }" :title="nombre">
+  <span class="marca-logo" :style="{ height: tamano + 'px', minWidth: tamano + 'px' }" :title="nombre">
     <img v-if="tieneLogo" :src="url" :alt="'Logo de ' + nombre">
     <span v-else aria-hidden="true">{{ nombre.charAt(0) }}</span>
   </span>

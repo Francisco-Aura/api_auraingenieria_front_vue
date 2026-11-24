@@ -1,0 +1,209 @@
+/* Presupuesto con cambios (ver BudgetChanges.tsx) */
+
+.bd .bd-acciones {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bd-only {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.bd-estadisticas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.bd-dato {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-alt);
+}
+
+.bd-dato span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bd-dato strong {
+  display: block;
+  font-size: 18px;
+  color: var(--text-h);
+}
+
+.bd-dato small {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bd-plus {
+  color: #1d4ed8;
+}
+
+.bd-minus {
+  color: #b91c1c;
+}
+
+.bd-tabla-envoltorio {
+  overflow-x: auto;
+}
+
+.bd-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.bd-tabla th,
+.bd-tabla td {
+  padding: 7px 10px;
+  border-top: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.bd-tabla th {
+  border-top: 0;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.bd-tabla .num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.bd-grupo td {
+  background: var(--bg-alt);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.bd-cambiado {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.bd-nombre {
+  color: var(--text-h);
+}
+
+.bd-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bd-etiqueta {
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.bd-auto {
+  color: var(--muted);
+}
+
+.bd-entrada {
+  width: 84px;
+  text-align: right;
+}
+
+.bd-borrador {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg));
+}
+
+.bd-modules {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.bd-borrador-acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bd-borrador-acciones .muted {
+  margin-right: auto;
+}
+
+.bd-selector {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px 12px;
+}
+
+.bd-selector-fila {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bd-selector-fila input {
+  flex: 1;
+  min-width: 180px;
+}
+
+.bd-found {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bd-found button {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.bd-found button:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+
+.bd-por-cambio {
+  margin-top: 16px;
+}
+
+@media (max-width: 760px) {
+  .bd-estadisticas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

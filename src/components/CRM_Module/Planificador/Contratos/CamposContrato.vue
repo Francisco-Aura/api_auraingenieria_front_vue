@@ -1,8 +1,8 @@
 <template>
-  <div class="form-grid">
-    <label v-for="f in campos" :key="f.key" :class="{ 'from-contract': resaltar.includes(f.key) }">
+  <div class="formulario-rejilla">
+    <label v-for="f in campos" :key="f.key" :class="{ 'from-contrato': resaltar.includes(f.key) }">
       {{ f.label }}
-      <input :class="{ 'required-empty': invalidos.includes(f.key) && !String(valores[f.key] ?? '').trim() }" :type="f.type !== 'text' ? 'number' : 'text'" :inputmode="f.type !== 'text' ? 'decimal' : undefined" :step="f.type === 'int' ? 1 : 'any'" :min="f.type !== 'text' ? 0 : undefined"
+      <input :class="{ 'obligatorio-vacio': invalidos.includes(f.key) && !String(valores[f.key] ?? '').trim() }" :type="f.type !== 'text' ? 'number' : 'text'" :inputmode="f.type !== 'text' ? 'decimal' : undefined" :step="f.type === 'int' ? 1 : 'any'" :min="f.type !== 'text' ? 0 : undefined"
              :value="valores[f.key] ?? ''" @input="$emit('update:valores', { ...valores, [f.key]: $event.target.value })">
     </label>
   </div>

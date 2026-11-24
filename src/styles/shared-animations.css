@@ -18,14 +18,12 @@
   100% { opacity: 1; }
 }
 
-/* Usado por PuntoSuministroComponent.css y ClientesComponent.css en .stat-card */
+/* Usado por PuntoSuministroComponent.css, ClientesComponent.css y McasShared.css en .stat-card */
+/* Sin «to»: la tarjeta termina con sus propios estilos y, con relleno
+   «backwards», sin un transform que se quede puesto y anule el del hover */
 @keyframes statCardEntrance {
   from {
     opacity: 0;
-    transform: translateY(15px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(8px) scale(0.98);
   }
 }

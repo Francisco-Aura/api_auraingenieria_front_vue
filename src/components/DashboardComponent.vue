@@ -8,8 +8,15 @@
           <img v-if="!sidebarCollapsed" src="@/assets/logo.png" alt="AURA Logo" class="logo-icon" />
           <span v-if="!sidebarCollapsed" class="logo-text">AURA</span>
         </div>
-        <button class="toggle-sidebar" @click="toggleSidebar">
-          <i class="fas" :class="sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+        <button
+          type="button"
+          class="toggle-sidebar"
+          :title="sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'"
+          :aria-label="sidebarCollapsed ? 'Expandir menú' : 'Contraer menú'"
+          :aria-expanded="sidebarCollapsed ? 'false' : 'true'"
+          @click="toggleSidebar"
+        >
+          <i class="fas" :class="sidebarCollapsed ? 'fa-bars' : 'fa-angles-left'" aria-hidden="true"></i>
         </button>
       </div>
 
@@ -36,7 +43,7 @@
         <router-link v-if="planificadorDisponible" to="/dashboard/planificador" class="menu-item" active-class="active">
           <i class="fas fa-project-diagram menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Planificador</span>
-          <span v-if="presupuestosPorValidar > 0" class="menu-dot" :title="presupuestosPorValidar + ' pendiente(s) en el presupuestador (por validar o con la propuesta enviada al cliente)'" aria-label="Hay pendientes en el presupuestador"></span>
+          <span v-if="presupuestosPorValidar > 0" class="menu-dot" :title="presupuestosPorValidar + ' propuesta(s) entregada(s) pendiente(s) de validar'" aria-label="Hay pendientes en el presupuestador"></span>
           <div v-if="sidebarCollapsed" class="tooltip">Planificador</div>
         </router-link>
 
@@ -52,26 +59,57 @@
           <div v-if="sidebarCollapsed" class="tooltip">Registro horario</div>
         </router-link>
 
-        <router-link v-if="nivelAcceso === 1" to="/dashboard/administracion" class="menu-item" active-class="active">
+        <!-- Configuración MCAS se abre desde Administración (reunión del 04/11/2026): allí se queda marcada -->
+        <router-link v-if="nivelAcceso === 1" to="/dashboard/administracion" class="menu-item" active-class="active"
+                     :class="{ active: enConfiguracionMcas }">
           <i class="fas fa-cog menu-icon"></i>
           <span v-if="!sidebarCollapsed" class="menu-text">Administración</span>
           <div v-if="sidebarCollapsed" class="tooltip">Administración</div>
         </router-link>
+
+        <!-- Insignia con las comisiones por aprobar (abierto y plegado); el desglose va en el título -->
+        <router-link v-if="nivelAcceso === 1" to="/dashboard/mcas-propuestas" class="menu-item" active-class="active" :title="sidebarCollapsed ? null : (tituloPendientesMcas || null)">
+          <i class="fas fa-file-invoice-dollar menu-icon"></i>
+          <span v-if="!sidebarCollapsed" class="menu-text">Comisiones MCAS</span>
+          <span v-if="pendientesPorValidar" class="menu-insignia" :title="tituloPendientesMcas" :aria-label="pendientesPorValidar + ' por aprobar'">{{ insigniaPendientesMcas }}</span>
+          <div v-if="sidebarCollapsed" class="tooltip">Comisiones MCAS<span v-if="tituloPendientesMcas" class="tooltip-detalle">{{ tituloPendientesMcas }}</span></div>
+        </router-link>
       </div>
 
       <!-- User profile at the bottom -->
-      <div class="sidebar-footer">
-        <div class="user-profile" @click="handleUserProfileClick">
+      <!-- Tarjeta y opción con rol de botón: se llega con Tab y se pulsan con Intro o
+           Espacio sin cambiar su aspecto. El menú se cierra con Esc o pulsando fuera. -->
+      <div ref="pieUsuario" class="sidebar-footer">
+        <div
+          ref="tarjetaUsuario"
+          class="user-profile"
+          role="button"
+          tabindex="0"
+          aria-haspopup="menu"
+          :aria-expanded="userMenuOpen ? 'true' : 'false'"
+          :title="sidebarCollapsed ? `${userName} (${userRole})` : null"
+          @click="handleUserProfileClick"
+          @keydown.enter.prevent="handleUserProfileClick"
+          @keydown.space.prevent="handleUserProfileClick"
+        >
           <div class="avatar">
             <i class="fas fa-user"></i>
           </div>
           <div v-if="!sidebarCollapsed" class="user-info">
-            <div class="user-name">{{ userName }}</div>
+            <div class="user-name" :title="userName">{{ userName }}</div>
             <div class="user-role">{{ userRole }}</div>
           </div>
         </div>
-        <div v-if="userMenuOpen && !sidebarCollapsed" class="user-menu">
-          <div class="menu-option" @click="cerrarSesion">
+        <div v-if="userMenuOpen && !sidebarCollapsed" class="user-menu" role="menu">
+          <div
+            ref="opcionCerrarSesion"
+            class="menu-option"
+            role="menuitem"
+            tabindex="0"
+            @click="cerrarSesion"
+            @keydown.enter.prevent="cerrarSesion"
+            @keydown.space.prevent="cerrarSesion"
+          >
             <i class="fas fa-sign-out-alt"></i>
             <span>Cerrar sesión</span>
           </div>
@@ -89,7 +127,7 @@
           </div>
         </div>
         <div class="header-right">
-          <NotificacionesComponent v-if="moduloTareasActivo" />
+          <NotificacionesComponent v-if="moduloTareasActivo" @menu-abierto="userMenuOpen = false" />
         </div>
       </header>
 
@@ -104,8 +142,10 @@
 </template>
 
 <script>
+import axios from 'axios'
 import NotificacionesComponent from '@/components/CRM_Module/Tareas/NotificacionesComponent.vue'
 import { tareasApi } from '@/services/tareasApi'
+import { crearSondeoPendientes, textoPendientesMcas } from '@/services/mcasPendientes'
 import { planificadorDisponible } from '@/config/entornos'
 
 export default {
@@ -126,10 +166,14 @@ export default {
         '/dashboard/informes': 'Informes',
         '/dashboard/administracion': 'Administración',
         '/dashboard/tareas': 'Gestión de Tareas',
+        '/dashboard/mcas': 'Configuración MCAS',
+        '/dashboard/mcas-propuestas': 'Comisiones MCAS',
         '/dashboard/planificador': 'Planificador',
         '/dashboard/registro-horario': 'Registro horario'
       },
       moduloTareasActivo: false,
+      // Recuento de comisiones MCAS pendientes (solo administradores): { porValidar, porRevisar, enCorreccion, total }
+      pendientesMcas: null,
       // En PRO el Planificador no se enseña (ver src/config/entornos.js)
       planificadorDisponible: planificadorDisponible(),
       // Ofertas del presupuestador enviadas al cliente a la espera de que las valide el usuario 1 (solo se le avisa a él)
@@ -138,16 +182,42 @@ export default {
     };
   },
   computed: {
+    enConfiguracionMcas() {
+      return this.$route?.path === '/dashboard/mcas';
+    },
     pageTitle() {
       // Retorna el título basado en la ruta actual
       return this.routes[this.$route.path] || 'Dashboard';
     },
+    pendientesPorValidar() {
+      return this.pendientesMcas?.porValidar || 0;
+    },
+    insigniaPendientesMcas() {
+      return this.pendientesPorValidar > 99 ? '99+' : String(this.pendientesPorValidar);
+    },
+    tituloPendientesMcas() {
+      return textoPendientesMcas(this.pendientesMcas);
+    },
     // Aplicaciones que se muestran dentro de la página (iframe) y gestionan su propio desplazamiento
+    // (el Registro horario ya no: es una pantalla de la intranet y se desplaza con la página)
     esAplicacionIncrustada() {
-      return ['/dashboard/planificador', '/dashboard/registro-horario'].includes(this.$route.path);
+      return ['/dashboard/planificador'].includes(this.$route.path);
     }
   },
   methods: {
+    // La sesión del servidor es una por navegador: si en otra pestaña se cierra sesión o se
+    // entra con otro usuario, esta seguía enseñando el nombre y los menús del anterior
+    // (y sus peticiones salían ya como el nuevo). Se recarga para ponerse al día.
+    alCambiarUsuarioEnOtraPestana(evento) {
+      if (evento.key !== 'usuario' && evento.key !== null) return;
+      let antes = null;
+      let ahora = null;
+      try { antes = JSON.parse(evento.oldValue || 'null'); } catch { antes = null; }
+      try { ahora = JSON.parse(evento.newValue || 'null'); } catch { ahora = null; }
+      if (evento.key === null || !ahora || antes?.id !== ahora.id) {
+        window.location.assign(ahora ? '/dashboard/clientes' : '/');
+      }
+    },
     toggleSidebar() {
       this.sidebarCollapsed = !this.sidebarCollapsed;
       if (this.sidebarCollapsed) {
@@ -159,7 +229,27 @@ export default {
         this.userMenuOpen = !this.userMenuOpen;
       }
     },
+    // El menú de usuario se cierra al pulsar fuera de la tarjeta (antes seguía abierto
+    // encima de lo que se hiciera después, incluso a la vez que el de notificaciones)
+    cerrarMenuUsuarioAlPulsarFuera(evento) {
+      if (!this.userMenuOpen) return;
+      const pie = this.$refs.pieUsuario;
+      if (pie && pie.contains(evento.target)) return;
+      this.userMenuOpen = false;
+    },
+    // Esc cierra el menú de usuario y devuelve el foco a la tarjeta
+    cerrarMenuUsuarioConEscape(evento) {
+      if (evento.key !== 'Escape' || !this.userMenuOpen || evento.defaultPrevented) return;
+      evento.preventDefault();
+      this.userMenuOpen = false;
+      this.$refs.tarjetaUsuario?.focus();
+    },
     cerrarSesion() {
+      // El contador de Comisiones MCAS deja de preguntar ya: sin sesión cada vuelta sería un 401.
+      this.sondeoPendientesMcas?.detener();
+      this.sondeoPendientesMcas = null;
+      // Cierra también la sesión del servidor; si falla (red, ya caducada) se sale igual
+      axios.post(`${process.env.VUE_APP_API_URL}/usuarios/logout`).catch(() => {});
       localStorage.removeItem('usuario');
       localStorage.removeItem('token');
       this.$router.push('/');
@@ -189,7 +279,7 @@ export default {
         return;
       }
       try {
-        // El planificador lo cuenta: ofertas por validar y propuestas enviadas al cliente que esperan su respuesta
+        // El planificador lo cuenta: ofertas entregadas al cliente que esperan su validación
         const res = await fetch('/api/planificador/budgets/pending-validation', { headers: { 'X-Usuario-Id': String(usuario.id) } });
         if (!res.ok) return;
         const pendientes = await res.json();
@@ -203,6 +293,12 @@ export default {
         this.sidebarCollapsed = true;
         this.userMenuOpen = false;
       }
+    },
+    // Contador de «Comisiones MCAS»: sondeo cada 60 s, en pausa con la pestaña oculta
+    iniciarPendientesMcas() {
+      this.sondeoPendientesMcas = crearSondeoPendientes();
+      this.sondeoPendientesMcas.suscribir((recuento) => { this.pendientesMcas = recuento; });
+      this.sondeoPendientesMcas.iniciar();
     }
   },
   async created() {
@@ -214,6 +310,7 @@ export default {
       // Bajo el nombre se muestra su grupo de trabajo; sin grupo (o con una sesión anterior al grupo), su nivel de acceso
       const grupos = { comercial: 'Comercial', ingenieria: 'Ingeniería', administracion: 'Administración', coordinacion: 'Coordinación' };
       this.userRole = grupos[usuario.grupo] || (usuario.nivelAcceso === 1 ? 'Administrador' : 'Usuario');
+      if (usuario.nivelAcceso === 1) this.iniciarPendientesMcas();
     } else {
       // Si no hay usuario autenticado, redirigir al login
       this.$router.push('/');
@@ -228,11 +325,18 @@ export default {
       this.sidebarCollapsed = true;
     }
     window.addEventListener('resize', this.handleResize);
+    window.addEventListener('storage', this.alCambiarUsuarioEnOtraPestana);
+    document.addEventListener('click', this.cerrarMenuUsuarioAlPulsarFuera);
+    document.addEventListener('keydown', this.cerrarMenuUsuarioConEscape);
     this.cargarPresupuestosPorValidar();
     this.temporizadorPresupuestos = setInterval(this.cargarPresupuestosPorValidar, 60000);
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.handleResize);
+    window.removeEventListener('storage', this.alCambiarUsuarioEnOtraPestana);
+    document.removeEventListener('click', this.cerrarMenuUsuarioAlPulsarFuera);
+    document.removeEventListener('keydown', this.cerrarMenuUsuarioConEscape);
+    this.sondeoPendientesMcas?.detener();
     clearInterval(this.temporizadorPresupuestos);
   },
   watch: {

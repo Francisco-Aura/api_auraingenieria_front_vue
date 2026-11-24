@@ -1,20 +1,19 @@
 <template>
-  <div v-if="!remoto || remoto.status !== 'descartado'" class="status-box">
+  <div v-if="!remoto || remoto.status !== 'descartado'" class="estado-caja">
     <template v-if="accion.tipo === 'validar'">
-      <button type="button" @click="validar">Validar presupuesto</button>
-      <span class="muted">Es el que elige el jefe: el resto de variantes de su oferta se descartan.</span>
+      <button type="button" @click="validar">Aprobar presupuesto</button>
+      <span class="muted">Es el que acepta el cliente: queda bloqueado y el resto de variantes de su oferta se descartan.</span>
     </template>
-    <span v-else-if="accion.tipo === 'esperar'" class="muted">Enviado al cliente. Solo quien valida puede elegirlo.</span>
-    <span v-else-if="accion.tipo === 'elegido'" class="muted">Validado: es el presupuesto elegido de su oferta.</span>
-    <span v-else-if="accion.tipo === 'bloqueado'" class="muted">No se puede quitar la validación: la propuesta ya está {{ accion.propuesta === 'aprobada' ? 'aprobada' : 'entregada al cliente' }}.</span>
+    <span v-else-if="accion.tipo === 'elegido'" class="muted">Aprobado: es el presupuesto elegido de su oferta y está bloqueado.</span>
+    <span v-else-if="accion.tipo === 'bloqueado'" class="muted">No se puede quitar la aprobación: la propuesta ya está {{ accion.propuesta === 'aprobada' ? 'validada' : 'entregada al cliente' }}.</span>
     <template v-else-if="accion.tipo === 'desvalidar'">
-      <button type="button" class="secondary" @click="preguntar('Se quitará la validación y las variantes descartadas de su oferta volverán a Enviado. ¿Continuar?', 'unvalidate')">Quitar validación</button>
+      <button type="button" class="secondary" @click="preguntar('Se quitará la aprobación y las variantes descartadas de su oferta volverán a Enviado. ¿Continuar?', 'unvalidate')">Quitar aprobación</button>
       <span class="muted">Las variantes descartadas de su oferta volverán a Enviado.</span>
     </template>
     <template v-else-if="accion.tipo === 'enviar'">
       <button type="button" class="secondary" :disabled="guardando || !accion.habilitado" :title="!remoto ? 'Guárdalo y compártelo primero' : sinGuardar ? 'Guarda primero los cambios' : undefined"
-              @click="preguntar('Este presupuesto pasará a «Enviado» y ya no se podrá editar. Para cambiar algo, se duplicará como variante. ¿Marcarlo como enviado?', 'send')">
-        Marcar como enviado
+              @click="preguntar('Este presupuesto pasará a «Enviado» y ya no se podrá editar. Para cambiar algo, se duplicará como variante. ¿Marcarlo como entregado?', 'send')">
+        Marcar como entregado
       </button>
       <span class="muted">{{ !remoto ? 'Guárdalo y compártelo primero.' : sinGuardar ? 'Guarda primero los cambios.' : 'Cuando ya lo hayas revisado y mandado al cliente: desde ahí no se edita.' }}</span>
     </template>
@@ -54,7 +53,7 @@ export default {
         if (!cif) return
       }
       const alta = potencial ? ' El cliente «' + cliente.name + '» se dará de alta en la intranet.' : ''
-      if (window.confirm('Se validará este presupuesto y se descartarán las demás variantes de su oferta.' + alta + ' ¿Continuar?')) this.$emit('estado', { accion: 'validate', cif })
+      if (window.confirm('Se aprobará este presupuesto y se descartarán las demás variantes de su oferta.' + alta + ' ¿Continuar?')) this.$emit('estado', { accion: 'validate', cif })
     }
   }
 }

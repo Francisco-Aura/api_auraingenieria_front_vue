@@ -1,15 +1,20 @@
 
+/* Alto de la pantalla menos la cabecera fija del panel (70 px): con 100vh la
+   barra de paginación quedaba por debajo del borde y había que desplazar la
+   página entera para verla */
 .admin-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 70px);
+  min-height: 520px;
   padding: 20px;
   background-color: var(--surface-color);
   gap: 20px;
   overflow: hidden;
 }
 
-/* Panel de estadísticas - mantiene el diseño original */
+/* Panel de estadísticas: tarjetas del mismo tamaño que en Clientes, Puntos de
+   suministro y MCAS (antes más altas, con borde gris e icono y cifra mayores) */
 .stats-panel {
   flex-shrink: 0;
 }
@@ -23,31 +28,28 @@
   background-color: var(--white);
   border-radius: var(--border-radius);
   box-shadow: var(--card-shadow);
-  padding: 20px;
+  padding: 0.7rem 1rem;
   display: flex;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   flex: 1;
-  border: 1px solid var(--border-color);
 }
 
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
-}
+/* Las tarjetas de resumen no se pulsan: sin elevarse al pasar el ratón (parecían botones).
+   Las de Comisiones MCAS, que sí filtran, tienen su propio hover (McasShared.css). */
 
 .stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.7rem;
   background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
-  margin-right: 16px;
-  box-shadow: 0 4px 8px rgba(255, 196, 12, 0.3);
+  font-size: 1.2rem;
+  margin-right: 0.8rem;
+  flex-shrink: 0;
 }
 
 .stat-content {
@@ -55,7 +57,7 @@
 }
 
 .stat-value {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
@@ -64,16 +66,16 @@
 .skeleton-stat-loader {
   display: inline-block;
   width: 60px;
-  height: 1.8rem;
+  height: 1.5rem;
   background: linear-gradient(90deg, #d5dae2 25%, #eef1f5 37%, #d5dae2 63%);
   background-size: 400% 100%;
   animation: skeleton-shimmer 1.4s ease infinite;
 }
 
 .stat-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin-top: 0.2rem;
 }
 
 /* Vista principal */
@@ -136,10 +138,14 @@
   border-radius: var(--border-radius);
   padding: 12px 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   position: relative;
   overflow: hidden;
   min-height: 90px;
+  /* Columna para que el pie («N registros» y la flecha) quede abajo en todas
+     las tarjetas de la fila, aunque la descripción ocupe más o menos líneas */
+  display: flex;
+  flex-direction: column;
 }
 
 .table-card::before {
@@ -151,17 +157,29 @@
   height: 4px;
   background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
   transform: translateX(-100%);
-  transition: transform 0.3s ease;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .table-card:hover::before {
   transform: translateX(0);
 }
 
+.table-card:focus-visible {
+  /* Con el teclado (Tab + Intro/Espacio), como las tarjetas de Informes */
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: var(--focus-ring), 0 8px 20px rgba(252, 215, 0, 0.18);
+}
+
+.table-card--cargando {
+  cursor: progress;
+}
+
 .table-card:hover {
   border-color: var(--primary-color);
-  box-shadow: 0 8px 25px rgba(255, 196, 12, 0.2);
-  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(252, 215, 0, 0.18);
+  /* 2 px, como las tarjetas de Informes */
+  transform: translateY(-2px);
 }
 
 .table-card-header {
@@ -203,7 +221,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 4px;
+  margin-top: auto;
 }
 
 .records-count {
@@ -233,7 +251,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   font-size: 1rem;
 }
 
@@ -418,17 +436,11 @@
   cursor: default;
 }
 
-.column-title:hover {
-  background-color: var(--hover-color);
-}
+/* El efecto del ratón en las cabeceras es común a todas las tablas: shared-ui.css */
 
 .actions-header .column-title {
   justify-content: center;
   cursor: default;
-}
-
-.actions-header .column-title:hover {
-  background-color: transparent;
 }
 
 .column-filter-container {
@@ -475,7 +487,9 @@
   color: var(--color-text-secondary);
 }
 
-.empty-state i {
+/* Solo el icono grande: con «.empty-state i» el «+» del botón «Crear primer
+   registro» también salía en un círculo amarillo pálido, casi invisible */
+.empty-state > i {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -497,7 +511,6 @@
   font-size: 1rem;
 }
 
-
 /* Modal CORREGIDO */
 .modal-overlay {
   position: fixed !important;
@@ -505,7 +518,8 @@
   left: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  background-color: rgba(0, 0, 0, 0.75) !important;
+  background-color: var(--backdrop-color) !important;
+  backdrop-filter: var(--backdrop-blur);
   z-index: var(--z-toast) !important;
   display: flex !important;
   align-items: center !important;
@@ -525,7 +539,6 @@
   overflow: hidden !important;
   border: 1px solid var(--border-color) !important;
   position: relative !important;
-  transform: none !important;
   display: flex !important;
   flex-direction: column !important;
 }
@@ -581,8 +594,8 @@
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 25px;
-  margin-bottom: 30px;
+  gap: 18px 20px;
+  margin-bottom: 0;
 }
 
 .form-group {
@@ -590,8 +603,10 @@
   flex-direction: column;
 }
 
+/* Sin el margen superior de 1rem que styles.css da a todo label (separaba la
+   etiqueta de la fila anterior el doble que de su propio campo) */
 .form-label {
-  margin-bottom: 8px;
+  margin: 0 0 6px;
   font-weight: 600;
   color: var(--text-primary);
   font-size: 0.95rem;
@@ -604,12 +619,22 @@
 
 /* Validación de errores */
 .form-input {
-  padding: 12px 16px;
-  border: 2px solid var(--border-color);
+  box-sizing: border-box;
+  width: 100%;
+  height: 42px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   background: var(--white);
+}
+
+.form-input::placeholder {
+  color: var(--text-muted);
 }
 
 .form-input:focus {
@@ -627,21 +652,7 @@
   gap: 10px !important;
 }
 
-/* Animaciones */
-.fade-in {
-  animation: fadeIn 0.5s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* Entrada de la pantalla: la común (.fade-in en App.css), solo opacidad como las demás */
 
 /* Responsive */
 @media (max-width: 1200px) {
@@ -672,15 +683,6 @@
     flex-direction: column;
     gap: 15px;
     align-items: stretch;
-  }
-  
-  .controls-left {
-    max-width: 100%;
-  }
-  
-  .pagination-footer {
-    flex-direction: column;
-    gap: 15px;
   }
   
   .tables-grid {
@@ -769,6 +771,23 @@
   border-top: 1px solid var(--border-color);
 }
 
+/* Aviso de tabla de solo consulta (catálogos fijos) */
+.aviso-solo-lectura {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  padding: var(--space-10) 30px;
+  background: var(--color-accent-indigo-tint);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.aviso-solo-lectura i {
+  color: var(--color-accent-indigo);
+}
+
 .selector-help {
   font-size: 0.85rem;
   color: var(--text-secondary);
@@ -790,7 +809,7 @@
   border: 2px solid var(--border-color);
   border-radius: 25px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   font-size: 0.9rem;
 }
 
@@ -841,6 +860,9 @@
 .toggle-switch {
   display: flex;
   align-items: center;
+  min-height: 42px;
+  margin: 0;
+  font-weight: normal;
   gap: 12px;
   cursor: pointer;
   user-select: none;
@@ -856,7 +878,7 @@
   height: 26px;
   background: #ccc;
   border-radius: 26px;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
 }
 
 .toggle-slider::before {
@@ -868,7 +890,7 @@
   height: 20px;
   background: white;
   border-radius: 50%;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
@@ -898,4 +920,16 @@
   font-size: 0.72rem;
   margin-top: 2px;
   line-height: 1.2;
+}
+
+/* Pie del formulario: fijo abajo y siempre visible, aunque la tabla tenga muchos campos */
+form.modal-body {
+  padding-bottom: 0 !important;
+}
+
+form.modal-body > .modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin: 25px -25px 0;
 }

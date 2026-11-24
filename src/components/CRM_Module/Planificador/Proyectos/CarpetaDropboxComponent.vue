@@ -1,21 +1,21 @@
 <template>
-  <div v-if="proyecto.dropbox_path" class="dbx-line">
+  <div v-if="proyecto.dropbox_path" class="dbx-linea">
     <p class="muted" :title="proyecto.dropbox_path">
       📁 Dropbox: <span class="dbx-path">{{ relativoABase(proyecto.dropbox_path, estado ? estado.base : '') }}</span>
-      <template v-if="estado && estado.enabled"> <button type="button" class="link-btn" :disabled="ocupado" @click="completarSubcarpetas">Crear subcarpetas que falten</button></template>
+      <template v-if="estado && estado.enabled"> <button type="button" class="enlace-boton" :disabled="ocupado" @click="completarSubcarpetas">Crear subcarpetas que falten</button></template>
     </p>
     <p v-if="nota" class="muted">{{ nota }}</p>
     <p v-if="error" class="error">{{ error }}</p>
   </div>
-  <p v-else-if="estado && !estado.enabled" class="muted dbx-line">📁 Dropbox no está configurado en este servidor: no se pueden subir archivos a este proyecto.</p>
-  <div v-else-if="estado" class="dbx-line">
+  <p v-else-if="estado && !estado.enabled" class="muted dbx-linea">📁 Dropbox no está configurado en este servidor: no se pueden subir archivos a este proyecto.</p>
+  <div v-else-if="estado" class="dbx-linea">
     <p class="muted">
       📁 Este proyecto no tiene carpeta en Dropbox: sin ella no se pueden subir archivos (el servidor no los guarda).
-      <template v-if="!abierto"> <button type="button" class="link-btn" @click="abierto = true">Crear carpeta</button> · <button type="button" class="link-btn" @click="eligiendo = true">Elegir una que ya existe</button></template>
+      <template v-if="!abierto"> <button type="button" class="enlace-boton" @click="abierto = true">Crear carpeta</button> · <button type="button" class="enlace-boton" @click="eligiendo = true">Elegir una que ya existe</button></template>
     </p>
     <selector-carpeta-dropbox v-if="eligiendo" @cerrar="eligiendo = false" @elegir="crear" />
     <p v-if="!abierto && error" class="error">{{ error }}</p>
-    <div v-if="abierto" class="dbx-create">
+    <div v-if="abierto" class="dbx-crear">
       <campo-carpeta-dropbox v-model:empresa="empresa" v-model:lugar="lugar" :fecha-inicio="proyecto.start_date || ''" />
       <div class="row">
         <button type="button" :disabled="ocupado || !nombre.trim()" @click="crear()">Crear carpeta</button>

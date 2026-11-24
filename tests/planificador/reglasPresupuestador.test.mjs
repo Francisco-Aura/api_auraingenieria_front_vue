@@ -2,8 +2,10 @@
 // (la especificación): cada regla de compatibilidad, qué reglas ocultan el producto («hard»), las constantes y tablas
 // de intensidad, los criterios de «Sugeridos» y la regla de strings iguales.
 import test from 'node:test'
+import { splitMissing, spreadPanels, createStrings, fixedCount, releaseFixed, canSpreadRest } from '../../src/utils/planificador/motor/strings.js'
+import { parseCosts } from '../../src/utils/planificador/motor/costes.js'
 import assert from 'node:assert/strict'
-import { checkCompatibility, hardConflicts, issuesByLine, fitReasons, suggestions } from '../../src/utils/planificador/motor/compatibilidad.js'
+import { checkCompatibility, hardConflicts, issuesByLine, fitReasons, suggestions, sizeInverters } from '../../src/utils/planificador/motor/compatibilidad.js'
 import { stringPlan, stringLimits, COLD_VOC, HOT_VMP, MIN_STRING_PANELS, MAX_STRING_PANELS } from '../../src/utils/planificador/motor/pasosConfig.js'
 
 // ------------------------------------------------------------------------------------------------ ayudas
@@ -126,6 +128,68 @@ test('cubierta: cubierta del producto distinta de la elegida (error, no oculta)'
   assert.equal(tiene(revisar([extra(estructura({ cubierta: 'Chapa' }))], { opciones: { survey: { roof: 'chapa' } } }), 'error', 'cubierta'), false)
 })
 
+test('estructura-tipo: cada cubierta solo admite los tipos de estructura de la hoja de Ingeniería (error, no oculta)', () => {
+  // ¿Salta «estructura-tipo» con esta cubierta, este producto de esa cubierta y este montaje?
+  const salta = (roof, cubierta, montaje) =>
+    tiene(revisar([extra(estructura({ cubierta, montaje }))], { opciones: { survey: { roof } } }), 'error', 'estructura-tipo')
+  // Teja: coplanar
+  assert.equal(salta('teja', 'Teja', 'Coplanar teja'), false)
+  assert.equal(salta('teja', 'Teja', 'Inclinada 5º'), true)
+  // Chapa minionda: inclinada, micro rail y perfil corrido («Coplanar chapa» es el perfil corrido de la chapa)
+  assert.equal(salta('chapa_minionda', 'Chapa minionda', 'Coplanar chapa'), false)
+  assert.equal(salta('chapa_minionda', 'Chapa minionda', 'Micro rail'), false)
+  assert.equal(salta('chapa_minionda', 'Chapa minionda', 'Inclinada 15º'), false)
+  assert.equal(salta('chapa_minionda', 'Chapa minionda', 'Suelo (hormigón)'), true)
+  // Chapa grecada: micro rail y perfil corrido (sin inclinada)
+  assert.equal(salta('chapa_grecada', 'Chapa grecada', 'Micro rail'), false)
+  assert.equal(salta('chapa_grecada', 'Chapa grecada', 'Perfil corrido'), false)
+  assert.equal(salta('chapa_grecada', 'Chapa grecada', 'Inclinada 15º'), true)
+  // Plana: bloque de hormigón y también inclinada (kits vela, triángulos con lastre)
+  assert.equal(salta('plana', 'Plana', 'Bloques (cubierta plana)'), false)
+  assert.equal(salta('plana', 'Plana', 'Inclinada 5º'), false)
+  assert.equal(salta('plana', 'Plana', 'Coplanar teja'), true)
+  // Suelo: hormigón y estructura hincada
+  assert.equal(salta('suelo', 'Suelo', 'Suelo (hormigón)'), false)
+  assert.equal(salta('suelo', 'Suelo', 'Estructura hincada'), false)
+  assert.equal(salta('suelo', 'Suelo', 'Inclinada 15º'), true)
+  // Parking: hincada, hormigón y metálica (y valen las de suelo, como ya se admitía)
+  assert.equal(salta('parking', 'Parking', 'Estructura metálica'), false)
+  assert.equal(salta('parking', 'Suelo', 'Suelo (hormigón)'), false)
+  assert.equal(salta('parking', 'Parking', 'Inclinada 15º'), true)
+  // Panel sándwich: perfil corrido
+  assert.equal(salta('sandwich', 'Panel sándwich', 'Perfil corrido'), false)
+  assert.equal(salta('sandwich', 'Panel sándwich', 'Micro rail'), true)
+  // Flotante y pérgola no tienen regla todavía
+  assert.equal(salta('flotante', 'Flotante', 'Inclinada 15º'), false)
+  assert.equal(salta('pergola', 'Pérgola', 'Estructura hincada'), false)
+  // Lo genérico («Todas»: perfiles, grapas), lo sin montaje y lo de otra cubierta (ya avisa «cubierta») no se evalúa
+  assert.equal(salta('suelo', 'Todas', 'Coplanar'), false)
+  assert.equal(salta('suelo', 'Suelo', ''), false)
+  assert.equal(salta('suelo', 'Teja', 'Coplanar teja'), false)
+  assert.equal(buscar(revisar([extra(estructura({ cubierta: 'Teja', montaje: 'Inclinada 5º' }))]), 'error', 'estructura-tipo').hard, false)
+})
+
+const solo = (roof, cubierta, montaje) => revisar([extra(estructura({ cubierta, montaje }))], { opciones: { survey: { roof } } })
+
+test('varias cubiertas: una estructura vale si es de alguna de ellas y los tipos admitidos son los de la suya', () => {
+  const con = (roofs, cubierta, montaje) => revisar([extra(estructura({ cubierta, montaje }))], { opciones: { survey: { roof: roofs[0], roofs } } })
+  // Teja y plana: valen los productos de las dos
+  assert.equal(tiene(con(['teja', 'plana'], 'Teja', 'Coplanar teja'), 'error', 'cubierta'), false)
+  assert.equal(tiene(con(['teja', 'plana'], 'Plana', 'Bloques (cubierta plana)'), 'error', 'cubierta'), false)
+  // Un producto de la plana se evalúa con las reglas de la plana (admite inclinada), no con las de la teja
+  assert.equal(tiene(con(['teja', 'plana'], 'Plana', 'Inclinada 5º'), 'error', 'estructura-tipo'), false)
+  assert.equal(tiene(solo('teja', 'Plana', 'Inclinada 5º'), 'error', 'cubierta'), true, 'con solo teja, un producto de plana no vale')
+  assert.equal(tiene(con(['teja', 'plana'], 'Plana', 'Coplanar teja'), 'error', 'estructura-tipo'), true, 'la plana no admite coplanar aunque la teja sí')
+  // Una cubierta que no está entre las elegidas sigue siendo error, y el aviso las nombra todas
+  const fuera = buscar(con(['teja', 'plana'], 'Suelo', 'Suelo (hormigón)'), 'error', 'cubierta')
+  assert.ok(fuera)
+  assert.ok(JSON.stringify(fuera).includes('teja y plana'))
+  // Chapa a secas vale para minionda y grecada: admite lo que admita cualquiera de las dos
+  assert.equal(tiene(con(['chapa_minionda', 'chapa_grecada'], 'Chapa', 'Inclinada 15º'), 'error', 'estructura-tipo'), false)
+  // Si una de las cubiertas del producto no tiene regla (flotante), no se evalúa el tipo
+  assert.equal(tiene(con(['teja', 'flotante'], 'Flotante', 'Inclinada 15º'), 'error', 'estructura-tipo'), false)
+})
+
 test('estructura-kits: kits que cubren menos paneles de los que hay (error) y sobra un kit entero (aviso)', () => {
   const kit = estructura({ modulos_por_kit: 3 })
   const falta = revisar([extra(kit, 3)]) // cubre 9 paneles, hay 12
@@ -141,6 +205,19 @@ test('estructura-modulos: partida «por módulo» con unidades distintas del nº
   assert.ok(tiene(revisar([extra(porModulo, 10)]), 'warn', 'estructura-modulos'))
   assert.equal(tiene(revisar([extra(porModulo, 12)]), 'warn', 'estructura-modulos'), false)
   assert.equal(tiene(revisar([extra(porModulo, 0, { auto: true })]), 'warn', 'estructura-modulos'), false)
+})
+
+test('estructura-modulos: varias filas por módulo que se reparten los paneles y suman el total no avisan (247 + 24 = 271)', () => {
+  const coplanar = estructura({}, { unit: 'módulo' })
+  const inclinada = estructura({}, { id: 'e2', model: 'Inclinada', unit: 'módulo' })
+  // El presupuesto de las pruebas lleva 12 paneles: 10 + 2 = 12
+  assert.equal(tiene(revisar([extra(coplanar, 10), extra(inclinada, 2)]), 'warn', 'estructura-modulos'), false)
+  // Dos repartos completos (12 + 12) tampoco; si no suman un total exacto, sigue avisando
+  assert.equal(tiene(revisar([extra(coplanar, 10), extra(inclinada, 14)]), 'warn', 'estructura-modulos'), false)
+  assert.ok(tiene(revisar([extra(coplanar, 10), extra(inclinada, 3)]), 'warn', 'estructura-modulos'), '10 + 3 = 13: no suman 12')
+  assert.ok(tiene(revisar([extra(coplanar, 10)]), 'warn', 'estructura-modulos'), 'una sola fila que no llega sigue avisando')
+  // Una fila que ya lleva todos los paneles no se mezcla con el reparto de otras
+  assert.equal(tiene(revisar([extra(coplanar, 12), extra(inclinada, 12)]), 'warn', 'estructura-modulos'), false)
 })
 
 test('estructura-uds: faltan unidades por panel (< ceil(nº de paneles × unidades por panel))', () => {
@@ -203,6 +280,53 @@ test('strings (más strings de los que admite el inversor y cortocircuito por en
   const mezcla = checkCompatibility(estado(lineas, { n: 18, strings: [{ id: 'a', panels: 12, input: 1 }, { id: 'b', panels: 6, input: 1 }, { id: 'c', panels: 0, input: 9 }] }), cat)
   assert.ok(mezcla.some((i) => /mezcla strings de 12 y 6/.test(i.message)))
   assert.ok(mezcla.some((i) => /van a entradas que no existen/.test(i.message)))
+})
+
+test('con inversores de sobra, los strings que siguen en las entradas de cuando había menos se reasignan solos (una por entrada)', () => {
+  // HUAWEI SUN2000-100KTL-M2 (10 MPPT, 30 A por entrada) y JA SOLAR 670 W (Imp 15,98 A): dos strings en una entrada dan 32 A, no valen
+  const ja = producto('ja', 'modulos', { voc_v: 50.41, vmp_v: 41.93, isc_a: 16.78, imp_a: 15.98, grosor_mm: 30 }, { brand: 'JA SOLAR', model: 'JAM66D50-670/GB' })
+  const huawei = producto('hw', 'inversores', {
+    tipo: 'String', potencia_kw: 100, mppt_min_v: 200, mppt_max_v: 1000, vmax_v: 1100, imax_mppt_a: 30, n_mppt: 10, 'x:Corriente de cortocircuito máx. (A)': 40
+  }, { brand: 'HUAWEI', model: 'SUN2000-100KTL-M2' })
+  // 271 paneles en 15 strings (uno de 19 y 14 de 18; con este panel un string admite 19 como mucho), repartidos como cuando solo había
+  // un inversor: 10 entradas y vuelta a empezar, así que las 5 primeras llevan dos strings
+  const strings = Array.from({ length: 15 }, (_, i) => ({ id: 's' + i, panels: i === 0 ? 19 : 18, input: (i % 10) + 1 }))
+  const state = estado([linea(ja, 271, { auto: true }), linea(huawei, 2)], { n: 271, wp: 670, strings })
+  const cat = catalogo([ja, huawei])
+  const antes = checkCompatibility(state, cat).filter((i) => codigo(i) === 'strings-diseno')
+  assert.equal(antes.filter((i) => /reciben 2 strings/.test(i.message)).length, 1, 'los avisos de entradas iguales salen en uno solo')
+  assert.ok(antes.some((i) => /Las entradas 1 a 5 reciben 2 strings en paralelo: 32 A y admiten 30 A/.test(i.message)))
+  const ajustado = sizeInverters(state, cat)
+  assert.ok(ajustado, 'se reasignan las entradas')
+  assert.equal(new Set(ajustado.strings.map((s) => s.input)).size, 15, 'cada string en su propia entrada')
+  assert.ok(ajustado.strings.every((s) => s.input >= 1 && s.input <= 20))
+  assert.equal(ajustado.lines.find((l) => l.itemId === 'hw').qty, 2, 'las unidades no cambian')
+  assert.equal(checkCompatibility(ajustado, cat).some((i) => codigo(i) === 'strings-diseno'), false)
+  // Un diseño que ya vale no se toca
+  assert.equal(sizeInverters(ajustado, cat), null)
+})
+
+test('corriente máx. por MPPT distinta con un string (20 A) o con dos (30 A)', () => {
+  const huawei = (extra = {}) => producto('hw', 'inversores', {
+    tipo: 'String', potencia_kw: 50, mppt_min_v: 200, mppt_max_v: 1000, vmax_v: 1100, imax_mppt_a: 30, n_mppt: 4, ...extra
+  }, { brand: 'HUAWEI', model: 'SUN2000-50KTL-M3' })
+  const panel = (imp) => producto('p', 'modulos', { voc_v: 50, vmp_v: 42, isc_a: imp + 1, imp_a: imp, grosor_mm: 30 }, { brand: 'X', model: 'P' })
+  const problemas = (pan, inv, strings) => checkCompatibility(
+    estado([linea(pan, 12, { auto: true }), linea(inv, 1)], { n: 12, strings }), catalogo([pan, inv]))
+    .filter((i) => codigo(i) === 'strings-diseno' && /admite/.test(i.message))
+  const uno = [{ id: 'a', panels: 12, input: 1 }]
+  const dos = [{ id: 'a', panels: 6, input: 1 }, { id: 'b', panels: 6, input: 1 }]
+  // Panel de 22 A: con un solo string pasa los 20 A de la ficha; sin distinguir, valdría contra 30 A
+  assert.ok(problemas(panel(22), huawei({ imax_mppt_1string_a: 20 }), uno).some((i) => /20 A/.test(i.message)))
+  assert.equal(problemas(panel(22), huawei(), uno).length, 0, 'sin el dato nuevo se comporta como antes')
+  // Panel de 15 A: uno solo (15 ≤ 20) y dos en paralelo (30 ≤ 30) valen
+  assert.equal(problemas(panel(15), huawei({ imax_mppt_1string_a: 20 }), uno).length, 0)
+  assert.equal(problemas(panel(15), huawei({ imax_mppt_1string_a: 20 }), dos).length, 0)
+  // Panel de 16 A: uno solo vale, dos en paralelo dan 32 A y no valen
+  assert.ok(problemas(panel(16), huawei({ imax_mppt_1string_a: 20 }), dos).some((i) => /32 A y admite 30 A/.test(i.message)))
+  // El plan automático también lo respeta
+  assert.ok(stringPlan(panel(22), huawei({ imax_mppt_1string_a: 20 }), 12).problems.some((p) => /20 A/.test(p)))
+  assert.equal(stringPlan(panel(22), huawei(), 12).problems.some((p) => /20 A/.test(p)), false)
 })
 
 test('el diseño de strings: sin strings no hay nada que comprobar y los que no suman los paneles dan error', () => {
@@ -378,11 +502,13 @@ test('cable-metros: metros menores que los previstos por polaridad en el paso 1 
   assert.equal(tiene(revisar([rojo, negro], { opciones: { survey: { cableMeters: 50 } } }), 'warn', 'cable-metros'), false)
 })
 
-test('cable-dc-seccion: la sección no aguanta 1,25 × Isc (error que oculta)', () => {
+test('cable-dc-seccion: la sección no aguanta 1,25 × Isc (recomendación: no oculta ni bloquea)', () => {
   const potente = panel({ isc_a: 25 }) // 31,25 A > 30 A (2,5 mm²)
-  const i = buscar(revisar([extra(cable('CC', 'Rojo', 2.5, 'cr'), 100), extra(cable('CC', 'Negro', 2.5, 'cn'), 100)], { panelo: potente }), 'error', 'cable-dc-seccion')
+  const i = buscar(revisar([extra(cable('CC', 'Rojo', 2.5, 'cr'), 100), extra(cable('CC', 'Negro', 2.5, 'cn'), 100)], { panelo: potente }), 'warn', 'cable-dc-seccion')
   assert.ok(i)
-  assert.equal(i.hard, true)
+  assert.equal(i.hard, false)
+  assert.match(i.message, /^Recomendación/)
+  assert.equal(tiene(revisar([extra(cable('CC', 'Rojo', 2.5, 'cr'), 100), extra(cable('CC', 'Negro', 2.5, 'cn'), 100)], { panelo: potente }), 'error', 'cable-dc-seccion'), false)
 })
 
 test('tabla de intensidad admisible del cable de continua: cada sección aguanta justo su intensidad', () => {
@@ -390,10 +516,10 @@ test('tabla de intensidad admisible del cable de continua: cada sección aguanta
   for (const [seccion, amperios] of tabla) {
     const justo = panel({ isc_a: amperios / 1.25 })
     const pasa = revisar([extra(cable('CC', 'Rojo', seccion, 'cr'), 10), extra(cable('CC', 'Negro', seccion, 'cn'), 10)], { panelo: justo })
-    assert.equal(tiene(pasa, 'error', 'cable-dc-seccion'), false, `${seccion} mm² debe aguantar ${amperios} A`)
+    assert.equal(tiene(pasa, 'warn', 'cable-dc-seccion'), false, `${seccion} mm² debe aguantar ${amperios} A`)
     const se_pasa = panel({ isc_a: amperios / 1.25 + 0.1 })
     const falla = revisar([extra(cable('CC', 'Rojo', seccion, 'cr'), 10), extra(cable('CC', 'Negro', seccion, 'cn'), 10)], { panelo: se_pasa })
-    assert.ok(tiene(falla, 'error', 'cable-dc-seccion'), `${seccion} mm² no debe aguantar más de ${amperios} A`)
+    assert.ok(tiene(falla, 'warn', 'cable-dc-seccion'), `${seccion} mm² no debe aguantar más de ${amperios} A`)
   }
 })
 
@@ -436,12 +562,28 @@ test('cable-ac-metros: metros de cable de alterna menores que los previstos (avi
   assert.equal(tiene(revisar([ac], { opciones: { survey: { acMeters: 20 } } }), 'warn', 'cable-ac-metros'), false)
 })
 
-test('cable-ac-seccion: la sección no aguanta 1,25 × la corriente del inversor (error que oculta)', () => {
+test('cable-ac-seccion: la sección no aguanta 1,25 × la corriente del inversor (recomendación: no oculta ni bloquea)', () => {
   // 10 kW trifásico: 10000 ÷ (√3 × 400) = 14,43 A; × 1,25 = 18,04 A > 15 A (1,5 mm²)
-  const i = buscar(revisar([extra(cable('AC', '', 1.5, 'ca'), 20)]), 'error', 'cable-ac-seccion')
+  const i = buscar(revisar([extra(cable('AC', '', 1.5, 'ca'), 20)]), 'warn', 'cable-ac-seccion')
   assert.ok(i)
-  assert.equal(i.hard, true)
-  assert.equal(tiene(revisar([extra(cable('AC', '', 2.5, 'ca'), 20)]), 'error', 'cable-ac-seccion'), false)
+  assert.equal(i.hard, false)
+  assert.match(i.message, /^Recomendación/)
+  assert.equal(tiene(revisar([extra(cable('AC', '', 1.5, 'ca'), 20)]), 'error', 'cable-ac-seccion'), false)
+  assert.equal(tiene(revisar([extra(cable('AC', '', 2.5, 'ca'), 20)]), 'warn', 'cable-ac-seccion'), false)
+})
+
+test('cable-ac-seccion: con varios inversores también avisa por cada inversor, no solo por el total', () => {
+  const salida = { 'x:Corriente máx. de salida (A)': 40 }
+  // 3 inversores de 40 A: 50 A con margen cada uno (> 36 A de 6 mm²) y 150 A en total
+  const issues = revisar([extra(cable('AC', '', 6, 'ca'), 20), extra(inversor(salida, { id: 'inv-2' }), 2)], { inv: inversor(salida) })
+  const avisos = issues.filter((i) => i.level === 'warn' && codigo(i) === 'cable-ac-seccion')
+  assert.ok(avisos.some((i) => /en total/.test(i.message)), 'por la instalación')
+  const porInversor = avisos.filter((i) => /cada /.test(i.message))
+  assert.ok(porInversor.length > 0, 'por inversor')
+  assert.ok(porInversor.every((i) => i.lineIds.length === 2), 'marca el cable y el inversor')
+  // Con un solo inversor no se repite el mismo aviso
+  const uno = revisar([extra(cable('AC', '', 6, 'ca'), 20)], { inv: inversor({ 'x:Corriente máx. de salida (A)': 40 }) })
+  assert.equal(uno.filter((i) => codigo(i) === 'cable-ac-seccion').length, 1)
 })
 
 test('tabla de intensidad admisible del cable de alterna: cada sección aguanta justo su intensidad', () => {
@@ -449,9 +591,9 @@ test('tabla de intensidad admisible del cable de alterna: cada sección aguanta 
   for (const [seccion, amperios] of tabla) {
     const salida = (a) => inversor({ 'x:Corriente máx. de salida (A)': a })
     const pasa = revisar([extra(cable('AC', '', seccion, 'ca'), 10)], { inv: salida(amperios / 1.25) })
-    assert.equal(tiene(pasa, 'error', 'cable-ac-seccion'), false, `${seccion} mm² debe aguantar ${amperios} A`)
+    assert.equal(tiene(pasa, 'warn', 'cable-ac-seccion'), false, `${seccion} mm² debe aguantar ${amperios} A`)
     const falla = revisar([extra(cable('AC', '', seccion, 'ca'), 10)], { inv: salida(amperios / 1.25 + 0.1) })
-    assert.ok(tiene(falla, 'error', 'cable-ac-seccion'), `${seccion} mm² no debe aguantar más de ${amperios} A`)
+    assert.ok(tiene(falla, 'warn', 'cable-ac-seccion'), `${seccion} mm² no debe aguantar más de ${amperios} A`)
   }
 })
 
@@ -514,10 +656,10 @@ test('Auxiliar, Trámites y Obra no tienen reglas de compatibilidad', () => {
 
 // ----------------------------------------------------------------------- cuáles ocultan (columna «¿Oculta?»)
 
-test('solo las 12 reglas de incompatibilidad de fondo ocultan el producto; el resto no, aunque sea error', () => {
+test('solo las 10 reglas de incompatibilidad de fondo ocultan el producto; el resto no, aunque sea error (los cables solo recomiendan)', () => {
   const OCULTAN = ['strings-imposible', 'optimizador-marca', 'medidor-fases', 'suministro', 'bateria', 'estructura-marco',
-    'prot-tension', 'prot-corriente', 'cable-dc-seccion', 'cable-ac-seccion', 'ac-calibre', 'ac-polos']
-  assert.equal(OCULTAN.length, 12, 'el documento dice que 12 reglas ocultan')
+    'prot-tension', 'prot-corriente', 'ac-calibre', 'ac-polos']
+  assert.equal(OCULTAN.length, 10, 'las reglas de fondo que ocultan son 10: los cables recomiendan, no ocultan')
   const potente = panel({ isc_a: 25 })
   const escenarios = [
     revisar([], { inv: inversor({ mppt_min_v: 600, vmax_v: 700 }) }),
@@ -528,8 +670,6 @@ test('solo las 12 reglas de incompatibilidad de fondo ocultan el producto; el re
     revisar([extra(estructura({ grosor_min_mm: 35 }))]),
     revisar([extra(protCC('Fusible', { tension_v: 600 }, 'pc1'))]),
     revisar([extra(protCC('Fusible', { corriente_a: 10 }, 'pc2'))]),
-    revisar([extra(cable('CC', 'Rojo', 2.5, 'cr'), 10)], { panelo: potente }),
-    revisar([extra(cable('AC', '', 1.5, 'ca'), 10)]),
     revisar([extra(protAC('Magnetotérmico', { corriente_a: 10 }, 'mg1'))]),
     revisar([extra(protAC('Magnetotérmico', { corriente_a: 20, polos: 2 }, 'mg2'))])
   ]
@@ -655,4 +795,101 @@ test('Sugeridos · protecciones CC y AC, cableado y tierra', () => {
   assert.ok(fitReasons(cable('CC', 'Rojo', 6, 'f5'), ctx, cat).some((r) => /6 mm²: aguanta 57 A/.test(r)))
   assert.ok(fitReasons(cable('AC', '', 4, 'f6'), ctx, cat).some((r) => /aguanta 27 A/.test(r)))
   assert.ok(fitReasons(producto('f7', 'tierra', { componente: 'Cable', seccion_mm2: 16 }), ctx, cat).some((r) => /suficiente para la estructura/.test(r)))
+})
+
+test('splitMissing reparte lo que falta en los menos strings posibles y lo más iguales', () => {
+    const limites = { min: 6, max: 19 };
+    assert.deepEqual(splitMissing(24, limites), [12, 12]);
+    assert.deepEqual(splitMissing(19, limites), [19]);
+    assert.deepEqual(splitMissing(25, limites), [13, 12]);
+    assert.equal(splitMissing(4, limites), null);
+    assert.equal(splitMissing(0, limites), null);
+});
+
+test('strings fijados a mano: «repartir» no los toca y los demás se reparten lo que queda', () => {
+  // 271 paneles en 15 strings con los dos últimos fijados en 12: los otros 13 llevan (271 − 24) ÷ 13 = 19
+  const diseno = Array.from({ length: 15 }, (_, i) => ({ id: 's' + i, panels: i >= 13 ? 12 : 18, input: 0, ...(i >= 13 ? { fixed: true } : {}) }))
+  const repartido = spreadPanels(diseno, 271)
+  assert.deepEqual(repartido.map((s) => s.panels), [...Array(13).fill(19), 12, 12])
+  assert.equal(fixedCount(repartido), 2, 'siguen fijados')
+  // Con paneles que no se dividen, los que sobran van a los primeros sin fijar
+  assert.deepEqual(spreadPanels(diseno, 272).map((s) => s.panels), [20, ...Array(12).fill(19), 12, 12])
+  // Cambiar cuántos strings hay también respeta los fijados
+  const mas = createStrings(16, diseno, 271, null)
+  assert.equal(mas.length, 16)
+  assert.equal(mas.reduce((sum, s) => sum + s.panels, 0), 271)
+  assert.equal(mas[13].panels, 12)
+  assert.equal(mas[14].panels, 12)
+})
+
+test('strings fijados: si no queda para el resto, se reparte por igual y se sueltan los fijados', () => {
+  const diseno = [{ id: 'a', panels: 30, input: 0, fixed: true }, { id: 'b', panels: 5, input: 0 }, { id: 'c', panels: 5, input: 0 }]
+  const r = spreadPanels(diseno, 31) // sobran 1 panel para dos strings
+  assert.deepEqual(r.map((s) => s.panels), [11, 10, 10])
+  assert.equal(fixedCount(r), 0)
+  // Soltar los fijados los deja entrar de nuevo en el reparto
+  assert.equal(fixedCount(releaseFixed([{ id: 'a', panels: 12, input: 0, fixed: true }])), 0)
+})
+
+test('strings fijados: el presupuesto guardado conserva la marca', () => {
+  const guardado = parseCosts({ strings: [{ id: 'a', panels: 12, input: 1, fixed: true }, { id: 'b', panels: 19, input: 2 }] })
+  assert.equal(guardado.strings[0].fixed, true)
+  assert.equal('fixed' in guardado.strings[1], false)
+})
+
+test('strings fijados: se reparte el resto al momento solo si queda para los demás, y «por igual» empieza de nuevo', () => {
+  const diseno = Array.from({ length: 15 }, (_, i) => ({ id: 's' + i, panels: 18, input: 0, ...(i >= 13 ? { fixed: true } : {}) }))
+  assert.equal(canSpreadRest(diseno, 271), true)
+  assert.equal(canSpreadRest(diseno.map((s) => ({ ...s, fixed: false })), 271), false, 'sin fijados no hay nada que repartir aparte')
+  // Si lo escrito se lleva todo (p. ej. un «300» a medio teclear), no se reparte: los demás se quedan como están
+  assert.equal(canSpreadRest([{ id: 'a', panels: 300, input: 0, fixed: true }, { id: 'b', panels: 5, input: 0 }], 271), false)
+  // Volver a repartir por igual: se sueltan los fijados y todos quedan parejos
+  const parejo = spreadPanels(releaseFixed(diseno), 271)
+  assert.equal(fixedCount(parejo), 0)
+  assert.equal(Math.max(...parejo.map((s) => s.panels)) - Math.min(...parejo.map((s) => s.panels)), 1)
+})
+
+test('cubierta: los tipos nuevos aceptan los productos que les corresponden y avisan con los que no', () => {
+  const con = (roof, cubierta) => revisar([extra(estructura({ cubierta }))], { opciones: { survey: { roof } } })
+  // Las dos chapas aceptan «Chapa» a secas (productos de antes) y su propio valor, pero no el de la otra
+  assert.equal(tiene(con('chapa_minionda', 'Chapa'), 'error', 'cubierta'), false)
+  assert.equal(tiene(con('chapa_minionda', 'Chapa minionda'), 'error', 'cubierta'), false)
+  assert.ok(tiene(con('chapa_minionda', 'Chapa grecada'), 'error', 'cubierta'))
+  assert.equal(tiene(con('chapa_grecada', 'Chapa grecada'), 'error', 'cubierta'), false)
+  // Un parking admite las estructuras de suelo; flotante, pérgola y panel sándwich solo las suyas (y las «Todas»)
+  assert.equal(tiene(con('parking', 'Suelo'), 'error', 'cubierta'), false)
+  assert.equal(tiene(con('parking', 'Parking'), 'error', 'cubierta'), false)
+  assert.ok(tiene(con('flotante', 'Suelo'), 'error', 'cubierta'))
+  assert.equal(tiene(con('flotante', 'Todas'), 'error', 'cubierta'), false)
+  assert.equal(tiene(con('pergola', 'Pérgola'), 'error', 'cubierta'), false)
+  assert.equal(tiene(con('sandwich', 'Panel sándwich'), 'error', 'cubierta'), false)
+  assert.ok(tiene(con('sandwich', 'Teja'), 'error', 'cubierta'))
+  // Un presupuesto antiguo con «chapa» sigue valiendo para las dos chapas
+  assert.equal(tiene(con('chapa', 'Chapa grecada'), 'error', 'cubierta'), false)
+})
+
+test('cubierta: se guardan y se leen todos los tipos, y uno desconocido vuelve a teja', () => {
+  for (const roof of ['teja', 'chapa_minionda', 'chapa_grecada', 'plana', 'suelo', 'parking', 'flotante', 'pergola', 'sandwich', 'chapa']) {
+    assert.equal(parseCosts({ survey: { roof } }).survey.roof, roof)
+  }
+  assert.equal(parseCosts({ survey: { roof: 'volcan' } }).survey.roof, 'teja')
+})
+
+test('disposición por cubierta: coplanar o inclinada deja solo los tipos de estructura de esa disposición', () => {
+  const con = (layout, montaje) => revisar([extra(estructura({ cubierta: 'Chapa minionda', montaje }))],
+    { opciones: { survey: { roof: 'chapa_minionda', roofs: ['chapa_minionda'], roofLayouts: { chapa_minionda: layout } } } })
+  assert.equal(tiene(con('coplanar', 'Micro rail'), 'error', 'estructura-tipo'), false)
+  assert.equal(tiene(con('coplanar', 'Inclinada 15º'), 'error', 'estructura-tipo'), true)
+  assert.equal(tiene(con('inclinada', 'Inclinada 15º'), 'error', 'estructura-tipo'), false)
+  assert.equal(tiene(con('inclinada', 'Micro rail'), 'error', 'estructura-tipo'), true)
+  assert.equal(tiene(con('', 'Micro rail'), 'error', 'estructura-tipo'), false, 'sin disposición elegida valen todos los de la cubierta')
+})
+
+test('reparto de paneles por cubierta: una estructura solo cubre los paneles de su cubierta', () => {
+  const kits = (roofPanels) => revisar([extra(estructura({ cubierta: 'Teja', montaje: 'Coplanar teja', modulos_por_kit: 1 }), 8)],
+    { opciones: { survey: { roof: 'teja', roofs: ['teja', 'chapa_minionda'], roofPanels } } })
+  // 12 paneles: 8 en teja y 4 en minionda → 8 kits de teja bastan; sin reparto harían falta 12
+  assert.equal(tiene(kits({ teja: 8, chapa_minionda: 4 }), 'error', 'estructura-kits'), false)
+  assert.equal(tiene(kits(undefined), 'error', 'estructura-kits'), true)
+  assert.equal(tiene(kits({ teja: 9, chapa_minionda: 4 }), 'error', 'estructura-kits'), true, 'un reparto que no suma el total no se usa')
 })

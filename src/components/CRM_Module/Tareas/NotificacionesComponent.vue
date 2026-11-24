@@ -2,10 +2,17 @@
   <div class="notificaciones-container">
     <!-- Indicador de notificaciones -->
     <div class="notificaciones-trigger" @click="toggleMenu">
-      <button class="btn-icon notification-btn" :class="{ 'campana-urgente': tareasVenciendoHoyLista.length > 0 }" aria-label="Notificaciones">
-        <i class="fas fa-bell"></i>
-        <span v-if="contadorNoLeidas > 0" class="notification-badge">{{ contadorNoLeidas > 99 ? '99+' : contadorNoLeidas }}</span>
-        <span v-if="tareasVenciendoHoyLista.length > 0" class="vencimiento-badge-urgente" :title="`${tareasVenciendoHoyLista.length} tarea(s) vence(n) hoy`">!</span>
+      <button
+        ref="botonCampana"
+        type="button"
+        class="btn-icon notification-btn"
+        :aria-label="etiquetaCampana"
+        :title="etiquetaCampana"
+        :aria-expanded="menuAbierto ? 'true' : 'false'"
+      >
+        <i :class="iconoCampana" aria-hidden="true"></i>
+        <!-- Un solo contador: rojo si alguna tarea vence hoy («!» si no hay ninguna sin leer) -->
+        <span v-if="textoContadorCampana" class="notification-badge" :class="{ 'notification-badge--urgente': hayVencimientosHoy }" aria-hidden="true">{{ textoContadorCampana }}</span>
       </button>
     </div>
 
@@ -37,7 +44,7 @@
           <button 
             class="btn-icon"
             @click="alternarVistaNotificaciones"
-            :title="mostrarSoloNoLeidas ? 'Ver todas las notificaciones' : 'Ver solo no leídas'"
+            :title="mostrarSoloNoLeidas ? 'Ver leídas' : 'Ver no leídas'"
           >
             <i :class="mostrarSoloNoLeidas ? 'fas fa-eye' : 'fas fa-eye-slash'"></i>
           </button>
@@ -75,8 +82,8 @@
             </div>
           </div>
           <ul v-if="verDetalleBanner" class="vencimiento-tareas-lista">
-            <li v-for="tarea in tareasVenciendoHoyLista" :key="tarea.id" @click="irATarea(tarea.id)">
-              <i class="fas fa-clock"></i> {{ tarea.titulo }}
+            <li v-for="tarea in tareasVenciendoHoyLista" :key="tarea.id" :title="tarea.titulo" @click="irATarea(tarea.id)">
+              <i class="fas fa-clock"></i> <span class="vencimiento-tarea-titulo">{{ tarea.titulo }}</span>
             </li>
           </ul>
         </div>
@@ -85,9 +92,23 @@
           <p>Cargando notificaciones...</p>
         </div>
 
+        <!-- Si la carga falla no se dice «No hay notificaciones» (con el contador
+             marcando pendientes): se avisa del fallo y se puede reintentar -->
+        <div v-else-if="errorCarga && notificaciones.length === 0" class="sin-notificaciones error-carga">
+          <i class="fas fa-exclamation-circle fa-2x"></i>
+          <p>No se pudieron cargar las notificaciones</p>
+          <button type="button" class="btn-reintentar" @click="cargarNotificaciones">Reintentar</button>
+        </div>
+
         <div v-else-if="notificaciones.length === 0" class="sin-notificaciones">
           <i class="fas fa-bell fa-2x"></i>
           <p>No hay notificaciones</p>
+        </div>
+
+        <!-- Con un tipo elegido que no tiene ninguna: antes la lista quedaba en blanco -->
+        <div v-else-if="notificacionesFiltradas.length === 0" class="sin-notificaciones">
+          <i class="fas fa-filter fa-2x"></i>
+          <p>No hay notificaciones de este tipo</p>
         </div>
 
         <div v-else class="lista-notificaciones">
@@ -111,7 +132,7 @@
                 <small class="notificacion-tiempo">
                   {{ formatearTiempoRelativo(notificacion.fechaCreacion) }}
                 </small>
-                <small class="notificacion-tarea">
+                <small class="notificacion-tarea" :title="notificacion.tareaTitulo">
                   {{ notificacion.tareaTitulo }}
                 </small>
               </div>
@@ -138,19 +159,26 @@
         </div>
       </div>
 
-      <div v-if="notificaciones.length > 0" class="notificaciones-footer">
+      <!-- Siempre: sin no leídas también se puede consultar el historial -->
+      <div class="notificaciones-footer">
         <button class="btn btn-link" @click="verTodasLasNotificaciones">
           Ver todas las notificaciones
         </button>
       </div>
     </div>
 
-    <!-- Modal de todas las notificaciones -->
-    <div v-if="modalTodasNotificaciones" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="notif-modal-title" @click="modalTodasNotificaciones = false">
+    <!-- Modal de todas las notificaciones: en <body> para cubrir toda la pantalla
+         (dentro de la barra superior quedaba recortado y sin oscurecer el menú) -->
+    <Teleport to="body">
+    <div v-if="modalTodasNotificaciones" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="notif-modal-title" v-cierre-fondo="() => (modalTodasNotificaciones = false)">
       <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3 id="notif-modal-title">Todas las Notificaciones</h3>
-          <button class="close-button" @click="modalTodasNotificaciones = false">
+        <div class="modal-header aura-modal-header">
+          <span class="aura-modal-header__icono" aria-hidden="true"><i class="fas fa-bell"></i></span>
+          <div class="aura-modal-header__titulos">
+            <h3 id="notif-modal-title">Todas las notificaciones</h3>
+            <span class="aura-modal-header__subtitulo">Historial completo: leídas y no leídas</span>
+          </div>
+          <button ref="cerrarModalTodas" type="button" class="close-button" aria-label="Cerrar" @click="modalTodasNotificaciones = false">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -186,7 +214,7 @@
                   <small class="notificacion-tiempo">
                     {{ formatearFecha(notificacion.fechaCreacion) }}
                   </small>
-                  <small class="notificacion-tarea">
+                  <small class="notificacion-tarea" :title="notificacion.tareaTitulo">
                     {{ notificacion.tipo === 'PLANIFICADOR' ? '' : 'Tarea: ' }}{{ notificacion.tareaTitulo }}
                   </small>
                 </div>
@@ -214,14 +242,18 @@
         </div>
       </div>
     </div>
+    </Teleport>
 
-    <!-- Snackbar para mensajes -->
-    <div v-if="snackbar.show" class="snackbar" :class="snackbar.color">
+    <!-- Snackbar para mensajes: en <body>, como el modal. Dentro de la barra superior
+         (que crea su propia capa) quedaba debajo del fondo oscuro del modal y no se leía -->
+    <Teleport to="body">
+    <div v-if="snackbar.show" class="snackbar" :class="snackbar.color" role="status">
       <span>{{ snackbar.message }}</span>
-      <button @click="snackbar.show = false" class="snackbar-close">
+      <button type="button" @click="snackbar.show = false" class="snackbar-close" aria-label="Cerrar aviso">
         <i class="fas fa-times"></i>
       </button>
     </div>
+    </Teleport>
   </div>
 </template>
 
@@ -229,9 +261,11 @@
 import { tareasApi } from '@/services/tareasApi'
 import { notificacionesPolling } from '@/services/notificacionesPolling'
 import { audioService } from '@/services/audioService'
+import { fechaHoraES } from '@/utils/fechas'
 
 export default {
   name: 'NotificacionesComponent',
+  emits: ['menu-abierto'],
   data() {
     return {
       menuAbierto: false,
@@ -242,6 +276,7 @@ export default {
       todasLasNotificaciones: [],
       contadorNoLeidas: 0,
       cargando: false,
+      errorCarga: false,
       cargandoTodas: false,
       filtroTipoSeleccionado: '',
       sonidosActivados: true,
@@ -260,6 +295,24 @@ export default {
     }
   },
   computed: {
+    hayVencimientosHoy() {
+      return this.tareasVenciendoHoyLista.length > 0
+    },
+    textoContadorCampana() {
+      if (this.contadorNoLeidas > 0) return this.contadorNoLeidas > 99 ? '99+' : String(this.contadorNoLeidas)
+      return this.hayVencimientosHoy ? '!' : ''
+    },
+    // Hueca sin nada pendiente; llena si hay avisos sin leer o tareas que vencen hoy
+    iconoCampana() {
+      return this.contadorNoLeidas > 0 || this.hayVencimientosHoy ? 'fas fa-bell' : 'far fa-bell'
+    },
+    etiquetaCampana() {
+      const partes = []
+      if (this.contadorNoLeidas > 0) partes.push(`${this.contadorNoLeidas} sin leer`)
+      const hoy = this.tareasVenciendoHoyLista.length
+      if (hoy > 0) partes.push(hoy === 1 ? '1 tarea vence hoy' : `${hoy} tareas vencen hoy`)
+      return partes.length ? `Notificaciones: ${partes.join(' · ')}` : 'Notificaciones'
+    }
   },
   mounted() {
     this.inicializar()
@@ -267,14 +320,28 @@ export default {
     // Refrescar vencimientos cada 5 minutos
     this.vencimientosIntervalId = setInterval(() => this.cargarTareasVenciendoHoy(), 300000)
     
-    // Cerrar menú al hacer clic fuera
+    // Cerrar menú al hacer clic fuera o con Esc
     document.addEventListener('click', this.handleClickOutside)
+    document.addEventListener('keydown', this.cerrarMenuConEscape)
   },
   beforeUnmount() {
     // Detener polling si se desmonta
+    this.desmontado = true
     notificacionesPolling.detener()
     if (this.vencimientosIntervalId) clearInterval(this.vencimientosIntervalId)
+    clearTimeout(this.temporizadorMensaje)
     document.removeEventListener('click', this.handleClickOutside)
+    document.removeEventListener('keydown', this.cerrarMenuConEscape)
+  },
+  watch: {
+    // Al abrir el historial el foco va a su botón de cerrar (con Tab se seguía
+    // recorriendo la pantalla de detrás); al cerrarlo vuelve a la campana
+    modalTodasNotificaciones(abierto) {
+      this.$nextTick(() => {
+        if (abierto) this.$refs.cerrarModalTodas?.focus()
+        else this.$refs.botonCampana?.focus()
+      })
+    }
   },
   methods: {
     async inicializar() {
@@ -289,12 +356,15 @@ export default {
         this.sonidosActivados = localStorage.getItem('sonidos_notificaciones_enabled') !== 'false'
         
         const moduloActivo = await tareasApi.verificarModuloActivo()
+        // Si se desmontó mientras tanto (p. ej. cierre de sesión) no se abre el WebSocket:
+        // quedaría conectado y con un callback hacia un componente que ya no existe
+        if (this.desmontado) return
         if (moduloActivo) {
           // Iniciar polling automático
           notificacionesPolling.iniciar(usuario.id)
           
           // Registrar callback para actualizar el componente cuando hay nuevas notificaciones
-          notificacionesPolling.onNotificacionesActualizadas((notificaciones) => {
+          notificacionesPolling.onNotificacionesActualizadas((notificaciones, origen) => {
             // Solo actualizar el contador y aplicar filtros
             // No reemplazar la lista completa para evitar desaparición cuando se ven leídas
             const notificacionesAnteriores = this.contadorNoLeidas
@@ -311,8 +381,9 @@ export default {
               audioService.reproducirNotificacion()
             }
 
-            // Refrescar vencimientos de hoy al recibir push
-            this.cargarTareasVenciendoHoy()
+            // Refrescar vencimientos de hoy al recibir push. La primera entrega es la
+            // carga inicial, no un aviso: mounted() acaba de pedir los vencimientos.
+            if (origen !== 'inicial') this.cargarTareasVenciendoHoy()
           })
           
           // Cargar notificaciones iniciales
@@ -326,8 +397,19 @@ export default {
     toggleMenu() {
       this.menuAbierto = !this.menuAbierto
       if (this.menuAbierto) {
+        // El menú de usuario del lateral se cierra para no tener dos abiertos a la vez
+        this.$emit('menu-abierto')
         this.cargarNotificaciones()
       }
+    },
+
+    // Esc cierra el desplegable y devuelve el foco a la campana (el modal del
+    // historial lo cierra el Esc común de los modales)
+    cerrarMenuConEscape(evento) {
+      if (evento.key !== 'Escape' || !this.menuAbierto || this.modalTodasNotificaciones || evento.defaultPrevented) return
+      evento.preventDefault()
+      this.menuAbierto = false
+      this.$refs.botonCampana?.focus()
     },
     
     alternarSonidos() {
@@ -346,7 +428,10 @@ export default {
       try {
         const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
         if (!usuario.id) return
-        this.tareasVenciendoHoyLista = await tareasApi.obtenerTareasVencenHoy(parseInt(usuario.id), parseInt(usuario.nivelAcceso))
+        // El refresco cada 5 min y el de cada aviso pueden cruzarse: vale la última petición
+        const peticion = this.peticionVencimientos = (this.peticionVencimientos || 0) + 1
+        const lista = await tareasApi.obtenerTareasVencenHoy(parseInt(usuario.id), parseInt(usuario.nivelAcceso))
+        if (peticion === this.peticionVencimientos) this.tareasVenciendoHoyLista = lista
       } catch (e) {
         console.error('Error cargando tareas vencen hoy:', e)
       }
@@ -370,26 +455,35 @@ export default {
         return
       }
       
+      // Al alternar rápido «No leídas»/«Leídas» la respuesta anterior puede llegar
+      // después: solo se aplica la de la última petición
+      const peticion = this.peticionNotificaciones = (this.peticionNotificaciones || 0) + 1
+      const vigente = () => peticion === this.peticionNotificaciones
       try {
         this.cargando = true
+        this.errorCarga = false
         
+        let notificaciones
         if (this.mostrarSoloNoLeidas) {
           // Cargar solo no leídas
-          this.notificaciones = await tareasApi.obtenerNotificacionesNoLeidas(parseInt(usuario.id))
+          notificaciones = await tareasApi.obtenerNotificacionesNoLeidas(parseInt(usuario.id))
         } else {
-          // Cargar todas (leídas + no leídas)
-          this.notificaciones = await tareasApi.obtenerNotificacionesPorUsuario(parseInt(usuario.id))
-          // Filtrar para mostrar solo las leídas
-          this.notificaciones = this.notificaciones.filter(n => n.leida === true)
+          // Cargar todas (leídas + no leídas) y mostrar solo las leídas
+          notificaciones = (await tareasApi.obtenerNotificacionesPorUsuario(parseInt(usuario.id)))
+            .filter(n => n.leida === true)
         }
+        if (!vigente()) return
+        this.notificaciones = notificaciones
         
         this.aplicarFiltroTipo()
         await this.actualizarContador()
       } catch (error) {
+        if (!vigente()) return
         console.error('Error cargando notificaciones:', error)
+        this.errorCarga = true
         this.mostrarMensaje('Error al cargar las notificaciones', 'error')
       } finally {
-        this.cargando = false
+        if (vigente()) this.cargando = false
       }
     },
     
@@ -472,10 +566,11 @@ export default {
       try {
         await tareasApi.eliminarNotificacion(notificacionId)
         
-        // Remover de listas locales
+        // Remover de listas locales (y de la lista filtrada que se muestra)
         this.notificaciones = this.notificaciones.filter(n => n.id !== notificacionId)
         this.todasLasNotificaciones = this.todasLasNotificaciones.filter(n => n.id !== notificacionId)
-        
+        this.aplicarFiltroTipo()
+
         await this.actualizarContador()
         this.mostrarMensaje('Notificación eliminada', 'success')
       } catch (error) {
@@ -500,13 +595,10 @@ export default {
         return
       }
 
-      // Navegar a la tarea si es posible
+      // Abre el detalle de su tarea, igual que el aviso de «vence hoy» (antes solo
+      // llevaba a la lista y había que buscarla)
       if (notificacion.tareaId) {
-        this.$router.push({
-          path: '/dashboard/tareas',
-          query: { destacar: notificacion.tareaId }
-        })
-        this.menuAbierto = false
+        this.irATarea(notificacion.tareaId)
       }
     },
     
@@ -562,14 +654,7 @@ export default {
     },
     
     formatearFecha(fecha) {
-      if (!fecha) return ''
-      return new Date(fecha).toLocaleString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      return fechaHoraES(fecha, '')
     },
     
     aplicarFiltroTipo() {
@@ -587,7 +672,9 @@ export default {
         color
       }
       
-      setTimeout(() => {
+      // El temporizador de un mensaje anterior no puede ocultar este antes de tiempo
+      clearTimeout(this.temporizadorMensaje)
+      this.temporizadorMensaje = setTimeout(() => {
         this.snackbar.show = false
       }, 3000)
     }

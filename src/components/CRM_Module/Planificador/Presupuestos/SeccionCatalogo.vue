@@ -1,7 +1,7 @@
 <template>
-  <section v-if="categoria" class="step-section" :class="{ titled: !!seccion.title }" :id="'seccion-' + seccion.id" :aria-label="seccion.title || categoria.label">
+  <section v-if="categoria" class="paso-seccion" :class="{ titled: !!seccion.title }" :id="'seccion-' + seccion.id" :aria-label="seccion.title || categoria.label">
     <h3 v-if="seccion.title">{{ seccion.title }}</h3>
-    <div class="cost-filters" role="search">
+    <div class="coste-filtros" role="search">
       <label class="search">
         Buscar
         <input v-model="filtros.q" type="search" :placeholder="'En ' + (seccion.title || categoria.label).toLowerCase() + '…'">
@@ -9,10 +9,10 @@
       <template v-for="f in definiciones" :key="f.key">
         <label v-if="f.opciones.length > 1">
           {{ f.label }}
-          <select v-model="filtros[f.key]"><option value="">Todos</option><option v-for="o in f.opciones" :key="o" :value="o">{{ o }}</option></select>
+          <select :value="filtros[f.key] || ''" @change="filtros[f.key] = $event.target.value"><option value="">Todos</option><option v-for="o in f.opciones" :key="o" :value="o">{{ o === 'Todas' ? 'Cualquier cubierta' : o }}</option></select>
         </label>
       </template>
-      <button v-if="hayFiltros" type="button" class="link-btn clear" @click="filtros = {}">Quitar filtros</button>
+      <button v-if="hayFiltros" type="button" class="enlace-boton clear" @click="filtros = {}">Quitar filtros</button>
     </div>
 
     <label v-if="filtroDefecto" class="switch">
@@ -20,18 +20,18 @@
       Ver también lo que no es para {{ filtroDefecto.label }}
     </label>
 
-    <p class="muted result-count" aria-live="polite">
+    <p class="muted resultado-total" aria-live="polite">
       {{ mostrados.length }} de {{ enCategoria.length }}{{ filtroDefecto && !verTodo ? ' · filtrado para ' + filtroDefecto.label : '' }}{{ filasSugeridas.length > 0 ? ' · ' + filasSugeridas.length + ' sugerido' + (filasSugeridas.length === 1 ? '' : 's') : '' }}{{ incompatibles.length > 0 ? ' · ' + incompatibles.length + ' incompatible' + (incompatibles.length === 1 ? '' : 's') + ' con lo elegido, al final' : '' }}
     </p>
 
     <p v-if="mostrados.length === 0 && incompatibles.length === 0" class="muted empty">Ningún equipo cumple los filtros.</p>
-    <div v-else class="cost-table-wrap">
-      <table class="cost-table">
+    <div v-else class="coste-tabla-envoltorio">
+      <table class="coste-tabla">
         <thead>
           <tr>
             <th v-for="c in columnasCabecera" :key="c.clave" :class="c.clase" :aria-sort="ariaOrden(c.clave)">
-              <button type="button" class="sort-btn" :class="{ on: orden && orden.key === c.clave }" title="Ordenar por esta columna" @click="orden = nextSort(orden, c.clave)">
-                {{ c.etiqueta }}<span class="sort-icon" aria-hidden="true">{{ iconoOrden(c.clave) }}</span>
+              <button type="button" class="orden-boton" :class="{ on: orden && orden.key === c.clave }" title="Ordenar por esta columna" @click="orden = nextSort(orden, c.clave)">
+                {{ c.etiqueta }}<span class="orden-icon" aria-hidden="true">{{ iconoOrden(c.clave) }}</span>
               </button>
             </th>
             <th class="act" />
@@ -39,19 +39,19 @@
         </thead>
         <tbody>
           <template v-if="filasSugeridas.length > 0">
-            <tr class="group-row suggested-head">
+            <tr class="grupo-fila sugerido-cabecera">
               <th :colspan="numColumnas" scope="colgroup"><span aria-hidden="true">★</span> Sugeridos<span class="muted"> · encajan con lo elegido{{ filasSugeridas.some((s) => s.inStock) ? ' y los que hay en stock van primero' : '' }}</span></th>
             </tr>
             <fila-producto v-for="s in filasSugeridas" :key="'s' + s.item.id" v-bind="propsFila(s.item, s)" @anadir="$emit('anadir', $event)" @quitar="$emit('quitar', $event)" @ficha="$emit('ficha', $event)" />
           </template>
           <template v-if="restantes.length > 0">
-            <tr v-if="filasSugeridas.length > 0 || incompatibles.length > 0" class="group-row"><th :colspan="numColumnas" scope="colgroup">Compatibles</th></tr>
+            <tr v-if="filasSugeridas.length > 0 || incompatibles.length > 0" class="grupo-fila"><th :colspan="numColumnas" scope="colgroup">Compatibles</th></tr>
             <fila-producto v-for="i in restantes" :key="i.id" v-bind="propsFila(i, null)" @anadir="$emit('anadir', $event)" @quitar="$emit('quitar', $event)" @ficha="$emit('ficha', $event)" />
           </template>
           <template v-if="incompatibles.length > 0">
-            <tr class="group-row incompatible-head">
+            <tr class="grupo-fila incompatible-cabecera">
               <th :colspan="numColumnas" scope="colgroup">
-                <button type="button" class="link-btn" :aria-expanded="incompatiblesAbiertos" @click="verIncompatibles = !incompatiblesAbiertos">
+                <button type="button" class="enlace-boton" :aria-expanded="incompatiblesAbiertos" @click="verIncompatibles = !incompatiblesAbiertos">
                   <span aria-hidden="true">{{ incompatiblesAbiertos ? '▾' : '▸' }} ⛔</span> Incompatibles con lo que ya has elegido ({{ incompatibles.length }})
                 </button>
               </th>

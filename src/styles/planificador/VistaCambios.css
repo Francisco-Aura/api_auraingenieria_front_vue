@@ -1,0 +1,290 @@
+.cambios {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 960px;
+}
+
+.tarjeta-block {
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.tarjeta-block h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: var(--text-h);
+}
+
+.block-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.block-cabecera h2 {
+  margin: 0;
+}
+
+/* ---- Resumen ---------------------------------------------------------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stat {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-alt);
+}
+
+.stat span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.stat strong {
+  font-size: 20px;
+  color: var(--text-h);
+}
+
+.stat.main {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+
+.up {
+  color: #b45309;
+}
+
+.down {
+  color: #15803d;
+}
+
+.cambios .hint {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.notice.warn {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, #f59e0b 55%, transparent);
+  border-left: 5px solid #f59e0b;
+  border-radius: 8px;
+  font-size: 13.5px;
+  background: color-mix(in srgb, #f59e0b 12%, var(--bg));
+}
+
+/* ---- Formularios -------------------------------------------------------- */
+
+.formulario-rejilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.formulario-rejilla label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-h);
+}
+
+.cambios input,
+.modal input[type='text'],
+.modal input[type='number'],
+.modal input[type='date'],
+.modal textarea,
+.modal select {
+  font: inherit;
+  padding: 7px 9px;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* ---- Tabla de datos vigentes ------------------------------------------------ */
+
+.actual-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.actual-tabla th,
+.actual-tabla td {
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.actual-tabla tr.cambiado td {
+  background: color-mix(in srgb, #f59e0b 9%, transparent);
+}
+
+.tag {
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #b45309;
+  background: color-mix(in srgb, #f59e0b 18%, transparent);
+}
+
+/* ---- Cambios registrados --------------------------------------------------------- */
+
+.cambio {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+}
+
+.cambio header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.cambio h3 {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  color: var(--text-h);
+}
+
+.cambio-acciones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cambio dl {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 6px 14px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.cambio dt {
+  color: var(--muted);
+}
+
+.cambio dd {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.sets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ok-text {
+  color: #15803d;
+}
+
+.aviso-text {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.cambio footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.tarea-chip {
+  padding: 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12.5px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.tarea-chip.pendiente {
+  border-color: color-mix(in srgb, #f59e0b 60%, transparent);
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  color: var(--text-h);
+}
+
+/* ---- Diálogo de cambio ------------------------------------------------------------- */
+
+.precio-caja {
+  margin: 0;
+  padding: 10px 14px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+}
+
+.precio-caja legend {
+  padding: 0 6px;
+  font-size: 13px;
+  color: var(--text-h);
+}
+
+.precio-caja .hint {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.validation {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.conjunto-fila {
+  flex-basis: 100%;
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+}
+
+@media (max-width: 800px) {
+  .stats,
+  .formulario-rejilla {
+    grid-template-columns: 1fr;
+  }
+
+  .cambio dl {
+    grid-template-columns: 1fr;
+  }
+}

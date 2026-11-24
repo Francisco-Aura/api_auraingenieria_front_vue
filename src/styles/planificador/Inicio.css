@@ -1,0 +1,96 @@
+.inicio {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 36px 8px 48px;
+}
+
+.inicio h1 {
+  margin: 0 0 4px;
+}
+
+.inicio-intro {
+  margin: 0 0 28px;
+  font-size: 15px;
+}
+
+.inicio-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+/* Con ancho medio, agrupadas de 2 en 2 (nunca 3 + 1) */
+@media (max-width: 960px) {
+  .inicio-tarjetas { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 520px) {
+  .inicio-tarjetas { grid-template-columns: 1fr; }
+}
+
+.inicio-tarjeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 210px;
+  padding: 26px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  text-align: left;
+  box-shadow: var(--shadow-card);
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.inicio-tarjeta {
+  position: relative;
+}
+
+/* Número de cosas pendientes (p. ej. presupuestos por validar), en la esquina de la tarjeta */
+.inicio-insignia {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.inicio-tarjeta:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  filter: none;
+}
+
+.inicio-tarjeta svg {
+  color: var(--accent-ink, var(--text-h));
+  padding: 10px;
+  box-sizing: content-box;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.inicio-tarjeta strong {
+  font-size: 19px;
+  color: var(--text-h);
+}
+
+.inicio-tarjeta span {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+}

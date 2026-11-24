@@ -2,16 +2,16 @@
   <modal-component titulo="Eliminar proyecto" @cerrar="$emit('cerrar')">
     <p>Vas a eliminar <strong>{{ nombre }}</strong> con todas sus tareas, documentación aportada, cambios y registro de actividad.</p>
     <p class="hint">Se borra <strong>definitivamente y al momento</strong>: no se puede deshacer ni recuperar.<template v-if="enDropbox"> La carpeta del proyecto y sus archivos en Dropbox se quedan como están: no se borran desde aquí.</template></p>
-    <label class="check-row"><input v-model="entendido" type="checkbox"> Entiendo que el proyecto dejará de estar disponible para todo el equipo.</label>
+    <label class="check-fila"><input v-model="entendido" type="checkbox"> Entiendo que el proyecto dejará de estar disponible para todo el equipo.</label>
     <label class="field">
       Para confirmar, escribe el nombre del proyecto:
-      <span class="confirm-name">{{ nombre }}</span>
+      <span class="confirmar-nombre">{{ nombre }}</span>
       <input v-model="escrito" :placeholder="nombre" autocomplete="off" spellcheck="false">
     </label>
     <p v-if="error" class="error">{{ error }}</p>
     <template #pie>
       <button type="button" class="secondary" @click="$emit('cerrar')">Cancelar</button>
-      <button type="button" class="danger-btn" :disabled="!entendido || !coincide || ocupado" @click="confirmar">{{ ocupado ? 'Eliminando…' : 'Eliminar proyecto' }}</button>
+      <button type="button" class="danger-boton" :disabled="!entendido || !coincide || ocupado" @click="confirmar">{{ ocupado ? 'Eliminando…' : 'Eliminar proyecto' }}</button>
     </template>
   </modal-component>
 </template>

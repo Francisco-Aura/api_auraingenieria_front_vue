@@ -1,9 +1,9 @@
 <template>
-  <span class="num-field">
+  <span class="num-campo">
     <input :class="clase" inputmode="decimal" :aria-label="etiqueta" :value="texto === null ? String(modelValue).replace('.', ',') : texto"
-           @input="escribir" @keydown="teclas" @blur="texto = null">
+           @input="escribir" @keydown="teclas" @blur="salir">
     <!-- Solo para el ratón: con teclado se usan las flechas del propio campo. -->
-    <span class="steppers" aria-hidden="true">
+    <span class="pasos" aria-hidden="true">
       <button type="button" tabindex="-1" @mousedown.prevent @click="subir(1, $event)">▲</button>
       <button type="button" tabindex="-1" @mousedown.prevent @click="subir(-1, $event)">▼</button>
     </span>
@@ -30,6 +30,7 @@ export default {
   emits: ['update:modelValue'],
   data() { return { texto: null } },
   methods: {
+    salir() { this.texto = null },
     escribir(e) {
       this.texto = e.target.value
       const n = Number(e.target.value.replace(',', '.'))

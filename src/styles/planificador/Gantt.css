@@ -303,16 +303,16 @@
 
 /* ---- Retrasos: el color depende de la gravedad (ámbar, naranja, rojo) ---- */
 
-.gantt-item.late .gantt-bar {
+.gantt-item.retraso .gantt-bar {
   background: color-mix(in srgb, var(--bar) 28%, var(--bg));
 }
 
-.gantt-item.late .gantt-progress {
+.gantt-item.retraso .gantt-progress {
   background: color-mix(in srgb, var(--bar) 70%, transparent);
 }
 
 /* La propia tarea ha vencido: rayada, como una alerta activa */
-.gantt-item.late.own .gantt-bar {
+.gantt-item.retraso.own .gantt-bar {
   background-image: repeating-linear-gradient(
     -45deg,
     color-mix(in srgb, var(--bar) 55%, transparent) 0 6px,
@@ -320,23 +320,23 @@
   );
 }
 
-.gantt-item.late.level-3 .gantt-bar {
+.gantt-item.retraso.level-3 .gantt-bar {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--bar) 35%, transparent);
 }
 
-.gantt-item.late .gantt-meta {
+.gantt-item.retraso .gantt-meta {
   color: var(--bar);
 }
 
-.late-meta {
+.retraso-meta {
   font-weight: 700;
 }
 
-.late-mark {
+.retraso-marca {
   font-weight: 700;
 }
 
-.late-count {
+.retraso-total {
   flex: none;
   margin-left: 8px;
   font-size: 12px;
@@ -355,20 +355,20 @@
 }
 
 /* Hito: rombo */
-.gantt-item.milestone {
+.gantt-item.hito {
   margin-left: calc((var(--day-w) - var(--bar-h)) / 2);
   width: var(--bar-h);
 }
 
-.gantt-item.milestone .gantt-bar {
+.gantt-item.hito .gantt-bar {
   border: none;
   border-radius: 0;
   background: var(--bar);
   clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
 }
 
-.gantt-item.milestone .gantt-progress,
-.gantt-item.milestone .gantt-handle {
+.gantt-item.hito .gantt-progress,
+.gantt-item.hito .gantt-handle {
   display: none;
 }
 
@@ -385,11 +385,11 @@
   background: color-mix(in srgb, var(--c, var(--accent)) 8%, transparent);
 }
 
-.phase-name {
+.fase-nombre {
   cursor: pointer;
 }
 
-.phase-name:hover {
+.fase-nombre:hover {
   text-decoration: underline;
 }
 
@@ -409,7 +409,7 @@
   background: var(--c, var(--accent));
 }
 
-.phase-toggle {
+.fase-alternar {
   flex: none;
   margin-right: 6px;
   padding: 0 4px;
@@ -464,19 +464,19 @@
 
 /* ---- Pestañas de vista (Gantt / Lista / Documentos) ------------------- */
 
-.view-tabs {
+.vista-pestanas {
   display: flex;
   gap: 6px;
   margin-bottom: 16px;
 }
 
-.view-tabs button {
+.vista-pestanas button {
   background: var(--bg);
   color: var(--text);
   border-color: var(--border);
 }
 
-.view-tabs button.active {
+.vista-pestanas button.active {
   background: var(--accent);
   color: var(--accent-contrast);
   border-color: var(--accent);

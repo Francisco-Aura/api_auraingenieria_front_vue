@@ -84,14 +84,21 @@ html.tema-oscuro .loading-text-main {
 }
 
 /* ===== Campana de notificaciones =====
-   El botón es #2c3e50 con !important: sobre la cabecera oscura casi no se distingue, así que se aclara y lleva un aro.
+   Mismo diseño que en claro (botón redondo sin fondo ni aro; solo el fondo cambia al pasar el ratón o con el panel abierto),
+   con la campana en blanco para que se vea sobre la cabecera oscura.
    El número del distintivo va sobre amarillo: texto negro (su color y su fondo están en reglas distintas y el generador
    lo había pasado a claro). */
-html.tema-oscuro .notification-btn {
-  background: #34465a !important;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+html.tema-oscuro .notification-btn.btn-icon {
+  background: transparent !important;
+  box-shadow: none;
+  border-color: transparent;
+  color: #fff !important;
 }
-html.tema-oscuro .notification-btn:hover { background: #3f536a !important; }
+html.tema-oscuro .notification-btn.btn-icon:hover:not(:disabled),
+html.tema-oscuro .notification-btn.btn-icon[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+}
 html.tema-oscuro .notification-btn:focus-visible { box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 5px #fcd700; }
 html.tema-oscuro .notification-badge { color: #000; border-color: var(--color-surface); }
 html.tema-oscuro .vencimiento-badge-urgente { border-color: var(--color-surface); }

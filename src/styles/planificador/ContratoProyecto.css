@@ -1,0 +1,35 @@
+.contrato-pendiente {
+  margin: 0 0 14px;
+  padding: 9px 14px;
+  border: 1px solid color-mix(in srgb, #f59e0b 55%, var(--border));
+  border-left: 5px solid #f59e0b;
+  border-radius: 8px;
+  font-size: 14px;
+  background: color-mix(in srgb, #f59e0b 9%, var(--bg));
+}
+
+.contrato-pendiente button {
+  margin-left: 6px;
+}
+
+.contrato-hecho {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+
+.modal .party-rejilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+
+.modal .party-rejilla label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.modal .party-rejilla .wide-campo {
+  grid-column: 1 / -1;
+}

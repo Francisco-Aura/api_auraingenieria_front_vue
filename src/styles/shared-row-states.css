@@ -25,15 +25,18 @@
   background-color: rgba(220, 53, 69, 0.1) !important;
 }
 
-/* Solo Clientes/Puntos de Suministro atenúan además la opacidad de la fila
-   (Tareas no lo hace en su tabla principal). */
-.cliente-dado-baja,
-.punto-dado-baja {
+/* Solo Clientes/Puntos de Suministro atenúan además los datos de la fila (Tareas no
+   lo hace en su tabla principal). Los datos, no los botones, como en las tareas
+   completadas: con la fila entera al 70 % ver, editar y reactivar parecían
+   desactivados, y la columna fija de Acciones se volvía transparente y dejaba ver
+   las celdas que pasaban por debajo al desplazar la tabla. */
+.cliente-dado-baja td:not(:last-child),
+.punto-dado-baja td:not(:last-child) {
   opacity: 0.7;
 }
 
-.cliente-dado-baja:hover,
-.punto-dado-baja:hover {
+.cliente-dado-baja:hover td:not(:last-child),
+.punto-dado-baja:hover td:not(:last-child) {
   opacity: 0.8;
 }
 
@@ -49,13 +52,15 @@
   background-color: rgba(255, 193, 7, 0.15) !important;
 }
 
-/* "Completada" (Tareas y su mini-tabla en Crea/Actualiza Cliente). */
-.tarea-completada,
-.tp-row-completada {
+/* "Completada" (Tareas y su mini-tabla en Crea/Actualiza Cliente). Se atenúan los
+   datos, no los botones: con toda la fila al 60 % ver, editar y borrar parecían
+   desactivados. */
+.tarea-completada td:not(:last-child),
+.tp-row-completada td:not(:last-child) {
   opacity: 0.6;
 }
 
-.tarea-completada td,
-.tp-row-completada td {
+.tarea-completada td:not(:last-child),
+.tp-row-completada td:not(:last-child) {
   text-decoration: line-through;
 }

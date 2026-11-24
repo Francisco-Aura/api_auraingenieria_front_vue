@@ -10,8 +10,8 @@
       <div v-if="loginError" class="alert alert-danger">
         <i class="fas fa-exclamation-triangle alert-icon"></i>
         <div class="alert-content">
-          <div class="alert-title">Error de autenticación</div>
-          <div class="alert-message">Usuario o contraseña incorrectos.</div>
+          <div class="alert-title">{{ tituloError }}</div>
+          <div class="alert-message">{{ mensajeError }}</div>
         </div>
       </div>
       
@@ -21,6 +21,7 @@
           <i class="fas fa-user"></i>
           <input 
             id="login-username"
+            ref="campoUsuario"
             type="text" 
             v-model="username" 
             placeholder="Usuario" 
@@ -37,6 +38,7 @@
           <i class="fas fa-lock"></i>
           <input 
             id="login-password"
+            ref="campoContrasena"
             type="password" 
             v-model="password" 
             placeholder="Contraseña" 
@@ -71,6 +73,8 @@ export default {
       username: '',
       password: '',
       loginError: false,
+      tituloError: 'Error de autenticación',
+      mensajeError: 'Usuario o contraseña incorrectos.',
       isLoading: false,
       errores: {}
     };
@@ -85,26 +89,36 @@ export default {
         this.errores.password = 'La contraseña es obligatoria';
       }
       if (Object.keys(this.errores).length > 0) {
-        this.$swal.fire({
-          icon: 'warning',
-          title: 'Campos obligatorios',
-          text: 'Por favor, revise los campos marcados en rojo'
+        // Sin diálogo: los campos ya se marcan en rojo con su mensaje debajo. El foco va
+        // al primero que falta para poder escribir directamente.
+        this.$nextTick(() => {
+          const campo = this.errores.username ? this.$refs.campoUsuario : this.$refs.campoContrasena;
+          campo?.focus();
         });
         return false;
       }
       return true;
+    },
+    async peticionLogin() {
+      const url = `${process.env.VUE_APP_API_URL}/usuarios/login`;
+      try {
+        return await axios.post(url, { user: this.username, pass: this.password });
+      } catch (error) {
+        // Backend anterior (solo tenía el login por GET) durante el despliegue
+        const estado = error?.response?.status;
+        if (estado === 404 || estado === 405) {
+          return axios.get(url, { params: { user: this.username, pass: this.password } });
+        }
+        throw error;
+      }
     },
     async submitForm() {
       this.loginError = false;
       if (!this.validarFormulario()) return;
       this.isLoading = true;
       try {
-        const response = await axios.get(`${process.env.VUE_APP_API_URL}/usuarios/login`, {
-          params: {
-            user: this.username,
-            pass: this.password
-          }
-        });
+        // POST con las credenciales en el cuerpo: por GET quedaban en la URL (logs, historial)
+        const response = await this.peticionLogin();
 
         if (response.status === 200) {
           const userData = response.data;
@@ -116,8 +130,12 @@ export default {
         }
       } catch (error) {
         this.loginError = true;
+        const motivoBloqueo = error?.response?.status === 429 ? error.response.data?.error : '';
+        // Demasiados intentos: no es que la contraseña esté mal, es un bloqueo temporal
+        this.tituloError = motivoBloqueo ? 'Acceso bloqueado temporalmente' : 'Error de autenticación';
+        this.mensajeError = motivoBloqueo || 'Usuario o contraseña incorrectos.';
         this.isLoading = false;
-        console.error('Error en la solicitud:', error);
+        console.error('Error en la solicitud:', error?.response?.status);
       }
     }
   }

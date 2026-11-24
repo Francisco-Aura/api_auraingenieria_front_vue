@@ -12,15 +12,19 @@
 </template>
 
 <script>
+import { bloquearScroll, liberarScroll } from '@/utils/planificador/bloqueoScroll'
+
 export default {
   name: 'Modal-Component',
   props: { titulo: { type: String, default: '' }, ancho: { type: Boolean, default: false } },
   emits: ['cerrar'],
   mounted() {
+    bloquearScroll()
     this.alPulsarTecla = (e) => { if (e.key === 'Escape') this.$emit('cerrar') }
     window.addEventListener('keydown', this.alPulsarTecla)
   },
   beforeUnmount() {
+    liberarScroll()
     window.removeEventListener('keydown', this.alPulsarTecla)
   }
 }

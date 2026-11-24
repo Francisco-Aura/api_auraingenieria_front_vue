@@ -1,0 +1,11 @@
+.pago-modo .radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+
+.pago-modo .radio input {
+  margin-top: 4px;
+}

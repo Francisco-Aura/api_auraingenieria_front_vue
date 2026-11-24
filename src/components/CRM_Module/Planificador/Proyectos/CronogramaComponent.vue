@@ -25,9 +25,9 @@
           <template v-for="fila in filas" :key="fila.kind === 'phase' ? 'fase:' + fila.group.name : fila.task.id">
             <div v-if="fila.kind === 'phase'" class="gantt-row gantt-phase" :style="{ '--c': colores.get(fila.group.name) || NO_COLOR }">
               <div class="gantt-label" :title="fila.group.name">
-                <button type="button" class="phase-toggle" :aria-expanded="!plegadas.has(fila.group.name)" :title="plegadas.has(fila.group.name) ? 'Expandir fase' : 'Plegar fase'" @click="alternarFase(fila.group.name)">{{ plegadas.has(fila.group.name) ? '▸' : '▾' }}</button>
-                <span class="phase-name" title="Ver el detalle de la fase" @click="$emit('seleccionar', { kind: 'phase', name: fila.group.name })">{{ fila.group.name }}</span>
-                <span v-if="retrasosDeFase(fila.group).length > 0" class="late-count" :style="{ color: peorRetraso(fila.group).color }" :title="retrasosDeFase(fila.group).length + ' tarea(s) con retraso en esta fase'">⚠ {{ retrasosDeFase(fila.group).length }}</span>
+                <button type="button" class="fase-alternar" :aria-expanded="!plegadas.has(fila.group.name)" :title="plegadas.has(fila.group.name) ? 'Expandir fase' : 'Plegar fase'" @click="alternarFase(fila.group.name)">{{ plegadas.has(fila.group.name) ? '▸' : '▾' }}</button>
+                <span class="fase-nombre" title="Ver el detalle de la fase" @click="$emit('seleccionar', { kind: 'phase', name: fila.group.name })">{{ fila.group.name }}</span>
+                <span v-if="retrasosDeFase(fila.group).length > 0" class="retraso-total" :style="{ color: peorRetraso(fila.group).color }" :title="retrasosDeFase(fila.group).length + ' tarea(s) con retraso en esta fase'">⚠ {{ retrasosDeFase(fila.group).length }}</span>
               </div>
               <div class="gantt-timeline">
                 <div class="gantt-item" :style="{ gridColumn: (fila.group.start + 1) + ' / ' + (fila.group.end + 2) }" :title="fila.group.name + '\n' + fecha(fila.group.start) + ' → ' + fecha(fila.group.end) + ' · ' + fila.group.progress + '%'">
@@ -43,13 +43,13 @@
                 <span>
                   <span v-if="fila.task.status === 'blocked'" :title="'Bloqueada: ' + fila.task.status_reason">⛔ </span>
                   <span v-if="fila.task.status === 'paused'" title="En pausa">⏸ </span>
-                  <span v-if="retrasoDe(fila.task)" class="late-mark" :style="{ color: retrasoDe(fila.task).color }" :title="retrasoDe(fila.task).label">⚠ </span>{{ fila.task.name }}
+                  <span v-if="retrasoDe(fila.task)" class="retraso-marca" :style="{ color: retrasoDe(fila.task).color }" :title="retrasoDe(fila.task).label">⚠ </span>{{ fila.task.name }}
                 </span>
               </div>
               <div class="gantt-timeline">
                 <span v-if="retrasoDe(fila.task) && indicePrevisto(fila.task) >= 0 && indicePrevisto(fila.task) < dias" class="gantt-planned"
                       :style="{ gridColumn: (indicePrevisto(fila.task) + 1) + ' / ' + (indicePrevisto(fila.task) + 2), '--alert': retrasoDe(fila.task).color }" :title="'Plazo previsto: ' + retrasoDe(fila.task).planned" />
-                <div class="gantt-item" :class="[fila.task.status, { milestone: fila.task.milestone, dragging: borrador && borrador.id === fila.task.id }, retrasoDe(fila.task) ? 'late level-' + retrasoDe(fila.task).level + (retrasoDe(fila.task).own ? ' own' : '') : '']"
+                <div class="gantt-item" :class="[fila.task.status, { hito: fila.task.milestone, dragging: borrador && borrador.id === fila.task.id }, retrasoDe(fila.task) ? 'retraso level-' + retrasoDe(fila.task).level + (retrasoDe(fila.task).own ? ' own' : '') : '']"
                      :style="{ gridColumn: (rango(fila.task).start + 1) + ' / ' + (rango(fila.task).end + 2), ...(retrasoDe(fila.task) ? { '--bar': retrasoDe(fila.task).color } : {}) }">
                   <div class="gantt-bar" :title="fila.task.name + '\n' + fecha(rango(fila.task).start) + ' → ' + fecha(rango(fila.task).end) + ' · ' + fila.task.progress + '%'"
                        @pointerdown="empezar($event, fila.task, 'move')" @pointermove="mover" @pointerup="terminar" @pointercancel="terminar">
@@ -59,7 +59,7 @@
                   </div>
                   <span class="gantt-meta">
                     {{ fila.task.milestone ? 'Hito' : rango(fila.task).end - rango(fila.task).start + 1 + ' d' }}{{ fila.task.status === 'done' ? ' · ✓' : fila.task.progress > 0 ? ' · ' + fila.task.progress + '%' : '' }}
-                    <strong v-if="retrasoDe(fila.task)" class="late-meta" :style="{ color: retrasoDe(fila.task).color }"> · +{{ retrasoDe(fila.task).days }} d</strong>
+                    <strong v-if="retrasoDe(fila.task)" class="retraso-meta" :style="{ color: retrasoDe(fila.task).color }"> · +{{ retrasoDe(fila.task).days }} d</strong>
                   </span>
                 </div>
               </div>

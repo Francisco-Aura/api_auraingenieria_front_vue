@@ -1,6 +1,10 @@
+import { layoutOf, roofsOf } from './pasosConfig.js';
 import { clampTotals } from './strings.js';
 export const EMPTY_SURVEY = {
     roof: 'teja',
+    roofs: ['teja'],
+    roofLayouts: {},
+    roofPanels: {},
     targetKwp: 0,
     cableMeters: 0,
     acMeters: 0,
@@ -11,6 +15,10 @@ export const EMPTY_COSTS = {
     client: '',
     customer: null,
     reference: '',
+    cif: '',
+    clientLogo: '',
+    // «Encaje»: imagen con la disposición de los paneles en el proyecto; sale en la propuesta HTML (opcional)
+    encaje: '',
     strings: null,
     moduleWp: 615,
     moduleCount: 12,
@@ -19,14 +27,21 @@ export const EMPTY_COSTS = {
     survey: EMPTY_SURVEY,
     order: 'insercion',
 };
+/** Largo máximo de las observaciones internas de un producto del presupuesto. */
+export const MAX_OBSERVACIONES_LINEA = 1000;
 const STORAGE_KEY = 'planificador.costes.v5';
 const OLD_STORAGE_KEY = 'planificador.costes.v4';
 function loadSurvey(raw) {
     const d = (raw && typeof raw === 'object' ? raw : {});
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 0);
-    const roofs = ['teja', 'chapa', 'plana', 'suelo'];
+    // Varios tipos de cubierta: `roofs` manda; un presupuesto anterior solo trae `roof`. `roof` queda siempre como la primera.
+    const roofs = roofsOf(d);
     return {
-        roof: roofs.includes(d.roof) ? d.roof : EMPTY_SURVEY.roof,
+        roof: roofs[0],
+        roofs,
+        // Cómo se colocan los paneles en cada cubierta y cuántos van en cada una (solo se guarda lo de las cubiertas que hay)
+        roofLayouts: Object.fromEntries(roofs.filter((r) => layoutOf(d, r)).map((r) => [r, layoutOf(d, r)])),
+        roofPanels: Object.fromEntries(roofs.filter((r) => Number.isInteger(d.roofPanels?.[r]) && d.roofPanels[r] >= 0).map((r) => [r, d.roofPanels[r]])),
         targetKwp: num(d.targetKwp),
         cableMeters: num(d.cableMeters),
         acMeters: num(d.acMeters),
@@ -45,7 +60,7 @@ function parseStrings(raw) {
         const d = s;
         const n = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.round(v) : 0);
         const parts = n(d.parts);
-        return { id: typeof d.id === 'string' && d.id ? d.id : `s-${i}`, panels: n(d.panels), input: n(d.input), ...(parts > 1 ? { parts } : {}) };
+        return { id: typeof d.id === 'string' && d.id ? d.id : `s-${i}`, panels: n(d.panels), input: n(d.input), ...(parts > 1 ? { parts } : {}), ...(d.fixed === true ? { fixed: true } : {}) };
     });
     return list;
 }
@@ -62,6 +77,10 @@ function parseCustomer(raw) {
     return null;
 }
 /** Un presupuesto leído de donde sea (el navegador o el servidor): lo que falte o venga mal toma su valor por defecto. */
+/** El logo de la empresa del cliente: una imagen en data URI de hasta ~1,5 MB; cualquier otra cosa, vacío. */
+function validLogo(v) {
+    return typeof v === 'string' && v.length <= 2000000 && /^data:image\/(png|jpeg|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(v) ? v : '';
+}
 export function parseCosts(raw) {
     {
         const data = (raw && typeof raw === 'object' ? raw : {});
@@ -71,12 +90,17 @@ export function parseCosts(raw) {
             client: str(data.client),
             customer: parseCustomer(data.customer),
             reference: str(data.reference),
+            cif: str(data.cif).trim().slice(0, 30),
+            clientLogo: validLogo(data.clientLogo),
+            encaje: validLogo(data.encaje),
             strings: parseStrings(data.strings),
             moduleWp: num(data.moduleWp, EMPTY_COSTS.moduleWp),
             moduleCount: num(data.moduleCount, EMPTY_COSTS.moduleCount),
             saleRatio: num(data.saleRatio, EMPTY_COSTS.saleRatio),
             survey: loadSurvey(data.survey),
             order: data.order === 'fijo' ? 'fijo' : 'insercion',
+            // Solo un presupuesto recién creado: el editor le pone las partidas de proyecto y trámites por defecto y quita la marca
+            ...(data.tramitesPendientes === true ? { tramitesPendientes: true } : {}),
             lines: Array.isArray(data.lines)
                 ? data.lines
                     .filter((l) => l && typeof l.group === 'string')
@@ -95,6 +119,8 @@ export function parseCosts(raw) {
                     price: num(l.price, 0),
                     priceEdited: l.priceEdited === true,
                     notes: str(l.notes),
+                    // Observaciones internas del equipo sobre este producto (no salen en la propuesta del cliente); sin texto, ni existen
+                    ...(str(l.observaciones).trim() ? { observaciones: str(l.observaciones).trim().slice(0, MAX_OBSERVACIONES_LINEA) } : {}),
                 }))
                 : [],
         };

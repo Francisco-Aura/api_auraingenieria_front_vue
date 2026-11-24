@@ -1,31 +1,31 @@
 <template>
   <p v-if="tareas.length === 0" class="muted">Sin tareas todavía.</p>
-  <div v-else class="tasklist">
-    <section v-for="g in grupos" :key="g.nombre || 'todas'" class="tl-group" :style="{ '--c': colorDe(g.nombre) }">
-      <header v-if="g.nombre" class="tl-head" :class="{ selected: faseSeleccionada(g.nombre) }">
-        <button type="button" class="tl-toggle" :aria-expanded="!plegados.includes(g.nombre)" :title="plegados.includes(g.nombre) ? 'Expandir' : 'Plegar'" @click="alternar(g.nombre)">
+  <div v-else class="listatareas">
+    <section v-for="g in grupos" :key="g.nombre || 'todas'" class="tl-grupo" :style="{ '--c': colorDe(g.nombre) }">
+      <header v-if="g.nombre" class="tl-cabecera" :class="{ selected: faseSeleccionada(g.nombre) }">
+        <button type="button" class="tl-alternar" :aria-expanded="!plegados.includes(g.nombre)" :title="plegados.includes(g.nombre) ? 'Expandir' : 'Plegar'" @click="alternar(g.nombre)">
           {{ plegados.includes(g.nombre) ? '▸' : '▾' }}
         </button>
-        <button type="button" class="tl-phase-name" @click="$emit('seleccionar', { kind: 'phase', name: g.nombre })">{{ g.nombre }}</button>
-        <span class="tl-head-meta">{{ g.hechas }}/{{ g.tareas.length }} hechas · {{ shortDate(g.inicio) }} → {{ shortDate(g.fin) }}</span>
+        <button type="button" class="tl-fase-nombre" @click="$emit('seleccionar', { kind: 'phase', name: g.nombre })">{{ g.nombre }}</button>
+        <span class="tl-cabecera-meta">{{ g.hechas }}/{{ g.tareas.length }} hechas · {{ shortDate(g.inicio) }} → {{ shortDate(g.fin) }}</span>
         <div class="tl-head-bar"><insignia-tarea tipo="progreso" :valor="g.progreso" :color="colorDe(g.nombre)" /></div>
       </header>
 
-      <ul v-if="!plegados.includes(g.nombre)" class="tl-rows">
-        <li v-for="t in g.tareas" :key="t.id" class="tl-row" :class="[{ selected: tareaSeleccionada(t), done: t.status === 'done' }, retrasoDe(t) ? 'late level-' + retrasoDe(t).level : '']"
+      <ul v-if="!plegados.includes(g.nombre)" class="tl-filas">
+        <li v-for="t in g.tareas" :key="t.id" class="tl-fila" :class="[{ selected: tareaSeleccionada(t), done: t.status === 'done' }, retrasoDe(t) ? 'retraso level-' + retrasoDe(t).level : '']"
             :style="retrasoDe(t) ? { '--alert': retrasoDe(t).color } : undefined" @click="$emit('seleccionar', { kind: 'task', id: t.id })">
           <button type="button" class="tl-check" :title="t.status === 'done' ? 'Reabrir (vuelve a En curso)' : (moveBlockedReason(t, 'done') || 'Finalizar la tarea')"
                   :aria-label="t.status === 'done' ? 'Reabrir la tarea' : 'Finalizar la tarea'" :disabled="t.status !== 'done' && moveBlockedReason(t, 'done') !== null"
                   @click.stop="$emit('alternar-hecha', t)">{{ t.status === 'done' ? '✓' : '' }}</button>
-          <span class="tl-name">
-            <span v-if="t.milestone" class="tl-milestone">◆ </span>{{ t.name }}
+          <span class="tl-nombre">
+            <span v-if="t.milestone" class="tl-hito">◆ </span>{{ t.name }}
             <template v-if="retrasoDe(t)"> <insignia-tarea tipo="retraso" :retraso="retrasoDe(t)" /></template>
-            <template v-if="idsRevisar.has(t.id)"> <span class="review-badge" title="Hay un cambio del contrato por revisar">↻ Cambio</span></template>
+            <template v-if="idsRevisar.has(t.id)"> <span class="revision-insignia" title="Hay un cambio del contrato por revisar">↻ Cambio</span></template>
           </span>
           <span class="tl-dept"><insignia-tarea tipo="area" :nombre="t.department" /></span>
-          <span class="tl-dates">{{ shortDate(t.start) }} → {{ shortDate(t.end) }}</span>
+          <span class="tl-fechas">{{ shortDate(t.start) }} → {{ shortDate(t.end) }}</span>
           <span class="tl-dur">{{ durationDays(t.start, t.end) }} d</span>
-          <span class="tl-status"><insignia-tarea tipo="estado" :estado="t.status" :detalle="detalle(t)" /></span>
+          <span class="tl-estado"><insignia-tarea tipo="estado" :estado="t.status" :detalle="detalle(t)" /></span>
           <span class="tl-deps" :title="t.depends_on.length + ' dependencia(s)'">{{ t.depends_on.length > 0 ? '⛓ ' + t.depends_on.length : '' }}</span>
         </li>
       </ul>

@@ -128,6 +128,15 @@ test('Sugeridos · salen sin avisos y con razones; los de prueba y sin precio no
   assert.equal(sugeridosDelPaso(conUno, cat, IDX.inversor).get('inversores').some((s) => s.item.id === 'i-stock'), false)
 })
 
+test('Filtro por defecto · con varias cubiertas valen los productos de cualquiera de ellas', () => {
+  const f = filtroPorDefecto(STEPS[IDX.estructura].sections[0], { roof: 'teja', roofs: ['teja', 'plana'] })
+  assert.equal(f.label, 'cubierta teja y plana')
+  assert.equal(f.test(producto('x', 'estructura', { cubierta: 'Teja' })), true)
+  assert.equal(f.test(producto('x', 'estructura', { cubierta: 'Plana' })), true)
+  assert.equal(f.test(producto('x', 'estructura', { cubierta: 'Todas' })), true)
+  assert.equal(f.test(producto('x', 'estructura', { cubierta: 'Suelo' })), false)
+})
+
 test('Filtro por defecto · estructura por la cubierta elegida; inversores, híbridos si se prevén baterías', () => {
   const seccionEstructura = STEPS[IDX.estructura].sections[0]
   const f = filtroPorDefecto(seccionEstructura, { roof: 'chapa' })

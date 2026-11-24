@@ -1,39 +1,39 @@
 <template>
   <p v-if="tareas.length === 0" class="muted">Sin tareas todavía.</p>
   <div v-else class="board-wrap">
-    <div class="board-filters">
+    <div class="tablero-filtros">
       <label>Fase <select v-model="filtroFase"><option value="">Todas</option><option v-for="p in fases" :key="p" :value="p">{{ p }}</option></select></label>
       <label>Área <select v-model="filtroArea"><option value="">Todas</option><option v-for="d in areas" :key="d" :value="d">{{ d }}</option></select></label>
-      <span class="muted board-hint">Arrastra una tarjeta para cambiar su estado. Una tarea iniciada no vuelve a Pendiente.</span>
+      <span class="muted tablero-pista">Arrastra una tarjeta para cambiar su estado. Una tarea iniciada no vuelve a Pendiente.</span>
     </div>
 
-    <div class="board">
-      <section v-for="estado in COLUMNAS" :key="estado" class="board-col" :class="{ over: sobre === estado }" :style="{ '--s': STATUS_META[estado].color }"
+    <div class="tablero">
+      <section v-for="estado in COLUMNAS" :key="estado" class="tablero-col" :class="{ over: sobre === estado }" :style="{ '--s': STATUS_META[estado].color }"
                @dragover="alArrastrarSobre($event, estado)" @dragleave="alSalir($event)" @drop="alSoltar($event, estado)">
-        <header class="board-col-head"><span class="board-dot" /><h3>{{ STATUS_META[estado].label }}</h3><span class="board-count">{{ tarjetas(estado).length }}</span></header>
-        <div class="board-cards">
+        <header class="tablero-col-cabecera"><span class="tablero-punto" /><h3>{{ STATUS_META[estado].label }}</h3><span class="tablero-total">{{ tarjetas(estado).length }}</span></header>
+        <div class="tablero-tarjetas">
           <article v-for="t in tarjetas(estado)" :key="t.id" class="card" draggable="true"
-                   :class="[{ selected: seleccionada(t), dragging: arrastrando === t.id, done: estado === 'done' }, retrasoDe(t) ? 'late level-' + retrasoDe(t).level : '']"
+                   :class="[{ selected: seleccionada(t), dragging: arrastrando === t.id, done: estado === 'done' }, retrasoDe(t) ? 'retraso level-' + retrasoDe(t).level : '']"
                    :style="{ '--c': colores.get(t.phase) || NO_COLOR, ...(retrasoDe(t) ? { '--alert': retrasoDe(t).color } : {}) }"
                    @dragstart="empezarArrastre($event, t)" @dragend="arrastrando = null; sobre = null" @click="$emit('seleccionar', { kind: 'task', id: t.id })">
-            <div class="card-chips">
+            <div class="tarjeta-chips">
               <insignia-tarea v-if="t.phase" tipo="fase" :nombre="t.phase" :color="colores.get(t.phase) || NO_COLOR" />
               <insignia-tarea tipo="area" :nombre="t.department" />
               <insignia-tarea v-if="retrasoDe(t)" tipo="retraso" :retraso="retrasoDe(t)" />
-              <span v-if="idsRevisar.has(t.id)" class="review-badge" title="Hay un cambio del contrato por revisar">↻ Cambio</span>
+              <span v-if="idsRevisar.has(t.id)" class="revision-insignia" title="Hay un cambio del contrato por revisar">↻ Cambio</span>
             </div>
-            <p class="card-title"><span v-if="t.milestone" class="card-milestone">◆ </span>{{ t.name }}</p>
-            <p v-if="estado === 'blocked'" class="card-blocked" :title="t.status_note || undefined">⛔ {{ t.status_reason || 'Sin motivo indicado' }}</p>
-            <footer class="card-foot">
+            <p class="tarjeta-titulo"><span v-if="t.milestone" class="tarjeta-hito">◆ </span>{{ t.name }}</p>
+            <p v-if="estado === 'blocked'" class="tarjeta-blocked" :title="t.status_note || undefined">⛔ {{ t.status_reason || 'Sin motivo indicado' }}</p>
+            <footer class="tarjeta-pie">
               <span title="Fechas">{{ shortDate(t.start) }} → {{ shortDate(t.end) }} · {{ durationDays(t.start, t.end) }} d</span>
               <span v-if="t.checklist.length > 0" title="Subtareas hechas">☑ {{ t.checklist.filter((i) => i.done).length }}/{{ t.checklist.length }}</span>
               <span v-if="totalRequeridos(t) > 0" title="Documentos o elementos aportados">📎 {{ aportados(t) }}/{{ totalRequeridos(t) }}</span>
             </footer>
-            <p v-if="estado !== 'done' && esperando(t).length > 0" class="card-waiting" :title="'Espera a:\n' + esperando(t).map((w) => w.name).join('\n')">
+            <p v-if="estado !== 'done' && esperando(t).length > 0" class="tarjeta-waiting" :title="'Espera a:\n' + esperando(t).map((w) => w.name).join('\n')">
               ⛓ Espera a {{ esperando(t).length }} {{ esperando(t).length === 1 ? 'tarea' : 'tareas' }}
             </p>
           </article>
-          <p v-if="tarjetas(estado).length === 0" class="board-empty">Sin tareas</p>
+          <p v-if="tarjetas(estado).length === 0" class="tablero-vacio">Sin tareas</p>
         </div>
       </section>
     </div>

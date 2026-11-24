@@ -1,0 +1,126 @@
+.escaneo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: calc(100svh - 60px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-alt);
+  overflow: hidden;
+}
+
+.escaneo-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.escaneo-cabecera strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--text-h);
+}
+
+.escaneo-herramientas {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.escaneo-herramientas button,
+.escaneo-herramientas a {
+  min-width: 28px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+}
+
+.escaneo-cuerpo {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.escaneo-cuerpo iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+/* Documento de Word con su aspecto original (docx-preview) */
+.docx-cuerpo {
+  background: color-mix(in srgb, var(--text) 14%, var(--bg-alt));
+}
+
+.docx-loading {
+  margin: 0;
+  padding: 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.docx-host .docx-envoltorio {
+  padding: 12px;
+  background: transparent;
+}
+
+.docx-host .docx-envoltorio > section.docx {
+  margin-bottom: 12px;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.35);
+}
+
+/* Documento de Word mostrado como texto */
+.txt-cuerpo {
+  padding: 14px 18px;
+  background: var(--bg);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.txt-cuerpo p {
+  margin: 0 0 8px;
+}
+
+.txt-cuerpo h4 {
+  margin: 14px 0 6px;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  color: var(--text-h);
+}
+
+.txt-fila {
+  display: grid;
+  gap: 10px;
+  padding: 4px 8px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+}
+
+.txt-blank {
+  border-bottom: 1.5px dashed var(--muted);
+}
+
+.escaneo-cuerpo img {
+  display: block;
+  max-width: none;
+  height: auto;
+}

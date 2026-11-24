@@ -34,6 +34,49 @@
   z-index: var(--z-swal) !important;
 }
 
+/*
+ * Aspecto común de todos los diálogos: mismas esquinas que los modales de la app,
+ * título en el azul oscuro de Aura (SweetAlert lo pinta gris #545454) y campos de
+ * texto con el anillo de foco amarillo en vez del azul de SweetAlert.
+ */
+.swal2-popup:not(.swal2-toast) {
+  border-radius: 12px;
+  font-family: inherit;
+}
+
+.swal2-popup .swal2-title {
+  color: var(--color-text-dark);
+  font-weight: 600;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-title {
+  font-size: 1.5rem;
+  line-height: 1.3;
+}
+
+.swal2-popup .swal2-html-container {
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.swal2-popup.swal2-toast {
+  border-radius: var(--radius-md);
+  font-family: inherit;
+}
+
+.swal2-popup :is(.swal2-input, .swal2-textarea, .swal2-select) {
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  box-shadow: none;
+  color: var(--color-text-dark);
+}
+
+.swal2-popup :is(.swal2-input, .swal2-textarea, .swal2-select):focus {
+  border-color: var(--color-brand-yellow-hex);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
 /* InformesComponent.vue: confirmación de marcar pago como pagado */
 .swal-marcar-pagado-info {
   text-align: left;
@@ -129,12 +172,21 @@
   color: #8b4545;
 }
 
-/* ModalServicios.vue: advertencia de pérdida de cuotas al cambiar modalidad de pago */
+/* MCAS (McasComponent.vue): motivo de rechazo en un <textarea> nativo de SweetAlert2,
+   que por defecto usa la fuente monoespaciada del navegador. */
+.swal-accion-textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+/* ModalServicios.vue: advertencia de pérdida de cuotas al cambiar modalidad de pago.
+   Sin alto máximo propio: con su barra interna, en 1280x720 el aviso «no se puede
+   deshacer» quedaba oculto mientras el botón rojo se veía. Si no cabe, se desplaza
+   el diálogo entero (lo hace SweetAlert). */
 .swal-perdida-cuotas-contenedor {
   text-align: left;
   padding: 20px;
-  max-height: 400px;
-  overflow-y: auto;
 }
 
 .swal-perdida-cuotas-resumen {
@@ -274,15 +326,19 @@
   border-radius: 8px;
 }
 
+/* Arriba: si el texto ocupa dos líneas, la casilla sigue alineada con la primera */
 .swal-reactivar-ps-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 6px 0;
   cursor: pointer;
 }
 
+/* Sin encoger: con una dirección larga la casilla se estrechaba */
 .swal-reactivar-ps-item input[type="checkbox"] {
+  flex-shrink: 0;
+  margin-top: 2px;
   width: 16px;
   height: 16px;
   cursor: pointer;

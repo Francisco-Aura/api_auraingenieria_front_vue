@@ -1,17 +1,17 @@
 <template>
-  <nav v-if="actual" class="variant-strip" aria-label="Variantes de esta oferta">
-    <span class="muted variant-strip-label">Variantes de esta oferta</span>
-    <div class="variant-strip-list">
-      <div v-for="v in variantes" :key="v.id" class="variant-chip" :class="{ current: v.id === presupuestoId }" :aria-current="v.id === presupuestoId ? 'true' : undefined">
+  <nav v-if="actual" class="variante-tira" aria-label="Variantes de esta oferta">
+    <span class="muted variante-tira-etiqueta">Variantes de esta oferta</span>
+    <div class="variante-tira-lista">
+      <div v-for="v in variantes" :key="v.id" class="variante-chip" :class="{ actual: v.id === presupuestoId }" :aria-current="v.id === presupuestoId ? 'true' : undefined">
         <template v-if="v.id === presupuestoId">
           <strong>{{ etiquetas.get(v.id) }}</strong>
           <span class="tag state" :class="etiqueta(v).cls" :title="etiqueta(v).title">{{ etiqueta(v).label }}</span>
           <span>{{ v.budget_total > 0 ? eur(v.budget_total) : '—' }}</span>
-          <button type="button" class="icon-btn variant-rename" title="Cambiar el nombre de esta variante" aria-label="Cambiar el nombre de esta variante" @click="renombrar">
+          <button type="button" class="icon-btn variante-renombrar" title="Cambiar el nombre de esta variante" aria-label="Cambiar el nombre de esta variante" @click="renombrar">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3" /></svg>
           </button>
         </template>
-        <button v-else type="button" class="variant-open" title="Abrir esta variante" @click="$emit('abrir', v.id)">
+        <button v-else type="button" class="variante-abrir" title="Abrir esta variante" @click="$emit('abrir', v.id)">
           <strong>{{ etiquetas.get(v.id) }}</strong>
           <span class="tag state" :class="etiqueta(v).cls" :title="etiqueta(v).title">{{ etiqueta(v).label }}</span>
           <span>{{ v.budget_total > 0 ? eur(v.budget_total) : '—' }}</span>
@@ -19,7 +19,7 @@
             ({{ v.budget_total > actual.budget_total ? '+' : '−' }}{{ eur(Math.abs(v.budget_total - actual.budget_total)) }})
           </span>
         </button>
-        <button v-if="puedeEliminar(v)" type="button" class="icon-btn variant-trash" title="Eliminar esta variante" :aria-label="'Eliminar la variante ' + etiquetas.get(v.id)" @click="eliminar(v)">
+        <button v-if="puedeEliminar(v)" type="button" class="icon-btn variante-papelera" title="Eliminar esta variante" :aria-label="'Eliminar la variante ' + etiquetas.get(v.id)" @click="eliminar(v)">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
         </button>
       </div>
@@ -68,7 +68,7 @@ export default {
       try { this.todos = await planificadorApi.presupuestos() } catch (e) { /* sin tira: no pasa nada */ }
     },
     async renombrar() {
-      const nombre = window.prompt('Nombre de esta variante (vacío = «Versión N»):', this.actual.variant_name)
+      const nombre = window.prompt('Nombre de esta versión (vacío = Versión 1, Versión 2…):', this.actual.variant_name)
       if (nombre === null) return
       try {
         const actualizada = await planificadorApi.renombrarVariante(this.presupuestoId, nombre.trim())

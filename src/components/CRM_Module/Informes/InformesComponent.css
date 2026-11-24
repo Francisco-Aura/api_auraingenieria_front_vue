@@ -27,13 +27,8 @@
   padding: 0.8rem 1rem;
   display: flex;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   min-width: 200px;
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
 }
 
 .stat-icon {
@@ -106,14 +101,21 @@
   display: flex;
   align-items: center;
   padding: 16px;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   cursor: pointer;
   border: 2px solid transparent;
 }
 
 .informe-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Con el teclado (Tab + Intro/Espacio), como las tarjetas de filtro de Comisiones MCAS */
+.informe-card:focus-visible {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: var(--focus-ring), var(--shadow-card-hover);
 }
 
 .informe-card--activo {
@@ -183,11 +185,13 @@
 
 /* Panel de la tabla */
 .table-panel {
+  /* Al llevar la vista a la tabla, que no quede debajo de la cabecera fija */
+  scroll-margin-top: 86px;
   background: white;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   overflow: hidden;
-  animation: tablaExpand 0.3s ease;
+  animation: tablaExpand 0.2s var(--aura-curva);
 }
 
 @keyframes tablaExpand {
@@ -206,7 +210,8 @@
 .table-header h2 {
   margin: 0;
   font-size: 1.1rem;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
 }
@@ -221,29 +226,39 @@
   gap: 8px;
 }
 
+/* Contraer: botón neutro cuadrado del mismo alto y esquinas que Actualizar y
+   Excel (antes un círculo de 40 px que no casaba con ellos) */
 .btn-collapse-tabla {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
+  box-sizing: border-box;
+  width: var(--aura-btn-alto, 38px);
+  height: var(--aura-btn-alto, 38px);
+  min-width: var(--aura-btn-alto, 38px);
   padding: 0;
-  border-radius: 50%;
-  border: 1px solid var(--border-color);
-  background: #fff;
-  color: var(--text-secondary);
+  border-radius: var(--aura-btn-radio, 8px);
+  border: 1px solid var(--aura-btn-neutro-borde, #c9d1db);
+  background: var(--aura-btn-neutro-fondo, #fff);
+  color: var(--aura-btn-neutro-texto, #2c3e50);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin-left: 4px;
+  box-shadow: var(--aura-btn-sombra);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  margin-left: 0;
 }
 
 .btn-collapse-tabla:hover {
-  background: var(--primary-color);
-  color: #000;
-  border-color: var(--primary-color);
-  transform: translateY(-1px);
+  background: var(--aura-btn-neutro-hover, #f4f6f9);
+  border-color: var(--aura-btn-neutro-borde-hover, #aab4c0);
+  color: var(--aura-btn-neutro-texto, #2c3e50);
+  box-shadow: var(--aura-btn-sombra);
+  transform: none;
+}
+
+.btn-collapse-tabla:focus-visible {
+  outline: none;
+  box-shadow: var(--aura-btn-foco);
 }
 
 /* Modal de comentario de renovación */
@@ -278,10 +293,6 @@
   .stats-panel {
     flex-direction: column;
     align-items: stretch;
-  }
-  
-  .option-selector {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -358,10 +369,6 @@
   flex-shrink: 0;
 }
 
-.column-title:hover {
-  background-color: var(--hover-color);
-}
-
 .column-filter-container {
   position: relative;
   min-width: 60px;
@@ -375,7 +382,7 @@
   border-radius: 4px;
   font-size: 0.85rem;
   background-color: white;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   min-width: 55px;
 }
@@ -425,7 +432,7 @@
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   font-weight: 500;
   min-width: 40px;
 }
@@ -486,9 +493,7 @@
   user-select: none;
 }
 
-.sortable:hover {
-  background-color: var(--hover-color);
-}
+/* El efecto del ratón en las cabeceras es común a todas las tablas: shared-ui.css */
 
 /* Estilos Generales de Botones - Actualizados */
 .btn {
@@ -500,7 +505,7 @@
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.95rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: var(--aura-transicion);
   border: none;
   cursor: pointer;
   letter-spacing: 0.3px;
@@ -574,7 +579,7 @@
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
   border: none;
   cursor: pointer;
 }
@@ -598,12 +603,6 @@
   align-items: center;
 }
 
-.filters-container {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
 /* Permitir wrap en los nombres de las columnas */
 .data-table th .column-title {
   display: flex;
@@ -620,6 +619,27 @@
 
 .data-table th .column-title i {
   flex-shrink: 0;
+}
+
+/* Títulos de columna en dos líneas como máximo en vez de cortarlos a la
+   primera («Fecha In…», «Tarifa L…»). Todos reservan el alto de dos líneas para
+   que los filtros de debajo queden a la misma altura. */
+.data-table th .column-title {
+  min-height: calc(2.4em + 8px);
+}
+
+.data-table th .column-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  /* Parte entre palabras, nunca a mitad («Descripció/n»): la columna se
+     ensancha hasta la palabra más larga del título */
+  word-break: normal;
+  overflow-wrap: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Una sola línea por fila: el texto que no cabe se corta con "..."
@@ -660,6 +680,61 @@
   font-family: 'Courier New', 'Monaco', monospace;
   font-size: 0.85rem;
   letter-spacing: -0.2px;
+}
+
+/* El contenido de estas columnas usa el ancho reservado para la columna (el
+   límite general de 112 px cortaba correos y teléfonos con hueco de sobra) */
+.data-table td[data-column="correo"] .cell-content { max-width: 300px; }
+.data-table td[data-column="sector"] .cell-content { max-width: 186px; }
+.data-table td[data-column="cargo"] .cell-content { max-width: 206px; }
+.data-table td[data-column="telefono"] .cell-content { max-width: 166px; }
+.data-table td[data-column="nombreCliente"] .cell-content { max-width: 246px; }
+.data-table td[data-column="comercializadoraActual"] .cell-content { max-width: 116px; }
+
+/* En pantallas anchas sobra sitio: el cliente (lo que más se busca) se ve entero o
+   casi, en vez de «COMUNIDAD …» con la columna del CUPS medio vacía */
+@media (min-width: 1600px) {
+  .data-table th[data-column="cliente"],
+  .data-table td[data-column="cliente"] {
+    max-width: 240px;
+  }
+
+  .data-table td[data-column="cliente"] .cell-content {
+    max-width: 226px;
+  }
+}
+
+/* Informe sin datos o sin coincidencias con los filtros */
+.fila-sin-datos td {
+  background: white;
+}
+
+/* Mismo aspecto que el «sin resultados» de Tareas y Puntos de Suministro */
+.fila-sin-datos .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--color-text-secondary);
+}
+
+.fila-sin-datos .empty-state i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55em;
+  border-radius: var(--radius-full);
+  background: rgba(var(--color-brand-yellow-rgb), 0.14);
+  color: var(--primary-dark);
+  margin-bottom: 1rem;
+}
+
+.fila-sin-datos .empty-state p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
 }
 
 .contacto-link-wrapper {
@@ -749,9 +824,9 @@
 }
 
 .contacto-email-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  /* Bloque y no inline-flex: con flex no sale el «…» y el texto se cortaba en seco
+     debajo del botón de copiar */
+  display: block;
   color: #374151;
   font-weight: 500;
   user-select: text;
@@ -759,6 +834,7 @@
 }
 
 .contacto-email-text i {
+  margin-right: 5px;
   font-size: 0.8em;
   opacity: 0.5;
   color: #2563eb;
@@ -774,9 +850,9 @@
 }
 
 .contacto-phone-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  /* Bloque y no inline-flex: con flex no sale el «…» y el texto se cortaba en seco
+     debajo del botón de copiar */
+  display: block;
   color: #374151;
   font-weight: 500;
   user-select: text;
@@ -784,6 +860,7 @@
 }
 
 .contacto-phone-text i {
+  margin-right: 5px;
   font-size: 0.8em;
   opacity: 0.5;
   color: #059669;
@@ -799,7 +876,7 @@
   padding: 2px 5px;
   font-size: 0.75em;
   flex-shrink: 0;
-  transition: all 0.2s;
+  transition: var(--aura-transicion);
   display: flex;
   align-items: center;
 }
@@ -831,7 +908,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   white-space: nowrap;
 }
 
@@ -890,73 +967,67 @@
   flex-wrap: nowrap;
 }
 
+/* Renovar y comentario: mismo icono cuadrado de 32 px en tono suave que las
+   acciones del resto de tablas (shared-buttons.css), sin degradados ni saltos */
 .btn-accion-informe {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   padding: 0;
+  border: none;
   border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-accion-informe:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-renovar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  border: 1px solid #0e9f6e;
-  background: linear-gradient(135deg, #18b77f 0%, #119765 100%);
-  color: #ffffff;
-  font-size: 0.74rem;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(17, 151, 101, 0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  background: #eaf3de;
+  color: #3b6d11;
 }
 
 .btn-renovar:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 16px rgba(17, 151, 101, 0.3);
-  filter: brightness(1.02);
+  background: #d8eac2;
 }
 
 .btn-comentario {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  border: 1px solid #3e5068;
-  background: linear-gradient(135deg, #4e647f 0%, #3c4e65 100%);
-  color: #ffffff !important;
-  font-size: 0.74rem;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(60, 78, 101, 0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  background: #eef1f5;
+  color: #44546a;
 }
 
 .btn-comentario:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 16px rgba(60, 78, 101, 0.3);
-  filter: brightness(1.03);
+  background: #dfe5ec;
 }
 
+/* Con comentario guardado el icono se marca en azul */
 .btn-comentario .has-comment {
-  color: #ffd447;
+  color: #185fa5;
 }
 
 .btn-renovar:focus-visible,
 .btn-comentario:focus-visible {
-  outline: 2px solid rgba(15, 23, 42, 0.35);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 /* Modal comentario renovación */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(11, 18, 32, 0.48);
-  backdrop-filter: blur(4px);
+  background: var(--backdrop-color);
+  backdrop-filter: var(--backdrop-blur);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1019,6 +1090,8 @@
 }
 
 .textarea-comentario {
+  display: block;
+  margin: 0;
   width: 100%;
   min-height: 160px;
   border: 1px solid #cdd7e6;
@@ -1034,8 +1107,8 @@
 
 .textarea-comentario:focus {
   outline: none;
-  border-color: #77a4f8;
-  box-shadow: 0 0 0 3px rgba(119, 164, 248, 0.2);
+  border-color: var(--color-brand-yellow-hex);
+  box-shadow: var(--focus-ring);
 }
 
 .modal-comentario-renovacion .modal-footer {
@@ -1119,7 +1192,7 @@
   font-weight: 600;
   padding: 10px 20px;
   border-radius: 8px;
-  transition: all 0.3s ease;
+  transition: var(--aura-transicion);
 }
 
 .btn-toggle-baja:hover {
@@ -1153,7 +1226,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: var(--aura-transicion);
   padding: 0;
   margin: 0;
 }

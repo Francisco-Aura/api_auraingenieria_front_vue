@@ -1,17 +1,17 @@
 <template>
   <p v-if="documentos.length === 0" class="muted">Este proyecto no tiene documentos.</p>
-  <div v-else class="documents">
-    <nav class="doc-list" aria-label="Documentos del proyecto">
+  <div v-else class="documentos">
+    <nav class="documento-lista" aria-label="Documentos del proyecto">
       <button v-for="(d, i) in documentos" :key="i" type="button" :class="{ active: i === indice }" @click="abrir(i)">{{ d.title }}</button>
     </nav>
 
-    <article class="doc-page">
-      <header class="doc-head">
+    <article class="documento-pagina">
+      <header class="documento-cabecera">
         <h2>{{ doc.title }}</h2>
         <button type="button" class="secondary" @click="alternarEdicion">{{ editando ? 'Listo' : 'Editar texto' }}</button>
       </header>
 
-      <textarea v-if="editando" :key="indice" class="doc-body" :value="borrador ?? doc.body" spellcheck="false" @input="borrador = $event.target.value" @blur="confirmar" />
+      <textarea v-if="editando" :key="indice" class="documento-cuerpo" :value="borrador ?? doc.body" spellcheck="false" @input="borrador = $event.target.value" @blur="confirmar" />
       <texto-con-formato v-else :texto="doc.body" />
     </article>
   </div>
