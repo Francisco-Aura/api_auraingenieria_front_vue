@@ -2105,6 +2105,7 @@ th .orden-boton.on .orden-icon {
   align-items: center;
   gap: 8px;
   min-width: 150px;
+  white-space: nowrap;
   padding: 6px 10px 6px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius);

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  etiquetaEstado, filasDeEstudios, pendientesDeValidar, esMio, puedeBorrar, construirFilas, contarPendientes, filtrarFilas, armarProyectos, claveDeProyectoServidor, MAX_VERSIONES, esVariantable, accionesDeEstado, opcionesFiltro
+  etiquetaEstado, etiquetaPropuesta, filasDeEstudios, pendientesDeValidar, esMio, puedeBorrar, construirFilas, contarPendientes, filtrarFilas, armarProyectos, claveDeProyectoServidor, MAX_VERSIONES, esVariantable, accionesDeEstado, opcionesFiltro
 } from '../../src/utils/planificador/listaPresupuestos.js'
 import { canonical } from '../../src/utils/planificador/almacenPresupuestos.js'
 import { EMPTY_COSTS } from '../../src/utils/planificador/motor/costes.js'
@@ -24,15 +24,31 @@ const local = (id, extra = {}) => ({
 const filas = (remotos, locales = [], usuario = ANA, copias = {}) =>
   construirFilas({ remotos, locales, copiaLocal: (id) => copias[id] ?? null, usuario })
 
-test('etiquetaEstado: una sola etiqueta por fila; un validado enseña cómo va su propuesta', () => {
+test('etiquetaEstado: una sola etiqueta por fila, la del propio documento; la propuesta no se mezcla', () => {
   assert.equal(etiquetaEstado({ kind: 'borrador' }).label, 'Borrador')
   assert.equal(etiquetaEstado({ kind: 'local' }).label, 'Local')
-  assert.deepEqual(etiquetaEstado({ kind: 'validado', proposal: '' }).label, 'Falta propuesta')
-  assert.equal(etiquetaEstado({ kind: 'validado', proposal: 'enviada' }).label, 'Propuesta entregada')
-  assert.equal(etiquetaEstado({ kind: 'validado', proposal: 'enviada' }).cls, 'enviado')
-  assert.equal(etiquetaEstado({ kind: 'validado', proposal: 'aprobada' }).label, 'Validada')
-  assert.equal(etiquetaEstado({ kind: 'validado', proposal: 'aprobada' }).cls, 'validado')
-  assert.equal(etiquetaEstado({ kind: 'validado', proposal: 'rechazada' }).cls, 'descartado')
+  // Un presupuesto validado es «Validado» se haya hecho o no la propuesta, y ninguna etiqueta de estas columnas habla de «propuesta»
+  for (const proposal of ['', 'borrador', 'enviada', 'aprobada', 'rechazada']) {
+    const e = etiquetaEstado({ kind: 'validado', proposal })
+    assert.equal(e.label, 'Validado')
+    assert.equal(e.cls, 'validado')
+  }
+  for (const kind of ['local', 'borrador', 'enviado', 'validado', 'descartado']) {
+    assert.doesNotMatch(etiquetaEstado({ kind, proposal: 'borrador' }).label, /propuesta/i)
+  }
+  for (const estado of ['en_estudio', 'pte_doc', 'entregado', 'pte_cliente', 'aceptado', 'rechazado', 'cancelado']) {
+    assert.doesNotMatch(etiquetaEstado({ tipo: 'estudio', estado }).label, /propuesta/i)
+  }
+})
+
+test('etiquetaPropuesta: cómo va la propuesta final, solo para su columna', () => {
+  assert.equal(etiquetaPropuesta({ proposal: '' }).label, 'Falta propuesta')
+  assert.equal(etiquetaPropuesta({ proposal: 'borrador' }).label, 'Propuesta en borrador')
+  assert.equal(etiquetaPropuesta({ proposal: 'enviada' }).label, 'Propuesta entregada')
+  assert.equal(etiquetaPropuesta({ proposal: 'enviada' }).cls, 'enviado')
+  assert.equal(etiquetaPropuesta({ proposal: 'aprobada' }).label, 'Validada')
+  assert.equal(etiquetaPropuesta({ proposal: 'aprobada' }).cls, 'validado')
+  assert.equal(etiquetaPropuesta({ proposal: 'rechazada' }).cls, 'descartado')
 })
 
 test('la propuesta final aparece cuando hay un estudio terminado y un presupuesto validado', () => {

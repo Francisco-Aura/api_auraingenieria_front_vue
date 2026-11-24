@@ -10,14 +10,14 @@ import { sortRows } from './orden.js'
 export const NIVEL_ADMIN = 1
 
 export const ETIQUETA_ESTADO = {
-  local: 'Local', borrador: 'Borrador', enviado: 'Enviado', validado: 'Aprobado', descartado: 'Descartado'
+  local: 'Local', borrador: 'Borrador', enviado: 'Enviado', validado: 'Validado', descartado: 'Descartado'
 }
 
 export const TITULO_ESTADO = {
   local: 'Solo existe en este navegador: nadie más lo ve',
   borrador: 'Guardado en el servidor: lo ven y lo pueden modificar todos los usuarios de la intranet',
   enviado: 'Ya se ha enviado al cliente: no se puede editar (para cambiar algo, crea una variante)',
-  validado: 'Presupuesto aprobado: el que acepta el cliente (queda bloqueado)',
+  validado: 'Presupuesto validado: el que acepta el cliente (queda bloqueado)',
   descartado: 'Se aprobó otra variante de su oferta'
 }
 
@@ -35,18 +35,25 @@ export const ESTADOS_ESTUDIO = {
   aceptado: { label: 'Aceptado', cls: 'validado' }, rechazado: { label: 'Rechazado', cls: 'descartado' }, cancelado: { label: 'Cancelado', cls: 'descartado' }
 }
 
-/** Una sola etiqueta por fila: la fase en la que está. Un presupuesto validado enseña cómo va su propuesta; un estudio, su estado. */
+/**
+ * Una sola etiqueta por fila: el estado del propio documento. Un estudio enseña el suyo y un presupuesto el suyo (validado es «Validado»);
+ * cómo va la propuesta al cliente no sale aquí sino en la columna «Propuesta final» (etiquetaPropuesta).
+ */
 export function etiquetaEstado(r) {
   if (r.tipo === 'estudio') {
     if (r.kind === 'local') return { cls: 'local', label: ETIQUETA_ESTADO.local, title: TITULO_ESTADO.local }
     const e = ESTADOS_ESTUDIO[r.estado] || { label: r.estadoNombre || r.estado, cls: 'borrador' }
     return { cls: e.cls, label: e.label, title: r.estadoNombre || e.label }
   }
-  if (r.kind !== 'validado') return { cls: r.kind, label: ETIQUETA_ESTADO[r.kind], title: TITULO_ESTADO[r.kind] }
-  if (!r.proposal) return { cls: 'enviado', label: 'Falta propuesta', title: 'Presupuesto aprobado: falta hacer la propuesta que se manda al cliente' }
+  return { cls: r.kind, label: ETIQUETA_ESTADO[r.kind], title: TITULO_ESTADO[r.kind] }
+}
+
+/** Cómo va la propuesta final de un presupuesto validado (lo que se entrega al cliente): solo para la columna «Propuesta final». */
+export function etiquetaPropuesta(r) {
+  if (!r.proposal) return { cls: 'enviado', label: 'Falta propuesta', title: 'Presupuesto validado: falta hacer la propuesta que se manda al cliente' }
   return {
     cls: CLASE_PROPUESTA[r.proposal], label: ETIQUETA_PROPUESTA[r.proposal],
-    title: 'Presupuesto aprobado · ' + ETIQUETA_PROPUESTA[r.proposal].toLowerCase()
+    title: 'Propuesta final · ' + ETIQUETA_PROPUESTA[r.proposal].toLowerCase()
   }
 }
 
@@ -281,7 +288,7 @@ export const ESTUDIO_TERMINADO = ['entregado', 'pte_cliente', 'aceptado']
 export function propuestaFinalDe(estudios, presupuestos) {
   const presupuesto = presupuestos.find((r) => r.kind === 'validado')
   const estudio = presupuesto && (estudios.find((e) => e.id === presupuesto.estudioId && ESTUDIO_TERMINADO.includes(e.estado)) || estudios.find((e) => ESTUDIO_TERMINADO.includes(e.estado)))
-  return presupuesto && estudio ? { presupuesto, estudio, etiqueta: etiquetaEstado(presupuesto) } : null
+  return presupuesto && estudio ? { presupuesto, estudio, etiqueta: etiquetaPropuesta(presupuesto) } : null
 }
 
 /** Un proyecto del servidor sin estudios ni presupuestos: sus dos huecos y el cliente entero, para precargar lo que se cree. */
