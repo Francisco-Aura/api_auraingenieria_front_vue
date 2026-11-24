@@ -3,9 +3,9 @@
   <nav v-if="presupuesto" class="variante-tira" aria-label="Estudio asociado">
     <span class="muted variante-tira-etiqueta">Estudio</span>
     <div class="variante-tira-lista">
+      <!-- El estudio va con el presupuesto por su cliente y proyecto: aquí no se desasocia; se abre, modifica o elimina desde la pestaña «Estudio» -->
       <div v-if="asociado" class="variante-chip actual">
         <strong>{{ etiquetaEstudio(asociado) }}</strong>
-        <button type="button" class="secondary" :disabled="ocupado" @click="cambiar('')">Quitar</button>
       </div>
       <template v-else>
         <template v-if="compatibles.length > 0">
