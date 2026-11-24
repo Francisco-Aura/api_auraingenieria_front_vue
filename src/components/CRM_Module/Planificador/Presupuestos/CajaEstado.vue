@@ -1,7 +1,10 @@
 <template>
   <div v-if="!remoto || remoto.status !== 'descartado'" class="estado-caja">
     <template v-if="accion.tipo === 'validar'">
-      <button type="button" @click="validar">Aprobar presupuesto</button>
+      <button type="button" @click="validar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5" /></svg>
+        Aprobar presupuesto
+      </button>
       <span class="muted">Es el que acepta el cliente: queda bloqueado y el resto de variantes de su oferta se descartan.</span>
     </template>
     <span v-else-if="accion.tipo === 'elegido'" class="muted">Aprobado: es el presupuesto elegido de su oferta y está bloqueado.</span>

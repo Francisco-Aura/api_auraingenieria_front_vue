@@ -204,7 +204,7 @@
       </aside>
     </div>
     <div v-if="revisando" class="revision-barra" role="region" aria-label="Validación del presupuesto">
-      <strong>Pendiente de validar</strong>
+      <strong class="revision-estado">Pendiente de validar</strong>
       <caja-estado :presupuesto="presupuesto" :guardando="guardando" :estado-propuesta="''" :sin-guardar="sucio" @estado="$emit('estado', $event)" />
     </div>
 
