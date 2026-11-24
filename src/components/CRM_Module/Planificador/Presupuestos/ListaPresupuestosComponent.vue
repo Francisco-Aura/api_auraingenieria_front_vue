@@ -71,7 +71,7 @@
     <div v-else class="presupuesto-tabla-envoltorio">
       <table class="presupuesto-tabla proyectos-tabla">
         <colgroup>
-          <col><col style="width: 22%"><col style="width: 26%"><col style="width: 200px"><col style="width: 110px"><col style="width: 56px">
+          <col><col style="width: 22%"><col style="width: 26%"><col style="width: 220px"><col style="width: 110px"><col style="width: 56px">
         </colgroup>
         <thead>
           <tr>
