@@ -322,6 +322,12 @@
 .th-col-categoria { width: 10%; }
 .th-col-fecha { width: 9%; }
 .th-col-tiempo { width: 7%; }
+/* Sin la columna Tiempo (Workmeter desactivado): anchos de antes */
+.tabla-sin-tiempo .th-col-titulo { width: 22%; }
+.tabla-sin-tiempo .th-col-cliente { width: 19%; }
+.tabla-sin-tiempo .th-col-asignado { width: 12%; }
+.tabla-sin-tiempo .th-col-prioridad { width: 9%; }
+.tabla-sin-tiempo .th-col-categoria { width: 11%; }
 .th-col-acciones { width: 8%; }
 
 /* Columna Tiempo y botón de cronómetro */

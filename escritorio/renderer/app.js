@@ -125,10 +125,8 @@
 
   const estadoQueCuenta = () => estado.estados.find(e => e.cuentaTiempo && !e.estadoFinal);
   const estadoFinal = () => estado.estados.find(e => e.estadoFinal);
-  // «Pausar» devuelve la tarea al estado de espera (el que ni cuenta tiempo, ni bloquea, ni cierra).
-  const estadoEspera = () => estado.estados.find(e => !e.cuentaTiempo && !e.estadoBloqueo && !e.estadoFinal);
-
-  const estaCorriendo = t => !!estado.estados.find(e => e.id === t.estadoId && e.cuentaTiempo);
+  // Corre el cronómetro de la tarea (tramos de tiempo del servidor), no el estado «En progreso»
+  const estaCorriendo = t => !!t.cronometroActivo;
 
   function segundosActuales(t) {
     const base = t._base || 0;
@@ -159,7 +157,7 @@
     const ahora = Date.now();
     estado.tareas = (Array.isArray(r.datos) ? r.datos : [])
       .filter(t => !t.estadoFinal)
-      .map(t => ({ ...t, _base: t.duracionActivaSegundos || 0, _recibida: ahora }));
+      .map(t => ({ ...t, _base: t.tiempoCronometroSegundos || 0, _recibida: ahora }));
     if (!silencioso) ocultarAviso();
     pintar();
   }
@@ -202,27 +200,20 @@
     return posibles.find(t => t.id === ultima) || ordenar(posibles)[0] || null;
   }
 
+  // Un solo cronómetro a la vez: el servidor cierra el que corriera en otra tarea (también el iniciado desde la intranet).
   function iniciar(tarea) {
     recordarUltima(tarea.id);
     return ejecutar(async () => {
-      // Un solo cronómetro a la vez: las que estuvieran en curso (también las iniciadas desde la
-      // intranet) pasan a espera.
-      const otras = estado.tareas.filter(t => estaCorriendo(t) && t.id !== tarea.id);
-      if (otras.length) {
-        const espera = estadoEspera();
-        if (!espera) throw new Error('No hay un estado de espera al que pasar la tarea en curso');
-        for (const otra of otras) await cambiarEstado(otra, espera);
-      }
-      await cambiarEstado(tarea, estadoQueCuenta());
+      const r = await llamar('POST', `/tareas/tiempo/iniciar/${tarea.id}`);
+      if (!r.ok) throw new Error(mensajeError(r, 'No se pudo iniciar el cronómetro'));
     });
   }
 
   function pausar(tarea) {
     recordarUltima(tarea.id);
     return ejecutar(async () => {
-      const espera = estadoEspera();
-      if (!espera) throw new Error('No hay un estado de espera al que pasar la tarea');
-      await cambiarEstado(tarea, espera);
+      const r = await llamar('POST', '/tareas/tiempo/pausar');
+      if (!r.ok) throw new Error(mensajeError(r, 'No se pudo pausar el cronómetro'));
     });
   }
 

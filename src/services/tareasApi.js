@@ -126,6 +126,17 @@ export const tareasApi = {
     return response.data
   },
 
+  // Workmeter: cronómetro por tarea (tramos de tiempo). Solo existe en el backend con workmeter.activo.
+  async iniciarCronometro(tareaId) {
+    const response = await axios.post(`/tareas/tiempo/iniciar/${tareaId}`)
+    return response.data
+  },
+
+  async pausarCronometro() {
+    const response = await axios.post('/tareas/tiempo/pausar')
+    return response.data
+  },
+
   async cambiarEstadoTarea(tareaId, estadoId, motivoBloqueo = null) {
     // Se envía quién hace el cambio: queda en la auditoría y la persona asignada
     // no recibe notificaciones de sus propios cambios

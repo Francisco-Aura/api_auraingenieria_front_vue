@@ -43,7 +43,7 @@
       </div>
 
       <div class="table-responsive" v-desborde-tabla>
-        <table v-if="vistaActual === 'tabla'" class="data-table data-table--acciones-fijas data-table--compacta">
+        <table v-if="vistaActual === 'tabla'" class="data-table data-table--acciones-fijas data-table--compacta" :class="{ 'tabla-sin-tiempo': !workmeterActivo }">
           <thead>
             <tr>
               <th class="sortable th-col-titulo">
@@ -172,11 +172,11 @@
                   </div>
                 </div>
               </th>
-              <th class="sortable th-col-tiempo">
+              <th v-if="workmeterActivo" class="sortable th-col-tiempo">
                 <div class="column-header">
-                  <div class="column-title" @click="sortBy('duracionActivaSegundos')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('duracionActivaSegundos')" @keydown.space.prevent="sortBy('duracionActivaSegundos')">
+                  <div class="column-title" @click="sortBy('tiempoCronometroSegundos')" tabindex="0" role="button" @keydown.enter.prevent="sortBy('tiempoCronometroSegundos')" @keydown.space.prevent="sortBy('tiempoCronometroSegundos')">
                     <i class="fas fa-stopwatch mr-2"></i>Tiempo
-                    <i :class="getSortIcon('duracionActivaSegundos')"></i>
+                    <i :class="getSortIcon('tiempoCronometroSegundos')"></i>
                   </div>
                 </div>
               </th>
@@ -192,7 +192,7 @@
           <tbody>
             <template v-if="cargando">
               <tr v-for="n in 8" :key="'skeleton-' + n" class="skeleton-row">
-                <td v-for="col in 9" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
+                <td v-for="col in (workmeterActivo ? 9 : 8)" :key="col"><div class="skeleton-line skeleton-line--md"></div></td>
               </tr>
             </template>
             <tr v-for="tarea in paginatedTareas" v-show="!cargando" :key="tarea.id" 
@@ -242,14 +242,14 @@
               <td :class="{ 'fecha-vencida': tarea.vencida }">
                 {{ formatearFecha(tarea.fechaVencimiento) || '-' }}
               </td>
-              <td class="celda-tiempo" :class="{ 'celda-tiempo--en-curso': tareaEnCurso(tarea) }"
+              <td v-if="workmeterActivo" class="celda-tiempo" :class="{ 'celda-tiempo--en-curso': tareaEnCurso(tarea) }"
                   :title="tareaEnCurso(tarea) ? 'Cronómetro en marcha' : 'Tiempo activo acumulado'">
                 <span v-if="tareaEnCurso(tarea)" class="tiempo-punto" aria-hidden="true"></span>
                 {{ formatearTiempo(segundosTarea(tarea)) }}
               </td>
               <td>
                 <div class="action-buttons">
-                  <button v-if="puedeCronometrar(tarea)" class="btn-icon btn-cronometro"
+                  <button v-if="workmeterActivo && puedeCronometrar(tarea)" class="btn-icon btn-cronometro"
                           :class="{ 'btn-cronometro--en-curso': tareaEnCurso(tarea) }"
                           :disabled="cambiandoEstadoTarea"
                           @click="alternarCronometro(tarea)"
@@ -270,7 +270,7 @@
               </td>
             </tr>
             <tr v-if="!cargando && paginatedTareas.length === 0">
-              <td colspan="9" class="text-center py-4">
+              <td :colspan="workmeterActivo ? 9 : 8" class="text-center py-4">
                 <div class="empty-state">
                   <i class="fas fa-search fa-3x text-muted"></i>
                   <p class="mt-3">{{ tareas.length === 0 ? 'No hay tareas. ¡Crea una nueva!' : 'No se encontraron tareas que coincidan con los filtros' }}</p>
@@ -393,6 +393,9 @@ import { cargarExcelJS, descargarLibroExcel } from '@/utils/excel'
 import { fechaLocalISO, fechaES } from '@/utils/fechas'
 import { iconoEstadoTarea, nombreEstado, textoPrioridad } from '@/utils/tareas'
 import { colorTextoSobre } from '@/utils/colores'
+import { WORKMETER_ACTIVO } from '@/config/workmeter'
+
+const REFRESCO_WORKMETER_MS = 15000
 
 export default {
   name: 'TareasComponent',
@@ -449,6 +452,10 @@ export default {
       tareasRecibidasEn: Date.now(),
       ahoraMs: Date.now(),
       temporizadorTiempo: null,
+      temporizadorRefresco: null,
+      refrescandoFondo: false,
+      // Columna Tiempo y botón de cronómetro (Workmeter): solo en local, ver src/config/workmeter.js
+      workmeterActivo: WORKMETER_ACTIVO,
       
       // Snackbar
       snackbar: {
@@ -534,10 +541,17 @@ export default {
     if (this.filtroDebounceTimer) clearTimeout(this.filtroDebounceTimer)
     clearTimeout(this.temporizadorMensaje)
     clearInterval(this.temporizadorTiempo)
+    clearInterval(this.temporizadorRefresco)
+    document.removeEventListener('visibilitychange', this.refrescarEnSegundoPlano)
   },
   async mounted() {
+    // Workmeter: los cambios hechos desde la app de escritorio (iniciar, pausar, finalizar) se ven aquí sin recargar
+    if (this.workmeterActivo) {
+      this.temporizadorRefresco = setInterval(this.refrescarEnSegundoPlano, REFRESCO_WORKMETER_MS)
+      document.addEventListener('visibilitychange', this.refrescarEnSegundoPlano)
+    }
     this.temporizadorTiempo = setInterval(() => {
-      if (this.paginatedTareas.some(t => this.tareaEnCurso(t))) this.ahoraMs = Date.now()
+      if (this.workmeterActivo && this.paginatedTareas.some(t => this.tareaEnCurso(t))) this.ahoraMs = Date.now()
     }, 1000)
     await this.inicializar()
     // Abrir detalle si viene en query params (por si el watch no lo pilló antes de cargar)
@@ -549,13 +563,14 @@ export default {
   methods: {
     colorTextoSobre,
 
-    // ---- Tiempo de las tareas (el estado que «cuenta tiempo» suma a duracionActivaSegundos) ----
+    // ---- Tiempo de las tareas (Workmeter): solo cuenta el tiempo con el cronómetro en marcha ----
+    // El backend manda la suma de los tramos de cronómetro (tiempoCronometroSegundos) y si hay uno corriendo (cronometroActivo).
     tareaEnCurso(tarea) {
-      return this.estados.some(e => e.id === tarea.estadoId && e.cuentaTiempo)
+      return !!tarea.cronometroActivo
     },
 
     segundosTarea(tarea) {
-      const base = tarea.duracionActivaSegundos || 0
+      const base = tarea.tiempoCronometroSegundos || 0
       if (!this.tareaEnCurso(tarea)) return base
       return base + Math.max(0, (this.ahoraMs - this.tareasRecibidasEn) / 1000)
     },
@@ -569,33 +584,22 @@ export default {
       return h > 0 ? `${h} h ${String(m).padStart(2, '0')} min` : `${m} min`
     },
 
-    // El cronómetro lo maneja quien tiene la tarea asignada (o un administrador)
+    // El cronómetro solo lo maneja quien tiene la tarea asignada (el backend no deja controlar el de otro)
     puedeCronometrar(tarea) {
       if (tarea.estadoFinal) return false
-      if (this.esAdmin) return true
       const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
       return !!usuario && tarea.usuarioAsignadoId === usuario.id
     },
 
-    // Iniciar pone la tarea «En Progreso» y pausa las demás que esa persona tuviera en marcha;
-    // pausar la devuelve al estado de espera.
+    // Iniciar para el cronómetro que corriera en otra tarea y pone esta «En progreso»; pausar solo para el cronómetro.
     async alternarCronometro(tarea) {
       if (this.cambiandoEstadoTarea) return
-      const cuenta = this.estados.find(e => e.cuentaTiempo && !e.estadoFinal)
-      const espera = this.estados.find(e => !e.cuentaTiempo && !e.estadoBloqueo && !e.estadoFinal)
-      if (!cuenta || !espera) {
-        this.mostrarMensaje('El módulo de tareas no tiene estados de «en progreso» y de espera', 'warning')
-        return
-      }
       this.cambiandoEstadoTarea = true
       try {
         if (this.tareaEnCurso(tarea)) {
-          await tareasApi.cambiarEstadoTarea(tarea.id, espera.id)
+          await tareasApi.pausarCronometro()
         } else {
-          const otras = this.tareas.filter(t => t.id !== tarea.id
-            && t.usuarioAsignadoId === tarea.usuarioAsignadoId && this.tareaEnCurso(t))
-          for (const otra of otras) await tareasApi.cambiarEstadoTarea(otra.id, espera.id)
-          await tareasApi.cambiarEstadoTarea(tarea.id, cuenta.id)
+          await tareasApi.iniciarCronometro(tarea.id)
         }
         await this.cargarTareas()
         if (this.$refs.estadisticas) await this.$refs.estadisticas.cargarEstadisticas()
@@ -769,6 +773,23 @@ export default {
       return []
     },
     
+    // Recarga la lista sin spinner ni avisos. No hace nada si la pestaña está oculta o si hay algo en marcha
+    // (carga, guardado, cambio de estado, un modal abierto) para no pisar lo que el usuario está haciendo.
+    async refrescarEnSegundoPlano() {
+      if (!this.workmeterActivo || document.hidden || this.cargando || this.guardandoTarea || this.cambiandoEstadoTarea
+        || this.mostrarModalCrearTarea || this.mostrarModalDetalle || this.tareaEnEdicion || this.refrescandoFondo) return
+      this.refrescandoFondo = true
+      try {
+        this.tareas = await this.fetchTareas()
+        this.aplicarFiltros()
+        if (this.$refs.estadisticas) this.$refs.estadisticas.cargarEstadisticasConDatos(this.tareas)
+      } catch (error) {
+        console.error('Error refrescando tareas en segundo plano:', error)
+      } finally {
+        this.refrescandoFondo = false
+      }
+    },
+
     async cargarTareas() {
       try {
         this.cargando = true
