@@ -9,5 +9,6 @@ contextBridge.exposeInMainWorld('workmeter', {
   fijarAlto: (alto, libre = false) => ipcRenderer.invoke('ventana:alto', alto, libre),
   ocultar: () => ipcRenderer.invoke('ventana:ocultar'),
   salir: () => ipcRenderer.invoke('app:salir'),
+  alInactividad: fn => ipcRenderer.on('inactividad', (_e, datos) => fn(datos)),
   alCambiarModo: fn => ipcRenderer.on('modo', (_e, valor) => fn(valor))
 });

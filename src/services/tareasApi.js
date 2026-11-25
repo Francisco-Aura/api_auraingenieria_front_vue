@@ -137,6 +137,12 @@ export const tareasApi = {
     return response.data
   },
 
+  // Workmeter: tiempo trabajado por un usuario entre dos fechas (YYYY-MM-DD). Los de otro usuario, solo nivel 1.
+  async resumenTiempo(usuarioId, desde, hasta) {
+    const response = await axios.get('/tareas/tiempo/resumen', { params: { usuarioId, desde, hasta } })
+    return response.data
+  },
+
   async cambiarEstadoTarea(tareaId, estadoId, motivoBloqueo = null) {
     // Se envía quién hace el cambio: queda en la auditoría y la persona asignada
     // no recibe notificaciones de sus propios cambios

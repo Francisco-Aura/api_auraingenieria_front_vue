@@ -217,6 +217,22 @@
     });
   }
 
+  // Pausa por inactividad: el servidor recorta el tramo al momento en que dejó de haber actividad.
+  // Un bloqueo de pantalla (segundos = 0) pausa sin recortar; al desbloquear llega el tiempo que estuvo fuera.
+  async function pausarPorInactividad({ segundos, motivo }) {
+    if (!estado.usuario) return;
+    await cargarTareas({ silencioso: true });
+    const t = tareaEnCurso();
+    if (!t) return;
+    const r = await llamar('POST', `/tareas/tiempo/pausar?inactivoSegundos=${segundos}`);
+    if (!r.ok) return mostrarAviso(mensajeError(r, 'No se pudo pausar por inactividad'));
+    await cargarTareas({ silencioso: true });
+    const min = Math.round(segundos / 60);
+    const causa = motivo === 'inactividad' ? `${min} min sin actividad`
+      : motivo === 'suspension' ? 'equipo suspendido' : 'pantalla bloqueada';
+    mostrarAviso(`Cronómetro pausado (${causa}).`, 15000);
+  }
+
   function finalizar(tarea) {
     return ejecutar(async () => {
       const fin = estadoFinal();
@@ -483,6 +499,7 @@
     $('btn-minimo').addEventListener('click', () => aplicarModo('minimo'));
     $('mini-expandir').addEventListener('click', () => aplicarModo('completo'));
     // Cambio hecho desde el menú de la bandeja: main ya ha ajustado la ventana.
+    api.alInactividad(d => { if (!estado.ocupado) pausarPorInactividad(d); });
     api.alCambiarModo(modo => { estado.modoPreferido = modo; ponerModoVisual(modo); });
 
     // Píldora: un botón que pausa la tarea en curso o reanuda la última; el título abre el selector.

@@ -1,6 +1,6 @@
 // Workmeter: widget de escritorio con el cronómetro de tareas de la intranet.
 // Ventana sin marco, siempre encima, que arranca con Windows y recuerda su posición.
-const { app, BrowserWindow, Tray, Menu, ipcMain, screen, nativeImage, session } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, screen, nativeImage, session, powerMonitor } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
@@ -15,6 +15,7 @@ const CONFIG_POR_DEFECTO = {
   usuario: null, // { id, nombre, nivelAcceso, ... } de la última sesión; la contraseña nunca se guarda
   modo: 'minimo', // 'minimo' (píldora) o 'completo' (lista de tareas)
   arrancarConWindows: true,
+  inactividadMin: 10, // minutos sin teclado ni ratón tras los que se pausa el cronómetro (0 = no pausar)
   posicion: null // { x, y }
 };
 
@@ -193,6 +194,47 @@ function actualizarMenuBandeja() {
   ]));
 }
 
+// ---------- Inactividad ----------
+// Avisa a la ventana de que el usuario lleva `segundos` sin trabajar (sin teclado/ratón, pantalla bloqueada o equipo
+// suspendido) para que pause el cronómetro y el servidor recorte el tramo a ese momento.
+
+let inactividadAvisada = false;
+let sinActividadDesde = null; // bloqueo o suspensión: cuándo empezó
+
+function avisarInactividad(segundos, motivo) {
+  if (ventana && !ventana.isDestroyed()) ventana.webContents.send('inactividad', { segundos: Math.max(0, Math.round(segundos)), motivo });
+}
+
+function vigilarInactividad() {
+  setInterval(() => {
+    const limite = Number(config.inactividadMin) * 60;
+    if (!(limite > 0)) return;
+    const inactivo = powerMonitor.getSystemIdleTime();
+    if (inactivo >= limite) {
+      if (!inactividadAvisada) {
+        inactividadAvisada = true;
+        avisarInactividad(inactivo, 'inactividad');
+      }
+    } else {
+      inactividadAvisada = false;
+    }
+  }, 15000);
+
+  // Al bloquear o suspender se pausa ya; al volver se descuenta lo que estuvo fuera (la suspensión no deja hacer la llamada).
+  const empezar = () => { if (sinActividadDesde == null) sinActividadDesde = Date.now(); };
+  const terminar = motivo => {
+    if (sinActividadDesde == null) return;
+    const segundos = (Date.now() - sinActividadDesde) / 1000;
+    sinActividadDesde = null;
+    inactividadAvisada = false;
+    if (segundos >= 30) avisarInactividad(segundos, motivo);
+  };
+  powerMonitor.on('lock-screen', () => { empezar(); avisarInactividad(0, 'bloqueo'); });
+  powerMonitor.on('suspend', empezar);
+  powerMonitor.on('unlock-screen', () => terminar('bloqueo'));
+  powerMonitor.on('resume', () => terminar('suspension'));
+}
+
 function salir() {
   saliendo = true;
   app.quit();
@@ -284,6 +326,7 @@ if (!unica) {
     aplicarArranque();
     crearVentana();
     crearBandeja();
+    vigilarInactividad();
   });
 
   // Es un widget residente: no sale al cerrar la ventana.

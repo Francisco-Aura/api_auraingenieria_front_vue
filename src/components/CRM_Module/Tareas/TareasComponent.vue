@@ -35,6 +35,10 @@
             <i :class="mostrarCompletadas ? 'fas fa-tasks' : 'fas fa-check-circle'"></i>
             <span>{{ mostrarCompletadas ? 'Ver pendientes' : 'Ver completadas' }}</span>
           </button>
+          <button v-if="workmeterActivo && esAdmin" class="btn btn-refresh" @click="mostrarResumenTiempo = true" title="Tiempo trabajado por trabajador">
+            <i class="fas fa-stopwatch"></i>
+            <span>Tiempos</span>
+          </button>
           <button class="btn btn-create" @click="abrirModalCrearTarea" title="Crear nueva tarea">
             <i class="fas fa-plus-circle"></i>
             <span>Crear tarea</span>
@@ -367,6 +371,14 @@
       @cerrar="cerrarModal"
     />
 
+    <!-- Workmeter: tiempo por trabajador (solo nivel 1) -->
+    <ResumenTiempoModal
+      v-if="workmeterActivo && esAdmin && mostrarResumenTiempo"
+      :value="mostrarResumenTiempo"
+      :usuarios="usuarios"
+      @cerrar="mostrarResumenTiempo = false"
+    />
+
     <!-- Notificaciones -->
     <div v-if="snackbar.show" class="snackbar" :class="snackbar.color" role="status">
       <div class="snackbar-content">
@@ -388,6 +400,7 @@ import TareaDetalleModal from './TareaDetalleModal.vue'
 import EstadisticasTareasComponent from './EstadisticasTareasComponent.vue'
 import TareaModalCorporativo from './TareaModalCorporativo.vue'
 import TareasCalendarioView from './TareasCalendarioView.vue'
+import ResumenTiempoModal from './ResumenTiempoModal.vue'
 import Spinner from '@/components/SpinnerComponent.vue'
 import { cargarExcelJS, descargarLibroExcel } from '@/utils/excel'
 import { fechaLocalISO, fechaES } from '@/utils/fechas'
@@ -405,6 +418,7 @@ export default {
     EstadisticasTareasComponent,
     TareaModalCorporativo,
     TareasCalendarioView,
+    ResumenTiempoModal,
     Spinner
   },
   data() {
@@ -415,6 +429,7 @@ export default {
       usuarios: [],
       categorias: [],
       cargando: false,
+      mostrarResumenTiempo: false,
       mostrarCompletadas: false,
       
       // Modales
