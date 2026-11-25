@@ -15,7 +15,7 @@ const CONFIG_POR_DEFECTO = {
   usuario: null, // { id, nombre, nivelAcceso, ... } de la última sesión; la contraseña nunca se guarda
   modo: 'minimo', // 'minimo' (píldora) o 'completo' (lista de tareas)
   arrancarConWindows: true,
-  inactividadMin: 10, // minutos sin teclado ni ratón tras los que se pausa el cronómetro (0 = no pausar)
+  inactividadMin: 2, // minutos sin teclado ni ratón tras los que se pausa el cronómetro (0 = no pausar)
   posicion: null // { x, y }
 };
 
