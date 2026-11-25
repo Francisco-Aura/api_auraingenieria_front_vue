@@ -86,6 +86,14 @@
 .estudio-coste-boton { margin-left: 32px; }
 .estudio-coste-manual { align-items: end; gap: 12px 32px; }
 .estudio-potencia-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+/* Instalación: a la izquierda los datos de la instalación y a la derecha, en la misma tarjeta, la potencia contratada (o el grupo electrógeno si es aislada) */
+.estudio-instalacion-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
+.estudio-segmento-tipo { max-width: 460px; } /* dos botones: no hace falta que midan toda la fila */
+.estudio-lado { padding: 8px 0 0 28px; border-left: 1px solid var(--border, rgba(127, 127, 127, 0.25)); min-width: 0; }
+@media (max-width: 1000px) { .estudio-instalacion-cols { grid-template-columns: minmax(0, 1fr); } .estudio-lado { padding: 12px 0 0; margin-top: 12px; border-left: 0; border-top: 1px solid var(--border, rgba(127, 127, 127, 0.25)); } }
+/* Grupo electrógeno: dos casillas por fila y la última, que queda sola, ocupa la fila entera */
+.estudio-grupo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.estudio-campos.estudio-grupo > .cuestionario-campo:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .estudio-mini { padding: 4px 14px; font-size: 0.85em; font-weight: 600; }
 .estudio-quitar { color: var(--danger); }
 .estudio-zona-accion { margin-top: auto; font-size: 0.85em; font-weight: 600; color: var(--accent-text, var(--text-h)); }

@@ -98,63 +98,63 @@
 
       <!-- Dos columnas por filas: cada pareja de tarjetas tiene la misma altura; Observaciones es la única que se estira (su casilla crece) -->
       <div class="estudio-columnas" :class="{ aislada }">
-      <fieldset class="alta-tarjeta" :class="{ completa: !aislada }">
-        <legend>{{ aislada ? 'Instalación' : 'Instalación y potencia contratada' }}</legend>
-        <div class="estudio-campos estudio-campos-4">
-          <div class="cuestionario-campo estudio-ancho">
-            Tipo de instalación
-            <div class="estudio-segmento" role="radiogroup" aria-label="Tipo de instalación">
-              <button type="button" role="radio" :aria-checked="!aislada" :class="{ on: !aislada }" @click="v.economia.modo = 'red'">Conectada a la red</button>
-              <button type="button" role="radio" :aria-checked="aislada" :class="{ on: aislada }" @click="v.economia.modo = 'aislada'">Aislada con grupo electrógeno</button>
+      <fieldset class="alta-tarjeta completa estudio-instalacion">
+        <legend>Instalación</legend>
+        <div class="estudio-instalacion-cols">
+          <div class="estudio-campos estudio-campos-4">
+            <div class="cuestionario-campo estudio-ancho">
+              Tipo de instalación
+              <div class="estudio-segmento estudio-segmento-tipo" role="radiogroup" aria-label="Tipo de instalación">
+                <button type="button" role="radio" :aria-checked="!aislada" :class="{ on: !aislada }" @click="v.economia.modo = 'red'">Conectada a la red</button>
+                <button type="button" role="radio" :aria-checked="aislada" :class="{ on: aislada }" @click="v.economia.modo = 'aislada'">Aislada con grupo electrógeno</button>
+              </div>
+            </div>
+            <label class="cuestionario-campo estudio-mitad">Paneles (kWp)<input v-model.number="v.instalacion.kwp" type="number" min="0" step="1" :placeholder="kwpPropuesto ? kwpPropuesto + ' (propuesta)' : 'Carga primero el consumo'" title="Vacío: se usa la potencia propuesta, la que produce más o menos la mitad de lo que consume el cliente al año"></label>
+            <label class="cuestionario-campo estudio-mitad">Batería (kWh)<input v-model.number="v.instalacion.bateriaKwh" type="number" min="0" step="1" placeholder="0 = sin batería"></label>
+            <div class="cuestionario-campo estudio-mitad">
+              Orientación
+              <div class="estudio-segmento" role="radiogroup" aria-label="Orientación">
+                <button v-for="o in ORIENTACIONES" :key="o.id" type="button" role="radio" :aria-checked="v.instalacion.orientacion === o.id"
+                        :class="{ on: v.instalacion.orientacion === o.id }" @click="v.instalacion.orientacion = o.id">{{ o.nombre }}</button>
+              </div>
+            </div>
+            <label class="cuestionario-campo">Azimut (°)
+              <input v-if="personalizada" v-model.number="v.instalacion.azimut" type="number" min="-180" max="180" step="5" placeholder="0 sur · -90 este">
+              <input v-else :value="orientacionFija.azimut" type="text" disabled>
+            </label>
+            <label class="cuestionario-campo">Inclinación (°)
+              <input v-if="personalizada" v-model.number="v.instalacion.inclinacion" type="number" min="0" max="90" step="1">
+              <input v-else :value="orientacionFija.inclinacion" type="text" disabled>
+            </label>
+          </div>
+          <div v-if="!aislada" class="estudio-lado estudio-potencia">
+            <div class="estudio-potencia-cabecera">
+              <strong>Potencia contratada</strong>
+              <button v-if="sugeridaPotencia" type="button" class="secondary estudio-mini" @click="usarSugerida">Usar la reducción sugerida</button>
+            </div>
+            <div class="estudio-campos">
+              <label v-for="p in nPotencia" :key="'p' + p" class="cuestionario-campo">Reducción en P{{ p }} (kW)
+                <input v-model.number="v.economia.reduccionPotencia[p - 1]" type="number" min="0" :max="maxReduccion(p)" step="1" :placeholder="placeholderReduccion(p)">
+                <small class="muted">{{ infoPotencia(p) }}</small>
+              </label>
+              <label class="cuestionario-campo" :style="{ gridColumn: 'span ' + (nPotencia % 4 ? 4 - nPotencia % 4 : 1) }">Ahorro anual en potencia (€)
+                <input v-if="!reducePotencia" v-model.number="v.economia.ahorroPotencia" type="number" min="0" step="100">
+                <input v-else :value="precios && precios.potenciaCalculada ? fmt(precios.ahorroPotencia, 0) : 'Se calcula al crear'" type="text" disabled>
+              </label>
             </div>
           </div>
-          <label class="cuestionario-campo estudio-mitad">Paneles (kWp)<input v-model.number="v.instalacion.kwp" type="number" min="0" step="1" :placeholder="kwpPropuesto ? kwpPropuesto + ' (propuesta)' : 'Carga primero el consumo'" title="Vacío: se usa la potencia propuesta, la que produce más o menos la mitad de lo que consume el cliente al año"></label>
-          <label class="cuestionario-campo estudio-mitad">Batería (kWh)<input v-model.number="v.instalacion.bateriaKwh" type="number" min="0" step="1" placeholder="0 = sin batería"></label>
-          <div class="cuestionario-campo estudio-mitad">
-            Orientación
-            <div class="estudio-segmento" role="radiogroup" aria-label="Orientación">
-              <button v-for="o in ORIENTACIONES" :key="o.id" type="button" role="radio" :aria-checked="v.instalacion.orientacion === o.id"
-                      :class="{ on: v.instalacion.orientacion === o.id }" @click="v.instalacion.orientacion = o.id">{{ o.nombre }}</button>
+          <div v-else class="estudio-lado">
+            <strong>Grupo electrógeno y mantenimiento</strong>
+            <div class="estudio-campos estudio-grupo">
+              <label class="cuestionario-campo">Gasoil (€/L)<input v-model.number="v.economia.precioGasoil" type="number" min="0.2" max="5" step="0.01"></label>
+              <label class="cuestionario-campo">Consumo del grupo (L/kWh)<input v-model.number="v.economia.consumoGrupo" type="number" min="0.15" max="1" step="0.01"></label>
+              <label class="cuestionario-campo">Mantenimiento del grupo (€/kWh)<input v-model.number="v.economia.mantenimientoGrupo" type="number" min="0" max="2" step="0.01"></label>
+              <label class="cuestionario-campo">Mantenimiento y seguro (% de la inversión al año)<input v-model.number="v.economia.mantenimientoPct" type="number" min="0" max="10" step="0.1" :disabled="mantenimientoFijo"></label>
+              <label class="cuestionario-campo">Mantenimiento fijo (€/año, vacío = % de la inversión)<input v-model.number="v.economia.mantenimiento" type="number" min="0" step="50"></label>
             </div>
-          </div>
-          <label class="cuestionario-campo">Azimut (°)
-            <input v-if="personalizada" v-model.number="v.instalacion.azimut" type="number" min="-180" max="180" step="5" placeholder="0 sur · -90 este">
-            <input v-else :value="orientacionFija.azimut" type="text" disabled>
-          </label>
-          <label class="cuestionario-campo">Inclinación (°)
-            <input v-if="personalizada" v-model.number="v.instalacion.inclinacion" type="number" min="0" max="90" step="1">
-            <input v-else :value="orientacionFija.inclinacion" type="text" disabled>
-          </label>
-        </div>
-        <div v-if="!aislada" class="estudio-periodos estudio-potencia">
-          <div class="estudio-potencia-cabecera">
-            <strong>Potencia contratada</strong>
-            <button v-if="sugeridaPotencia" type="button" class="secondary estudio-mini" @click="usarSugerida">Usar la reducción sugerida</button>
-          </div>
-          <div class="estudio-campos">
-            <label v-for="p in nPotencia" :key="'p' + p" class="cuestionario-campo">Reducción en P{{ p }} (kW)
-              <input v-model.number="v.economia.reduccionPotencia[p - 1]" type="number" min="0" :max="maxReduccion(p)" step="1" :placeholder="placeholderReduccion(p)">
-              <small class="muted">{{ infoPotencia(p) }}</small>
-            </label>
-            <label class="cuestionario-campo" :style="{ gridColumn: 'span ' + (nPotencia % 4 ? 4 - nPotencia % 4 : 1) }">Ahorro anual en potencia (€)
-              <input v-if="!reducePotencia" v-model.number="v.economia.ahorroPotencia" type="number" min="0" step="100">
-              <input v-else :value="precios && precios.potenciaCalculada ? fmt(precios.ahorroPotencia, 0) : 'Se calcula al crear'" type="text" disabled>
-            </label>
           </div>
         </div>
       </fieldset>
-
-      <fieldset v-if="aislada" class="alta-tarjeta estudio-ajustes">
-        <legend>Grupo electrógeno y mantenimiento</legend>
-        <div class="estudio-campos">
-          <label class="cuestionario-campo">Gasoil (€/L)<input v-model.number="v.economia.precioGasoil" type="number" min="0.2" max="5" step="0.01"></label>
-          <label class="cuestionario-campo">Consumo del grupo (L/kWh)<input v-model.number="v.economia.consumoGrupo" type="number" min="0.15" max="1" step="0.01"></label>
-          <label class="cuestionario-campo">Mantenimiento del grupo (€/kWh)<input v-model.number="v.economia.mantenimientoGrupo" type="number" min="0" max="2" step="0.01"></label>
-          <label class="cuestionario-campo">Mantenimiento y seguro (% de la inversión al año)<input v-model.number="v.economia.mantenimientoPct" type="number" min="0" max="10" step="0.1" :disabled="mantenimientoFijo"></label>
-          <label class="cuestionario-campo">Mantenimiento fijo (€/año, vacío = % de la inversión)<input v-model.number="v.economia.mantenimiento" type="number" min="0" step="50"></label>
-        </div>
-      </fieldset>
-
 
       <fieldset class="alta-tarjeta estudio-coste-obs">
         <legend>Coste y observaciones</legend>
